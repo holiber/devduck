@@ -5,7 +5,6 @@
   "private": true,
   "scripts": {
     "install:check": "node scripts/install.js",
-    "check:shell-live": "node scripts/checks/shell-live.js",
     "postinstall": "npx playwright install chromium"
   },
   "dependencies": {
