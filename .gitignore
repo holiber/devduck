@@ -1,0 +1,31 @@
+# environment variables
+.env
+
+# Cache directory
+.cache/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Cursor files
+.cursor/
+.cursorrules
+
+# node modules
+node_modules/
+package-lock.json
+
+# Test output files
+tests/installer/output/
+
+# Projects (workspace-specific, not part of devduck repo)
+projects/
+

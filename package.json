@@ -1,0 +1,18 @@
+{
+  "name": "devduck",
+  "version": "0.1.0",
+  "description": "AI assistant integration for Cursor IDE in Yandex Arcadia",
+  "private": true,
+  "scripts": {
+    "install:check": "node scripts/install.js",
+    "check:shell-live": "node scripts/checks/shell-live.js",
+    "postinstall": "npx playwright install chromium"
+  },
+  "dependencies": {
+    "ink": "^5.1.0",
+    "ink-text-input": "^6.0.0",
+    "playwright": "^1.57.0",
+    "react": "^18.3.1",
+    "zod": "^3.25.76"
+  }
+}
