@@ -12,7 +12,23 @@
 const fs = require('fs');
 const path = require('path');
 const { spawnSync } = require('child_process');
-const { print, symbols } = require('../../modules/core/scripts/utils');
+
+// Try to load utils - handle both direct and relative paths
+let print, symbols;
+try {
+  const utils = require('../../modules/core/scripts/utils');
+  print = utils.print;
+  symbols = utils.symbols;
+} catch (e) {
+  // Fallback if utils not found - use console
+  print = (msg, color) => console.log(msg);
+  symbols = {
+    info: 'ℹ',
+    success: '✓',
+    warning: '⚠',
+    error: '✗'
+  };
+}
 
 const PROJECT_ROOT = path.resolve(__dirname, '..', '..');
 
