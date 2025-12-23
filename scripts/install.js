@@ -2076,9 +2076,15 @@ async function installWorkspace() {
   }
   
   // Merge external modules with local modules
-  const { getAllModules, resolveModules, resolveDependencies, mergeModuleSettings } = require('./module-resolver');
+  const { getAllModules, getAllModulesFromDirectory, resolveModules, resolveDependencies, mergeModuleSettings } = require('./module-resolver');
   const localModules = getAllModules();
-  const allModules = [...localModules, ...externalModules];
+  
+  // Also load workspace-local modules (if workspace has its own modules/ folder)
+  // Workspace modules should take precedence over built-in and external modules when names collide.
+  const workspaceModulesDir = path.join(WORKSPACE_ROOT, 'modules');
+  const workspaceModules = getAllModulesFromDirectory(workspaceModulesDir);
+  
+  const allModules = [...localModules, ...externalModules, ...workspaceModules];
   
   // Resolve modules manually with merged list
   let moduleNames = config.modules || ['*'];
@@ -2099,7 +2105,11 @@ async function installWorkspace() {
     };
   });
   
-  print(`\n${symbols.info} Loaded ${loadedModules.length} module(s) (${localModules.length} local, ${externalModules.length} external)`, 'cyan');
+  print(
+    `\n${symbols.info} Loaded ${loadedModules.length} module(s) ` +
+    `(${localModules.length} local, ${externalModules.length} external, ${workspaceModules.length} workspace)`,
+    'cyan'
+  );
   log(`Loaded modules: ${loadedModules.map(m => m.name).join(', ')}`);
   
   // Execute module hooks
