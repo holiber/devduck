@@ -96,6 +96,7 @@ describe('Workspace Installer - Unattended Mode', () => {
       const providedWorkspaceConfigPath = path.join(tempWorkspace, 'provided-workspace.config.json');
       const localProjectsRoot = path.join(tempWorkspace, 'local-projects');
       const localProjectPath = path.join(localProjectsRoot, 'my-local-project');
+      const helloJsPath = path.join(localProjectPath, 'hello.js');
       
       try {
         await fs.mkdir(localProjectPath, { recursive: true });
@@ -113,6 +114,12 @@ describe('Workspace Installer - Unattended Mode', () => {
                   name: 'NodeJS',
                   description: 'Node.js should be installed',
                   test: 'node --version'
+                },
+                {
+                  name: 'HelloJS',
+                  description: 'hello.js should exist and contain hello world',
+                  test: `node -e 'const fs=require(\"fs\"); const p=${JSON.stringify(helloJsPath)}; const c=fs.readFileSync(p,\"utf8\"); if(!c.includes(\"hello world\")) process.exit(1); console.log(\"ok\");'`,
+                  install: `mkdir -p ${JSON.stringify(localProjectPath)} && printf \"console.log('hello world')\\n\" > ${JSON.stringify(helloJsPath)}`
                 }
               ]
             }
@@ -142,6 +149,20 @@ describe('Workspace Installer - Unattended Mode', () => {
         assert.ok(
           result.stdout.includes('NodeJS (Node.js should be installed) - v'),
           'Installer output should include NodeJS version output'
+        );
+
+        // Ensure hello.js check ran, got installed, and succeeded
+        assert.ok(
+          result.stdout.includes('Checking HelloJS...'),
+          'Installer output should include HelloJS check'
+        );
+        assert.ok(
+          result.stdout.includes('Re-checking HelloJS after installation...'),
+          'Installer output should show HelloJS was installed and re-checked'
+        );
+        assert.ok(
+          result.stdout.includes('HelloJS (hello.js should exist and contain hello world) - ok (installed)'),
+          'Installer output should include HelloJS success after installation'
         );
 
         // Ensure workspace.config.json exists (created from provided config)
