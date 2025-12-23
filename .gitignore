@@ -21,7 +21,6 @@ Thumbs.db
 
 # node modules
 node_modules/
-package-lock.json
 
 # Test output files
 tests/installer/output/

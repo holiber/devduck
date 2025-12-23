@@ -94,14 +94,53 @@ module.exports = {
       }
     }
     
-    if (Object.keys(mcpServers).length > 0) {
-      const mcpFilePath = path.join(context.cursorDir, 'mcp.json');
-      const mcpConfig = { mcpServers };
-      fs.writeFileSync(mcpFilePath, JSON.stringify(mcpConfig, null, 2) + '\n', 'utf8');
-      createdFiles.push('.cursor/mcp.json');
-    }
+    // Always create mcp.json, even if empty
+    const mcpFilePath = path.join(context.cursorDir, 'mcp.json');
+    const mcpConfig = { mcpServers };
+    fs.writeFileSync(mcpFilePath, JSON.stringify(mcpConfig, null, 2) + '\n', 'utf8');
+    createdFiles.push('.cursor/mcp.json');
     
-    let message = `Installed ${commandsCount} commands, ${rulesCount} rules, ${Object.keys(mcpServers).length} MCP servers`;
+    // 4. Create .cursorignore file
+    const cursorignorePath = path.join(context.workspaceRoot, '.cursorignore');
+    const cursorignoreContent = [
+      '# Environment variables',
+      '.env',
+      '.env.local',
+      '.env.*.local',
+      '',
+      '# Cache directory',
+      '.cache/',
+      '',
+      '# IDE and editor files',
+      '.vscode/',
+      '.idea/',
+      '*.swp',
+      '*.swo',
+      '*~',
+      '',
+      '# OS files',
+      '.DS_Store',
+      'Thumbs.db',
+      '',
+      '# node modules',
+      'node_modules/',
+      'package-lock.json',
+      'yarn.lock',
+      '',
+      '# Build outputs',
+      'dist/',
+      'build/',
+      '*.log',
+      '',
+      '# Temporary files',
+      '*.tmp',
+      '*.temp'
+    ].join('\n');
+    
+    fs.writeFileSync(cursorignorePath, cursorignoreContent + '\n', 'utf8');
+    createdFiles.push('.cursorignore');
+    
+    let message = `Installed ${commandsCount} commands, ${rulesCount} rules, ${Object.keys(mcpServers).length} MCP servers, created .cursorignore`;
     if (skippedCommands > 0) {
       message += ` (skipped ${skippedCommands} existing command files)`;
     }

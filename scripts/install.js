@@ -36,7 +36,33 @@ function findWorkspaceRoot(startPath = PROJECT_ROOT) {
   return null;
 }
 
-const WORKSPACE_ROOT = findWorkspaceRoot() || PROJECT_ROOT;
+// CLI flags - parse early
+const argv = process.argv.slice(2);
+
+// Parse workspace installation parameters
+function getArgValue(argName) {
+  const index = argv.indexOf(argName);
+  if (index !== -1 && index < argv.length - 1) {
+    return argv[index + 1];
+  }
+  return null;
+}
+
+const WORKSPACE_PATH = getArgValue('--workspace-path');
+const INSTALL_MODULES = getArgValue('--modules');
+const AI_AGENT = getArgValue('--ai-agent');
+const REPO_TYPE = getArgValue('--repo-type');
+const SKIP_REPO_INIT = argv.includes('--skip-repo-init');
+const CONFIG_FILE_PATH = getArgValue('--config');
+
+// Determine workspace root
+let WORKSPACE_ROOT;
+if (WORKSPACE_PATH) {
+  WORKSPACE_ROOT = path.resolve(WORKSPACE_PATH);
+} else {
+  WORKSPACE_ROOT = findWorkspaceRoot() || PROJECT_ROOT;
+}
+
 const CONFIG_FILE = path.join(WORKSPACE_ROOT, 'workspace.config.json');
 const CACHE_DIR = path.join(WORKSPACE_ROOT, '.cache');
 const CACHE_FILE = path.join(CACHE_DIR, 'install-check.json');
@@ -54,8 +80,7 @@ const DEFAULT_TIER = 'pre-install';
 let logStream = null;
 
 // CLI flags
-const argv = process.argv.slice(2);
-const AUTO_YES = argv.includes('-y') || argv.includes('--yes') || argv.includes('--non-interactive');
+const AUTO_YES = argv.includes('-y') || argv.includes('--yes') || argv.includes('--non-interactive') || argv.includes('--unattended');
 const CHECK_TOKENS_ONLY = argv.includes('--check-tokens-only');
 const STATUS_ONLY = argv.includes('--status');
 
@@ -1681,6 +1706,114 @@ function checkTokensOnly() {
 }
 
 /**
+ * Install workspace from scratch
+ */
+async function installWorkspace() {
+  const { loadModulesForWorkspace } = require('./module-loader');
+  const { executeHooksForStage, createHookContext } = require('./module-hooks');
+  
+  // Ensure workspace directory exists
+  if (!fs.existsSync(WORKSPACE_ROOT)) {
+    fs.mkdirSync(WORKSPACE_ROOT, { recursive: true });
+  }
+  
+  // Read or create workspace config
+  let config = readJSON(CONFIG_FILE);
+  
+  if (!config) {
+    // Create new workspace config
+    const modules = INSTALL_MODULES ? INSTALL_MODULES.split(',').map(m => m.trim()) : ['core', 'cursor'];
+    
+    // Calculate relative path from workspace to devduck project
+    let devduckPath = path.relative(WORKSPACE_ROOT, PROJECT_ROOT);
+    if (!devduckPath || devduckPath === '.') {
+      devduckPath = './projects/devduck';
+    } else if (!devduckPath.startsWith('.')) {
+      devduckPath = './' + devduckPath;
+    }
+    
+    config = {
+      workspaceVersion: '0.1.0',
+      devduckPath: devduckPath,
+      modules: modules,
+      moduleSettings: {},
+      repos: [],
+      projects: [],
+      checks: [],
+      env: []
+    };
+    
+    // If config file was provided, read it and merge
+    if (CONFIG_FILE_PATH && fs.existsSync(CONFIG_FILE_PATH)) {
+      const providedConfig = readJSON(CONFIG_FILE_PATH);
+      if (providedConfig) {
+        config = { ...config, ...providedConfig };
+        if (providedConfig.modules) {
+          config.modules = providedConfig.modules;
+        }
+      }
+    }
+    
+    writeJSON(CONFIG_FILE, config);
+    print(`\n${symbols.success} Created workspace.config.json`, 'green');
+    log(`Created workspace.config.json with modules: ${config.modules.join(', ')}`);
+  } else {
+    // Update existing config if modules specified
+    if (INSTALL_MODULES) {
+      const modules = INSTALL_MODULES.split(',').map(m => m.trim());
+      config.modules = modules;
+      writeJSON(CONFIG_FILE, config);
+      print(`\n${symbols.info} Updated workspace.config.json with modules: ${modules.join(', ')}`, 'cyan');
+      log(`Updated workspace.config.json with modules: ${modules.join(', ')}`);
+    }
+  }
+  
+  // Load modules
+  const loadedModules = loadModulesForWorkspace(config);
+  print(`\n${symbols.info} Loaded ${loadedModules.length} module(s)`, 'cyan');
+  log(`Loaded modules: ${loadedModules.map(m => m.name).join(', ')}`);
+  
+  // Execute module hooks
+  print(`\n${symbols.info} Executing module hooks...`, 'cyan');
+  
+  // Pre-install hooks
+  const preInstallContexts = loadedModules.map(module => 
+    createHookContext(WORKSPACE_ROOT, module, loadedModules)
+  );
+  await executeHooksForStage(loadedModules, 'pre-install', preInstallContexts);
+  
+  // Install hooks
+  const installContexts = loadedModules.map(module => 
+    createHookContext(WORKSPACE_ROOT, module, loadedModules)
+  );
+  await executeHooksForStage(loadedModules, 'install', installContexts);
+  
+  // Post-install hooks (this is where cursor module copies commands and rules)
+  const postInstallContexts = loadedModules.map(module => 
+    createHookContext(WORKSPACE_ROOT, module, loadedModules)
+  );
+  const postInstallResults = await executeHooksForStage(loadedModules, 'post-install', postInstallContexts);
+  
+  // Log results
+  for (const result of postInstallResults) {
+    if (result.success && result.message) {
+      log(`Module ${result.module}: ${result.message}`);
+    } else if (result.errors && result.errors.length > 0) {
+      log(`Module ${result.module} errors: ${result.errors.join(', ')}`);
+    }
+  }
+  
+  // Create .cache/devduck directory
+  const cacheDevduckDir = path.join(WORKSPACE_ROOT, '.cache', 'devduck');
+  if (!fs.existsSync(cacheDevduckDir)) {
+    fs.mkdirSync(cacheDevduckDir, { recursive: true });
+  }
+  
+  print(`\n${symbols.success} Workspace installation completed!`, 'green');
+  log(`Workspace installation completed at ${new Date().toISOString()}`);
+}
+
+/**
  * Main installation check function
  */
 async function main() {
@@ -1706,6 +1839,22 @@ async function main() {
   if (CHECKS && CHECKS.length > 0) {
     await runSelectedChecks(CHECKS, false);
     return;
+  }
+  
+  // If workspace-path is specified, install workspace from scratch
+  if (WORKSPACE_PATH) {
+    initLogging();
+    print(`\n${symbols.search} Installing workspace...\n`, 'blue');
+    await installWorkspace();
+    
+    // Close log stream
+    if (logStream) {
+      await new Promise((resolve) => {
+        logStream.end(resolve);
+      });
+    }
+    
+    process.exit(0);
   }
   
   // Initialize

@@ -15,7 +15,8 @@ const {
   verifyWorkspaceStructure,
   verifyWorkspaceConfig,
   verifyModuleInstallation,
-  waitForInstallation
+  waitForInstallation,
+  checkInstallerResult
 } = require('./helpers');
 
 describe('Workspace Installer - Unattended Mode', () => {
@@ -31,6 +32,8 @@ describe('Workspace Installer - Unattended Mode', () => {
           modules: ['core', 'cursor'],
           skipRepoInit: true
         });
+
+        checkInstallerResult(result);
 
         const installed = await waitForInstallation(tempWorkspace, 30000);
         assert.ok(installed, 'Installation should complete');
@@ -71,6 +74,8 @@ describe('Workspace Installer - Unattended Mode', () => {
           config: configPath
         });
 
+        checkInstallerResult(result);
+
         const installed = await waitForInstallation(tempWorkspace, 30000);
         assert.ok(installed, 'Installation should complete');
 
@@ -97,6 +102,8 @@ describe('Workspace Installer - Unattended Mode', () => {
           modules: ['core', 'cursor', 'plan', 'vcs'],
           skipRepoInit: true
         });
+
+        checkInstallerResult(result);
 
         const installed = await waitForInstallation(tempWorkspace, 30000);
         assert.ok(installed, 'Installation should complete');
@@ -136,13 +143,15 @@ describe('Workspace Installer - Unattended Mode', () => {
       const tempWorkspace = await createTempWorkspace();
       
       try {
-        await runInstaller(tempWorkspace, {
+        const initialResult = await runInstaller(tempWorkspace, {
           unattended: true,
           aiAgent: 'cursor',
           repoType: 'none',
           modules: ['core', 'cursor'],
           skipRepoInit: true
         });
+
+        checkInstallerResult(initialResult);
 
         await waitForInstallation(tempWorkspace, 30000);
 
@@ -156,6 +165,8 @@ describe('Workspace Installer - Unattended Mode', () => {
           modules: ['core', 'cursor', 'vcs'],
           skipRepoInit: true
         });
+
+        checkInstallerResult(reinstallResult);
 
         await waitForInstallation(tempWorkspace, 30000);
 
@@ -182,13 +193,15 @@ describe('Workspace Installer - Unattended Mode', () => {
       const tempWorkspace = await createTempWorkspace();
       
       try {
-        await runInstaller(tempWorkspace, {
+        const initialResult = await runInstaller(tempWorkspace, {
           unattended: true,
           aiAgent: 'cursor',
           repoType: 'none',
           modules: ['core', 'cursor'],
           skipRepoInit: true
         });
+
+        checkInstallerResult(initialResult);
 
         await waitForInstallation(tempWorkspace, 30000);
 
@@ -197,13 +210,15 @@ describe('Workspace Installer - Unattended Mode', () => {
         });
         assert.ok(initialConfig.valid, 'Initial config should be valid');
 
-        await runInstaller(tempWorkspace, {
+        const addResult = await runInstaller(tempWorkspace, {
           unattended: true,
           aiAgent: 'cursor',
           repoType: 'none',
           modules: ['core', 'cursor', 'dashboard'],
           skipRepoInit: true
         });
+
+        checkInstallerResult(addResult);
 
         await waitForInstallation(tempWorkspace, 30000);
 
@@ -223,7 +238,7 @@ describe('Workspace Installer - Unattended Mode', () => {
       const tempWorkspace = await createTempWorkspace();
       
       try {
-        await runInstaller(tempWorkspace, {
+        const initialResult = await runInstaller(tempWorkspace, {
           unattended: true,
           aiAgent: 'cursor',
           repoType: 'none',
@@ -231,18 +246,22 @@ describe('Workspace Installer - Unattended Mode', () => {
           skipRepoInit: true
         });
 
+        checkInstallerResult(initialResult);
+
         await waitForInstallation(tempWorkspace, 30000);
 
         const initialConfig = await verifyWorkspaceConfig(tempWorkspace);
         assert.ok(initialConfig.config.modules.includes('dashboard'), 'dashboard should be initially installed');
 
-        await runInstaller(tempWorkspace, {
+        const removeResult = await runInstaller(tempWorkspace, {
           unattended: true,
           aiAgent: 'cursor',
           repoType: 'none',
           modules: ['core', 'cursor', 'vcs'],
           skipRepoInit: true
         });
+
+        checkInstallerResult(removeResult);
 
         await waitForInstallation(tempWorkspace, 30000);
 
@@ -260,13 +279,15 @@ describe('Workspace Installer - Unattended Mode', () => {
       const tempWorkspace = await createTempWorkspace();
       
       try {
-        await runInstaller(tempWorkspace, {
+        const initialResult = await runInstaller(tempWorkspace, {
           unattended: true,
           aiAgent: 'cursor',
           repoType: 'none',
           modules: ['core', 'cursor', 'plan'],
           skipRepoInit: true
         });
+
+        checkInstallerResult(initialResult);
 
         await waitForInstallation(tempWorkspace, 30000);
 
@@ -281,13 +302,15 @@ describe('Workspace Installer - Unattended Mode', () => {
         };
         await fs.writeFile(configPath, JSON.stringify(initialConfig, null, 2), 'utf8');
 
-        await runInstaller(tempWorkspace, {
+        const reinstallResult = await runInstaller(tempWorkspace, {
           unattended: true,
           aiAgent: 'cursor',
           repoType: 'none',
           modules: ['core', 'cursor', 'plan'],
           skipRepoInit: true
         });
+
+        checkInstallerResult(reinstallResult);
 
         await waitForInstallation(tempWorkspace, 30000);
 
@@ -312,13 +335,15 @@ describe('Workspace Installer - Unattended Mode', () => {
       const tempWorkspace = await createTempWorkspace();
       
       try {
-        await runInstaller(tempWorkspace, {
+        const initialResult = await runInstaller(tempWorkspace, {
           unattended: true,
           aiAgent: 'cursor',
           repoType: 'none',
           modules: ['core', 'cursor'],
           skipRepoInit: true
         });
+
+        checkInstallerResult(initialResult);
 
         await waitForInstallation(tempWorkspace, 30000);
 
@@ -332,13 +357,15 @@ describe('Workspace Installer - Unattended Mode', () => {
 
         await fs.writeFile(cursorignorePath, '# Modified content', 'utf8');
 
-        await runInstaller(tempWorkspace, {
+        const reinstallResult = await runInstaller(tempWorkspace, {
           unattended: true,
           aiAgent: 'cursor',
           repoType: 'none',
           modules: ['core', 'cursor'],
           skipRepoInit: true
         });
+
+        checkInstallerResult(reinstallResult);
 
         await waitForInstallation(tempWorkspace, 30000);
 

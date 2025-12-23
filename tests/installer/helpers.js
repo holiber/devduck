@@ -10,7 +10,7 @@ const { spawn } = require('child_process');
 const os = require('os');
 
 const PROJECT_ROOT = path.resolve(__dirname, '../..');
-const INSTALLER_SCRIPT = path.join(PROJECT_ROOT, 'scripts', 'workspace-installer.js');
+const INSTALLER_SCRIPT = path.join(PROJECT_ROOT, 'scripts', 'install.js');
 
 /**
  * Create a temporary directory for testing
@@ -329,9 +329,10 @@ async function verifyModuleInstallation(workspacePath, expectedModules = []) {
  * Wait for installation to complete
  * @param {string} workspacePath - Path to workspace
  * @param {number} timeout - Timeout in milliseconds
+ * @param {number} checkInterval - Interval between checks in milliseconds
  * @returns {Promise<boolean>} True if installation completed
  */
-async function waitForInstallation(workspacePath, timeout = 30000) {
+async function waitForInstallation(workspacePath, timeout = 30000, checkInterval = 100) {
   const startTime = Date.now();
   const configPath = path.join(workspacePath, 'workspace.config.json');
   const cacheDir = path.join(workspacePath, '.cache', 'devduck');
@@ -342,7 +343,7 @@ async function waitForInstallation(workspacePath, timeout = 30000) {
       await fs.access(cacheDir);
       return true;
     } catch (e) {
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise(resolve => setTimeout(resolve, checkInterval));
     }
   }
 
@@ -368,6 +369,18 @@ async function createMockWorkspace(workspacePath, config = {}) {
   await fs.writeFile(configPath, JSON.stringify(finalConfig, null, 2), 'utf8');
 }
 
+/**
+ * Check if installer result indicates failure and throw early
+ * @param {object} result - Result from runInstaller
+ * @throws {Error} If installer failed
+ */
+function checkInstallerResult(result) {
+  if (result.exitCode !== 0) {
+    const errorMsg = result.stderr || result.stdout || 'Unknown error';
+    throw new Error(`Installer failed with exit code ${result.exitCode}. Error: ${errorMsg}`);
+  }
+}
+
 module.exports = {
   createTempWorkspace,
   cleanupTempWorkspace,
@@ -376,6 +389,7 @@ module.exports = {
   verifyWorkspaceConfig,
   verifyModuleInstallation,
   waitForInstallation,
-  createMockWorkspace
+  createMockWorkspace,
+  checkInstallerResult
 };
 
