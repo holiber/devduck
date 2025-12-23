@@ -6,6 +6,8 @@ const https = require('https');
 const http = require('http');
 const { URL } = require('url');
 const { spawnSync } = require('child_process');
+const yargs = require('yargs/yargs');
+const { hideBin } = require('yargs/helpers');
 const { print, symbols, executeCommand, executeInteractiveCommand, requiresSudo, createReadlineInterface, promptUser } = require('./utils');
 
 // Paths
@@ -37,24 +39,69 @@ function findWorkspaceRoot(startPath = PROJECT_ROOT) {
   return null;
 }
 
-// CLI flags - parse early
-const argv = process.argv.slice(2);
+// Parse CLI arguments using yargs
+const argv = yargs(hideBin(process.argv))
+  .option('workspace-path', {
+    type: 'string',
+    description: 'Path to workspace directory'
+  })
+  .option('modules', {
+    type: 'string',
+    description: 'Comma-separated list of modules to install'
+  })
+  .option('ai-agent', {
+    type: 'string',
+    description: 'AI agent to use'
+  })
+  .option('repo-type', {
+    type: 'string',
+    description: 'Repository type'
+  })
+  .option('skip-repo-init', {
+    type: 'boolean',
+    default: false,
+    description: 'Skip repository initialization'
+  })
+  .option('config', {
+    type: 'string',
+    description: 'Path to configuration file'
+  })
+  .option('y', {
+    alias: ['yes', 'non-interactive', 'unattended'],
+    type: 'boolean',
+    default: false,
+    description: 'Non-interactive mode (auto-yes)'
+  })
+  .option('check-tokens-only', {
+    type: 'boolean',
+    default: false,
+    description: 'Only check if required tokens are present'
+  })
+  .option('status', {
+    type: 'boolean',
+    default: false,
+    description: 'Show installation status'
+  })
+  .option('test-checks', {
+    type: 'string',
+    description: 'Comma-separated list of checks to test (without installation)',
+    coerce: (value) => value ? value.split(',').map(c => c.trim()).filter(c => c.length > 0) : null
+  })
+  .option('checks', {
+    type: 'string',
+    description: 'Comma-separated list of checks to run (with installation)',
+    coerce: (value) => value ? value.split(',').map(c => c.trim()).filter(c => c.length > 0) : null
+  })
+  .help()
+  .alias('help', 'h')
+  .argv;
 
-// Parse workspace installation parameters
-function getArgValue(argName) {
-  const index = argv.indexOf(argName);
-  if (index !== -1 && index < argv.length - 1) {
-    return argv[index + 1];
-  }
-  return null;
-}
-
-const WORKSPACE_PATH = getArgValue('--workspace-path');
-const INSTALL_MODULES = getArgValue('--modules');
-const AI_AGENT = getArgValue('--ai-agent');
-const REPO_TYPE = getArgValue('--repo-type');
-const SKIP_REPO_INIT = argv.includes('--skip-repo-init');
-const CONFIG_FILE_PATH = getArgValue('--config');
+const WORKSPACE_PATH = argv['workspace-path'];
+const INSTALL_MODULES = argv.modules;
+const AI_AGENT = argv['ai-agent'];
+const REPO_TYPE = argv['repo-type'];
+const SKIP_REPO_INIT = argv['skip-repo-init'];
+const CONFIG_FILE_PATH = argv.config;
 
 // Determine workspace root
 let WORKSPACE_ROOT;
@@ -81,21 +128,11 @@ const DEFAULT_TIER = 'pre-install';
 let logStream = null;
 
 // CLI flags
-const AUTO_YES = argv.includes('-y') || argv.includes('--yes') || argv.includes('--non-interactive') || argv.includes('--unattended');
-const CHECK_TOKENS_ONLY = argv.includes('--check-tokens-only');
-const STATUS_ONLY = argv.includes('--status');
-
-// Parse --test-checks and --checks parameters
-function parseChecksParam(paramName) {
-  const param = argv.find(arg => arg.startsWith(`${paramName}=`));
-  if (!param) return null;
-  const value = param.split('=')[1];
-  if (!value) return [];
-  return value.split(',').map(c => c.trim()).filter(c => c.length > 0);
-}
-
-const TEST_CHECKS = parseChecksParam('--test-checks');
-const CHECKS = parseChecksParam('--checks');
+const AUTO_YES = argv.y || argv.yes || argv['non-interactive'] || argv.unattended;
+const CHECK_TOKENS_ONLY = argv['check-tokens-only'];
+const STATUS_ONLY = argv.status;
+const TEST_CHECKS = argv['test-checks'];
+const CHECKS = argv.checks;
 
 /**
  * Initialize logging
