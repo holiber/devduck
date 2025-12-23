@@ -96,7 +96,6 @@ describe('Workspace Installer - Unattended Mode', () => {
       const providedWorkspaceConfigPath = path.join(tempWorkspace, 'provided-workspace.config.json');
       const localProjectsRoot = path.join(tempWorkspace, 'local-projects');
       const localProjectPath = path.join(localProjectsRoot, 'my-local-project');
-      const helloJsPath = path.join(localProjectPath, 'hello.js');
       
       try {
         await fs.mkdir(localProjectPath, { recursive: true });
@@ -118,8 +117,8 @@ describe('Workspace Installer - Unattended Mode', () => {
                 {
                   name: 'HelloJS',
                   description: 'hello.js should exist and contain hello world',
-                  test: `node -e 'const fs=require(\"fs\"); const p=${JSON.stringify(helloJsPath)}; const c=fs.readFileSync(p,\"utf8\"); if(!c.includes(\"hello world\")) process.exit(1); console.log(\"ok\");'`,
-                  install: `mkdir -p ${JSON.stringify(localProjectPath)} && printf \"console.log('hello world')\\n\" > ${JSON.stringify(helloJsPath)}`
+                  test: 'node hello.js',
+                  install: "printf \"console.log('hello world')\\n\" > hello.js"
                 }
               ]
             }
@@ -161,8 +160,8 @@ describe('Workspace Installer - Unattended Mode', () => {
           'Installer output should show HelloJS was installed and re-checked'
         );
         assert.ok(
-          result.stdout.includes('HelloJS (hello.js should exist and contain hello world) - ok (installed)'),
-          'Installer output should include HelloJS success after installation'
+          result.stdout.includes('HelloJS (hello.js should exist and contain hello world) - hello world (installed)'),
+          'Installer output should include HelloJS output after installation'
         );
 
         // Ensure workspace.config.json exists (created from provided config)

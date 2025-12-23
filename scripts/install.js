@@ -213,7 +213,7 @@ async function installSoftware(item) {
       const isSudo = requiresSudo(install);
       const result = isSudo 
         ? executeInteractiveCommand(install)
-        : executeCommand(install, '/bin/bash');
+        : executeCommand(install, { shell: '/bin/bash', cwd: item._execCwd });
       
       if (result.success) {
         print(`  ${symbols.success} Installation command completed`, 'green');
@@ -578,9 +578,22 @@ async function checkCommand(item, context = null, skipInstall = false) {
         command = `source ~/.nvm/nvm.sh && ${testWithVars}`;
       }
       
+      // For project checks, run command from projects/<projectName> if it exists
+      const execOptions = {};
+      if (context) {
+        const projectCwd = path.join(PROJECTS_DIR, context);
+        try {
+          if (fs.existsSync(projectCwd) && fs.statSync(projectCwd).isDirectory()) {
+            execOptions.cwd = projectCwd;
+          }
+        } catch {
+          // ignore
+        }
+      }
+      
       // Use interactive mode for sudo commands to allow password input
       const isSudo = requiresSudo(command);
-      const result = isSudo ? executeInteractiveCommand(command) : executeCommand(command);
+      const result = isSudo ? executeInteractiveCommand(command) : executeCommand(command, execOptions);
       
       if (result.success) {
         const version = isSudo ? 'passed' : (result.output || 'unknown');
@@ -599,14 +612,15 @@ async function checkCommand(item, context = null, skipInstall = false) {
         
         // If install command is available, offer to install (unless skipInstall is true)
         if (install && !skipInstall) {
-          const installed = await installSoftware(item);
+          const itemWithCwd = { ...item, _execCwd: execOptions.cwd };
+          const installed = await installSoftware(itemWithCwd);
           
           if (installed) {
             // Re-check after installation
             print(`${logPrefix}  Re-checking ${name} after installation...`, 'cyan');
             log(`${logPrefix}Re-checking ${name} after installation`);
             
-            const recheckResult = isSudo ? executeInteractiveCommand(command) : executeCommand(command);
+            const recheckResult = isSudo ? executeInteractiveCommand(command) : executeCommand(command, execOptions);
             
             if (recheckResult.success) {
               const version = isSudo ? 'passed' : (recheckResult.output || 'unknown');
