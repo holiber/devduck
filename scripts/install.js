@@ -10,14 +10,41 @@ const { print, symbols, executeCommand, executeInteractiveCommand, requiresSudo,
 // Paths
 // Script is in scripts/ directory, so project root is parent directory
 const PROJECT_ROOT = path.resolve(__dirname, '..');
-const CONFIG_FILE = path.join(PROJECT_ROOT, 'ai.config.json');
-const CACHE_DIR = path.join(PROJECT_ROOT, '.cache');
+
+/**
+ * Find workspace root by looking for workspace.config.json
+ */
+function findWorkspaceRoot(startPath = PROJECT_ROOT) {
+  let current = path.resolve(startPath);
+  const maxDepth = 10;
+  let depth = 0;
+  
+  while (depth < maxDepth) {
+    const configPath = path.join(current, 'workspace.config.json');
+    if (fs.existsSync(configPath)) {
+      return current;
+    }
+    
+    const parent = path.dirname(current);
+    if (parent === current) {
+      break;
+    }
+    current = parent;
+    depth++;
+  }
+  
+  return null;
+}
+
+const WORKSPACE_ROOT = findWorkspaceRoot() || PROJECT_ROOT;
+const CONFIG_FILE = path.join(WORKSPACE_ROOT, 'workspace.config.json');
+const CACHE_DIR = path.join(WORKSPACE_ROOT, '.cache');
 const CACHE_FILE = path.join(CACHE_DIR, 'install-check.json');
 const LOG_FILE = path.join(CACHE_DIR, 'install.log');
-const ENV_FILE = path.join(PROJECT_ROOT, '.env');
-const CURSOR_DIR = path.join(PROJECT_ROOT, '.cursor');
+const ENV_FILE = path.join(WORKSPACE_ROOT, '.env');
+const CURSOR_DIR = path.join(WORKSPACE_ROOT, '.cursor');
 const MCP_FILE = path.join(CURSOR_DIR, 'mcp.json');
-const PROJECTS_DIR = path.join(PROJECT_ROOT, 'projects');
+const PROJECTS_DIR = path.join(WORKSPACE_ROOT, 'projects');
 
 // Tier execution order
 const TIER_ORDER = ['pre-install', 'install', 'live', 'pre-test', 'tests'];
@@ -215,19 +242,37 @@ function checkFileExists(filePath) {
 }
 
 /**
- * Get project name from path_in_arcadia
+ * Get project name from path_in_arcadia or src
  * e.g., "crm/frontend/services/shell" -> "shell"
+ * e.g., "github.com/holiber/devduck" -> "devduck"
+ * e.g., "arc://junk/user/project" -> "project"
  */
-function getProjectName(pathInArcadia) {
-  return path.basename(pathInArcadia);
+function getProjectName(projectSrcOrPath) {
+  if (!projectSrcOrPath) return 'unknown';
+  
+  // Handle arc:// URLs
+  if (projectSrcOrPath.startsWith('arc://')) {
+    const pathPart = projectSrcOrPath.replace('arc://', '');
+    return path.basename(pathPart);
+  }
+  
+  // Handle GitHub URLs
+  if (projectSrcOrPath.includes('github.com/')) {
+    const match = projectSrcOrPath.match(/github\.com\/[^\/]+\/([^\/]+)/);
+    if (match) {
+      return match[1].replace('.git', '');
+    }
+  }
+  
+  // Handle regular paths
+  return path.basename(projectSrcOrPath);
 }
 
 /**
  * Create symlink for a project
  */
 function createProjectSymlink(projectName, pathInArcadia, env) {
-  const projectDir = path.join(PROJECTS_DIR, projectName);
-  const symlinkPath = path.join(projectDir, 'link');
+  const symlinkPath = path.join(PROJECTS_DIR, projectName);
   
   // Get ARCADIA path from env
   let arcadiaPath = env.ARCADIA || process.env.ARCADIA || '~/arcadia';
@@ -236,22 +281,23 @@ function createProjectSymlink(projectName, pathInArcadia, env) {
   const targetPath = path.join(arcadiaPath, pathInArcadia);
   
   try {
-    // Ensure project directory exists
-    if (!fs.existsSync(projectDir)) {
-      fs.mkdirSync(projectDir, { recursive: true });
-      log(`Created project directory: ${projectDir}`);
-    }
-    
     // Check if symlink already exists
     if (fs.existsSync(symlinkPath)) {
-      const existingTarget = fs.readlinkSync(symlinkPath);
-      if (existingTarget === targetPath) {
-        log(`Symlink already exists and points to correct target: ${symlinkPath} -> ${targetPath}`);
-        return { success: true, path: symlinkPath, target: targetPath, existed: true };
+      // Check if it's a symlink
+      if (fs.lstatSync(symlinkPath).isSymbolicLink()) {
+        const existingTarget = fs.readlinkSync(symlinkPath);
+        if (existingTarget === targetPath) {
+          log(`Symlink already exists and points to correct target: ${symlinkPath} -> ${targetPath}`);
+          return { success: true, path: symlinkPath, target: targetPath, existed: true };
+        } else {
+          // Remove old symlink
+          fs.unlinkSync(symlinkPath);
+          log(`Removed old symlink: ${symlinkPath} (was pointing to ${existingTarget})`);
+        }
       } else {
-        // Remove old symlink
-        fs.unlinkSync(symlinkPath);
-        log(`Removed old symlink: ${symlinkPath} (was pointing to ${existingTarget})`);
+        // It's a directory, remove it
+        fs.rmSync(symlinkPath, { recursive: true, force: true });
+        log(`Removed existing directory: ${symlinkPath}`);
       }
     }
     
@@ -668,7 +714,7 @@ function writeEnvFile(filePath, env) {
 }
 
 /**
- * Setup .env file from ai.config.json
+ * Setup .env file from workspace.config.json
  */
 async function setupEnvFile() {
   // Check if .env already exists
@@ -689,11 +735,11 @@ async function setupEnvFile() {
   // Check if env section exists in config
   if (!config.env || !Array.isArray(config.env) || config.env.length === 0) {
     print(`\n${symbols.info} No environment variables defined in config, skipping .env setup`, 'cyan');
-    log(`No environment variables found in ai.config.json`);
+    log(`No environment variables found in workspace.config.json`);
     return;
   }
   
-  print(`\n${symbols.info} Setting up .env file from ai.config.json...`, 'cyan');
+  print(`\n${symbols.info} Setting up .env file from workspace.config.json...`, 'cyan');
   log(`Reading environment variables from: ${CONFIG_FILE}`);
   
   const env = {};
@@ -780,17 +826,17 @@ function replaceVariablesInObject(obj, env) {
 }
 
 /**
- * Generate mcp.json from ai.config.json
+ * Generate mcp.json from workspace.config.json
  */
 function generateMcpJson() {
   print(`\n${symbols.info} Generating .cursor/mcp.json...`, 'cyan');
-  log(`Generating mcp.json from ai.config.json`);
+  log(`Generating mcp.json from workspace.config.json`);
   
-  // Read ai.config.json
+  // Read workspace.config.json
   const config = readJSON(CONFIG_FILE);
   if (!config) {
-    print(`  ${symbols.error} Cannot read ${CONFIG_FILE}`, 'red');
-    log(`ERROR: Cannot read configuration file: ${CONFIG_FILE}`);
+    print(`  ${symbols.warning} Cannot read ${CONFIG_FILE}, skipping MCP generation`, 'yellow');
+    log(`WARNING: Cannot read configuration file: ${CONFIG_FILE}`);
     return null;
   }
   
@@ -800,8 +846,8 @@ function generateMcpJson() {
   
   // Collect MCP servers from checks[].mcpSettings
   if (!config.checks || !Array.isArray(config.checks)) {
-    print(`  ${symbols.warning} No checks found in ai.config.json, skipping MCP generation`, 'yellow');
-    log(`No checks found in ai.config.json (cannot generate mcp.json)`);
+    print(`  ${symbols.info} No checks found in workspace.config.json, skipping MCP generation`, 'cyan');
+    log(`No checks found in workspace.config.json (cannot generate mcp.json)`);
     return null;
   }
 
@@ -1193,36 +1239,52 @@ async function checkHttpAccess(item, context = null) {
  * Create symlink for a project and return initial result object
  */
 function initProjectResult(project, env) {
-  const projectName = getProjectName(project.path_in_arcadia);
+  // Support both old format (path_in_arcadia) and new format (src)
+  const projectSrcOrPath = project.path_in_arcadia || project.src;
+  const projectName = getProjectName(projectSrcOrPath);
   
   print(`\n${symbols.info} Processing project: ${projectName}`, 'cyan');
-  log(`Processing project: ${projectName} (${project.path_in_arcadia})`);
+  log(`Processing project: ${projectName} (${projectSrcOrPath})`);
   
   const result = {
     name: projectName,
-    path_in_arcadia: project.path_in_arcadia,
+    path_in_arcadia: projectSrcOrPath,
+    src: project.src,
     symlink: null,
     checks: []
   };
   
-  // Create symlink
-  print(`  Creating symlink...`, 'cyan');
-  const symlinkResult = createProjectSymlink(projectName, project.path_in_arcadia, env);
-  
-  if (symlinkResult.success) {
-    const action = symlinkResult.existed ? 'exists' : 'created';
-    print(`  ${symbols.success} Symlink ${action}: projects/${projectName}/link -> ${symlinkResult.target}`, 'green');
-    result.symlink = {
-      path: `projects/${projectName}/link`,
-      target: symlinkResult.target,
-      created: symlinkResult.created || false
-    };
+  // Create symlink only if path_in_arcadia is provided (Arcadia projects)
+  // GitHub projects don't need symlinks in workspace
+  if (project.path_in_arcadia || (project.src && project.src.startsWith('arc://'))) {
+    print(`  Creating symlink...`, 'cyan');
+    // Remove arc:// prefix if present
+    const pathForSymlink = projectSrcOrPath.replace(/^arc:\/\//, '');
+    const symlinkResult = createProjectSymlink(projectName, pathForSymlink, env);
+    
+    if (symlinkResult.success) {
+      const action = symlinkResult.existed ? 'exists' : 'created';
+      print(`  ${symbols.success} Symlink ${action}: projects/${projectName} -> ${symlinkResult.target}`, 'green');
+      result.symlink = {
+        path: `projects/${projectName}`,
+        target: symlinkResult.target,
+        created: symlinkResult.created || false
+      };
+    } else {
+      print(`  ${symbols.error} Symlink failed: ${symlinkResult.error}`, 'red');
+      result.symlink = {
+        path: `projects/${projectName}`,
+        target: symlinkResult.target,
+        error: symlinkResult.error
+      };
+    }
   } else {
-    print(`  ${symbols.error} Symlink failed: ${symlinkResult.error}`, 'red');
+    // GitHub projects - no symlink needed
+    print(`  ${symbols.info} GitHub project - no symlink needed`, 'cyan');
     result.symlink = {
-      path: `projects/${projectName}/link`,
-      target: symlinkResult.target,
-      error: symlinkResult.error
+      path: null,
+      target: null,
+      note: 'GitHub project - no symlink needed'
     };
   }
   
@@ -1383,7 +1445,8 @@ async function runSelectedChecks(checkNames, testOnly = false) {
   if (config.projects && Array.isArray(config.projects)) {
     for (const project of config.projects) {
       if (project.checks && Array.isArray(project.checks)) {
-        const projectName = getProjectName(project.path_in_arcadia);
+        const projectSrcOrPath = project.path_in_arcadia || project.src;
+        const projectName = getProjectName(projectSrcOrPath);
         for (const check of project.checks) {
           if (checkNames.includes(check.name)) {
             allChecks.push({ ...check, source: 'project', projectName });
