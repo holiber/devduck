@@ -45,6 +45,10 @@ const argv = yargs(hideBin(process.argv))
     type: 'string',
     description: 'Path to workspace directory'
   })
+  .option('workspace-config', {
+    type: 'string',
+    description: 'Path to an existing workspace.config.json to use when creating a workspace'
+  })
   .option('modules', {
     type: 'string',
     description: 'Comma-separated list of modules to install'
@@ -97,6 +101,7 @@ const argv = yargs(hideBin(process.argv))
   .argv;
 
 const WORKSPACE_PATH = argv['workspace-path'];
+const WORKSPACE_CONFIG_PATH = argv['workspace-config'];
 const INSTALL_MODULES = argv.modules;
 const AI_AGENT = argv['ai-agent'];
 const REPO_TYPE = argv['repo-type'];
@@ -329,6 +334,70 @@ function getProjectName(projectSrcOrPath) {
   
   // Handle regular paths
   return path.basename(projectSrcOrPath);
+}
+
+/**
+ * Create symlink in projects/ pointing directly to a target folder.
+ * Used for local-folder projects (project.src is a directory path).
+ */
+function createProjectSymlinkToTarget(projectName, targetPath) {
+  const symlinkPath = path.join(PROJECTS_DIR, projectName);
+  const resolvedTarget = path.resolve(targetPath);
+  
+  try {
+    // Check if symlink already exists
+    if (fs.existsSync(symlinkPath)) {
+      if (fs.lstatSync(symlinkPath).isSymbolicLink()) {
+        const existingTarget = fs.readlinkSync(symlinkPath);
+        // readlink may return relative paths; normalize before comparing
+        const existingResolved = path.resolve(path.dirname(symlinkPath), existingTarget);
+        if (existingResolved === resolvedTarget) {
+          log(`Symlink already exists and points to correct target: ${symlinkPath} -> ${resolvedTarget}`);
+          return { success: true, path: symlinkPath, target: resolvedTarget, existed: true };
+        }
+        fs.unlinkSync(symlinkPath);
+        log(`Removed old symlink: ${symlinkPath} (was pointing to ${existingTarget})`);
+      } else {
+        // It's a directory or file, remove it
+        fs.rmSync(symlinkPath, { recursive: true, force: true });
+        log(`Removed existing path: ${symlinkPath}`);
+      }
+    }
+    
+    if (!fs.existsSync(resolvedTarget)) {
+      log(`Target path does not exist: ${resolvedTarget}`);
+      return { success: false, path: symlinkPath, target: resolvedTarget, error: 'Target path does not exist' };
+    }
+    
+    const stats = fs.statSync(resolvedTarget);
+    if (!stats.isDirectory()) {
+      log(`Target path is not a directory: ${resolvedTarget}`);
+      return { success: false, path: symlinkPath, target: resolvedTarget, error: 'Target path is not a directory' };
+    }
+    
+    fs.symlinkSync(resolvedTarget, symlinkPath);
+    log(`Created symlink: ${symlinkPath} -> ${resolvedTarget}`);
+    return { success: true, path: symlinkPath, target: resolvedTarget, created: true };
+  } catch (error) {
+    log(`Error creating symlink: ${error.message}`);
+    return { success: false, path: symlinkPath, target: resolvedTarget, error: error.message };
+  }
+}
+
+function resolveProjectSrcToWorkspacePath(projectSrc) {
+  if (!projectSrc || typeof projectSrc !== 'string') return null;
+  // Treat relative paths as relative to the workspace root (not PROJECT_ROOT)
+  return path.isAbsolute(projectSrc) ? projectSrc : path.resolve(WORKSPACE_ROOT, projectSrc);
+}
+
+function isExistingDirectory(dirPath) {
+  try {
+    if (!dirPath) return false;
+    if (!fs.existsSync(dirPath)) return false;
+    return fs.statSync(dirPath).isDirectory();
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -1341,6 +1410,30 @@ function initProjectResult(project, env) {
         error: symlinkResult.error
       };
     }
+  } else if (project.src && isExistingDirectory(resolveProjectSrcToWorkspacePath(project.src))) {
+    // Local-folder projects - create symlink in projects/ directly to the folder path
+    const resolvedLocalPath = resolveProjectSrcToWorkspacePath(project.src);
+    print(`  Creating symlink...`, 'cyan');
+    const symlinkResult = createProjectSymlinkToTarget(projectName, resolvedLocalPath);
+    
+    if (symlinkResult.success) {
+      const action = symlinkResult.existed ? 'exists' : 'created';
+      print(`  ${symbols.success} Symlink ${action}: projects/${projectName} -> ${symlinkResult.target}`, 'green');
+      result.symlink = {
+        path: `projects/${projectName}`,
+        target: symlinkResult.target,
+        created: symlinkResult.created || false
+      };
+    } else {
+      print(`  ${symbols.error} Symlink failed: ${symlinkResult.error}`, 'red');
+      result.symlink = {
+        path: `projects/${projectName}`,
+        target: symlinkResult.target,
+        error: symlinkResult.error
+      };
+    }
+    
+    return result;
   } else if (project.src && (project.src.includes('github.com') || project.src.startsWith('git@'))) {
     // GitHub projects - clone to projects/ directory
     const projectPath = path.join(PROJECTS_DIR, projectName);
@@ -1430,7 +1523,8 @@ function getProjectChecksByTier(project, env) {
     return {};
   }
   
-  const projectName = getProjectName(project.path_in_arcadia);
+  const projectSrcOrPath = project.path_in_arcadia || project.src;
+  const projectName = getProjectName(projectSrcOrPath);
   const checksWithVars = replaceVariablesInObject(project.checks, env);
   
   const checksByTier = {};
@@ -1849,6 +1943,17 @@ async function installWorkspace() {
       env: []
     };
     
+    // If workspace.config.json path was provided, read it and merge on top of defaults
+    if (WORKSPACE_CONFIG_PATH && fs.existsSync(WORKSPACE_CONFIG_PATH)) {
+      const providedWorkspaceConfig = readJSON(WORKSPACE_CONFIG_PATH);
+      if (providedWorkspaceConfig) {
+        config = { ...config, ...providedWorkspaceConfig };
+        if (providedWorkspaceConfig.modules) {
+          config.modules = providedWorkspaceConfig.modules;
+        }
+      }
+    }
+    
     // If config file was provided, read it and merge
     if (CONFIG_FILE_PATH && fs.existsSync(CONFIG_FILE_PATH)) {
       const providedConfig = readJSON(CONFIG_FILE_PATH);
@@ -1864,6 +1969,11 @@ async function installWorkspace() {
     print(`\n${symbols.success} Created workspace.config.json`, 'green');
     log(`Created workspace.config.json with modules: ${config.modules.join(', ')}`);
   } else {
+    // If a workspace config path is provided for an existing workspace, keep the existing one
+    if (WORKSPACE_CONFIG_PATH) {
+      print(`\n${symbols.info} workspace.config.json already exists, ignoring --workspace-config`, 'cyan');
+      log(`workspace.config.json already exists at ${CONFIG_FILE}, ignoring --workspace-config=${WORKSPACE_CONFIG_PATH}`);
+    }
     // Update existing config if modules specified
     if (INSTALL_MODULES) {
       const modules = INSTALL_MODULES.split(',').map(m => m.trim());
@@ -2011,6 +2121,12 @@ async function installWorkspace() {
   const cacheDevduckDir = path.join(WORKSPACE_ROOT, '.cache', 'devduck');
   if (!fs.existsSync(cacheDevduckDir)) {
     fs.mkdirSync(cacheDevduckDir, { recursive: true });
+  }
+
+  // If projects are defined in workspace.config.json, create symlinks/clones now.
+  if (config.projects && Array.isArray(config.projects) && config.projects.length > 0) {
+    const env = readEnvFile(ENV_FILE);
+    await processProjects(config.projects, env);
   }
   
   print(`\n${symbols.success} Workspace installation completed!`, 'green');

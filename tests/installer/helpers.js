@@ -43,6 +43,7 @@ async function cleanupTempWorkspace(workspacePath) {
  * @param {object} options - Installer options
  * @param {boolean} options.unattended - Run in unattended mode
  * @param {string} options.config - Path to config file
+ * @param {string} options.workspaceConfig - Path to workspace.config.json to use when creating a workspace
  * @param {object} options.inputs - Mock inputs for interactive mode (array of strings)
  * @returns {Promise<{stdout: string, stderr: string, exitCode: number}>}
  */
@@ -56,6 +57,10 @@ function runInstaller(workspacePath, options = {}) {
     
     if (options.config) {
       args.push('--config', options.config);
+    }
+
+    if (options.workspaceConfig) {
+      args.push('--workspace-config', options.workspaceConfig);
     }
     
     if (options.aiAgent) {
