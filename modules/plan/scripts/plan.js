@@ -13,6 +13,7 @@ const fs = require('fs');
 const { executeCommand } = require('../../core/scripts/utils');
 const tracker = require('../../ya-tracker/scripts/tracker');
 const { getEnv } = require('../../core/scripts/lib/env');
+const { createYargs, installEpipeHandler } = require('../../../scripts/lib/cli');
 
 const PLAN_STAGES = [
   'initialized',
@@ -793,26 +794,9 @@ async function discoverLinkedResources(planDir, issueKey, currentDistance, maxDi
   return { discovered };
 }
 
-function usage(code = 0) {
-  console.error(
-    [
-      'Usage:',
-      '  node scripts/plan.js                         # List open tasks',
-      '  node scripts/plan.js <issueKey|url>         # Create or continue plan',
-      '  node scripts/plan.js load <issueKey>         # Load resources for plan',
-      '  node scripts/plan.js validate <issueKey>      # Validate plan',
-      '  node scripts/plan.js done <issueKey>        # Archive plan',
-      '',
-      'Examples:',
-      '  node scripts/plan.js',
-      '  node scripts/plan.js CRM-47926',
-      '  node scripts/plan.js https://st.yandex-team.ru/CRM-47926',
-      '  node scripts/plan.js load CRM-47926',
-      '  node scripts/plan.js validate CRM-47926',
-      '  node scripts/plan.js done CRM-47926',
-    ].join('\n')
-  );
-  process.exit(code);
+function writeJson(obj) {
+  process.stdout.write(JSON.stringify(obj, null, 2));
+  if (!process.stdout.isTTY) process.stdout.write('\n');
 }
 
 function validatePlan(planDir) {
@@ -956,152 +940,184 @@ async function processSingleIssue(issueKey) {
   };
 }
 
-async function main() {
-  const args = process.argv.slice(2);
+async function main(argv = process.argv) {
+  installEpipeHandler();
 
-  // Handle EPIPE errors gracefully (e.g., when piped to head)
-  process.stdout.on('error', (error) => {
-    if (error.code === 'EPIPE') {
-      process.exit(0);
-    }
-  });
-  
-  if (args.length === 0) {
-    // List tasks
-    const result = listMyTasks();
-    if (result.success) {
-      process.stdout.write(JSON.stringify(result, null, 2));
-      if (!process.stdout.isTTY) process.stdout.write('\n');
-    } else {
-      console.error(result.error);
-      process.exit(1);
-    }
-    return;
-  }
-  
-  if (args[0] === 'load') {
-    // Load resources command
-    const issueKey = extractIssueKey(args[1]);
-    if (!issueKey) {
-      console.error('Error: Invalid issue key');
-      return usage(2);
-    }
-    
-    const existingPlan = findExistingPlan(issueKey);
-    if (!existingPlan) {
-      console.error(`Error: No plan found for ${issueKey}`);
-      process.exit(1);
-    }
-    
-    // Discover linked resources first
-    const resourcesPath = path.join(existingPlan, 'resources.json');
-    if (fs.existsSync(resourcesPath)) {
-      const resources = JSON.parse(fs.readFileSync(resourcesPath, 'utf8'));
-      const taskResource = resources['resources/task.json'];
-      if (taskResource && taskResource.downloaded) {
-        // Discover resources from distance 1 tickets
-        await discoverLinkedResources(existingPlan, issueKey, 1, 2);
-      }
-    }
-    
-    // Load resources
-    const loadResult = await loadResources(existingPlan, 2);
-    updatePlanStatus(existingPlan, 'resources_loaded');
-    
-    process.stdout.write(JSON.stringify(loadResult, null, 2));
-    if (!process.stdout.isTTY) process.stdout.write('\n');
-    return;
-  }
-  
-  if (args[0] === 'validate') {
-    // Validate plan
-    const issueKey = extractIssueKey(args[1]);
-    if (!issueKey) {
-      console.error('Error: Invalid issue key');
-      return usage(2);
-    }
-    
-    const existingPlan = findExistingPlan(issueKey);
-    if (!existingPlan) {
-      console.error(`Error: No plan found for ${issueKey}`);
-      process.exit(1);
-    }
-    
-    const validation = validatePlan(existingPlan);
-    process.stdout.write(JSON.stringify(validation, null, 2));
-    if (!process.stdout.isTTY) process.stdout.write('\n');
-    return;
-  }
-  
-  if (args[0] === 'done') {
-    // Archive plan
-    const issueKey = extractIssueKey(args[1]);
-    if (!issueKey) {
-      console.error('Error: Invalid issue key');
-      return usage(2);
-    }
-    
-    const existingPlan = findExistingPlan(issueKey);
-    if (!existingPlan) {
-      console.error(`Error: No plan found for ${issueKey}`);
-      process.exit(1);
-    }
-    
-    archivePlan(existingPlan);
-    return;
-  }
-  
-  // Parse issue keys - support comma-separated list
-  const input = args[0];
-  const issueKeys = input.split(',')
-    .map(k => extractIssueKey(k.trim()))
-    .filter(Boolean);
-  
-  if (issueKeys.length === 0) {
-    console.error('Error: Invalid issue key(s) or URL(s)');
-    return usage(2);
-  }
-  
-  // Batch mode: process multiple issues
-  if (issueKeys.length > 1) {
-    const results = [];
-    for (const issueKey of issueKeys) {
-      try {
+  return createYargs(argv)
+    .scriptName('plan')
+    .strict()
+    .usage(
+      [
+        'Usage:',
+        '  $0                              # List open tasks',
+        '  $0 <issueKey|url>[,<issue...>]  # Create or continue plan(s)',
+        '  $0 load <issueKey|url>          # Load resources for a plan',
+        '  $0 validate <issueKey|url>      # Validate plan',
+        '  $0 done <issueKey|url>          # Archive plan',
+        '',
+        'Examples:',
+        '  $0',
+        '  $0 CRM-47926',
+        '  $0 https://st.yandex-team.ru/CRM-47926',
+        '  $0 CRM-1,CRM-2',
+        '  $0 load CRM-47926',
+      ].join('\n'),
+    )
+    .command(
+      '$0 [issue]',
+      'List tasks (no args) or create/continue a plan.',
+      (y) =>
+        y.positional('issue', {
+          type: 'string',
+          describe: 'Issue key/URL or comma-separated list',
+        }),
+      async (args) => {
+        if (!args.issue) {
+          const result = listMyTasks();
+          if (!result.success) {
+            console.error(result.error);
+            process.exit(1);
+          }
+          writeJson(result);
+          return;
+        }
+
+        const input = String(args.issue || '');
+        const issueKeys = input
+          .split(',')
+          .map((k) => extractIssueKey(k.trim()))
+          .filter(Boolean);
+
+        if (issueKeys.length === 0) {
+          console.error('Error: Invalid issue key(s) or URL(s)');
+          process.exit(2);
+        }
+
+        if (issueKeys.length > 1) {
+          const results = [];
+          for (const issueKey of issueKeys) {
+            try {
+              const result = await processSingleIssue(issueKey);
+              results.push(result);
+            } catch (error) {
+              results.push({
+                success: false,
+                issueKey,
+                error: error.message,
+              });
+            }
+          }
+
+          const output = {
+            batch: true,
+            total: issueKeys.length,
+            successful: results.filter((r) => r.success).length,
+            failed: results.filter((r) => !r.success).length,
+            results,
+          };
+
+          writeJson(output);
+          return;
+        }
+
+        const issueKey = issueKeys[0];
         const result = await processSingleIssue(issueKey);
-        results.push(result);
-      } catch (error) {
-        results.push({
-          success: false,
-          issueKey,
-          error: error.message
-        });
-      }
-    }
-    
-    const output = {
-      batch: true,
-      total: issueKeys.length,
-      successful: results.filter(r => r.success).length,
-      failed: results.filter(r => !r.success).length,
-      results
-    };
-    
-    process.stdout.write(JSON.stringify(output, null, 2));
-    if (!process.stdout.isTTY) process.stdout.write('\n');
-    return;
-  }
-  
-  // Single issue mode
-  const issueKey = issueKeys[0];
-  const result = await processSingleIssue(issueKey);
-  
-  if (!result.success) {
-    console.error(`Error: ${result.error}`);
-    process.exit(1);
-  }
-  
-  process.stdout.write(JSON.stringify(result, null, 2));
-  if (!process.stdout.isTTY) process.stdout.write('\n');
+        if (!result.success) {
+          console.error(`Error: ${result.error}`);
+          process.exit(1);
+        }
+        writeJson(result);
+      },
+    )
+    .command(
+      'load <issue>',
+      'Load resources for a plan.',
+      (y) =>
+        y.positional('issue', {
+          type: 'string',
+          describe: 'Issue key or URL',
+          demandOption: true,
+        }),
+      async (args) => {
+        const issueKey = extractIssueKey(args.issue);
+        if (!issueKey) {
+          console.error('Error: Invalid issue key');
+          process.exit(2);
+        }
+
+        const existingPlan = findExistingPlan(issueKey);
+        if (!existingPlan) {
+          console.error(`Error: No plan found for ${issueKey}`);
+          process.exit(1);
+        }
+
+        // Discover linked resources first
+        const resourcesPath = path.join(existingPlan, 'resources.json');
+        if (fs.existsSync(resourcesPath)) {
+          const resources = JSON.parse(fs.readFileSync(resourcesPath, 'utf8'));
+          const taskResource = resources['resources/task.json'];
+          if (taskResource && taskResource.downloaded) {
+            await discoverLinkedResources(existingPlan, issueKey, 1, 2);
+          }
+        }
+
+        const loadResult = await loadResources(existingPlan, 2);
+        updatePlanStatus(existingPlan, 'resources_loaded');
+        writeJson(loadResult);
+      },
+    )
+    .command(
+      'validate <issue>',
+      'Validate plan structure.',
+      (y) =>
+        y.positional('issue', {
+          type: 'string',
+          describe: 'Issue key or URL',
+          demandOption: true,
+        }),
+      (args) => {
+        const issueKey = extractIssueKey(args.issue);
+        if (!issueKey) {
+          console.error('Error: Invalid issue key');
+          process.exit(2);
+        }
+
+        const existingPlan = findExistingPlan(issueKey);
+        if (!existingPlan) {
+          console.error(`Error: No plan found for ${issueKey}`);
+          process.exit(1);
+        }
+
+        const validation = validatePlan(existingPlan);
+        writeJson(validation);
+      },
+    )
+    .command(
+      'done <issue>',
+      'Archive a plan to trash.',
+      (y) =>
+        y.positional('issue', {
+          type: 'string',
+          describe: 'Issue key or URL',
+          demandOption: true,
+        }),
+      (args) => {
+        const issueKey = extractIssueKey(args.issue);
+        if (!issueKey) {
+          console.error('Error: Invalid issue key');
+          process.exit(2);
+        }
+
+        const existingPlan = findExistingPlan(issueKey);
+        if (!existingPlan) {
+          console.error(`Error: No plan found for ${issueKey}`);
+          process.exit(1);
+        }
+
+        archivePlan(existingPlan);
+      },
+    )
+    .parseAsync();
 }
 
 function archivePlan(planDir) {

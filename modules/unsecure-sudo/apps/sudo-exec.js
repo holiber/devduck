@@ -9,32 +9,57 @@
  * Usage: node sudo-exec.js <command>
  */
 
-const { spawnSync } = require('child_process');
 const { executeCommand } = require('../../core/scripts/utils');
+const { createYargs } = require('../../../scripts/lib/cli');
 
-const args = process.argv.slice(2);
+async function main(argv = process.argv) {
+  const parsed = await createYargs(argv)
+    .scriptName('sudo-exec')
+    // Allow passing arbitrary commands without yargs treating flags as options.
+    .parserConfiguration({ 'unknown-options-as-args': true })
+    .strict(false)
+    .usage('Usage: $0 <command...>\n\nExamples:\n  $0 ls -la\n  $0 -- apt-get update')
+    .command(
+      '$0 <cmd..>',
+      'Execute a command via sudo (temporary escape hatch).',
+      (y) =>
+        y.positional('cmd', {
+          describe: 'Command to execute (including arguments)',
+          type: 'string',
+          array: true,
+        }),
+      (args) => {
+        const command = (args.cmd || []).join(' ').trim();
+        if (!command) {
+          // yargs should enforce cmd.., but keep a defensive check.
+          throw new Error('Command is required');
+        }
 
-if (args.length === 0) {
-  console.error('Usage: sudo-exec.js <command>');
-  process.exit(1);
+        console.warn('WARNING: Executing command with sudo. This is a temporary solution.');
+        console.log(`Executing: sudo ${command}`);
+
+        const result = executeCommand(`sudo ${command}`, '/bin/bash');
+
+        if (result.success) {
+          if (result.output) console.log(result.output);
+          process.exit(0);
+        } else {
+          console.error(`Error: ${result.error || 'Command failed'}`);
+          if (result.output) console.error(result.output);
+          process.exit(1);
+        }
+      },
+    )
+    .parseAsync();
+
+  return parsed;
 }
 
-const command = args.join(' ');
-console.warn('WARNING: Executing command with sudo. This is a temporary solution.');
-console.log(`Executing: sudo ${command}`);
-
-const result = executeCommand(`sudo ${command}`, '/bin/bash');
-
-if (result.success) {
-  if (result.output) {
-    console.log(result.output);
-  }
-  process.exit(0);
-} else {
-  console.error(`Error: ${result.error || 'Command failed'}`);
-  if (result.output) {
-    console.error(result.output);
-  }
-  process.exit(1);
+if (require.main === module) {
+  // eslint-disable-next-line no-console
+  main().catch((e) => {
+    console.error(e && e.message ? e.message : String(e));
+    process.exit(1);
+  });
 }
 

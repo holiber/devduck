@@ -21,6 +21,7 @@ let TextInput;
 const { getSnapshot } = require('./dashboard-snapshot');
 const { DashboardSnapshotSchema } = require('../schemas/dashboard-snapshot.zod');
 // TaskStateSchema not available - validation removed
+const { createYargs } = require('../../../scripts/lib/cli');
 
 const h = React.createElement;
 
@@ -105,13 +106,6 @@ function spColor(prev, curr) {
 function runTaskCmd(args) {
   const res = spawnSync(process.execPath, [path.join(__dirname, 'task.js'), ...args], { encoding: 'utf8', stdio: 'pipe' });
   return { ok: res.status === 0, stdout: res.stdout || '', stderr: res.stderr || '', code: res.status || 0 };
-}
-
-function parseArgs() {
-  const args = process.argv.slice(2);
-  const idx = args.indexOf('--prompt');
-  const prompt = idx >= 0 ? (args[idx + 1] || '').trim() : '';
-  return { prompt };
 }
 
 function enqueuePrompt(promptText) {
@@ -514,7 +508,17 @@ function App() {
 }
 
 async function main() {
-  const args = parseArgs();
+  const args = await createYargs(process.argv)
+    .scriptName('dashboard')
+    .strict()
+    .usage('Usage: $0 [--prompt "<text>"]\n\nLaunch DevDuck dashboard (Ink TUI).')
+    .option('prompt', {
+      type: 'string',
+      describe: 'Enqueue a prompt before launching the dashboard',
+      default: '',
+    })
+    .parseAsync();
+
   ensureBgRunners();
   if (args.prompt) {
     enqueuePrompt(args.prompt);
