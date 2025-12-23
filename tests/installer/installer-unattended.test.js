@@ -106,7 +106,16 @@ describe('Workspace Installer - Unattended Mode', () => {
           devduckPath: './devduck',
           modules: ['core', 'cursor'],
           projects: [
-            { src: localProjectPath }
+            {
+              src: localProjectPath,
+              checks: [
+                {
+                  name: 'NodeJS',
+                  description: 'Node.js should be installed',
+                  test: 'node --version'
+                }
+              ]
+            }
           ]
         };
         await fs.writeFile(providedWorkspaceConfigPath, JSON.stringify(providedWorkspaceConfig, null, 2), 'utf8');
@@ -124,6 +133,16 @@ describe('Workspace Installer - Unattended Mode', () => {
         
         const installed = await waitForInstallation(tempWorkspace, 30000);
         assert.ok(installed, 'Installation should complete');
+
+        // Ensure project check ran and succeeded
+        assert.ok(
+          result.stdout.includes('Checking NodeJS...'),
+          'Installer output should include NodeJS check'
+        );
+        assert.ok(
+          result.stdout.includes('NodeJS (Node.js should be installed) - v'),
+          'Installer output should include NodeJS version output'
+        );
 
         // Ensure workspace.config.json exists (created from provided config)
         const structure = await verifyWorkspaceStructure(tempWorkspace);
