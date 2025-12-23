@@ -1,56 +1,65 @@
-# CRM-1234 feat(session): improve session handling and cleanup
+# [AI-generated title from diff]
+
+You are going to create N PR(s) in: repo1, repo2, ...
+
+## PR 1: Repository Name (Git/Arcadia)
+
+**Branch**: branch-name
+**Repository**: repo-name
 
 ## PR Description
 
-This PR improves session handling by introducing stricter TypeScript typings, simplifying internal structure, and removing unused code paths to make the system more predictable and easier to maintain.
+[AI-generated description with short intro paragraph]
 
-- Note: You may include multiple `📖 **Docs** — ...` bullets if documentation changes affect several areas. Do NOT list specific changed filenames here (Arcanum UI already shows them).
-  Use icons only (e.g. `📖 — ...`, `♻️ — ...`) if you prefer; avoid duplicating type labels.
-
-- 🧩 **Feature** — introduce typed `SessionState` and centralized session store
-- 🔧 **Bugfix** — fix race condition during session restoration on startup
-- ♻️ **Refactor** — simplify session lifecycle and internal APIs
-- 🧹 **Cleanup** — remove deprecated helpers and unused files
-- 🧪 **Tests** — add unit tests for expired and concurrent sessions
-- 📖 **Docs** — update session lifecycle documentation
+- 🧩 **Feature** — [description]
+- 🔧 **Bugfix** — [description]
+- ♻️ **Refactor** — [description]
+- 🧹 **Cleanup** — [description]
+- 🧪 **Tests** — [description]
+- 📖 **Docs** — [description]
 
 ---
 
-## [x] AI Suggestions — Documentation
+## PR 2: Repository Name (Git/Arcadia)
 
-- [x] Add to this PR — update `README.md` with current session lifecycle and public API usage
-- [x] Add to this PR — update `Roadmap.md` to reflect completed session refactor milestone
+**Branch**: branch-name
+**Repository**: repo-name
 
+## PR Description
+
+[AI-generated description with short intro paragraph]
+
+- 🧩 **Feature** — [description]
+- 🔧 **Bugfix** — [description]
+- ♻️ **Refactor** — [description]
+- 🧹 **Cleanup** — [description]
+- 🧪 **Tests** — [description]
+- 📖 **Docs** — [description]
 
 ---
 
+## [ ] AI Suggestions — Documentation
 
-## [x] AI Suggestions — Unreachable Code Cleanup
+- [ ] Add to this PR — [suggestion]
+
+---
+
+## [ ] AI Suggestions — Unreachable Code Cleanup
 
 The following items identify code that appears to be unused, unreachable, or obsolete.  
 These changes are **safe removals** and should not affect runtime behavior.
 
-- [ ] Add to this PR — remove unused exports and helpers not referenced anywhere in the codebase
-- [ ] Add to this PR — delete unreachable branches guarded by obsolete feature flags
-- [ ] Add to this PR — remove dead code paths kept for backward compatibility that is no longer required
-
+- [ ] Add to this PR — [suggestion]
 
 ---
 
 ## [ ] AI Suggestions — Recipes
 
-- [ ] Add to this PR — `modules/core/recipes/session-store.md`  
-  _Reusable patterns for typed session management in TypeScript_
-
-- [ ] Add to this PR — `modules/core/recipes/testing-session-edge-cases.md`  
-  _Test scenarios for session expiration and concurrency_
-
-- [ ] Add to this PR — `modules/core/recipes/refactor-session-lifecycle.md`  
-  _Step-by-step refactor strategy without behavior changes_
-
+- [ ] Add to this PR — `path/to/recipe.md`  
+  _Description of recipe_
 
 ---
 
+## Warnings
 
-
-Please check sections or items to implement with AI
+[If any warnings exist, list them here]
