@@ -1337,10 +1337,11 @@ function initProjectResult(project, env) {
       print(`  ${symbols.info} Cloning repository...`, 'cyan');
       log(`Cloning repository: ${project.src} to ${projectPath}`);
       
-      // Convert github.com/user/repo to git@github.com:user/repo.git
+      // Convert github.com/user/repo to https://github.com/user/repo.git
+      // Use HTTPS for CI compatibility (no SSH keys required)
       let gitUrl = project.src;
       if (gitUrl.includes('github.com') && !gitUrl.startsWith('git@') && !gitUrl.startsWith('http')) {
-        gitUrl = `git@github.com:${gitUrl.replace(/^github\.com\//, '').replace(/\.git$/, '')}.git`;
+        gitUrl = `https://github.com/${gitUrl.replace(/^github\.com\//, '').replace(/\.git$/, '')}.git`;
       }
       
       // Ensure projects directory exists

@@ -72,20 +72,32 @@ function parseRepoUrl(repoUrl) {
     // github.com/user/repo or https://github.com/user/repo
     let normalized = trimmed;
     if (normalized.startsWith('https://')) {
-      normalized = normalized.replace(/^https:\/\//, '');
+      // Already HTTPS, use as-is
+      if (!normalized.endsWith('.git')) {
+        normalized = `${normalized}.git`;
+      }
+      return {
+        type: 'git',
+        normalized: normalized
+      };
     }
     if (normalized.startsWith('http://')) {
-      normalized = normalized.replace(/^http:\/\//, '');
+      // HTTP, convert to HTTPS
+      normalized = normalized.replace(/^http:\/\//, 'https://');
+      if (!normalized.endsWith('.git')) {
+        normalized = `${normalized}.git`;
+      }
+      return {
+        type: 'git',
+        normalized: normalized
+      };
     }
-    if (!normalized.endsWith('.git')) {
-      normalized = `${normalized}.git`;
-    }
-    // Convert to git@ format for cloning
+    // github.com/user/repo format - convert to HTTPS for CI compatibility
     const match = normalized.match(/github\.com[\/:](.+?)(?:\.git)?$/);
     if (match) {
       return {
         type: 'git',
-        normalized: `git@github.com:${match[1]}.git`
+        normalized: `https://github.com/${match[1]}.git`
       };
     }
   }
