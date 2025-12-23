@@ -7,6 +7,8 @@ const http = require('http');
 const { URL } = require('url');
 const { spawnSync } = require('child_process');
 const { print, symbols, executeCommand, executeInteractiveCommand, requiresSudo, createReadlineInterface, promptUser } = require('./utils');
+const yargs = require('yargs/yargs');
+const { hideBin } = require('yargs/helpers');
 
 // Paths
 // Script is in scripts/ directory, so project root is parent directory
@@ -37,24 +39,50 @@ function findWorkspaceRoot(startPath = PROJECT_ROOT) {
   return null;
 }
 
-// CLI flags - parse early
-const argv = process.argv.slice(2);
-
-// Parse workspace installation parameters
-function getArgValue(argName) {
-  const index = argv.indexOf(argName);
-  if (index !== -1 && index < argv.length - 1) {
-    return argv[index + 1];
+function parseCommaList(value) {
+  if (value === undefined) return null;
+  if (value === null) return null;
+  if (Array.isArray(value)) {
+    return value
+      .flatMap(v => String(v).split(','))
+      .map(v => v.trim())
+      .filter(v => v.length > 0);
   }
-  return null;
+  const str = String(value);
+  if (str.length === 0) return [];
+  return str
+    .split(',')
+    .map(v => v.trim())
+    .filter(v => v.length > 0);
 }
 
-const WORKSPACE_PATH = getArgValue('--workspace-path');
-const INSTALL_MODULES = getArgValue('--modules');
-const AI_AGENT = getArgValue('--ai-agent');
-const REPO_TYPE = getArgValue('--repo-type');
-const SKIP_REPO_INIT = argv.includes('--skip-repo-init');
-const CONFIG_FILE_PATH = getArgValue('--config');
+// CLI flags - parse early
+const cli = yargs(hideBin(process.argv))
+  .scriptName('install')
+  .strict(false)
+  .help()
+  .version(false)
+  .option('workspace-path', { type: 'string', describe: 'Workspace root path' })
+  .option('modules', { type: 'string', describe: 'Comma-separated list of modules to install' })
+  .option('ai-agent', { type: 'string', describe: 'AI agent type (e.g., cursor)' })
+  .option('repo-type', { type: 'string', describe: 'Repository type (e.g., arc, git, none)' })
+  .option('skip-repo-init', { type: 'boolean', default: false, describe: 'Skip repository initialization' })
+  .option('config', { type: 'string', describe: 'Path to config JSON file to merge into workspace.config.json' })
+  .option('yes', { alias: ['y'], type: 'boolean', default: false, describe: 'Assume yes for prompts' })
+  .option('non-interactive', { type: 'boolean', default: false, describe: 'Run without prompts (alias of --yes)' })
+  .option('unattended', { type: 'boolean', default: false, describe: 'Run unattended (alias of --yes)' })
+  .option('check-tokens-only', { type: 'boolean', default: false, describe: 'Only check required tokens and exit' })
+  .option('status', { type: 'boolean', default: false, describe: 'Print last installation status and exit' })
+  .option('test-checks', { type: 'string', describe: 'Run selected checks in test-only mode (comma-separated)' })
+  .option('checks', { type: 'string', describe: 'Run selected checks with optional installation (comma-separated)' })
+  .parseSync();
+
+const WORKSPACE_PATH = cli.workspacePath;
+const INSTALL_MODULES = cli.modules;
+const AI_AGENT = cli.aiAgent;
+const REPO_TYPE = cli.repoType;
+const SKIP_REPO_INIT = cli.skipRepoInit;
+const CONFIG_FILE_PATH = cli.config;
 
 // Determine workspace root
 let WORKSPACE_ROOT;
@@ -81,21 +109,12 @@ const DEFAULT_TIER = 'pre-install';
 let logStream = null;
 
 // CLI flags
-const AUTO_YES = argv.includes('-y') || argv.includes('--yes') || argv.includes('--non-interactive') || argv.includes('--unattended');
-const CHECK_TOKENS_ONLY = argv.includes('--check-tokens-only');
-const STATUS_ONLY = argv.includes('--status');
+const AUTO_YES = Boolean(cli.yes || cli.nonInteractive || cli.unattended);
+const CHECK_TOKENS_ONLY = Boolean(cli.checkTokensOnly);
+const STATUS_ONLY = Boolean(cli.status);
 
-// Parse --test-checks and --checks parameters
-function parseChecksParam(paramName) {
-  const param = argv.find(arg => arg.startsWith(`${paramName}=`));
-  if (!param) return null;
-  const value = param.split('=')[1];
-  if (!value) return [];
-  return value.split(',').map(c => c.trim()).filter(c => c.length > 0);
-}
-
-const TEST_CHECKS = parseChecksParam('--test-checks');
-const CHECKS = parseChecksParam('--checks');
+const TEST_CHECKS = parseCommaList(cli.testChecks);
+const CHECKS = parseCommaList(cli.checks);
 
 /**
  * Initialize logging
