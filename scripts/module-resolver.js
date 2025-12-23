@@ -192,6 +192,34 @@ function loadModule(moduleName) {
 }
 
 /**
+ * Load module metadata from an explicit module path (not necessarily under MODULES_DIR)
+ */
+function loadModuleFromPath(modulePath, fallbackName = null) {
+  if (!modulePath || typeof modulePath !== 'string') {
+    return null;
+  }
+  if (!fs.existsSync(modulePath)) {
+    return null;
+  }
+
+  const metadata = parseModuleFrontmatter(modulePath);
+  if (!metadata) {
+    return null;
+  }
+
+  const moduleDirName = fallbackName || path.basename(modulePath);
+  return {
+    name: metadata.name || moduleDirName,
+    version: metadata.version || '0.1.0',
+    description: metadata.description || '',
+    tags: metadata.tags || [],
+    dependencies: metadata.dependencies || [],
+    defaultSettings: metadata.defaultSettings || {},
+    path: modulePath
+  };
+}
+
+/**
  * Get all available modules
  */
 function getAllModules() {
@@ -208,6 +236,37 @@ function getAllModules() {
       if (module) {
         modules.push(module);
       }
+    }
+  }
+
+  return modules;
+}
+
+/**
+ * Get all available modules from a specific modules directory
+ */
+function getAllModulesFromDirectory(modulesDir) {
+  if (!modulesDir || typeof modulesDir !== 'string') {
+    return [];
+  }
+  if (!fs.existsSync(modulesDir)) {
+    return [];
+  }
+
+  let entries;
+  try {
+    entries = fs.readdirSync(modulesDir, { withFileTypes: true });
+  } catch {
+    return [];
+  }
+
+  const modules = [];
+  for (const entry of entries) {
+    if (!entry.isDirectory()) continue;
+    const modulePath = path.join(modulesDir, entry.name);
+    const module = loadModuleFromPath(modulePath, entry.name);
+    if (module) {
+      modules.push(module);
     }
   }
 
@@ -310,7 +369,9 @@ function mergeModuleSettings(module, workspaceModuleSettings) {
 
 module.exports = {
   loadModule,
+  loadModuleFromPath,
   getAllModules,
+  getAllModulesFromDirectory,
   resolveModules,
   resolveDependencies,
   mergeModuleSettings,
