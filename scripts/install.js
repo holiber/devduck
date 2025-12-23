@@ -9,6 +9,7 @@ const { spawnSync } = require('child_process');
 const yargs = require('yargs/yargs');
 const { hideBin } = require('yargs/helpers');
 const { print, symbols, executeCommand, executeInteractiveCommand, requiresSudo, createReadlineInterface, promptUser } = require('./utils');
+const { resolveWorkspaceRoot } = require('./lib/workspace-path');
 
 // Paths
 // Script is in scripts/ directory, so project root is parent directory
@@ -111,7 +112,7 @@ const CONFIG_FILE_PATH = argv.config;
 // Determine workspace root
 let WORKSPACE_ROOT;
 if (WORKSPACE_PATH) {
-  WORKSPACE_ROOT = path.resolve(WORKSPACE_PATH);
+  WORKSPACE_ROOT = resolveWorkspaceRoot(WORKSPACE_PATH, { projectRoot: PROJECT_ROOT, findWorkspaceRoot });
 } else {
   WORKSPACE_ROOT = findWorkspaceRoot() || PROJECT_ROOT;
 }
