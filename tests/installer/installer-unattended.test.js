@@ -381,5 +381,77 @@ describe('Workspace Installer - Unattended Mode', () => {
       }
     });
   });
+
+  describe('External Repository Installation', () => {
+    test('Installation with External Repository', async () => {
+      const tempWorkspace = await createTempWorkspace();
+      
+      try {
+        // Create config with external repository
+        const configPath = path.join(tempWorkspace, 'test-config.json');
+        const config = {
+          aiAgent: 'cursor',
+          repoType: 'none',
+          modules: ['core', 'cursor', 'smogcheck'],
+          repos: ['github.com/holiber/devduck-test-repo'],
+          skipRepoInit: true
+        };
+        await fs.writeFile(configPath, JSON.stringify(config, null, 2), 'utf8');
+
+        const result = await runInstaller(tempWorkspace, {
+          unattended: true,
+          config: configPath
+        });
+
+        checkInstallerResult(result);
+
+        const installed = await waitForInstallation(tempWorkspace, 30000);
+        assert.ok(installed, 'Installation should complete');
+
+        // Verify workspace.config.json includes the repo
+        const configVerification = await verifyWorkspaceConfig(tempWorkspace);
+        assert.ok(configVerification.valid, 'Config should be valid');
+        assert.ok(configVerification.config.repos, 'Config should have repos field');
+        assert.ok(
+          configVerification.config.repos.includes('github.com/holiber/devduck-test-repo'),
+          'Config should include devduck-test-repo in repos'
+        );
+
+        // Verify smogchecked.txt file exists (created by smogcheck module hook)
+        const smogcheckedPath = path.join(tempWorkspace, 'smogchecked.txt');
+        try {
+          await fs.access(smogcheckedPath);
+          const smogcheckedContent = await fs.readFile(smogcheckedPath, 'utf8');
+          assert.ok(smogcheckedContent.includes('smogcheck'), 'smogchecked.txt should contain smogcheck');
+        } catch (e) {
+          throw new Error('smogchecked.txt file should exist in workspace root');
+        }
+
+        // Verify smogcheck command is copied to .cursor/commands/
+        const commandsDir = path.join(tempWorkspace, '.cursor', 'commands');
+        const commandsFiles = await fs.readdir(commandsDir);
+        assert.ok(
+          commandsFiles.includes('smogcheck.md'),
+          'smogcheck.md command should be copied to .cursor/commands/'
+        );
+
+        // Verify smogcheck rules are merged into .cursor/rules/
+        const rulesPath = path.join(tempWorkspace, '.cursor', 'rules', 'devduck-rules.md');
+        try {
+          const rulesContent = await fs.readFile(rulesPath, 'utf8');
+          assert.ok(
+            rulesContent.includes('smogcheck'),
+            'devduck-rules.md should contain smogcheck rules'
+          );
+        } catch (e) {
+          throw new Error('devduck-rules.md should exist and contain smogcheck rules');
+        }
+
+        assert.strictEqual(result.exitCode, 0, 'Installer should exit with code 0');
+      } finally {
+        await cleanupTempWorkspace(tempWorkspace);
+      }
+    });
+  });
 });
 

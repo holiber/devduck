@@ -5,6 +5,7 @@ const path = require('path');
 const https = require('https');
 const http = require('http');
 const { URL } = require('url');
+const { spawnSync } = require('child_process');
 const { print, symbols, executeCommand, executeInteractiveCommand, requiresSudo, createReadlineInterface, promptUser } = require('./utils');
 
 // Paths
@@ -1303,13 +1304,81 @@ function initProjectResult(project, env) {
         error: symlinkResult.error
       };
     }
+  } else if (project.src && (project.src.includes('github.com') || project.src.startsWith('git@'))) {
+    // GitHub projects - clone to projects/ directory
+    const projectPath = path.join(PROJECTS_DIR, projectName);
+    
+    // Check if already cloned
+    if (fs.existsSync(projectPath) && fs.existsSync(path.join(projectPath, '.git'))) {
+      // Update existing clone
+      print(`  ${symbols.info} Updating existing git repository...`, 'cyan');
+      log(`Updating existing git repository: ${projectPath}`);
+      const pullResult = spawnSync('git', ['pull'], {
+        cwd: projectPath,
+        encoding: 'utf8'
+      });
+      
+      if (pullResult.status === 0) {
+        print(`  ${symbols.success} Repository updated: projects/${projectName}`, 'green');
+        log(`Repository updated successfully: ${projectPath}`);
+      } else {
+        print(`  ${symbols.warning} Failed to update repository, using existing version`, 'yellow');
+        log(`Failed to update repository: ${pullResult.stderr || pullResult.stdout}`);
+      }
+      
+      result.symlink = {
+        path: `projects/${projectName}`,
+        target: projectPath,
+        exists: true,
+        updated: pullResult.status === 0
+      };
+    } else {
+      // Clone repository
+      print(`  ${symbols.info} Cloning repository...`, 'cyan');
+      log(`Cloning repository: ${project.src} to ${projectPath}`);
+      
+      // Convert github.com/user/repo to https://github.com/user/repo.git
+      // Use HTTPS for CI compatibility (no SSH keys required)
+      let gitUrl = project.src;
+      if (gitUrl.includes('github.com') && !gitUrl.startsWith('git@') && !gitUrl.startsWith('http')) {
+        gitUrl = `https://github.com/${gitUrl.replace(/^github\.com\//, '').replace(/\.git$/, '')}.git`;
+      }
+      
+      // Ensure projects directory exists
+      if (!fs.existsSync(PROJECTS_DIR)) {
+        fs.mkdirSync(PROJECTS_DIR, { recursive: true });
+      }
+      
+      const cloneResult = spawnSync('git', ['clone', gitUrl, projectPath], {
+        encoding: 'utf8',
+        stdio: 'inherit'
+      });
+      
+      if (cloneResult.status === 0) {
+        print(`  ${symbols.success} Repository cloned: projects/${projectName}`, 'green');
+        log(`Repository cloned successfully: ${projectPath}`);
+        result.symlink = {
+          path: `projects/${projectName}`,
+          target: projectPath,
+          created: true
+        };
+      } else {
+        print(`  ${symbols.error} Failed to clone repository: ${cloneResult.stderr || cloneResult.stdout}`, 'red');
+        log(`Failed to clone repository: ${cloneResult.stderr || cloneResult.stdout}`);
+        result.symlink = {
+          path: `projects/${projectName}`,
+          target: projectPath,
+          error: `Failed to clone: ${cloneResult.stderr || cloneResult.stdout}`
+        };
+      }
+    }
   } else {
-    // GitHub projects - no symlink needed
-    print(`  ${symbols.info} GitHub project - no symlink needed`, 'cyan');
+    // Other project types - no action needed
+    print(`  ${symbols.info} Project type not supported for automatic setup`, 'cyan');
     result.symlink = {
       path: null,
       target: null,
-      note: 'GitHub project - no symlink needed'
+      note: 'Project type not supported for automatic setup'
     };
   }
   
@@ -1768,9 +1837,107 @@ async function installWorkspace() {
     }
   }
   
-  // Load modules
-  const loadedModules = loadModulesForWorkspace(config);
-  print(`\n${symbols.info} Loaded ${loadedModules.length} module(s)`, 'cyan');
+  // Load modules from external repositories if specified
+  const externalModules = [];
+  if (config.repos && config.repos.length > 0) {
+    print(`\n${symbols.info} Loading modules from external repositories...`, 'cyan');
+    log(`Loading modules from ${config.repos.length} repository/repositories`);
+    
+    const { loadModulesFromRepo, getDevduckVersion } = require('./lib/repo-modules');
+    const { loadModule } = require('./module-resolver');
+    const devduckVersion = getDevduckVersion();
+    
+    for (const repoUrl of config.repos) {
+      try {
+        log(`Loading modules from repository: ${repoUrl}`);
+        const repoModulesPath = await loadModulesFromRepo(repoUrl, WORKSPACE_ROOT, devduckVersion);
+        
+        // repoModulesPath is the path to modules directory
+        // Load modules from the repository
+        if (fs.existsSync(repoModulesPath)) {
+          const repoModuleEntries = fs.readdirSync(repoModulesPath, { withFileTypes: true });
+          for (const entry of repoModuleEntries) {
+            if (entry.isDirectory()) {
+              const modulePath = path.join(repoModulesPath, entry.name);
+              // Use loadModule but with custom path - need to parse manually
+              const moduleMdPath = path.join(modulePath, 'MODULE.md');
+              if (fs.existsSync(moduleMdPath)) {
+                const content = fs.readFileSync(moduleMdPath, 'utf8');
+                const frontmatterMatch = content.match(/^---\n([\s\S]*?)\n---/);
+                if (frontmatterMatch) {
+                  const yamlContent = frontmatterMatch[1];
+                  const metadata = {};
+                  const lines = yamlContent.split('\n');
+                  
+                  for (const line of lines) {
+                    const trimmed = line.trim();
+                    if (!trimmed) continue;
+                    
+                    const colonIndex = trimmed.indexOf(':');
+                    if (colonIndex > 0) {
+                      const key = trimmed.substring(0, colonIndex).trim();
+                      let value = trimmed.substring(colonIndex + 1).trim();
+                      
+                      // Handle array values [item1, item2]
+                      if (value.startsWith('[') && value.endsWith(']')) {
+                        const arrayContent = value.slice(1, -1);
+                        metadata[key] = arrayContent.split(',').map(v => v.trim().replace(/^["']|["']$/g, ''));
+                      } else {
+                        metadata[key] = value.replace(/^["']|["']$/g, '');
+                      }
+                    }
+                  }
+                  
+                  if (metadata.name) {
+                    externalModules.push({
+                      name: metadata.name || entry.name,
+                      version: metadata.version || '0.1.0',
+                      description: metadata.description || '',
+                      tags: metadata.tags || [],
+                      dependencies: metadata.dependencies || [],
+                      defaultSettings: metadata.defaultSettings || {},
+                      path: modulePath
+                    });
+                    print(`  ${symbols.success} Loaded external module: ${metadata.name || entry.name}`, 'green');
+                    log(`Loaded external module: ${metadata.name || entry.name} from ${repoUrl}`);
+                  }
+                }
+              }
+            }
+          }
+        }
+      } catch (error) {
+        print(`  ${symbols.warning} Failed to load modules from ${repoUrl}: ${error.message}`, 'yellow');
+        log(`Failed to load modules from ${repoUrl}: ${error.message}`);
+      }
+    }
+  }
+  
+  // Merge external modules with local modules
+  const { getAllModules, resolveModules, resolveDependencies, mergeModuleSettings } = require('./module-resolver');
+  const localModules = getAllModules();
+  const allModules = [...localModules, ...externalModules];
+  
+  // Resolve modules manually with merged list
+  let moduleNames = config.modules || ['*'];
+  if (moduleNames.includes('*')) {
+    moduleNames = allModules.map(m => m.name);
+  }
+  const resolvedModules = resolveDependencies(moduleNames, allModules);
+  
+  // Load module resources
+  const { loadModuleResources } = require('./module-loader');
+  const loadedModules = resolvedModules.map(module => {
+    const resources = loadModuleResources(module);
+    const mergedSettings = mergeModuleSettings(module, config.moduleSettings);
+    
+    return {
+      ...resources,
+      settings: mergedSettings
+    };
+  });
+  
+  print(`\n${symbols.info} Loaded ${loadedModules.length} module(s) (${localModules.length} local, ${externalModules.length} external)`, 'cyan');
   log(`Loaded modules: ${loadedModules.map(m => m.name).join(', ')}`);
   
   // Execute module hooks
