@@ -2,11 +2,13 @@
 
 Create or update a Pull Request for the current branch. The script outputs structured information for AI agent to review and execute actions.
 
-Usage: `node scripts/pr.js [-y|--yes]`
+Usage: `node scripts/pr.js [-y|--yes] [git|arc]`
 
 ## Options
 
 - `-y`, `--yes` — Auto-create PR / push without asking for confirmation (only if no warnings detected and there are no uncommitted changes)
+- `git` — Create PR plan only for Git repositories (GitHub, etc.)
+- `arc` — Create PR plan only for Arcadia repositories
 
 ## Safety rules (must follow)
 
@@ -28,6 +30,11 @@ The AI agent should follow this workflow:
 
 ### 1. Run the PR analysis script
 Execute `node scripts/pr.js` to get the current state.
+
+**Repository filtering:**
+- Use `node scripts/pr.js git` to create PR plan only for Git repositories
+- Use `node scripts/pr.js arc` to create PR plan only for Arcadia repositories
+- Use `node scripts/pr.js` (no filter) to create PR plan for all repositories
 
 ### 2. Handle uncommitted changes
 If there are uncommitted changes:
