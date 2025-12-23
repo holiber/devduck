@@ -8,8 +8,9 @@ function tryParseUrl(value) {
   const trimmed = value.trim();
   if (!trimmed) return null;
 
-  // URL() requires a scheme; allow common scheme-less patterns if needed later.
-  if (!/^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//.test(trimmed)) return null;
+  // Accept both "scheme://..." and "scheme:/..." (e.g. ark:/path/to/file).
+  // URL() requires a scheme; without it we treat the input as a filesystem path.
+  if (!/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(trimmed)) return null;
 
   try {
     return new URL(trimmed);
@@ -64,24 +65,18 @@ function parseGithubSubpath(url) {
   return null;
 }
 
-function parseArcadiaSubpath(url) {
-  // Common web link:
-  // - https://a.yandex-team.ru/arcadia/<path>
-  const host = (url.hostname || '').toLowerCase();
-  const pathname = url.pathname || '';
-
-  if ((host === 'a.yandex-team.ru' || host.endsWith('.yandex-team.ru')) && pathname.includes('/arcadia/')) {
-    const idx = pathname.indexOf('/arcadia/');
-    return pathname.slice(idx + '/arcadia/'.length).replace(/^\/+/, '');
-  }
-
-  return null;
+function parseArkSubpath(url) {
+  // Supported link format (Arcadia):
+  // - ark:/<path>
+  // The path is treated as relative to `arc root`.
+  // Keep it permissive: strip leading slashes; decode percent-encoding.
+  const rawPath = url.pathname || '';
+  const decoded = decodeURIComponent(rawPath);
+  return decoded.replace(/^\/+/, '');
 }
 
 function isLikelyArcadiaUrl(url) {
-  const host = (url.hostname || '').toLowerCase();
-  const pathname = url.pathname || '';
-  return (host === 'a.yandex-team.ru' || host.endsWith('.yandex-team.ru')) && pathname.includes('/arcadia/');
+  return (url.protocol || '').toLowerCase() === 'ark:';
 }
 
 function isLikelyGithubUrl(url) {
@@ -127,10 +122,13 @@ function resolveWorkspaceRoot(workspacePathInput, opts = {}) {
   if (parsedUrl && isLikelyArcadiaUrl(parsedUrl)) {
     const arcRoot = arcRootFn();
     const fallback = arcRoot ? path.resolve(arcRoot) : path.resolve(projectRoot);
-    const subpath = parseArcadiaSubpath(parsedUrl);
+    const subpath = parseArkSubpath(parsedUrl);
 
     if (arcRoot && subpath) {
-      const local = path.join(arcRoot, subpath);
+      // Some ark: links may include "arcadia/" prefix; normalize it away if present,
+      // because `arc root` already points at the Arcadia checkout root.
+      const normalizedSubpath = subpath.startsWith('arcadia/') ? subpath.slice('arcadia/'.length) : subpath;
+      const local = path.join(arcRoot, normalizedSubpath);
       const start = fsExistsSync(local) ? path.dirname(local) : arcRoot;
       return path.resolve(findWorkspaceRoot(start) || arcRoot);
     }
@@ -160,7 +158,7 @@ module.exports = {
   // exported for unit tests
   _internal: {
     parseGithubSubpath,
-    parseArcadiaSubpath,
+    parseArkSubpath,
     isLikelyGithubUrl,
     isLikelyArcadiaUrl,
     tryParseUrl
