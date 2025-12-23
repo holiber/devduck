@@ -608,22 +608,22 @@ function main() {
       branch: 'trunk',
       success: true
     });
-  }
-  
-  const arcPullResult = executeCommand('arc pull');
-  if (!arcPullResult.success) {
-    result.errors.push({
-      repo: 'arc:current-working-copy',
-      operation: 'pull',
-      error: arcPullResult.error
-    });
-    result.ok = false;
-  } else {
-    result.operations.push({
-      repo: 'arc:current-working-copy',
-      operation: 'pull',
-      success: true
-    });
+    
+    const arcPullResult = executeCommand('arc pull');
+    if (!arcPullResult.success) {
+      result.errors.push({
+        repo: 'arc:current-working-copy',
+        operation: 'pull',
+        error: arcPullResult.error
+      });
+      result.ok = false;
+    } else {
+      result.operations.push({
+        repo: 'arc:current-working-copy',
+        operation: 'pull',
+        success: true
+      });
+    }
   }
   
   // Output result
