@@ -21,7 +21,7 @@ const {
 
 describe('Workspace Installer - GUI/Interactive Mode', () => {
   describe('Fresh Workspace Installation', () => {
-    test.skip('GUI Installation - Fresh Workspace', async () => {
+    test('GUI Installation - Fresh Workspace', async () => {
       const tempWorkspace = await createTempWorkspace();
       
       try {
@@ -82,7 +82,7 @@ describe('Workspace Installer - GUI/Interactive Mode', () => {
       }
     });
 
-    test.skip('Detect Existing Workspace', async () => {
+    test('Detect Existing Workspace', async () => {
       const result = await runInstaller(tempWorkspace, {
         unattended: false
       });
