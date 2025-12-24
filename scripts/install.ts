@@ -10,6 +10,11 @@ import yargs from 'yargs/yargs';
 import { hideBin } from 'yargs/helpers';
 import { print, symbols, executeCommand, executeInteractiveCommand, requiresSudo, createReadlineInterface, promptUser } from './utils.js';
 import { resolveWorkspaceRoot } from './lib/workspace-path.js';
+import { readJSON, writeJSON, replaceVariables, replaceVariablesInObject } from './lib/config.js';
+import { readEnvFile } from './lib/env.js';
+import { setupEnvFile } from './install/env.js';
+import { generateMcpJson, checkMcpServers } from './install/mcp.js';
+import type { WorkspaceConfig } from './schemas/workspace-config.zod.js';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -170,24 +175,6 @@ function log(message: string): void {
 }
 
 
-/**
- * Read JSON file
- */
-function readJSON(filePath: string): unknown {
-  try {
-    const content = fs.readFileSync(filePath, 'utf8');
-    return JSON.parse(content);
-  } catch (error) {
-    return null;
-  }
-}
-
-/**
- * Write JSON file
- */
-function writeJSON(filePath: string, data: unknown): void {
-  fs.writeFileSync(filePath, JSON.stringify(data, null, 2) + '\n', 'utf8');
-}
 
 
 interface CheckItem {
@@ -542,8 +529,8 @@ async function checkCommand(item: CheckItem, context: string | null = null, skip
   const env = readEnvFile(ENV_FILE);
   
   // Replace variables in test and install commands
-  const testWithVars = replaceVariables(effectiveTest, env);
-  const installWithVars = install ? replaceVariables(install, env) : install;
+  const testWithVars = replaceVariablesWithLog(effectiveTest, env);
+  const installWithVars = install ? replaceVariablesWithLog(install, env) : install;
   
   try {
     // Check if test is a file path or a command
@@ -785,318 +772,27 @@ function makeHttpRequest(method: string, url: string, headers: Record<string, st
   });
 }
 
-/**
- * Make HTTP request for MCP server (with proper headers and longer timeout)
- */
-function makeMcpHttpRequest(method: string, url: string): Promise<HttpRequestResult> {
-  return new Promise((resolve) => {
-    const urlObj = new URL(url);
-    const isHttps = urlObj.protocol === 'https:';
-    const httpModule = isHttps ? https : http;
-    
-    // MCP servers typically require Accept: text/event-stream
-    // Use HEAD request for faster check, or GET if HEAD is not supported
-    const headers = {
-      'Accept': 'text/event-stream, application/json',
-      'User-Agent': 'MCP-Client/1.0'
-    };
-    
-    const options = {
-      hostname: urlObj.hostname,
-      port: urlObj.port || (isHttps ? 443 : 80),
-      path: urlObj.pathname + urlObj.search,
-      method: method,
-      headers: headers,
-      timeout: 5000 // 5 seconds - enough to check if server responds
-    };
-    
-    const req = httpModule.request(options, (res) => {
-      let data = '';
-      
-      // For HEAD requests, we might not get data
-      res.on('data', (chunk) => {
-        data += chunk;
-      });
-      
-      res.on('end', () => {
-        const statusCode = res.statusCode;
-        // Any response (except 404) means server is reachable
-        const isSuccess = statusCode >= 200 && statusCode < 500 && statusCode !== 404;
-        
-        resolve({
-          success: isSuccess,
-          statusCode: statusCode,
-          error: null,
-          body: data
-        });
-      });
-    });
-    
-    req.on('error', (error) => {
-      resolve({
-        success: false,
-        statusCode: null,
-        error: error.message,
-        body: null
-      });
-    });
-    
-    req.on('timeout', () => {
-      req.destroy();
-      // For MCP servers, timeout might mean server is slow but working
-      // Try a simpler check - just verify the host is reachable
-      resolve({
-        success: false,
-        statusCode: null,
-        error: 'Request timeout (server may be slow or require different protocol)',
-        body: null,
-        timeout: true
-      });
-    });
-    
-    req.end();
-  });
-}
 
 
 /**
  * Parse .env file content
  */
-function parseEnvFile(content: string): Record<string, string> {
-  const env = {};
-  const lines = content.split('\n');
-  
-  for (const line of lines) {
-    const trimmed = line.trim();
-    // Skip empty lines and comments
-    if (!trimmed || trimmed.startsWith('#')) {
-      continue;
-    }
-    
-    // Parse KEY="VALUE" or KEY=VALUE format
-    const match = trimmed.match(/^([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^#\s]+))?/);
-    if (match) {
-      const key = match[1];
-      const value = match[2] || match[3] || match[4] || '';
-      env[key] = value;
-    }
-  }
-  
-  return env;
-}
-
-/**
- * Read .env file
- */
-function readEnvFile(filePath: string): Record<string, string> {
-  try {
-    if (!fs.existsSync(filePath)) {
-      return {};
-    }
-    const content = fs.readFileSync(filePath, 'utf8');
-    return parseEnvFile(content);
-  } catch {
-    return {};
-  }
-}
-
-/**
- * Write .env file
- */
-function writeEnvFile(filePath: string, env: Record<string, string>): void {
-  const lines = [];
-  for (const [key, value] of Object.entries(env)) {
-    // Escape quotes in value and wrap in quotes if contains spaces or special chars
-    const escapedValue = value.includes(' ') || value.includes('"') || value.includes("'")
-      ? `"${value.replace(/"/g, '\\"')}"`
-      : value;
-    lines.push(`${key}=${escapedValue}`);
-  }
-  fs.writeFileSync(filePath, lines.join('\n') + '\n', 'utf8');
-}
-
-/**
- * Setup .env file from workspace.config.json
- */
-async function setupEnvFile() {
-  // Check if .env already exists
-  if (fs.existsSync(ENV_FILE)) {
-    print(`\n${symbols.info} .env file already exists, skipping setup`, 'cyan');
-    log(`.env file already exists: ${ENV_FILE}`);
-    return;
-  }
-  
-  // Read configuration
-  const config = readJSON(CONFIG_FILE);
-  if (!config) {
-    print(`\n${symbols.warning} Cannot read ${CONFIG_FILE}, skipping .env setup`, 'yellow');
-    log(`Cannot read configuration file: ${CONFIG_FILE}`);
-    return;
-  }
-  
-  // Check if env section exists in config
-  if (!config.env || !Array.isArray(config.env) || config.env.length === 0) {
-    print(`\n${symbols.info} No environment variables defined in config, skipping .env setup`, 'cyan');
-    log(`No environment variables found in workspace.config.json`);
-    return;
-  }
-  
-  print(`\n${symbols.info} Setting up .env file from workspace.config.json...`, 'cyan');
-  log(`Reading environment variables from: ${CONFIG_FILE}`);
-  
-  const env = {};
-  
-  // Prompt for each variable (unless running in non-interactive mode)
-  if (AUTO_YES) {
-    print(`\n${symbols.info} Non-interactive mode: generating .env from defaults and environment`, 'cyan');
-    log(`Non-interactive mode: generating .env without prompts`);
-  } else {
-    print(`\n${symbols.info} Please provide values for environment variables:`, 'cyan');
-  }
-
-  const rl = AUTO_YES ? null : createReadlineInterface();
-  for (const envVar of config.env) {
-    const key = envVar && typeof envVar === 'object' ? envVar.name : null;
-    const defaultValue = envVar && typeof envVar === 'object' ? (envVar.default || '') : '';
-    const comment = envVar && typeof envVar === 'object' ? (envVar.description || '') : '';
-
-    if (!key) {
-      print(`  ${symbols.warning} Skipping invalid env entry (missing name)`, 'yellow');
-      log(`Skipping invalid env entry: ${JSON.stringify(envVar)}`);
-      continue;
-    }
-    
-    // Show comment if available
-    if (comment) {
-      print(`  ${symbols.info} ${comment}`, 'cyan');
-    }
-    
-    const fromProcessEnv = process.env[key];
-    if (AUTO_YES) {
-      env[key] = (fromProcessEnv !== undefined ? fromProcessEnv : (defaultValue || ''));
-      log(`Environment variable ${key} = ${env[key]}${comment ? ` (${comment})` : ''} [non-interactive]`);
-      continue;
-    }
-
-    const question = `  ${key}${defaultValue ? ` [${defaultValue}]` : ''}: `;
-    const answer = await promptUser(rl, question);
-    env[key] = answer || fromProcessEnv || defaultValue || '';
-    log(`Environment variable ${key} = ${env[key]}${comment ? ` (${comment})` : ''}`);
-  }
-  
-  if (rl) {
-    rl.close();
-  }
-  
-  // Write .env file
-  writeEnvFile(ENV_FILE, env);
-  print(`\n${symbols.success} .env file created successfully`, 'green');
-  log(`.env file created: ${ENV_FILE}`);
-}
+// readEnvFile is imported from lib/env.ts
 
 /**
  * Replace variables in string (format: $$VAR_NAME$$)
  */
-function replaceVariables(str: string, env: Record<string, string>): string {
-  if (typeof str !== 'string') {
-    return str;
-  }
-  
-  return str.replace(/\$\$([A-Za-z_][A-Za-z0-9_]*)\$\$/g, (match, varName) => {
-    // First check environment variables, then .env file
-    const value = process.env[varName] || env[varName];
-    if (value !== undefined) {
-      return value;
-    }
-    // If not found, return original match with warning
-    print(`  ${symbols.warning} Variable ${match} not found, keeping as is`, 'yellow');
-    log(`Warning: Variable ${match} not found in environment or .env file`);
-    return match;
-  });
+// Helper wrappers for replaceVariables with logging
+function replaceVariablesWithLog(str: string, env: Record<string, string>): string {
+  return replaceVariables(str, env, log, print, symbols);
 }
 
-/**
- * Recursively replace variables in object
- */
-function replaceVariablesInObject(obj: unknown, env: Record<string, string>): unknown {
-  if (typeof obj === 'string') {
-    return replaceVariables(obj, env);
-  } else if (Array.isArray(obj)) {
-    return obj.map(item => replaceVariablesInObject(item, env));
-  } else if (obj !== null && typeof obj === 'object') {
-    const result = {};
-    for (const [key, value] of Object.entries(obj)) {
-      result[key] = replaceVariablesInObject(value, env);
-    }
-    return result;
-  }
-  return obj;
+function replaceVariablesInObjectWithLog(obj: unknown, env: Record<string, string>): unknown {
+  return replaceVariablesInObject(obj, env, log, print, symbols);
 }
 
-/**
- * Generate mcp.json from workspace.config.json
- */
-function generateMcpJson() {
-  print(`\n${symbols.info} Generating .cursor/mcp.json...`, 'cyan');
-  log(`Generating mcp.json from workspace.config.json`);
-  
-  // Read workspace.config.json
-  const config = readJSON(CONFIG_FILE);
-  if (!config) {
-    print(`  ${symbols.warning} Cannot read ${CONFIG_FILE}, skipping MCP generation`, 'yellow');
-    log(`WARNING: Cannot read configuration file: ${CONFIG_FILE}`);
-    return null;
-  }
-  
-  // Read .env file
-  const env = readEnvFile(ENV_FILE);
-  log(`Loaded environment variables from .env file: ${Object.keys(env).join(', ')}`);
-  
-  // Collect MCP servers from checks[].mcpSettings
-  if (!config.checks || !Array.isArray(config.checks)) {
-    print(`  ${symbols.info} No checks found in workspace.config.json, skipping MCP generation`, 'cyan');
-    log(`No checks found in workspace.config.json (cannot generate mcp.json)`);
-    return null;
-  }
 
-  const mcpServers = {};
-  for (const item of config.checks) {
-    if (!item || typeof item !== 'object') continue;
-    if (!item.mcpSettings) continue;
-
-    const serverName = item.name;
-    if (!serverName || typeof serverName !== 'string') {
-      print(`  ${symbols.warning} MCP check is missing string 'name', skipping`, 'yellow');
-      log(`MCP check missing name: ${JSON.stringify(item)}`);
-      continue;
-    }
-
-    // Replace $$VARS$$ in mcpSettings
-    mcpServers[serverName] = replaceVariablesInObject(item.mcpSettings, env);
-  }
-
-  if (Object.keys(mcpServers).length === 0) {
-    print(`  ${symbols.warning} No mcpSettings found in checks, skipping`, 'yellow');
-    log(`No mcpSettings found in checks (cannot generate mcp.json)`);
-    return null;
-  }
-  
-  // Ensure .cursor directory exists
-  if (!fs.existsSync(CURSOR_DIR)) {
-    fs.mkdirSync(CURSOR_DIR, { recursive: true });
-    log(`Created .cursor directory: ${CURSOR_DIR}`);
-  }
-  
-  // Write mcp.json
-  const mcpConfig = { mcpServers };
-  writeJSON(MCP_FILE, mcpConfig);
-  
-  print(`  ${symbols.success} .cursor/mcp.json generated successfully`, 'green');
-  log(`mcp.json written to: ${MCP_FILE}`);
-  
-  return mcpServers;
-}
-
+// checkCommandExists is still used by checks, will be moved when extracting checks
 interface CommandCheckResult {
   exists: boolean;
   executable: boolean;
@@ -1152,261 +848,6 @@ function checkCommandExists(commandPath: string): CommandCheckResult {
     const err = error as Error;
     return { exists: false, executable: false, error: err.message };
   }
-}
-
-interface McpServerResult {
-  name: string;
-  type: 'url' | 'command' | 'unknown';
-  working: boolean;
-  optional: boolean;
-  url?: string;
-  command?: string;
-  statusCode?: number | null;
-  commandPath?: string;
-  error?: string;
-  note?: string | null;
-  timeout?: boolean;
-}
-
-/**
- * Check MCP server
- */
-async function checkMcpServer(name: string, serverConfig: Record<string, unknown>): Promise<McpServerResult> {
-  print(`Checking MCP server: ${name}...`, 'cyan');
-  log(`Checking MCP server: ${name}`);
-  
-  // Check if server is marked as optional
-  const isOptional = serverConfig.optional === true;
-  if (isOptional) {
-    log(`  Server is marked as optional`);
-  }
-  
-  try {
-    // Check URL-based server
-    if (serverConfig.url) {
-      log(`  Type: URL-based server`);
-      log(`  URL: ${serverConfig.url}`);
-      
-      // Try HEAD first (faster), then GET if HEAD fails
-      let result = await makeMcpHttpRequest('HEAD', serverConfig.url);
-      
-      // If HEAD times out or fails, try GET (some servers don't support HEAD)
-      if (result.timeout || (!result.success && !result.statusCode)) {
-        log(`  HEAD request failed, trying GET...`);
-        result = await makeMcpHttpRequest('GET', serverConfig.url);
-      }
-      
-      // Check if server responded (even with error, it means server is working)
-      // MCP servers may return JSON-RPC errors which indicate the server is reachable
-      if (result.success || (result.statusCode && result.statusCode !== 404)) {
-        // Check if response contains JSON-RPC error (which means server is working)
-        let isWorking = result.success;
-        let errorMessage = null;
-        
-        if (result.body) {
-          try {
-            const jsonResponse = JSON.parse(result.body);
-            // If we get a JSON-RPC error response, the server is working
-            // It just requires proper MCP protocol handshake
-            if (jsonResponse.error && jsonResponse.jsonrpc === '2.0') {
-              isWorking = true;
-              errorMessage = `Server requires MCP protocol (${jsonResponse.error.message || 'MCP handshake needed'})`;
-              log(`  Server responded with JSON-RPC error, but server is reachable`);
-            }
-          } catch (e) {
-            // Not JSON, check status code
-            if (result.statusCode >= 200 && result.statusCode < 500) {
-              isWorking = true;
-            }
-          }
-        } else if (result.statusCode && result.statusCode >= 200 && result.statusCode < 500) {
-          // HEAD request succeeded (no body)
-          isWorking = true;
-        }
-        
-        if (isWorking) {
-          const statusMsg = errorMessage ? `(requires MCP protocol)` : `(${result.statusCode})`;
-          print(`  ${symbols.success} ${name} - OK ${statusMsg}`, 'green');
-          log(`  Result: SUCCESS - Status: ${result.statusCode}, Server is reachable`);
-          
-          return {
-            name: name,
-            type: 'url',
-            url: serverConfig.url,
-            working: true,
-            optional: isOptional,
-            statusCode: result.statusCode,
-            note: errorMessage || null
-          };
-        }
-      }
-      
-      // Handle timeout specially - for MCP servers, timeout might mean server uses SSE/WebSocket
-      // and doesn't respond to regular HTTP, but server might still be working
-      if (result.timeout) {
-        // Try to verify the host is at least reachable with a simple DNS/connectivity check
-        const urlObj = new URL(serverConfig.url);
-        log(`  Request timed out, but server may use SSE/WebSocket protocol`);
-        print(`  ${symbols.warning} ${name} - Timeout (server may require SSE/WebSocket connection)`, 'yellow');
-        log(`  Result: TIMEOUT - Server may be working but requires different protocol`);
-        
-        // Consider it potentially working if URL is valid
-        return {
-          name: name,
-          type: 'url',
-          url: serverConfig.url,
-          working: true, // Assume working, timeout might be due to protocol requirements
-          optional: isOptional,
-          statusCode: null,
-          note: 'Timeout - server may require SSE/WebSocket (MCP protocol)',
-          timeout: true
-        };
-      }
-      
-      // Server not reachable or 404
-      if (isOptional) {
-        print(`  ${symbols.warning} ${name} - Failed (${result.statusCode || result.error}) (optional)`, 'yellow');
-        log(`  Result: WARNING (optional server) - Status: ${result.statusCode || 'N/A'}, Error: ${result.error || 'N/A'}`);
-      } else {
-        print(`  ${symbols.error} ${name} - Failed (${result.statusCode || result.error})`, 'red');
-        log(`  Result: FAILED - Status: ${result.statusCode || 'N/A'}, Error: ${result.error || 'N/A'}`);
-      }
-      
-      return {
-        name: name,
-        type: 'url',
-        url: serverConfig.url,
-        working: false,
-        optional: isOptional,
-        error: result.error || `HTTP ${result.statusCode}`
-      };
-    }
-    
-    // Check command-based server
-    if (serverConfig.command) {
-      log(`  Type: Command-based server`);
-      log(`  Command: ${serverConfig.command}`);
-      
-      // Check if command exists
-      const checkResult = checkCommandExists(serverConfig.command);
-      
-      if (checkResult.exists && checkResult.executable) {
-        // For npx, we can't easily test it without actually running it
-        // Just verify the command is available
-        const commandName = serverConfig.command.split(/\s+/)[0];
-        if (commandName === 'npx' || commandName === 'node' || commandName === 'npm') {
-          // These are Node.js commands, assume they work if found
-          print(`  ${symbols.success} ${name} - Command available (${commandName})`, 'green');
-          log(`  Result: SUCCESS - Command exists: ${checkResult.path || serverConfig.command}`);
-          
-          return {
-            name: name,
-            type: 'command',
-            command: serverConfig.command,
-            working: true,
-            optional: isOptional,
-            commandPath: checkResult.path || serverConfig.command
-          };
-        }
-        
-        // For other commands, try a simple test
-        try {
-          // Just verify command exists, don't try to run it with args
-          print(`  ${symbols.success} ${name} - Command available`, 'green');
-          log(`  Result: SUCCESS - Command exists: ${checkResult.path || serverConfig.command}`);
-          
-          return {
-            name: name,
-            type: 'command',
-            command: serverConfig.command,
-            working: true,
-            optional: isOptional,
-            commandPath: checkResult.path || serverConfig.command
-          };
-        } catch (error) {
-          // Command exists but test failed, still mark as available
-          print(`  ${symbols.success} ${name} - Command available`, 'green');
-          log(`  Result: SUCCESS - Command exists (test failed but command found)`);
-          
-          return {
-            name: name,
-            type: 'command',
-            command: serverConfig.command,
-            working: true,
-            optional: isOptional,
-            commandPath: checkResult.path || serverConfig.command
-          };
-        }
-      } else {
-        if (isOptional) {
-          print(`  ${symbols.warning} ${name} - Command not found or not executable (optional)`, 'yellow');
-          log(`  Result: WARNING (optional server) - Command not found or not executable: ${serverConfig.command}`);
-        } else {
-          print(`  ${symbols.error} ${name} - Command not found or not executable`, 'red');
-          log(`  Result: FAILED - Command not found or not executable: ${serverConfig.command}`);
-        }
-        
-        return {
-          name: name,
-          type: 'command',
-          command: serverConfig.command,
-          working: false,
-          optional: isOptional,
-          error: checkResult.error || 'Command not found or not executable'
-        };
-      }
-    }
-    
-    // Unknown server type
-    print(`  ${symbols.warning} ${name} - Unknown server type`, 'yellow');
-    log(`  Result: WARNING - Unknown server type`);
-    
-    return {
-      name: name,
-      type: 'unknown',
-      working: false,
-      optional: isOptional,
-      error: 'Unknown server configuration type'
-    };
-  } catch (error) {
-    const err = error as Error;
-    if (isOptional) {
-      print(`  ${symbols.warning} ${name} - Error: ${err.message} (optional)`, 'yellow');
-      log(`  Result: WARNING (optional server) - ${err.message}`);
-    } else {
-      print(`  ${symbols.error} ${name} - Error: ${err.message}`, 'red');
-      log(`  Result: ERROR - ${err.message}`);
-    }
-    
-    return {
-      name: name,
-      type: 'unknown',
-      working: false,
-      optional: isOptional,
-      error: err.message
-    };
-  }
-}
-
-/**
- * Check all MCP servers
- */
-async function checkMcpServers(mcpServers: Record<string, Record<string, unknown>>): Promise<McpServerResult[]> {
-  if (!mcpServers || Object.keys(mcpServers).length === 0) {
-    return [];
-  }
-  
-  print(`\n${symbols.info} Checking MCP servers...`, 'cyan');
-  log(`Checking MCP servers from mcp.json`);
-  
-  const results = [];
-  
-  for (const [name, serverConfig] of Object.entries(mcpServers)) {
-    const result = await checkMcpServer(name, serverConfig);
-    results.push(result);
-  }
-  
-  return results;
 }
 
 /**
@@ -1643,7 +1084,7 @@ function getProjectChecksByTier(project: Project, env: Record<string, string>): 
   }
   
   const projectName = getProjectName(project.src);
-  const checksWithVars = replaceVariablesInObject(project.checks, env);
+  const checksWithVars = replaceVariablesInObjectWithLog(project.checks, env);
   
   const checksByTier = {};
   for (const check of checksWithVars) {
@@ -1818,7 +1259,7 @@ async function runSelectedChecks(checkNames: string[], testOnly = false): Promis
     const context = check.projectName ? check.projectName : null;
     
     // Replace variables in check
-    const checkWithVars = replaceVariablesInObject(check, env);
+    const checkWithVars = replaceVariablesInObjectWithLog(check, env);
     
     // Skip check if skip=true in config
     if (checkWithVars.skip === true) {
@@ -2030,8 +1471,8 @@ function checkTokensOnly() {
  * Install workspace from scratch
  */
 async function installWorkspace(): Promise<void> {
-  const { loadModulesForWorkspace } = await import('./module-loader.js');
-  const { executeHooksForStage, createHookContext } = await import('./module-hooks.js');
+  const { loadModulesForWorkspace } = await import('./install/module-loader.js');
+  const { executeHooksForStage, createHookContext } = await import('./install/module-hooks.js');
   
   // Ensure workspace directory exists
   if (!fs.existsSync(WORKSPACE_ROOT)) {
@@ -2112,7 +1553,7 @@ async function installWorkspace(): Promise<void> {
     log(`Loading modules from ${config.repos.length} repository/repositories`);
     
     const { loadModulesFromRepo, getDevduckVersion } = await import('./lib/repo-modules.js');
-    const { loadModule } = await import('./module-resolver.js');
+    const { loadModule } = await import('./install/module-resolver.js');
     const devduckVersion = getDevduckVersion();
     
     for (const repoUrl of config.repos) {
@@ -2183,7 +1624,7 @@ async function installWorkspace(): Promise<void> {
   }
   
   // Merge external modules with local modules
-  const { getAllModules, getAllModulesFromDirectory, resolveModules, resolveDependencies, mergeModuleSettings } = await import('./module-resolver.js');
+  const { getAllModules, getAllModulesFromDirectory, resolveModules, resolveDependencies, mergeModuleSettings } = await import('./install/module-resolver.js');
   const localModules = getAllModules();
   
   // Also load workspace-local modules (if workspace has its own modules/ folder)
@@ -2216,7 +1657,7 @@ async function installWorkspace(): Promise<void> {
   const resolvedModules = resolveDependencies(moduleNames, allModules);
   
   // Load module resources
-  const { loadModuleResources } = await import('./module-loader.js');
+  const { loadModuleResources } = await import('./install/module-loader.js');
   const loadedModules = resolvedModules.map(module => {
     const resources = loadModuleResources(module);
     const mergedSettings = mergeModuleSettings(module, config.moduleSettings);
@@ -2338,15 +1779,23 @@ async function main(): Promise<void> {
   print(`\n${symbols.search} Checking environment installation...\n`, 'blue');
   
   // Setup .env file if needed
-  await setupEnvFile();
+  const configForEnv = readJSON(CONFIG_FILE);
+  if (configForEnv) {
+    await setupEnvFile(WORKSPACE_ROOT, configForEnv as WorkspaceConfig, {
+      autoYes: AUTO_YES,
+      log,
+      print,
+      symbols
+    });
+  }
   
   // Generate mcp.json
-  const mcpServers = generateMcpJson();
+  const mcpServers = generateMcpJson(WORKSPACE_ROOT, { log, print, symbols });
   
   // Check MCP servers if they were generated
   let mcpResults = [];
   if (mcpServers) {
-    mcpResults = await checkMcpServers(mcpServers);
+    mcpResults = await checkMcpServers(mcpServers, WORKSPACE_ROOT, { log, print, symbols });
   }
   
   // Read configuration
@@ -2419,7 +1868,7 @@ async function main(): Promise<void> {
         }
         
         // Replace variables in check item
-        const itemWithVars = replaceVariablesInObject(item, env);
+        const itemWithVars = replaceVariablesInObjectWithLog(item, env);
         
         // Detect check type by test format
         let checkResult;
