@@ -25,6 +25,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Automatically finds all `.test.ts` files in `tests/` directory
   - Scales better as new tests are added
 
+- ✉️ **Email module with provider system** - Added `modules/email/` with a Zod-based provider contract and a `/email` command
+  - Contract lives in `modules/email/schemas/contract.ts` (tools, common types, provider manifest)
+  - Provider selection via `EMAIL_PROVIDER`, `workspace.config.json` (`moduleSettings.email.provider`), or first discovered provider
+
+- 🧩 **Global provider registry** - Added `scripts/lib/provider-registry.ts` for registering and discovering providers across modules
+  - Supports module scanning for providers from both `modules/<module>/providers/*` and standalone provider modules (`modules/<module>/PROVIDER.md`)
+  - Optional per-provider-type Zod validation at registration time
+
+- 🧪 **Smogcheck email provider tests** - Added automated tests for `smogcheck-provider`
+  - Verifies contract compliance and tool behavior (`getMessage`, `searchMessages`, `downloadAttachment`, `listUnreadMessages`)
+  - Verifies provider discovery/registration via the global registry
+
 ---
 
 ## [0.2.0] - 2025-12-24
