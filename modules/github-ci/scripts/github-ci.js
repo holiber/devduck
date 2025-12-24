@@ -4,61 +4,9 @@ const path = require('path');
 const fs = require('fs');
 const https = require('https');
 const CI = require('../../ci/scripts/ci');
+const { resolveCorePaths } = require('../../../scripts/lib/devduck-paths');
 
-// Resolve core module utilities
-function findWorkspaceRootForModules() {
-  let current = process.cwd();
-  const maxDepth = 10;
-  let depth = 0;
-  
-  while (depth < maxDepth) {
-    const configPath = path.join(current, 'workspace.config.json');
-    if (fs.existsSync(configPath)) {
-      return current;
-    }
-    
-    const parent = path.dirname(current);
-    if (parent === current) {
-      break;
-    }
-    current = parent;
-    depth++;
-  }
-  
-  // Fallback: try from __dirname
-  current = path.resolve(__dirname);
-  depth = 0;
-  while (depth < maxDepth) {
-    const configPath = path.join(current, 'workspace.config.json');
-    if (fs.existsSync(configPath)) {
-      return current;
-    }
-    
-    const devduckPath = path.join(current, 'projects', 'devduck');
-    if (fs.existsSync(devduckPath)) {
-      return current;
-    }
-    
-    const parent = path.dirname(current);
-    if (parent === current) {
-      break;
-    }
-    current = parent;
-    depth++;
-  }
-  
-  return null;
-}
-
-const workspaceRoot = findWorkspaceRootForModules();
-const devduckRoot = workspaceRoot ? path.join(workspaceRoot, 'projects', 'devduck') : path.resolve(__dirname, '../../../../devduck');
-let coreUtilsPath = path.join(devduckRoot, 'scripts/utils.js');
-let coreEnvPath = path.join(devduckRoot, 'scripts/lib/env.js');
-if (!fs.existsSync(coreUtilsPath)) {
-  coreUtilsPath = path.join(devduckRoot, 'modules/core/scripts/utils.js');
-  coreEnvPath = path.join(devduckRoot, 'modules/core/scripts/lib/env.js');
-}
-
+const { coreUtilsPath, coreEnvPath } = resolveCorePaths({ cwd: process.cwd(), moduleDir: __dirname });
 const { executeCommand } = require(coreUtilsPath);
 const { getEnv } = require(coreEnvPath);
 

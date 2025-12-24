@@ -7,6 +7,7 @@
 const path = require('path');
 const fs = require('fs');
 const plan = require('./plan');
+const { createYargs, installEpipeHandler } = require('../../../scripts/lib/cli');
 
 function extractIssueKey(input) {
   if (input.startsWith('http')) {
@@ -73,28 +74,35 @@ async function finalizePlan(issueKey) {
 }
 
 async function main() {
-  const args = process.argv.slice(2);
-  
-  if (args.length === 0) {
-    console.error('Usage: node scripts/plan-finalize.js <issueKey>');
-    process.exit(1);
-  }
-  
-  const issueKey = extractIssueKey(args[0]);
-  if (!issueKey) {
-    console.error('Error: Invalid issue key');
-    process.exit(1);
-  }
-  
-  try {
-    const result = await finalizePlan(issueKey);
-    console.log(`Plan finalized and marked as ready for ${issueKey}`);
-    process.stdout.write(JSON.stringify(result, null, 2));
-    if (!process.stdout.isTTY) process.stdout.write('\n');
-  } catch (error) {
-    console.error('Error:', error.message);
-    process.exit(1);
-  }
+  installEpipeHandler();
+
+  return createYargs(process.argv)
+    .scriptName('plan-finalize')
+    .strict()
+    .usage('Usage: $0 <issueKey|url>\n\nFinalize plan by answering questions and marking it as ready.')
+    .command(
+      '$0 <issue>',
+      'Finalize a plan and mark status as plan_ready.',
+      (y) =>
+        y.positional('issue', {
+          type: 'string',
+          describe: 'Tracker issue key or URL',
+          demandOption: true,
+        }),
+      async (args) => {
+        const issueKey = extractIssueKey(args.issue);
+        if (!issueKey) {
+          console.error('Error: Invalid issue key');
+          process.exit(1);
+        }
+
+        const result = await finalizePlan(issueKey);
+        console.log(`Plan finalized and marked as ready for ${issueKey}`);
+        process.stdout.write(JSON.stringify(result, null, 2));
+        if (!process.stdout.isTTY) process.stdout.write('\n');
+      },
+    )
+    .parseAsync();
 }
 
 if (require.main === module) {

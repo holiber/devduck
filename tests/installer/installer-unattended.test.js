@@ -91,6 +91,95 @@ describe('Workspace Installer - Unattended Mode', () => {
       }
     });
 
+    test('Unattended Installation with workspace.config.json (local folder project src)', async () => {
+      const tempWorkspace = await createTempWorkspace();
+      const providedWorkspaceConfigPath = path.join(tempWorkspace, 'provided-workspace.config.json');
+      const localProjectsRoot = path.join(tempWorkspace, 'local-projects');
+      const localProjectPath = path.join(localProjectsRoot, 'my-local-project');
+      
+      try {
+        await fs.mkdir(localProjectPath, { recursive: true });
+        await fs.writeFile(path.join(localProjectPath, 'README.md'), '# local project\n', 'utf8');
+        
+        const providedWorkspaceConfig = {
+          workspaceVersion: '0.1.0',
+          devduckPath: './devduck',
+          modules: ['core', 'cursor'],
+          projects: [
+            {
+              src: localProjectPath,
+              checks: [
+                {
+                  name: 'NodeJS',
+                  description: 'Node.js should be installed',
+                  test: 'node --version'
+                },
+                {
+                  name: 'HelloJS',
+                  description: 'hello.js should exist and contain hello world',
+                  test: 'node hello.js',
+                  install: "printf \"console.log('hello world')\\n\" > hello.js"
+                }
+              ]
+            }
+          ]
+        };
+        await fs.writeFile(providedWorkspaceConfigPath, JSON.stringify(providedWorkspaceConfig, null, 2), 'utf8');
+
+        const result = await runInstaller(tempWorkspace, {
+          unattended: true,
+          aiAgent: 'cursor',
+          repoType: 'none',
+          modules: ['core', 'cursor'],
+          skipRepoInit: true,
+          workspaceConfig: providedWorkspaceConfigPath
+        });
+        
+        checkInstallerResult(result);
+        
+        const installed = await waitForInstallation(tempWorkspace, 30000);
+        assert.ok(installed, 'Installation should complete');
+
+        // Ensure project check ran and succeeded
+        assert.ok(
+          result.stdout.includes('Checking NodeJS...'),
+          'Installer output should include NodeJS check'
+        );
+        assert.ok(
+          result.stdout.includes('NodeJS (Node.js should be installed) - v'),
+          'Installer output should include NodeJS version output'
+        );
+
+        // Ensure hello.js check ran, got installed, and succeeded
+        assert.ok(
+          result.stdout.includes('Checking HelloJS...'),
+          'Installer output should include HelloJS check'
+        );
+        assert.ok(
+          result.stdout.includes('Re-checking HelloJS after installation...'),
+          'Installer output should show HelloJS was installed and re-checked'
+        );
+        assert.ok(
+          result.stdout.includes('HelloJS (hello.js should exist and contain hello world) - hello world (installed)'),
+          'Installer output should include HelloJS output after installation'
+        );
+
+        // Ensure workspace.config.json exists (created from provided config)
+        const structure = await verifyWorkspaceStructure(tempWorkspace);
+        assert.ok(structure.workspaceConfigExists, 'workspace.config.json should exist');
+
+        // Verify symlink was created in projects/
+        const symlinkPath = path.join(tempWorkspace, 'projects', 'my-local-project');
+        const st = await fs.lstat(symlinkPath);
+        assert.ok(st.isSymbolicLink(), 'projects/my-local-project should be a symlink');
+        const linkTarget = await fs.readlink(symlinkPath);
+        const resolvedTarget = path.resolve(path.dirname(symlinkPath), linkTarget);
+        assert.strictEqual(resolvedTarget, path.resolve(localProjectPath), 'symlink should point to the local project folder');
+      } finally {
+        await cleanupTempWorkspace(tempWorkspace);
+      }
+    });
+
     test('Unattended Installation - Full Structure Verification', async () => {
       const tempWorkspace = await createTempWorkspace();
       

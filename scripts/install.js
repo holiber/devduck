@@ -6,7 +6,10 @@ const https = require('https');
 const http = require('http');
 const { URL } = require('url');
 const { spawnSync } = require('child_process');
+const yargs = require('yargs/yargs');
+const { hideBin } = require('yargs/helpers');
 const { print, symbols, executeCommand, executeInteractiveCommand, requiresSudo, createReadlineInterface, promptUser } = require('./utils');
+const { resolveWorkspaceRoot } = require('./lib/workspace-path');
 
 // Paths
 // Script is in scripts/ directory, so project root is parent directory
@@ -37,29 +40,79 @@ function findWorkspaceRoot(startPath = PROJECT_ROOT) {
   return null;
 }
 
-// CLI flags - parse early
-const argv = process.argv.slice(2);
+// Parse CLI arguments using yargs
+const argv = yargs(hideBin(process.argv))
+  .option('workspace-path', {
+    type: 'string',
+    description: 'Path to workspace directory'
+  })
+  .option('workspace-config', {
+    type: 'string',
+    description: 'Path to an existing workspace.config.json to use when creating a workspace'
+  })
+  .option('modules', {
+    type: 'string',
+    description: 'Comma-separated list of modules to install'
+  })
+  .option('ai-agent', {
+    type: 'string',
+    description: 'AI agent to use'
+  })
+  .option('repo-type', {
+    type: 'string',
+    description: 'Repository type'
+  })
+  .option('skip-repo-init', {
+    type: 'boolean',
+    default: false,
+    description: 'Skip repository initialization'
+  })
+  .option('config', {
+    type: 'string',
+    description: 'Path to configuration file'
+  })
+  .option('y', {
+    alias: ['yes', 'non-interactive', 'unattended'],
+    type: 'boolean',
+    default: false,
+    description: 'Non-interactive mode (auto-yes)'
+  })
+  .option('check-tokens-only', {
+    type: 'boolean',
+    default: false,
+    description: 'Only check if required tokens are present'
+  })
+  .option('status', {
+    type: 'boolean',
+    default: false,
+    description: 'Show installation status'
+  })
+  .option('test-checks', {
+    type: 'string',
+    description: 'Comma-separated list of checks to test (without installation)',
+    coerce: (value) => value ? value.split(',').map(c => c.trim()).filter(c => c.length > 0) : null
+  })
+  .option('checks', {
+    type: 'string',
+    description: 'Comma-separated list of checks to run (with installation)',
+    coerce: (value) => value ? value.split(',').map(c => c.trim()).filter(c => c.length > 0) : null
+  })
+  .help()
+  .alias('help', 'h')
+  .argv;
 
-// Parse workspace installation parameters
-function getArgValue(argName) {
-  const index = argv.indexOf(argName);
-  if (index !== -1 && index < argv.length - 1) {
-    return argv[index + 1];
-  }
-  return null;
-}
-
-const WORKSPACE_PATH = getArgValue('--workspace-path');
-const INSTALL_MODULES = getArgValue('--modules');
-const AI_AGENT = getArgValue('--ai-agent');
-const REPO_TYPE = getArgValue('--repo-type');
-const SKIP_REPO_INIT = argv.includes('--skip-repo-init');
-const CONFIG_FILE_PATH = getArgValue('--config');
+const WORKSPACE_PATH = argv['workspace-path'];
+const WORKSPACE_CONFIG_PATH = argv['workspace-config'];
+const INSTALL_MODULES = argv.modules;
+const AI_AGENT = argv['ai-agent'];
+const REPO_TYPE = argv['repo-type'];
+const SKIP_REPO_INIT = argv['skip-repo-init'];
+const CONFIG_FILE_PATH = argv.config;
 
 // Determine workspace root
 let WORKSPACE_ROOT;
 if (WORKSPACE_PATH) {
-  WORKSPACE_ROOT = path.resolve(WORKSPACE_PATH);
+  WORKSPACE_ROOT = resolveWorkspaceRoot(WORKSPACE_PATH, { projectRoot: PROJECT_ROOT, findWorkspaceRoot });
 } else {
   WORKSPACE_ROOT = findWorkspaceRoot() || PROJECT_ROOT;
 }
@@ -81,21 +134,11 @@ const DEFAULT_TIER = 'pre-install';
 let logStream = null;
 
 // CLI flags
-const AUTO_YES = argv.includes('-y') || argv.includes('--yes') || argv.includes('--non-interactive') || argv.includes('--unattended');
-const CHECK_TOKENS_ONLY = argv.includes('--check-tokens-only');
-const STATUS_ONLY = argv.includes('--status');
-
-// Parse --test-checks and --checks parameters
-function parseChecksParam(paramName) {
-  const param = argv.find(arg => arg.startsWith(`${paramName}=`));
-  if (!param) return null;
-  const value = param.split('=')[1];
-  if (!value) return [];
-  return value.split(',').map(c => c.trim()).filter(c => c.length > 0);
-}
-
-const TEST_CHECKS = parseChecksParam('--test-checks');
-const CHECKS = parseChecksParam('--checks');
+const AUTO_YES = argv.y || argv.yes || argv['non-interactive'] || argv.unattended;
+const CHECK_TOKENS_ONLY = argv['check-tokens-only'];
+const STATUS_ONLY = argv.status;
+const TEST_CHECKS = argv['test-checks'];
+const CHECKS = argv.checks;
 
 /**
  * Initialize logging
@@ -171,7 +214,7 @@ async function installSoftware(item) {
       const isSudo = requiresSudo(install);
       const result = isSudo 
         ? executeInteractiveCommand(install)
-        : executeCommand(install, '/bin/bash');
+        : executeCommand(install, { shell: '/bin/bash', cwd: item._execCwd });
       
       if (result.success) {
         print(`  ${symbols.success} Installation command completed`, 'green');
@@ -268,30 +311,94 @@ function checkFileExists(filePath) {
 }
 
 /**
- * Get project name from path_in_arcadia or src
+ * Get project name from `src`
  * e.g., "crm/frontend/services/shell" -> "shell"
  * e.g., "github.com/holiber/devduck" -> "devduck"
  * e.g., "arc://junk/user/project" -> "project"
  */
-function getProjectName(projectSrcOrPath) {
-  if (!projectSrcOrPath) return 'unknown';
+function getProjectName(src) {
+  if (!src) return 'unknown';
   
   // Handle arc:// URLs
-  if (projectSrcOrPath.startsWith('arc://')) {
-    const pathPart = projectSrcOrPath.replace('arc://', '');
+  if (src.startsWith('arc://')) {
+    const pathPart = src.replace('arc://', '');
     return path.basename(pathPart);
   }
   
   // Handle GitHub URLs
-  if (projectSrcOrPath.includes('github.com/')) {
-    const match = projectSrcOrPath.match(/github\.com\/[^\/]+\/([^\/]+)/);
+  if (src.includes('github.com/')) {
+    const match = src.match(/github\.com\/[^\/]+\/([^\/]+)/);
     if (match) {
       return match[1].replace('.git', '');
     }
   }
   
   // Handle regular paths
-  return path.basename(projectSrcOrPath);
+  return path.basename(src);
+}
+
+/**
+ * Create symlink in projects/ pointing directly to a target folder.
+ * Used for local-folder projects (project.src is a directory path).
+ */
+function createProjectSymlinkToTarget(projectName, targetPath) {
+  const symlinkPath = path.join(PROJECTS_DIR, projectName);
+  const resolvedTarget = path.resolve(targetPath);
+  
+  try {
+    // Check if symlink already exists
+    if (fs.existsSync(symlinkPath)) {
+      if (fs.lstatSync(symlinkPath).isSymbolicLink()) {
+        const existingTarget = fs.readlinkSync(symlinkPath);
+        // readlink may return relative paths; normalize before comparing
+        const existingResolved = path.resolve(path.dirname(symlinkPath), existingTarget);
+        if (existingResolved === resolvedTarget) {
+          log(`Symlink already exists and points to correct target: ${symlinkPath} -> ${resolvedTarget}`);
+          return { success: true, path: symlinkPath, target: resolvedTarget, existed: true };
+        }
+        fs.unlinkSync(symlinkPath);
+        log(`Removed old symlink: ${symlinkPath} (was pointing to ${existingTarget})`);
+      } else {
+        // It's a directory or file, remove it
+        fs.rmSync(symlinkPath, { recursive: true, force: true });
+        log(`Removed existing path: ${symlinkPath}`);
+      }
+    }
+    
+    if (!fs.existsSync(resolvedTarget)) {
+      log(`Target path does not exist: ${resolvedTarget}`);
+      return { success: false, path: symlinkPath, target: resolvedTarget, error: 'Target path does not exist' };
+    }
+    
+    const stats = fs.statSync(resolvedTarget);
+    if (!stats.isDirectory()) {
+      log(`Target path is not a directory: ${resolvedTarget}`);
+      return { success: false, path: symlinkPath, target: resolvedTarget, error: 'Target path is not a directory' };
+    }
+    
+    fs.symlinkSync(resolvedTarget, symlinkPath);
+    log(`Created symlink: ${symlinkPath} -> ${resolvedTarget}`);
+    return { success: true, path: symlinkPath, target: resolvedTarget, created: true };
+  } catch (error) {
+    log(`Error creating symlink: ${error.message}`);
+    return { success: false, path: symlinkPath, target: resolvedTarget, error: error.message };
+  }
+}
+
+function resolveProjectSrcToWorkspacePath(projectSrc) {
+  if (!projectSrc || typeof projectSrc !== 'string') return null;
+  // Treat relative paths as relative to the workspace root (not PROJECT_ROOT)
+  return path.isAbsolute(projectSrc) ? projectSrc : path.resolve(WORKSPACE_ROOT, projectSrc);
+}
+
+function isExistingDirectory(dirPath) {
+  try {
+    if (!dirPath) return false;
+    if (!fs.existsSync(dirPath)) return false;
+    return fs.statSync(dirPath).isDirectory();
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -472,9 +579,22 @@ async function checkCommand(item, context = null, skipInstall = false) {
         command = `source ~/.nvm/nvm.sh && ${testWithVars}`;
       }
       
+      // For project checks, run command from projects/<projectName> if it exists
+      const execOptions = {};
+      if (context) {
+        const projectCwd = path.join(PROJECTS_DIR, context);
+        try {
+          if (fs.existsSync(projectCwd) && fs.statSync(projectCwd).isDirectory()) {
+            execOptions.cwd = projectCwd;
+          }
+        } catch {
+          // ignore
+        }
+      }
+      
       // Use interactive mode for sudo commands to allow password input
       const isSudo = requiresSudo(command);
-      const result = isSudo ? executeInteractiveCommand(command) : executeCommand(command);
+      const result = isSudo ? executeInteractiveCommand(command) : executeCommand(command, execOptions);
       
       if (result.success) {
         const version = isSudo ? 'passed' : (result.output || 'unknown');
@@ -493,14 +613,15 @@ async function checkCommand(item, context = null, skipInstall = false) {
         
         // If install command is available, offer to install (unless skipInstall is true)
         if (install && !skipInstall) {
-          const installed = await installSoftware(item);
+          const itemWithCwd = { ...item, _execCwd: execOptions.cwd };
+          const installed = await installSoftware(itemWithCwd);
           
           if (installed) {
             // Re-check after installation
             print(`${logPrefix}  Re-checking ${name} after installation...`, 'cyan');
             log(`${logPrefix}Re-checking ${name} after installation`);
             
-            const recheckResult = isSudo ? executeInteractiveCommand(command) : executeCommand(command);
+            const recheckResult = isSudo ? executeInteractiveCommand(command) : executeCommand(command, execOptions);
             
             if (recheckResult.success) {
               const version = isSudo ? 'passed' : (recheckResult.output || 'unknown');
@@ -780,9 +901,15 @@ async function setupEnvFile() {
 
   const rl = AUTO_YES ? null : createReadlineInterface();
   for (const envVar of config.env) {
-    const key = envVar.name || envVar.key;
-    const defaultValue = envVar.default || envVar.value || '';
-    const comment = envVar.comment || envVar.description || '';
+    const key = envVar && typeof envVar === 'object' ? envVar.name : null;
+    const defaultValue = envVar && typeof envVar === 'object' ? (envVar.default || '') : '';
+    const comment = envVar && typeof envVar === 'object' ? (envVar.description || '') : '';
+
+    if (!key) {
+      print(`  ${symbols.warning} Skipping invalid env entry (missing name)`, 'yellow');
+      log(`Skipping invalid env entry: ${JSON.stringify(envVar)}`);
+      continue;
+    }
     
     // Show comment if available
     if (comment) {
@@ -1265,27 +1392,35 @@ async function checkHttpAccess(item, context = null) {
  * Create symlink for a project and return initial result object
  */
 function initProjectResult(project, env) {
-  // Support both old format (path_in_arcadia) and new format (src)
-  const projectSrcOrPath = project.path_in_arcadia || project.src;
-  const projectName = getProjectName(projectSrcOrPath);
+  const projectName = getProjectName(project.src);
   
   print(`\n${symbols.info} Processing project: ${projectName}`, 'cyan');
-  log(`Processing project: ${projectName} (${projectSrcOrPath})`);
+  log(`Processing project: ${projectName} (${project.src})`);
   
   const result = {
     name: projectName,
-    path_in_arcadia: projectSrcOrPath,
     src: project.src,
     symlink: null,
     checks: []
   };
+
+  if (!project.src || typeof project.src !== 'string') {
+    print(`  ${symbols.warning} Project is missing required field: src`, 'yellow');
+    log(`Project skipped: missing src field (${JSON.stringify(project)})`);
+    result.symlink = {
+      path: null,
+      target: null,
+      error: 'Missing required field: src'
+    };
+    return result;
+  }
   
-  // Create symlink only if path_in_arcadia is provided (Arcadia projects)
-  // GitHub projects don't need symlinks in workspace
-  if (project.path_in_arcadia || (project.src && project.src.startsWith('arc://'))) {
+  // Arcadia projects: create symlink into Arcadia checkout.
+  // GitHub projects don't need symlinks in workspace.
+  if (project.src.startsWith('arc://')) {
     print(`  Creating symlink...`, 'cyan');
     // Remove arc:// prefix if present
-    const pathForSymlink = projectSrcOrPath.replace(/^arc:\/\//, '');
+    const pathForSymlink = project.src.replace(/^arc:\/\//, '');
     const symlinkResult = createProjectSymlink(projectName, pathForSymlink, env);
     
     if (symlinkResult.success) {
@@ -1304,6 +1439,30 @@ function initProjectResult(project, env) {
         error: symlinkResult.error
       };
     }
+  } else if (project.src && isExistingDirectory(resolveProjectSrcToWorkspacePath(project.src))) {
+    // Local-folder projects - create symlink in projects/ directly to the folder path
+    const resolvedLocalPath = resolveProjectSrcToWorkspacePath(project.src);
+    print(`  Creating symlink...`, 'cyan');
+    const symlinkResult = createProjectSymlinkToTarget(projectName, resolvedLocalPath);
+    
+    if (symlinkResult.success) {
+      const action = symlinkResult.existed ? 'exists' : 'created';
+      print(`  ${symbols.success} Symlink ${action}: projects/${projectName} -> ${symlinkResult.target}`, 'green');
+      result.symlink = {
+        path: `projects/${projectName}`,
+        target: symlinkResult.target,
+        created: symlinkResult.created || false
+      };
+    } else {
+      print(`  ${symbols.error} Symlink failed: ${symlinkResult.error}`, 'red');
+      result.symlink = {
+        path: `projects/${projectName}`,
+        target: symlinkResult.target,
+        error: symlinkResult.error
+      };
+    }
+    
+    return result;
   } else if (project.src && (project.src.includes('github.com') || project.src.startsWith('git@'))) {
     // GitHub projects - clone to projects/ directory
     const projectPath = path.join(PROJECTS_DIR, projectName);
@@ -1393,7 +1552,7 @@ function getProjectChecksByTier(project, env) {
     return {};
   }
   
-  const projectName = getProjectName(project.path_in_arcadia);
+  const projectName = getProjectName(project.src);
   const checksWithVars = replaceVariablesInObject(project.checks, env);
   
   const checksByTier = {};
@@ -1539,8 +1698,7 @@ async function runSelectedChecks(checkNames, testOnly = false) {
   if (config.projects && Array.isArray(config.projects)) {
     for (const project of config.projects) {
       if (project.checks && Array.isArray(project.checks)) {
-        const projectSrcOrPath = project.path_in_arcadia || project.src;
-        const projectName = getProjectName(projectSrcOrPath);
+        const projectName = getProjectName(project.src);
         for (const check of project.checks) {
           if (checkNames.includes(check.name)) {
             allChecks.push({ ...check, source: 'project', projectName });
@@ -1747,8 +1905,14 @@ function checkTokensOnly() {
   print(`\n${symbols.info} Checking ${config.env.length} token(s)...\n`, 'cyan');
   
   for (const envVar of config.env) {
-    const key = envVar.name || envVar.key;
-    const comment = envVar.comment || envVar.description || '';
+    const key = envVar && typeof envVar === 'object' ? envVar.name : null;
+    const comment = envVar && typeof envVar === 'object' ? (envVar.description || '') : '';
+
+    if (!key) {
+      print(`  ${symbols.warning} Skipping invalid env entry (missing name)`, 'yellow');
+      log(`Skipping invalid env entry: ${JSON.stringify(envVar)}`);
+      continue;
+    }
     
     // Check in process.env first, then .env file
     const value = process.env[key] || env[key];
@@ -1812,6 +1976,17 @@ async function installWorkspace() {
       env: []
     };
     
+    // If workspace.config.json path was provided, read it and merge on top of defaults
+    if (WORKSPACE_CONFIG_PATH && fs.existsSync(WORKSPACE_CONFIG_PATH)) {
+      const providedWorkspaceConfig = readJSON(WORKSPACE_CONFIG_PATH);
+      if (providedWorkspaceConfig) {
+        config = { ...config, ...providedWorkspaceConfig };
+        if (providedWorkspaceConfig.modules) {
+          config.modules = providedWorkspaceConfig.modules;
+        }
+      }
+    }
+    
     // If config file was provided, read it and merge
     if (CONFIG_FILE_PATH && fs.existsSync(CONFIG_FILE_PATH)) {
       const providedConfig = readJSON(CONFIG_FILE_PATH);
@@ -1827,6 +2002,11 @@ async function installWorkspace() {
     print(`\n${symbols.success} Created workspace.config.json`, 'green');
     log(`Created workspace.config.json with modules: ${config.modules.join(', ')}`);
   } else {
+    // If a workspace config path is provided for an existing workspace, keep the existing one
+    if (WORKSPACE_CONFIG_PATH) {
+      print(`\n${symbols.info} workspace.config.json already exists, ignoring --workspace-config`, 'cyan');
+      log(`workspace.config.json already exists at ${CONFIG_FILE}, ignoring --workspace-config=${WORKSPACE_CONFIG_PATH}`);
+    }
     // Update existing config if modules specified
     if (INSTALL_MODULES) {
       const modules = INSTALL_MODULES.split(',').map(m => m.trim());
@@ -1914,9 +2094,15 @@ async function installWorkspace() {
   }
   
   // Merge external modules with local modules
-  const { getAllModules, resolveModules, resolveDependencies, mergeModuleSettings } = require('./module-resolver');
+  const { getAllModules, getAllModulesFromDirectory, resolveModules, resolveDependencies, mergeModuleSettings } = require('./module-resolver');
   const localModules = getAllModules();
-  const allModules = [...localModules, ...externalModules];
+  
+  // Also load workspace-local modules (if workspace has its own modules/ folder)
+  // Workspace modules should take precedence over built-in and external modules when names collide.
+  const workspaceModulesDir = path.join(WORKSPACE_ROOT, 'modules');
+  const workspaceModules = getAllModulesFromDirectory(workspaceModulesDir);
+  
+  const allModules = [...localModules, ...externalModules, ...workspaceModules];
   
   // Resolve modules manually with merged list
   let moduleNames = config.modules || ['*'];
@@ -1937,7 +2123,11 @@ async function installWorkspace() {
     };
   });
   
-  print(`\n${symbols.info} Loaded ${loadedModules.length} module(s) (${localModules.length} local, ${externalModules.length} external)`, 'cyan');
+  print(
+    `\n${symbols.info} Loaded ${loadedModules.length} module(s) ` +
+    `(${localModules.length} local, ${externalModules.length} external, ${workspaceModules.length} workspace)`,
+    'cyan'
+  );
   log(`Loaded modules: ${loadedModules.map(m => m.name).join(', ')}`);
   
   // Execute module hooks
@@ -1974,6 +2164,12 @@ async function installWorkspace() {
   const cacheDevduckDir = path.join(WORKSPACE_ROOT, '.cache', 'devduck');
   if (!fs.existsSync(cacheDevduckDir)) {
     fs.mkdirSync(cacheDevduckDir, { recursive: true });
+  }
+
+  // If projects are defined in workspace.config.json, create symlinks/clones now.
+  if (config.projects && Array.isArray(config.projects) && config.projects.length > 0) {
+    const env = readEnvFile(ENV_FILE);
+    await processProjects(config.projects, env);
   }
   
   print(`\n${symbols.success} Workspace installation completed!`, 'green');

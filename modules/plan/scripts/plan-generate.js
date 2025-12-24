@@ -8,6 +8,7 @@
 const path = require('path');
 const fs = require('fs');
 const plan = require('./plan');
+const { createYargs, installEpipeHandler } = require('../../../scripts/lib/cli');
 
 function getProjectRoot() {
   return path.resolve(__dirname, '..');
@@ -258,87 +259,98 @@ function generateUnattendedPlan(taskData, description, summary, components, isBu
 }
 
 async function main() {
-  const args = process.argv.slice(2);
-  
-  if (args.length === 0) {
-    console.error('Usage: node scripts/plan-generate.js <issueKey> [--unattended]');
-    process.exit(1);
-  }
-  
-  // Check for --unattended flag
-  const unattendedIndex = args.indexOf('--unattended');
-  const unattended = unattendedIndex !== -1;
-  if (unattended) {
-    args.splice(unattendedIndex, 1);
-  }
-  
-  const issueKey = extractIssueKey(args[0]);
-  if (!issueKey) {
-    console.error('Error: Invalid issue key');
-    process.exit(1);
-  }
-  
-  // Find existing plan
-  const planDir = plan.findExistingPlan(issueKey);
-  if (!planDir) {
-    console.error(`Error: No plan found for ${issueKey}. Run 'node scripts/plan.js ${issueKey}' first.`);
-    process.exit(1);
-  }
-  
-  // Load task data
-  const taskPath = path.join(planDir, 'resources', 'task.json');
-  if (!fs.existsSync(taskPath)) {
-    console.error(`Error: Task data not found. Run 'node scripts/plan.js load ${issueKey}' first.`);
-    process.exit(1);
-  }
-  
-  const taskData = JSON.parse(fs.readFileSync(taskPath, 'utf8'));
-  
-  // Generate implementation plan
-  if (unattended) {
-    console.log(`Generating implementation plan in unattended mode for ${issueKey}...`);
-  } else {
-    console.log(`Generating implementation plan for ${issueKey}...`);
-  }
-  const implementationPlan = generateImplementationPlan(planDir, taskData, unattended);
-  
-  // Update plan section
-  plan.updatePlanSection(planDir, 'Implementation Plan', implementationPlan);
-  
-  // Generate and update questions section
-  const questionsContent = generateQuestions(taskData, unattended);
-  if (questionsContent && !questionsContent.includes('No critical questions')) {
-    plan.updatePlanSection(planDir, 'Questions for Clarification', questionsContent.trim());
-    plan.updatePlanStatus(planDir, 'questions_identified');
-  } else {
-    plan.updatePlanSection(planDir, 'Questions for Clarification', questionsContent.trim());
-    plan.updatePlanStatus(planDir, 'questions_answered');
-  }
-  
-  // In unattended mode, always mark as plan_ready (questions are optional improvements)
-  if (unattended) {
-    plan.updatePlanStatus(planDir, 'plan_ready');
-    console.log(`Plan generated and marked as ready for ${issueKey} (unattended mode)`);
-  } else if (!questionsContent || questionsContent[1].includes('No critical questions')) {
-    plan.updatePlanStatus(planDir, 'plan_ready');
-    console.log(`Plan generated and marked as ready for ${issueKey}`);
-  } else {
-    plan.updatePlanStatus(planDir, 'plan_generation');
-    console.log(`Plan generated for ${issueKey}. Please review questions before proceeding.`);
-  }
-  
-  const hasQuestions = questionsContent && !questionsContent.includes('No critical questions');
-  
-  const result = {
-    success: true,
-    issueKey,
-    planDir,
-    status: unattended || !hasQuestions ? 'plan_ready' : 'plan_generation',
-    unattended
-  };
-  
-  process.stdout.write(JSON.stringify(result, null, 2));
-  if (!process.stdout.isTTY) process.stdout.write('\n');
+  installEpipeHandler();
+
+  return createYargs(process.argv)
+    .scriptName('plan-generate')
+    .strict()
+    .usage('Usage: $0 <issueKey|url> [--unattended]\n\nGenerate Implementation Plan section from loaded resources.')
+    .option('unattended', {
+      type: 'boolean',
+      default: false,
+      describe: 'Generate a more specific plan without prompting (best-effort)',
+    })
+    .command(
+      '$0 <issue>',
+      'Generate and update the plan.md sections.',
+      (y) =>
+        y.positional('issue', {
+          type: 'string',
+          describe: 'Tracker issue key or URL',
+          demandOption: true,
+        }),
+      (args) => {
+        const issueKey = extractIssueKey(args.issue);
+        if (!issueKey) {
+          console.error('Error: Invalid issue key');
+          process.exit(1);
+        }
+
+        const unattended = !!args.unattended;
+
+        // Find existing plan
+        const planDir = plan.findExistingPlan(issueKey);
+        if (!planDir) {
+          console.error(`Error: No plan found for ${issueKey}. Run 'node scripts/plan.js ${issueKey}' first.`);
+          process.exit(1);
+        }
+
+        // Load task data
+        const taskPath = path.join(planDir, 'resources', 'task.json');
+        if (!fs.existsSync(taskPath)) {
+          console.error(`Error: Task data not found. Run 'node scripts/plan.js load ${issueKey}' first.`);
+          process.exit(1);
+        }
+
+        const taskData = JSON.parse(fs.readFileSync(taskPath, 'utf8'));
+
+        // Generate implementation plan
+        console.log(
+          unattended
+            ? `Generating implementation plan in unattended mode for ${issueKey}...`
+            : `Generating implementation plan for ${issueKey}...`,
+        );
+        const implementationPlan = generateImplementationPlan(planDir, taskData, unattended);
+
+        // Update plan section
+        plan.updatePlanSection(planDir, 'Implementation Plan', implementationPlan);
+
+        // Generate and update questions section
+        const questionsContent = generateQuestions(taskData, unattended);
+        plan.updatePlanSection(planDir, 'Questions for Clarification', (questionsContent || '').trim());
+        if (questionsContent && !questionsContent.includes('No critical questions')) {
+          plan.updatePlanStatus(planDir, 'questions_identified');
+        } else {
+          plan.updatePlanStatus(planDir, 'questions_answered');
+        }
+
+        // In unattended mode, always mark as plan_ready (questions are optional improvements)
+        const hasQuestions = questionsContent && !questionsContent.includes('No critical questions');
+        if (unattended || !hasQuestions) {
+          plan.updatePlanStatus(planDir, 'plan_ready');
+          console.log(
+            unattended
+              ? `Plan generated and marked as ready for ${issueKey} (unattended mode)`
+              : `Plan generated and marked as ready for ${issueKey}`,
+          );
+        } else {
+          plan.updatePlanStatus(planDir, 'plan_generation');
+          console.log(`Plan generated for ${issueKey}. Please review questions before proceeding.`);
+        }
+
+        const result = {
+          success: true,
+          issueKey,
+          planDir,
+          status: unattended || !hasQuestions ? 'plan_ready' : 'plan_generation',
+          unattended,
+        };
+
+        process.stdout.write(JSON.stringify(result, null, 2));
+        if (!process.stdout.isTTY) process.stdout.write('\n');
+      },
+    )
+    .parseAsync();
 }
 
 if (require.main === module) {

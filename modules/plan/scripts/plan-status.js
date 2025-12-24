@@ -7,6 +7,7 @@
 const { spawnSync } = require('child_process');
 const path = require('path');
 const fs = require('fs');
+const { createYargs, installEpipeHandler } = require('../../../scripts/lib/cli');
 
 function getProjectRoot() {
   return path.resolve(__dirname, '../../..');
@@ -237,39 +238,33 @@ function usage(code = 0) {
 }
 
 function main() {
-  const args = process.argv.slice(2);
-  
-  if (args.includes('--help') || args.includes('-h')) {
-    return usage(0);
-  }
-  
-  const formatIndex = args.indexOf('--format');
-  const format = formatIndex >= 0 && args[formatIndex + 1]
-    ? args[formatIndex + 1]
-    : 'table';
-  
-  if (format !== 'json' && format !== 'table') {
-    console.error('Error: Invalid format. Use "json" or "table"');
-    return usage(2);
-  }
-  
-  // Handle EPIPE errors gracefully (e.g., when piped to head)
-  process.stdout.on('error', (error) => {
-    if (error.code === 'EPIPE') {
-      process.exit(0);
-    }
-  });
-  
-  try {
-    displayStatus(format);
-  } catch (error) {
-    // Ignore EPIPE errors
-    if (error.code === 'EPIPE') {
-      process.exit(0);
-    }
-    console.error('Error:', error.message);
-    process.exit(1);
-  }
+  installEpipeHandler();
+
+  createYargs(process.argv)
+    .scriptName('plan-status')
+    .strict()
+    .usage('Usage: $0 [--format json|table]\n\nShows status of running containers and completed plans.')
+    .option('format', {
+      type: 'string',
+      choices: ['json', 'table'],
+      default: 'table',
+      describe: 'Output format',
+    })
+    .command(
+      '$0',
+      'Display plan status.',
+      (y) => y,
+      (args) => {
+        try {
+          displayStatus(args.format);
+        } catch (error) {
+          if (error && error.code === 'EPIPE') process.exit(0);
+          console.error('Error:', error.message);
+          process.exit(1);
+        }
+      },
+    )
+    .parse();
 }
 
 if (require.main === module) {

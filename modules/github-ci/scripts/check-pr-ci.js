@@ -8,40 +8,35 @@ const path = require('path');
 const fs = require('fs');
 const GitRepo = require('../../git/scripts/git-repo');
 const GitHubCI = require('./github-ci');
-
-// Resolve paths
-function findWorkspaceRoot() {
-  let current = process.cwd();
-  const maxDepth = 10;
-  let depth = 0;
-  
-  while (depth < maxDepth) {
-    const configPath = path.join(current, 'workspace.config.json');
-    if (fs.existsSync(configPath)) {
-      return current;
-    }
-    
-    const parent = path.dirname(current);
-    if (parent === current) {
-      break;
-    }
-    current = parent;
-    depth++;
-  }
-  
-  return null;
-}
+const { createYargs, installEpipeHandler } = require('../../../scripts/lib/cli');
+const { findWorkspaceRoot } = require('../../../scripts/lib/workspace-root');
 
 /**
  * Main function
  */
 async function main() {
-  const args = process.argv.slice(2);
-  const prNumber = args[0] ? parseInt(args[0]) : null;
-  
-  if (!prNumber) {
-    console.error('Usage: node check-pr-ci.js <PR_NUMBER>');
-    console.error('Example: node check-pr-ci.js 3');
+  installEpipeHandler();
+
+  const argv = await createYargs(process.argv)
+    .scriptName('check-pr-ci')
+    .strict()
+    .usage('Usage: $0 <prNumber>\n\nCheck GitHub CI merge checks for a PR.')
+    .command(
+      '$0 <prNumber>',
+      'Check CI status for a GitHub PR.',
+      (y) =>
+        y.positional('prNumber', {
+          type: 'number',
+          describe: 'Pull request number',
+          demandOption: true,
+        }),
+      () => {},
+    )
+    .parseAsync();
+
+  const prNumber = Number(argv.prNumber);
+  if (!Number.isFinite(prNumber) || prNumber <= 0) {
+    console.error('Error: prNumber must be a positive integer');
     process.exit(1);
   }
 

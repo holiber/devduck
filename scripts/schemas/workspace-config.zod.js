@@ -1,27 +1,105 @@
 /**
- * Zod schema for workspace.config.json
+ * Zod schema for `workspace.config.json`.
  *
- * This schema validates the workspace configuration file structure.
- * Fields are kept optional/loose where the system is still evolving.
+ * Notes:
+ * - This repo currently reads the config via ad-hoc `JSON.parse` in several scripts.
+ * - The schema is primarily for documentation / shared shape / defensive parsing.
+ * - Keep the schema permissive via `.passthrough()` so new fields don't break consumers.
  */
-
 const { z } = require('zod');
+
+/**
+ * `env[]` entries used to generate the workspace `.env` file.
+ */
+const WorkspaceEnvVarSchema = z
+  .object({
+    name: z.string(),
+    default: z.string().optional(),
+    description: z.string().optional(),
+  })
+  .passthrough();
+
+/**
+ * MCP server config shape (as written to `.cursor/mcp.json` under `mcpServers[check.name]`).
+ *
+ * The installer treats this as opaque data besides a few common fields.
+ */
+const McpServerSettingsSchema = z
+  .object({
+    // URL-based servers
+    url: z.string().optional(),
+    // Command-based servers (typically `npx`, `node`, etc.)
+    command: z.string().optional(),
+    // Optional marker used by installer checks
+    optional: z.boolean().optional(),
+  })
+  .passthrough();
+
+/**
+ * A check entry runnable by `scripts/install.js`.
+ *
+ * `test` supports:
+ * - a shell command (default)
+ * - an HTTP request string: "GET https://..." / "POST https://..."
+ * - a file/directory path (if it looks like a path, installer checks existence)
+ *
+ * If `mcpSettings` is present and `test` is missing/empty, installer will auto-generate a test.
+ */
+const WorkspaceCheckSchema = z
+  .object({
+    name: z.string(),
+    description: z.string().optional(),
+    test: z.string().optional(),
+    install: z.string().optional(),
+
+    tier: z.string().optional(),
+    skip: z.boolean().optional(),
+
+    mcpSettings: McpServerSettingsSchema.optional(),
+  })
+  .passthrough();
+
+/**
+ * A project to materialize under `projects/` (symlink / clone).
+ */
+const WorkspaceProjectSchema = z
+  .object({
+    src: z.string(),
+    checks: z.array(WorkspaceCheckSchema).optional(),
+  })
+  .passthrough();
 
 const WorkspaceConfigSchema = z
   .object({
-    workspaceVersion: z.string().optional(),
+    workspaceVersion: z.string(),
     devduckPath: z.string().optional(),
+
+    // Module selection: explicit module list or ["*"] to mean "all available modules".
     modules: z.array(z.string()).optional(),
-    moduleSettings: z.record(z.any()).optional(),
+    // Per-module override settings. Merge behavior is implemented in module resolver.
+    moduleSettings: z.record(z.string(), z.any()).optional(),
+
+    // External module repositories to load (git / arcadia formats).
     repos: z.array(z.string()).optional(),
-    projects: z.array(z.any()).optional(),
+
+    // Workspace projects (Arcadia, GitHub/Git, local folders).
+    projects: z.array(WorkspaceProjectSchema).optional(),
+
+    // Additional script names to import from projects (default: test, dev, build, start, lint).
     importScripts: z.array(z.string()).optional(),
-    checks: z.array(z.any()).optional(),
-    env: z.array(z.any()).optional(),
+
+    // Workspace-level checks (also used to generate `.cursor/mcp.json` via mcpSettings).
+    checks: z.array(WorkspaceCheckSchema).optional(),
+
+    // Variables written into `.env`.
+    env: z.array(WorkspaceEnvVarSchema).optional(),
   })
   .passthrough();
 
 module.exports = {
   WorkspaceConfigSchema,
+  WorkspaceProjectSchema,
+  WorkspaceCheckSchema,
+  WorkspaceEnvVarSchema,
+  McpServerSettingsSchema,
 };
-

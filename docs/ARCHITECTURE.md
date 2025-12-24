@@ -97,34 +97,109 @@ workspace/
 
 ### Workspace Configuration
 
-`workspace.config.json` structure:
+`workspace.config.json` is the workspace “source of truth”. It drives:
+
+- **Module installation**: which modules to install and how they are configured
+- **External module sources**: additional repositories to load modules from
+- **Project setup**: which repositories/folders should appear under `projects/`
+- **Checks & MCP**: checks to run, plus generation of `.cursor/mcp.json`
+- **Environment**: what to write into the workspace `.env` file
+
+`workspace.config.json` structure (v0.1.0):
 
 ```json
 {
   "workspaceVersion": "0.1.0",
   "devduckPath": "./devduck",
-  "modules": ["*"],
+  "modules": ["core", "cursor"],
   "moduleSettings": {
     "module-name": {
       "settingName": "override value"
     }
   },
-  "projects": [...],
-  "checks": [...],
-  "env": [...]
+  "repos": ["github.com/org/custom-devduck-modules"],
+  "projects": [
+    {
+      "src": "arc://junk/user/my-service",
+      "checks": [
+        {
+          "name": "node",
+          "description": "Node.js is installed",
+          "test": "node --version",
+          "tier": "pre-install"
+        }
+      ]
+    }
+  ],
+  "checks": [
+    {
+      "name": "my-mcp-server",
+      "description": "Expose MCP server to Cursor",
+      "mcpSettings": {
+        "command": "npx",
+        "args": ["-y", "@modelcontextprotocol/server-git"]
+      }
+    }
+  ],
+  "env": [
+    {
+      "name": "GITHUB_TOKEN",
+      "description": "Used by GitHub integration scripts",
+      "default": ""
+    }
+  ]
 }
 ```
 
 **Fields:**
-- `workspaceVersion`: Workspace configuration version
-- `devduckPath`: Path to devduck installation (relative to workspace)
-- `modules`: Array of module names or `["*"]` for all modules
-- `moduleSettings`: Override defaultSettings for specific modules
-- `repos`: Array of external repository URLs (optional)
-- `projects`: List of projects in Arcadia
-- `importScripts`: Optional array of additional script names to import from projects (default: `test`, `dev`, `build`, `start`, `lint`)
-- `checks`: Installation checks to run
-- `env`: Environment variables configuration
+- **`workspaceVersion`**: workspace config version string (currently `0.1.0`)
+- **`devduckPath`**: path to the Devduck installation (relative to workspace root); used by tooling to locate scripts/modules
+- **`modules`**: list of module names to install; supports `["*"]` to mean "all available modules"
+- **`moduleSettings`**: per-module settings override, merged on top of each module's `defaultSettings`
+- **`repos`**: list of external repositories to load additional modules from (Git or Arcadia URLs)
+- **`projects`**: list of projects that should be available under `projects/` (via symlink/clone)
+- **`importScripts`**: optional array of additional script names to import from projects (default: `test`, `dev`, `build`, `start`, `lint`)
+- **`checks`**: workspace-level checks to run (and the source for generating `.cursor/mcp.json`)
+- **`env`**: a list of environment variables to write into the workspace `.env`
+
+#### Variable expansion in config
+
+Some string fields support variable expansion using the `$$VARNAME$$` syntax (resolved from `process.env` first, then the workspace `.env`). This is used for check commands and MCP settings.
+
+#### `projects[]`
+
+Each project entry supports multiple source types:
+
+- **Arcadia**: `{ "src": "arc://path/in/arcadia" }`  
+  The installer creates a symlink under `projects/<name>` pointing into the Arcadia checkout (uses `$ARCADIA` from `.env`/environment).
+- **Local folder**: `{ "src": "./relative/path" }` or `{ "src": "/absolute/path" }`  
+  The installer creates a symlink under `projects/<name>` to that folder.
+- **GitHub/Git**: `{ "src": "github.com/org/repo" }`, `{ "src": "https://github.com/org/repo.git" }`, or `{ "src": "git@github.com:org/repo.git" }`  
+  The installer clones into `projects/<name>` (and pulls if already cloned).
+
+Projects can also define `checks[]` which are executed in the project context (working directory is `projects/<name>` when possible).
+
+#### `checks[]` and `projects[].checks[]`
+
+Checks are objects with (common) fields:
+
+- **`name`**: unique human-readable name
+- **`description`**: optional free text
+- **`test`**: command string (or an HTTP request string like `"GET https://..."`)  
+  If `test` looks like a file path, it is treated as “file/directory must exist”.
+- **`install`**: optional command to run if `test` fails (in non-interactive mode the installer auto-runs the install command)
+- **`tier`**: optional tier label used to order checks (default `pre-install`)
+- **`skip`**: optional boolean to force skip
+- **`mcpSettings`**: if present, this check contributes an entry to `.cursor/mcp.json` under `mcpServers[name]`
+
+#### `env[]`
+
+Each env entry is an object:
+
+- **`name`**: environment variable name
+- **`default`**: default value used when generating `.env`
+- **`description`**: shown to the user during interactive `.env` setup
+>>>>>>> origin/main
 
 ## Module Installation Process
 

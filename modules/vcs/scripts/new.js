@@ -2,87 +2,11 @@
 
 const path = require('path');
 const fs = require('fs');
+const { resolveCorePaths } = require('../../../scripts/lib/devduck-paths');
+const { findWorkspaceRoot } = require('../../../scripts/lib/workspace-root');
 
-// Resolve core module path - find workspace root first
-function findWorkspaceRootForModules() {
-  let current = process.cwd();
-  const maxDepth = 10;
-  let depth = 0;
-  
-  while (depth < maxDepth) {
-    const configPath = path.join(current, 'workspace.config.json');
-    if (fs.existsSync(configPath)) {
-      return current;
-    }
-    
-    const parent = path.dirname(current);
-    if (parent === current) {
-      break;
-    }
-    current = parent;
-    depth++;
-  }
-  
-  // Fallback: try from __dirname
-  current = path.resolve(__dirname);
-  depth = 0;
-  while (depth < maxDepth) {
-    const configPath = path.join(current, 'workspace.config.json');
-    if (fs.existsSync(configPath)) {
-      return current;
-    }
-    
-    const devduckPath = path.join(current, 'projects', 'devduck');
-    if (fs.existsSync(devduckPath)) {
-      return current;
-    }
-    
-    const parent = path.dirname(current);
-    if (parent === current) {
-      break;
-    }
-    current = parent;
-    depth++;
-  }
-  
-  return null;
-}
-
-const workspaceRoot = findWorkspaceRootForModules();
-const devduckRoot = workspaceRoot ? path.join(workspaceRoot, 'projects', 'devduck') : path.resolve(__dirname, '../../../../devduck');
-// Try scripts/ first (legacy), then modules/core/scripts/
-let coreUtilsPath = path.join(devduckRoot, 'scripts/utils.js');
-if (!fs.existsSync(coreUtilsPath)) {
-  coreUtilsPath = path.join(devduckRoot, 'modules/core/scripts/utils.js');
-}
-
+const { coreUtilsPath } = resolveCorePaths({ cwd: process.cwd(), moduleDir: __dirname });
 const { executeCommand } = require(coreUtilsPath);
-
-/**
- * Find workspace root by looking for workspace.config.json
- * Starts from current working directory
- */
-function findWorkspaceRoot(startPath = process.cwd()) {
-  let current = path.resolve(startPath);
-  const maxDepth = 10;
-  let depth = 0;
-  
-  while (depth < maxDepth) {
-    const configPath = path.join(current, 'workspace.config.json');
-    if (fs.existsSync(configPath)) {
-      return current;
-    }
-    
-    const parent = path.dirname(current);
-    if (parent === current) {
-      break;
-    }
-    current = parent;
-    depth++;
-  }
-  
-  return null;
-}
 
 /**
  * Load workspace configuration
@@ -455,7 +379,7 @@ function main() {
   // Check all git repositories
   if (workspaceConfig.projects && Array.isArray(workspaceConfig.projects)) {
     for (const project of workspaceConfig.projects) {
-      const projectSrc = project.src || project.path_in_arcadia;
+      const projectSrc = project.src;
       if (!projectSrc) continue;
       
       const repoInfo = parseRepoUrl(projectSrc);
