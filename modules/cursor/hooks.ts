@@ -6,7 +6,7 @@
 
 import fs from 'fs';
 import path from 'path';
-import type { HookContext, HookResult } from '../../scripts/module-hooks.js';
+import type { HookContext, HookResult } from '../../scripts/install/module-hooks.js';
 
 export default {
   /**

@@ -13,7 +13,7 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const MODULES_DIR = path.join(__dirname, '..', 'modules');
+const MODULES_DIR = path.join(__dirname, '..', '..', 'modules');
 const CORE_MODULE_NAME = 'core';
 const CURSOR_MODULE_NAME = 'cursor';
 const GIT_MODULE_NAME = 'git';
