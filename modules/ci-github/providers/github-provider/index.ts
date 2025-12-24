@@ -385,6 +385,10 @@ async function getPRComments(owner: string, repo: string, prNumber: number): Pro
   return await githubApiGet<GitHubComment[]>(`repos/${owner}/${repo}/pulls/${prNumber}/comments`, { per_page: 100 });
 }
 
+async function getIssueComments(owner: string, repo: string, issueNumber: number): Promise<GitHubComment[]> {
+  return await githubApiGet<GitHubComment[]>(`repos/${owner}/${repo}/issues/${issueNumber}/comments`, { per_page: 100 });
+}
+
 async function getPRReviews(owner: string, repo: string, prNumber: number): Promise<GitHubReview[]> {
   return await githubApiGet<GitHubReview[]>(`repos/${owner}/${repo}/pulls/${prNumber}/reviews`, { per_page: 100 });
 }
@@ -531,8 +535,15 @@ const provider: CIProvider = {
       throw new Error('github-provider: cannot determine PR number');
     }
 
-    const comments = await getPRComments(owner, repo, prNumber);
-    return comments.map(toContractComment);
+    // Fetch both review comments (code comments) and issue comments (general PR comments)
+    const [reviewComments, issueComments] = await Promise.all([
+      getPRComments(owner, repo, prNumber),
+      getIssueComments(owner, repo, prNumber)
+    ]);
+
+    // Combine both types of comments
+    const allComments = [...reviewComments, ...issueComments];
+    return allComments.map(toContractComment);
   }
 };
 

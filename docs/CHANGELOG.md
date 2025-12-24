@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - 2025-12-24
+
+- ✅ **Pre-install checks system** - Modules can now define pre-install checks to verify required environment variables and validate token functionality
+  - Auth checks verify that required tokens are present before installation
+  - Test checks validate token functionality using `curl` commands or HTTP requests
+  - Checks are collected from all modules and projects before installation
+  - Missing tokens are reported with descriptions for better error messages
+  - Successful checks are displayed in green, failed checks show HTTP status codes
+  - Installation fails if required tokens are missing or tests fail
+  - See `ARCHITECTURE.md` for configuration details
+
+- 🔌 **CI module provider discovery from external repositories** - CI module now discovers providers from external repositories defined in `workspace.config.json`
+  - Providers from `repos` in workspace config are automatically loaded
+  - Enables using providers from external module repositories
+  - Works with both Arcadia (`arc://`) and Git repository URLs
+
+- 📁 **Workspace repository resolution** - Improved repository path resolution for Arcadia repositories
+  - First checks if repository exists in workspace `projects/` directory
+  - Falls back to Arcadia root detection if not found in workspace
+  - Supports both relative paths (e.g., `arc://junk/user/repo`) and absolute paths
+  - Allows using same `workspace.config.json` across different developer machines
+
 ### Changed - 2025-12-24
 
 - 🔄 **Improved version compatibility check for external modules** - Modules with older `devduckVersion` can now be loaded (backward compatibility)

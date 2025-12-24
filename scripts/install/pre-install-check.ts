@@ -198,8 +198,24 @@ async function executeTestCheck(check: ModuleCheck, env: Record<string, string>)
     } catch (error) {
       const err = error as { stdout?: Buffer | string; stderr?: Buffer | string; message?: string; status?: number };
       result.passed = false;
-      const errorMsg = err.stderr ? err.stderr.toString().trim() : err.message || 'Command failed';
-      result.error = errorMsg;
+      
+      // Try to extract HTTP status code from stdout (curl might return it even on error)
+      let statusCode: number | null = null;
+      if (err.stdout) {
+        const stdoutStr = err.stdout.toString().trim();
+        if (/^\d{3}$/.test(stdoutStr)) {
+          statusCode = parseInt(stdoutStr, 10);
+        }
+      }
+      
+      // Build error message with status code if available
+      if (statusCode !== null) {
+        result.error = `HTTP ${statusCode}`;
+      } else {
+        const errorMsg = err.stderr ? err.stderr.toString().trim() : err.message || 'Command failed';
+        result.error = errorMsg;
+      }
+      
       return result;
     }
   }
@@ -512,6 +528,30 @@ export function validatePreInstallChecks(
 ): void {
   const { print, log, symbols } = options;
   
+  // Show successful auth token checks
+  for (const project of checkResults.projects) {
+    for (const check of project.checks) {
+      if (check.type === 'auth' && check.present && check.var) {
+        const desc = check.description ? ` (${check.description})` : '';
+        print(`  ${symbols.success} ${check.var}${desc} - token exist`, 'green');
+      }
+    }
+  }
+  
+  for (const module of checkResults.modules) {
+    for (const check of module.checks) {
+      if (check.type === 'auth' && check.present && check.var) {
+        const desc = check.description ? ` (${check.description})` : '';
+        const moduleName = module.name ? ` (module: ${module.name})` : '';
+        print(`  ${symbols.success} ${check.var}${desc}${moduleName} - token exist`, 'green');
+        // If test was executed and passed, show success
+        if (check.test && check.passed === true) {
+          print(`    ${symbols.success} Test check passed`, 'green');
+        }
+      }
+    }
+  }
+  
   // Check for missing auth tokens
   let hasMissingAuth = false;
   const missingAuth: string[] = [];
@@ -542,7 +582,7 @@ export function validatePreInstallChecks(
   
   // Check for failed test checks (both standalone test checks and test within auth checks)
   let hasFailedTests = false;
-  const failedTests: string[] = [];
+  const failedTests: Array<{ name: string; error?: string }> = [];
   
   for (const module of checkResults.modules) {
     for (const check of module.checks) {
@@ -550,7 +590,10 @@ export function validatePreInstallChecks(
       if (check.type === 'test' && check.passed === false) {
         hasFailedTests = true;
         const checkName = check.name || check.test || 'unknown';
-        failedTests.push(`${checkName} (module: ${module.name})`);
+        failedTests.push({ 
+          name: `${checkName} (module: ${module.name})`,
+          error: check.error
+        });
         if (check.error) {
           log(`Test check failed: ${checkName} - ${check.error}`);
         }
@@ -559,7 +602,10 @@ export function validatePreInstallChecks(
       if (check.type === 'auth' && check.test && check.passed !== undefined && check.passed === false) {
         hasFailedTests = true;
         const checkName = check.name || check.test || `${check.var} test`;
-        failedTests.push(`${checkName} (module: ${module.name})`);
+        failedTests.push({ 
+          name: `${checkName} (module: ${module.name})`,
+          error: check.error
+        });
         if (check.error) {
           log(`Auth test check failed: ${checkName} - ${check.error}`);
         }
@@ -578,7 +624,11 @@ export function validatePreInstallChecks(
     if (hasFailedTests) {
       print(`  Failed test checks:`, 'red');
       for (const test of failedTests) {
-        print(`    - ${test}`, 'red');
+        if (test.error) {
+          print(`    - ${test.name} - ${test.error}`, 'red');
+        } else {
+          print(`    - ${test.name}`, 'red');
+        }
       }
     }
     print(`\n${symbols.info} Please set missing tokens in .env file or environment variables`, 'cyan');

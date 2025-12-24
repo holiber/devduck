@@ -48,7 +48,8 @@ export function replaceVariables(
     return str;
   }
   
-  return str.replace(/\$\$([A-Za-z_][A-Za-z0-9_]*)\$\$/g, (match, varName) => {
+  // Replace $$VAR$$ format
+  let result = str.replace(/\$\$([A-Za-z_][A-Za-z0-9_]*)\$\$/g, (match, varName) => {
     // First check environment variables, then .env file
     const value = process.env[varName] || env[varName];
     if (value !== undefined) {
@@ -61,6 +62,14 @@ export function replaceVariables(
     }
     return match;
   });
+  
+  // Expand ~ to home directory
+  if (result.includes('~/')) {
+    const homeDir = process.env.HOME || process.env.USERPROFILE || '~';
+    result = result.replace(/~/g, homeDir);
+  }
+  
+  return result;
 }
 
 /**

@@ -22,7 +22,7 @@ function readEnvFile(envPath: string): Record<string, string> {
     for (const [key, value] of Object.entries(parsed)) {
       if (value !== undefined && value !== null) {
         env[key] = String(value);
-      }
+    }
     }
     return env;
   } catch {

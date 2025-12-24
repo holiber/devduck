@@ -36,6 +36,7 @@ export interface ModuleMetadata {
   dependencies?: string[];
   defaultSettings?: Record<string, unknown>;
   checks?: ModuleCheck[];
+  mcpSettings?: Record<string, unknown>;
 }
 
 export interface Module {
@@ -46,6 +47,7 @@ export interface Module {
   dependencies: string[];
   defaultSettings: Record<string, unknown>;
   checks?: ModuleCheck[];
+  mcpSettings?: Record<string, unknown>;
   path: string;
 }
 
@@ -77,7 +79,8 @@ function parseModuleFrontmatter(modulePath: string): ModuleMetadata | null {
       tags: Array.isArray(parsed.tags) ? parsed.tags as string[] : undefined,
       dependencies: Array.isArray(parsed.dependencies) ? parsed.dependencies as string[] : undefined,
       defaultSettings: parsed.defaultSettings as Record<string, unknown> | undefined,
-      checks: Array.isArray(parsed.checks) ? parsed.checks as ModuleCheck[] : undefined
+      checks: Array.isArray(parsed.checks) ? parsed.checks as ModuleCheck[] : undefined,
+      mcpSettings: parsed.mcpSettings as Record<string, unknown> | undefined
     };
     
     return metadata;
@@ -111,6 +114,7 @@ export function loadModule(moduleName: string): Module | null {
     dependencies: Array.isArray(metadata.dependencies) ? metadata.dependencies : [],
     defaultSettings: metadata.defaultSettings || {},
     checks: metadata.checks || [],
+    mcpSettings: metadata.mcpSettings,
     path: modulePath
   };
 }
@@ -140,6 +144,7 @@ export function loadModuleFromPath(modulePath: string, fallbackName: string | nu
     dependencies: Array.isArray(metadata.dependencies) ? metadata.dependencies : [],
     defaultSettings: metadata.defaultSettings || {},
     checks: metadata.checks || [],
+    mcpSettings: metadata.mcpSettings,
     path: modulePath
   };
 }

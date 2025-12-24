@@ -174,6 +174,25 @@ export const FetchCommentsInputSchema = z.object({
 });
 export type FetchCommentsInput = z.infer<typeof FetchCommentsInputSchema>;
 
+/**
+ * Mapping of tool names to their input schemas
+ * This is automatically used to generate CLI commands
+ */
+export const CIToolInputSchemas: Record<CIToolName, z.ZodObject<any>> = {
+  fetchPR: FetchPRInputSchema,
+  fetchCheckStatus: FetchCheckStatusInputSchema,
+  fetchComments: FetchCommentsInputSchema
+};
+
+/**
+ * Descriptions for tools (used in CLI help)
+ */
+export const CIToolDescriptions: Record<CIToolName, string> = {
+  fetchPR: 'Fetch PR information',
+  fetchCheckStatus: 'Fetch check status with annotations',
+  fetchComments: 'Fetch PR comments and reactions'
+};
+
 // Provider manifest (metadata)
 export const CIProviderManifestSchema = z
   .object({
