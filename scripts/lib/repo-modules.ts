@@ -43,6 +43,34 @@ interface VersionCheckResult {
 }
 
 /**
+ * Compare semantic versions
+ * Returns: -1 if v1 < v2, 0 if v1 === v2, 1 if v1 > v2
+ */
+function compareVersions(v1: string, v2: string): number {
+  const parseVersion = (v: string): number[] => {
+    return v.split('.').map(part => {
+      // Remove any non-numeric suffix (e.g., "0.1.0-beta" -> "0.1.0")
+      const numPart = part.replace(/[^0-9].*$/, '');
+      return parseInt(numPart || '0', 10);
+    });
+  };
+
+  const parts1 = parseVersion(v1);
+  const parts2 = parseVersion(v2);
+  const maxLength = Math.max(parts1.length, parts2.length);
+
+  for (let i = 0; i < maxLength; i++) {
+    const part1 = parts1[i] || 0;
+    const part2 = parts2[i] || 0;
+    
+    if (part1 < part2) return -1;
+    if (part1 > part2) return 1;
+  }
+
+  return 0;
+}
+
+/**
  * Parse repository URL and determine type
  * @param repoUrl - Repository URL
  * @returns Object with type and normalized URL
@@ -264,15 +292,21 @@ export async function checkRepoVersion(repoPath: string, devduckVersion: string)
           };
         }
 
-        // Strict version comparison
-        if (repoVersion !== devduckVersion) {
+        // Compare versions: module is compatible if its devduckVersion <= current devduck version
+        // This allows backward compatibility (old modules work with new devduck)
+        // Error only if module requires newer devduck version (repoVersion > devduckVersion)
+        const versionComparison = compareVersions(repoVersion, devduckVersion);
+        
+        if (versionComparison > 0) {
+          // Module requires newer devduck version
           return {
             compatible: false,
             version: repoVersion,
-            error: `Version mismatch: expected ${devduckVersion}, got ${repoVersion}`
+            error: `Module requires devduck version ${repoVersion} or higher, but current version is ${devduckVersion}`
           };
         }
 
+        // Module is compatible (repoVersion <= devduckVersion)
         return {
           compatible: true,
           version: repoVersion,
