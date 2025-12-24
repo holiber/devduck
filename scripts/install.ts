@@ -2191,7 +2191,22 @@ async function installWorkspace(): Promise<void> {
   const workspaceModulesDir = path.join(WORKSPACE_ROOT, 'modules');
   const workspaceModules = getAllModulesFromDirectory(workspaceModulesDir);
   
-  const allModules = [...localModules, ...externalModules, ...workspaceModules];
+  // Also load modules from projects (if projects have modules/ folders)
+  const projectsModules: Module[] = [];
+  if (config.projects && Array.isArray(config.projects)) {
+    for (const project of config.projects) {
+      const projectName = project.src.split('/').pop()?.replace(/\.git$/, '') || '';
+      const projectPath = path.join(WORKSPACE_ROOT, 'projects', projectName);
+      const projectModulesDir = path.join(projectPath, 'modules');
+      if (fs.existsSync(projectModulesDir)) {
+        const projectModules = getAllModulesFromDirectory(projectModulesDir);
+        projectsModules.push(...projectModules);
+        log(`Loaded ${projectModules.length} module(s) from project ${projectName}`);
+      }
+    }
+  }
+  
+  const allModules = [...localModules, ...externalModules, ...workspaceModules, ...projectsModules];
   
   // Resolve modules manually with merged list
   let moduleNames = config.modules || ['*'];
@@ -2218,6 +2233,10 @@ async function installWorkspace(): Promise<void> {
     'cyan'
   );
   log(`Loaded modules: ${loadedModules.map(m => m.name).join(', ')}`);
+  // Debug logging for test mode
+  if (process.env.NODE_ENV === 'test') {
+    log(`[DEBUG] Module paths: ${loadedModules.map(m => `${m.name} -> ${m.path}`).join(', ')}`);
+  }
   
   // Execute module hooks
   print(`\n${symbols.info} Executing module hooks...`, 'cyan');
@@ -2246,6 +2265,10 @@ async function installWorkspace(): Promise<void> {
       log(`Module ${result.module}: ${result.message}`);
     } else if (result.errors && result.errors.length > 0) {
       log(`Module ${result.module} errors: ${result.errors.join(', ')}`);
+    }
+    // Debug logging for test mode
+    if (process.env.NODE_ENV === 'test' && result.skipped) {
+      log(`[DEBUG] Module ${result.module} hook skipped: ${result.message || 'unknown reason'}`);
     }
   }
   
