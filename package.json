@@ -7,7 +7,7 @@
   "scripts": {
     "install:check": "tsx scripts/install.ts",
     "postinstall": "npx playwright install chromium",
-    "test": "tsx --test 'tests/**/*.test.ts'"
+    "test": "tsx --test tests/workspace-path.test.ts tests/installer/install-project-scripts.test.ts tests/installer/installer-gui.test.ts tests/installer/installer-unattended.test.ts tests/installer/workspace-modules-installation.test.ts"
   },
   "dependencies": {
     "ink": "^5.1.0",
