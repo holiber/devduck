@@ -209,7 +209,7 @@ Each env entry is an object:
 7. **Merge settings** - Combine defaultSettings with workspace moduleSettings
 8. **Execute hooks**:
    - **pre-install**: Check prerequisites
-   - **install**: Module-specific installation (e.g., create `.cursorignore`, `.arcignore`)
+   - **install**: Module-specific installation (e.g., create `.cursorignore`)
    - **post-install**: Finalize installation (e.g., cursor module copies commands/rules, generates mcp.json)
 9. **Create cache directory** - `.cache/devduck/` (fixed path)
 10. **Run checks** - Execute module-specific and workspace checks
