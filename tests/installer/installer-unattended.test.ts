@@ -180,7 +180,7 @@ describe('Workspace Installer - Unattended Mode', () => {
       }
     });
 
-    test('Unattended Installation with workspace.config.json files[] copies seed files/folders', async () => {
+    test('Unattended Installation with workspace.config.json seedFiles[] copies seed files/folders', async () => {
       const sourceWorkspace = await createTempWorkspace();
       const destWorkspace = await createTempWorkspace();
       const providedWorkspaceConfigPath = path.join(sourceWorkspace, 'workspace.config.json');
@@ -195,7 +195,7 @@ describe('Workspace Installer - Unattended Mode', () => {
           workspaceVersion: '0.1.0',
           devduckPath: './devduck',
           modules: ['core', 'cursor'],
-          files: ['seed.txt', 'seed-dir']
+          seedFiles: ['seed.txt', 'seed-dir']
         };
         await fs.writeFile(providedWorkspaceConfigPath, JSON.stringify(providedWorkspaceConfig, null, 2), 'utf8');
 

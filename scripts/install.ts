@@ -1479,28 +1479,28 @@ function isSafeRelativePath(p: string): boolean {
 function copySeedFilesFromProvidedWorkspaceConfig(params: {
   workspaceRoot: string;
   providedWorkspaceConfigPath: string;
-  files: unknown;
+  seedFiles: unknown;
 }): void {
-  const { workspaceRoot, providedWorkspaceConfigPath, files } = params;
+  const { workspaceRoot, providedWorkspaceConfigPath, seedFiles } = params;
 
-  if (!Array.isArray(files) || files.length === 0) return;
+  if (!Array.isArray(seedFiles) || seedFiles.length === 0) return;
 
   const sourceRoot = path.dirname(providedWorkspaceConfigPath);
 
   print(`\n${symbols.info} Copying seed files into workspace...`, 'cyan');
-  log(`Copying ${files.length} seed file(s) from ${sourceRoot} into ${workspaceRoot}`);
+  log(`Copying ${seedFiles.length} seed file(s) from ${sourceRoot} into ${workspaceRoot}`);
 
-  for (const entry of files) {
+  for (const entry of seedFiles) {
     if (typeof entry !== 'string') {
-      print(`  ${symbols.warning} Skipping non-string entry in files[]`, 'yellow');
-      log(`Skipping non-string entry in files[]: ${JSON.stringify(entry)}`);
+      print(`  ${symbols.warning} Skipping non-string entry in seedFiles[]`, 'yellow');
+      log(`Skipping non-string entry in seedFiles[]: ${JSON.stringify(entry)}`);
       continue;
     }
 
     const relPath = entry.trim();
     if (!isSafeRelativePath(relPath)) {
-      print(`  ${symbols.warning} Skipping unsafe path in files[]: ${entry}`, 'yellow');
-      log(`Skipping unsafe path in files[]: ${entry}`);
+      print(`  ${symbols.warning} Skipping unsafe path in seedFiles[]: ${entry}`, 'yellow');
+      log(`Skipping unsafe path in seedFiles[]: ${entry}`);
       continue;
     }
 
@@ -1573,12 +1573,16 @@ async function installWorkspace(): Promise<void> {
           config.modules = providedWorkspaceConfig.modules;
         }
 
-        // If files[] is provided, copy those paths from the provided config folder
+        // If seedFiles[] is provided, copy those paths from the provided config folder
         // into the newly created workspace root.
+        // Backward compat: accept `files` as legacy field name.
+        const seedFiles =
+          (providedWorkspaceConfig as Record<string, unknown>).seedFiles ??
+          (providedWorkspaceConfig as Record<string, unknown>).files;
         copySeedFilesFromProvidedWorkspaceConfig({
           workspaceRoot: WORKSPACE_ROOT,
           providedWorkspaceConfigPath: WORKSPACE_CONFIG_PATH,
-          files: (providedWorkspaceConfig as Record<string, unknown>).files
+          seedFiles
         });
       }
     }
