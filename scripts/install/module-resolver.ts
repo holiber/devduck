@@ -9,6 +9,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { parse as parseYaml } from 'yaml';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -18,6 +19,15 @@ const CORE_MODULE_NAME = 'core';
 const CURSOR_MODULE_NAME = 'cursor';
 const GIT_MODULE_NAME = 'git';
 
+export interface ModuleCheck {
+  type: string;
+  var?: string;
+  name?: string;
+  description?: string;
+  test?: string;
+  [key: string]: unknown;
+}
+
 export interface ModuleMetadata {
   name?: string;
   version?: string;
@@ -25,6 +35,8 @@ export interface ModuleMetadata {
   tags?: string[];
   dependencies?: string[];
   defaultSettings?: Record<string, unknown>;
+  checks?: ModuleCheck[];
+  mcpSettings?: Record<string, unknown>;
 }
 
 export interface Module {
@@ -34,6 +46,8 @@ export interface Module {
   tags: string[];
   dependencies: string[];
   defaultSettings: Record<string, unknown>;
+  checks?: ModuleCheck[];
+  mcpSettings?: Record<string, unknown>;
   path: string;
 }
 
@@ -53,149 +67,29 @@ function parseModuleFrontmatter(modulePath: string): ModuleMetadata | null {
   }
 
   const yamlContent = frontmatterMatch[1];
-  const metadata: ModuleMetadata = {};
-  const lines = yamlContent.split('\n');
   
-  let currentKey: string | null = null;
-  let currentValue: string[] = [];
-  let inMultiline = false;
-  let inDefaultSettings = false;
-  let currentSettingKey: string | null = null;
-  let currentSettingValue: string[] = [];
-  let inSettingMultiline = false;
-
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    const trimmed = line.trim();
-    const indent = line.match(/^(\s*)/)?.[1].length || 0;
-
-    // Skip empty lines when not in multiline
-    if (trimmed === '' && !inMultiline && !inSettingMultiline) {
-      continue;
-    }
-
-    // Check if we're entering defaultSettings block
-    if (trimmed === 'defaultSettings:' && indent === 0) {
-      inDefaultSettings = true;
-      metadata.defaultSettings = {};
-      continue;
-    }
-
-    // Check if we're leaving defaultSettings (next top-level key)
-    if (inDefaultSettings && indent === 0 && trimmed.includes(':') && !trimmed.startsWith(' ')) {
-      // Save last setting
-      if (currentSettingKey && currentSettingValue.length > 0) {
-        if (!metadata.defaultSettings) metadata.defaultSettings = {};
-        metadata.defaultSettings[currentSettingKey] = currentSettingValue.join('\n').trim();
-      }
-      inDefaultSettings = false;
-      currentSettingKey = null;
-      currentSettingValue = [];
-      inSettingMultiline = false;
-    }
-
-    // Handle defaultSettings nested keys
-    if (inDefaultSettings) {
-      // Check for multiline setting (key: |)
-      const multilineMatch = trimmed.match(/^(\w+):\s*\|/);
-      if (multilineMatch) {
-        // Save previous setting
-        if (currentSettingKey && currentSettingValue.length > 0) {
-          if (!metadata.defaultSettings) metadata.defaultSettings = {};
-          metadata.defaultSettings[currentSettingKey] = currentSettingValue.join('\n').trim();
-        }
-        currentSettingKey = multilineMatch[1];
-        currentSettingValue = [];
-        inSettingMultiline = true;
-        continue;
-      }
-
-      // Check for end of multiline setting
-      if (inSettingMultiline) {
-        if (trimmed === '' && currentSettingValue.length > 0 && (i === lines.length - 1 || lines[i + 1].trim() === '' || !lines[i + 1].match(/^\s/))) {
-          if (!metadata.defaultSettings) metadata.defaultSettings = {};
-          if (currentSettingKey) {
-            metadata.defaultSettings[currentSettingKey] = currentSettingValue.join('\n').trim();
-          }
-          currentSettingKey = null;
-          currentSettingValue = [];
-          inSettingMultiline = false;
-          continue;
-        }
-        // Remove 4-space indentation from multiline content
-        const dedented = line.replace(/^\s{4}/, '');
-        currentSettingValue.push(dedented);
-        continue;
-      }
-
-      // Regular key: value in defaultSettings (shouldn't happen with our format, but handle it)
-      const colonIndex = trimmed.indexOf(':');
-      if (colonIndex > 0 && indent === 2) {
-        const key = trimmed.substring(0, colonIndex).trim();
-        const value = trimmed.substring(colonIndex + 1).trim();
-        if (!metadata.defaultSettings) metadata.defaultSettings = {};
-        metadata.defaultSettings[key] = value.replace(/^["']|["']$/g, '');
-      }
-      continue;
-    }
-
-    // Handle top-level keys
-    // Check for multiline value (key: |)
-    const multilineMatch = trimmed.match(/^(\w+):\s*\|/);
-    if (multilineMatch) {
-      // Save previous key
-      if (currentKey && currentValue.length > 0) {
-        (metadata as Record<string, unknown>)[currentKey] = currentValue.join('\n').trim();
-      }
-      currentKey = multilineMatch[1];
-      currentValue = [];
-      inMultiline = true;
-      continue;
-    }
-
-    // Check for end of multiline value
-    if (inMultiline) {
-      if (trimmed === '' && currentValue.length > 0 && (i === lines.length - 1 || lines[i + 1].trim() === '' || !lines[i + 1].match(/^\s/))) {
-        if (currentKey) {
-          (metadata as Record<string, unknown>)[currentKey] = currentValue.join('\n').trim();
-        }
-        currentKey = null;
-        currentValue = [];
-        inMultiline = false;
-        continue;
-      }
-      // Remove 2-space indentation from multiline content
-      const dedented = line.replace(/^\s{2}/, '');
-      currentValue.push(dedented);
-      continue;
-    }
-
-    // Regular key: value
-    const colonIndex = trimmed.indexOf(':');
-    if (colonIndex > 0 && indent === 0) {
-      const key = trimmed.substring(0, colonIndex).trim();
-      const value = trimmed.substring(colonIndex + 1).trim();
-      
-      // Handle array values [item1, item2]
-      if (value.startsWith('[') && value.endsWith(']')) {
-        const arrayContent = value.slice(1, -1);
-        (metadata as Record<string, unknown>)[key] = arrayContent.split(',').map(v => v.trim().replace(/^["']|["']$/g, ''));
-      } else {
-        (metadata as Record<string, unknown>)[key] = value.replace(/^["']|["']$/g, '');
-      }
-    }
+  try {
+    const parsed = parseYaml(yamlContent) as Record<string, unknown>;
+    
+    // Convert to ModuleMetadata format
+    const metadata: ModuleMetadata = {
+      name: parsed.name as string | undefined,
+      version: parsed.version as string | undefined,
+      description: parsed.description as string | undefined,
+      tags: Array.isArray(parsed.tags) ? parsed.tags as string[] : undefined,
+      dependencies: Array.isArray(parsed.dependencies) ? parsed.dependencies as string[] : undefined,
+      defaultSettings: parsed.defaultSettings as Record<string, unknown> | undefined,
+      checks: Array.isArray(parsed.checks) ? parsed.checks as ModuleCheck[] : undefined,
+      mcpSettings: parsed.mcpSettings as Record<string, unknown> | undefined
+    };
+    
+    return metadata;
+  } catch (error) {
+    // If parsing fails, return null
+    const err = error as Error;
+    console.warn(`Warning: Failed to parse YAML frontmatter for module at ${modulePath}: ${err.message}`);
+    return null;
   }
-
-  // Save last values
-  if (currentKey && currentValue.length > 0) {
-    (metadata as Record<string, unknown>)[currentKey] = currentValue.join('\n').trim();
-  }
-  if (currentSettingKey && currentSettingValue.length > 0) {
-    if (!metadata.defaultSettings) metadata.defaultSettings = {};
-    metadata.defaultSettings[currentSettingKey] = currentSettingValue.join('\n').trim();
-  }
-
-  return metadata;
 }
 
 /**
@@ -219,6 +113,8 @@ export function loadModule(moduleName: string): Module | null {
     tags: Array.isArray(metadata.tags) ? metadata.tags : [],
     dependencies: Array.isArray(metadata.dependencies) ? metadata.dependencies : [],
     defaultSettings: metadata.defaultSettings || {},
+    checks: metadata.checks || [],
+    mcpSettings: metadata.mcpSettings,
     path: modulePath
   };
 }
@@ -247,6 +143,8 @@ export function loadModuleFromPath(modulePath: string, fallbackName: string | nu
     tags: Array.isArray(metadata.tags) ? metadata.tags : [],
     dependencies: Array.isArray(metadata.dependencies) ? metadata.dependencies : [],
     defaultSettings: metadata.defaultSettings || {},
+    checks: metadata.checks || [],
+    mcpSettings: metadata.mcpSettings,
     path: modulePath
   };
 }

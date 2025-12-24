@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { parse as parseDotenv } from 'dotenv';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -13,21 +14,16 @@ function readEnvFile(envPath: string): Record<string, string> {
   try {
     if (!fs.existsSync(envPath)) return {};
     const content = fs.readFileSync(envPath, 'utf8');
+    // Use dotenv.parse() to parse .env file without loading into process.env
+    const parsed = parseDotenv(content);
+    if (!parsed) return {};
+    // Convert to Record<string, string> (dotenv returns Record<string, string | undefined>)
     const env: Record<string, string> = {};
-
-    for (const line of content.split('\n')) {
-      const trimmed = line.trim();
-      if (!trimmed || trimmed.startsWith('#')) continue;
-
-      // Parse KEY="VALUE" or KEY='VALUE' or KEY=VALUE
-      const match = trimmed.match(/^([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^#\s]+))?/);
-      if (!match) continue;
-
-      const key = match[1];
-      const value = match[2] || match[3] || match[4] || '';
-      env[key] = value;
+    for (const [key, value] of Object.entries(parsed)) {
+      if (value !== undefined && value !== null) {
+        env[key] = String(value);
     }
-
+    }
     return env;
   } catch {
     return {};

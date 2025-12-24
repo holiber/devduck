@@ -7,6 +7,8 @@
 import fs from 'fs';
 import path from 'path';
 import type { HookContext, HookResult } from '../../scripts/install/module-hooks.js';
+import { replaceVariablesInObject } from '../../scripts/lib/config.js';
+import { readEnvFile } from '../../scripts/lib/env.js';
 
 export default {
   /**
@@ -74,24 +76,42 @@ export default {
     }
     
     // 3. Generate mcp.json from all modules
+    // Load environment variables for variable substitution
+    const envFilePath = path.join(context.workspaceRoot, '.env');
+    const env = readEnvFile(envFilePath);
+    
     const mcpServers: Record<string, unknown> = {};
     for (const module of context.allModules) {
-      const mcpPath = path.join(module.path, 'mcp.json');
-      if (fs.existsSync(mcpPath)) {
-        try {
-          const mcpConfig = JSON.parse(fs.readFileSync(mcpPath, 'utf8')) as Record<string, unknown>;
-          // Handle mcp.json structure: { mcpServers: { ... } }
-          if (mcpConfig.mcpServers && typeof mcpConfig.mcpServers === 'object') {
-            Object.assign(mcpServers, mcpConfig.mcpServers);
-          } else if (typeof mcpConfig === 'object') {
-            // Direct object assignment
-            Object.assign(mcpServers, mcpConfig);
-          } else {
-            mcpServers[module.name] = mcpConfig;
+      // First, try to load mcpSettings from module frontmatter (MODULE.md)
+      // This is the preferred way for modules to provide MCP configuration
+      const { loadModuleFromPath } = await import('../../scripts/install/module-resolver.js');
+      const moduleWithMcp = loadModuleFromPath(module.path, module.name);
+      if (moduleWithMcp?.mcpSettings) {
+        // mcpSettings from frontmatter is a map of server names to server configs
+        // Replace variables in mcpSettings before adding to mcpServers
+        const replacedMcpSettings = replaceVariablesInObject(moduleWithMcp.mcpSettings, env);
+        Object.assign(mcpServers, replacedMcpSettings);
+      } else {
+        // Fallback: try to load from mcp.json file (legacy support)
+        const mcpPath = path.join(module.path, 'mcp.json');
+        if (fs.existsSync(mcpPath)) {
+          try {
+            const mcpConfig = JSON.parse(fs.readFileSync(mcpPath, 'utf8')) as Record<string, unknown>;
+            // Handle mcp.json structure: { mcpServers: { ... } }
+            if (mcpConfig.mcpServers && typeof mcpConfig.mcpServers === 'object') {
+              const replacedConfig = replaceVariablesInObject(mcpConfig.mcpServers, env);
+              Object.assign(mcpServers, replacedConfig);
+            } else if (typeof mcpConfig === 'object') {
+              // Direct object assignment
+              const replacedConfig = replaceVariablesInObject(mcpConfig, env);
+              Object.assign(mcpServers, replacedConfig);
+            } else {
+              mcpServers[module.name] = mcpConfig;
+            }
+          } catch (error) {
+            const err = error as Error;
+            console.warn(`Warning: Failed to parse mcp.json for module ${module.name}: ${err.message}`);
           }
-        } catch (error) {
-          const err = error as Error;
-          console.warn(`Warning: Failed to parse mcp.json for module ${module.name}: ${err.message}`);
         }
       }
     }
@@ -101,6 +121,62 @@ export default {
     const mcpConfig = { mcpServers };
     fs.writeFileSync(mcpFilePath, JSON.stringify(mcpConfig, null, 2) + '\n', 'utf8');
     createdFiles.push('.cursor/mcp.json');
+    
+    // 3.5. Test MCP servers functionality
+    if (Object.keys(mcpServers).length > 0) {
+      const { testMcpServer } = await import('../../scripts/install/mcp-test.js');
+      const testResults: Array<{ name: string; success: boolean; error?: string }> = [];
+      
+      for (const [serverName, serverConfig] of Object.entries(mcpServers)) {
+        const config = serverConfig as Record<string, unknown>;
+        
+        // Only test command-based servers (not URL-based)
+        if (config.command && typeof config.command === 'string') {
+          try {
+            const result = await testMcpServer(serverName, {
+              command: config.command as string,
+              args: Array.isArray(config.args) ? config.args as string[] : []
+            }, {
+              timeout: 10000,
+              log: (msg) => {
+                // Silent logging during installation
+              }
+            });
+            
+            testResults.push({
+              name: serverName,
+              success: result.success,
+              error: result.error
+            });
+            
+            if (result.success && result.methods && result.methods.length > 0) {
+              // Server is working and has methods
+              console.log(`✓ MCP server ${serverName} tested successfully (${result.methods.length} method(s))`);
+            } else if (!result.success) {
+              // Log warning but don't fail installation
+              console.warn(`Warning: MCP server ${serverName} test failed: ${result.error || 'Unknown error'}`);
+            } else if (result.success) {
+              console.log(`✓ MCP server ${serverName} tested successfully (no methods listed)`);
+            }
+          } catch (error) {
+            const err = error as Error;
+            console.warn(`Warning: Failed to test MCP server ${serverName}: ${err.message}`);
+            testResults.push({
+              name: serverName,
+              success: false,
+              error: err.message
+            });
+          }
+        }
+      }
+      
+      // Log summary
+      const successfulTests = testResults.filter(r => r.success).length;
+      const totalTests = testResults.length;
+      if (totalTests > 0) {
+        console.log(`\nMCP servers tested: ${successfulTests}/${totalTests} successful`);
+      }
+    }
     
     // 4. Create .cursorignore file
     const cursorignorePath = path.join(context.workspaceRoot, '.cursorignore');

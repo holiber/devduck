@@ -37,6 +37,11 @@ defaultSettings:
   settingName: value
   multilineSetting: |
     Multi-line content
+checks:
+  - type: "auth"
+    var: "TOKEN_NAME"
+    description: "Token description"
+    test: "curl -X GET -H 'Authorization: OAuth $TOKEN_NAME' -s -o /dev/null -w '%{http_code}' https://api.example.com/endpoint"
 ---
 # Module Documentation
 
@@ -50,6 +55,42 @@ Module description and usage instructions.
 - `tags`: Array of tags for categorization (e.g., `vcs`, `yandex`, `security`)
 - `dependencies`: Array of module names this module depends on
 - `defaultSettings`: Module-specific default settings (e.g., `cursorignore`, `arcignore`)
+- `checks`: Array of pre-install checks (see [Pre-install Checks](#pre-install-checks))
+
+#### Pre-install Checks
+
+Modules can define pre-install checks that are executed before module installation to verify required environment variables and validate token functionality.
+
+**Check Types:**
+
+1. **Auth Check** (`type: "auth"`):
+   - Verifies that a required environment variable (token) is present
+   - Required fields:
+     - `var`: Environment variable name (e.g., `GITHUB_TOKEN`, `AR_TOKEN`)
+     - `description`: Human-readable description of the token
+   - Optional fields:
+     - `test`: Command to test token validity (e.g., `curl` command)
+       - If `test` is provided, it will be executed only if the token is present
+       - Should return HTTP status code 200 for success, other codes indicate failure
+       - Use `$VAR_NAME` syntax to reference environment variables in the command
+
+**Example:**
+
+```yaml
+checks:
+  - type: "auth"
+    var: "GITHUB_TOKEN"
+    description: "GitHub API token"
+    test: "curl -H 'Authorization: token $GITHUB_TOKEN' -H 'Accept: application/vnd.github.v3+json' -s -o /dev/null -w '%{http_code}' https://api.github.com/user"
+```
+
+**Check Execution:**
+- Checks are collected from all modules and projects before installation
+- Missing tokens are reported with their descriptions
+- Test commands are executed only if the associated token is present
+- Failed tests show HTTP status codes for debugging
+- Successful checks are displayed in green
+- Installation fails if required tokens are missing or tests fail
 
 ### Module Types
 

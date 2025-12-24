@@ -169,48 +169,54 @@ export async function resolveRepoPath(repoUrl: string, workspaceRoot: string): P
     if (path.isAbsolute(parsed.normalized)) {
       repoPath = parsed.normalized;
     } else {
-      // Try to find arcadia root
-      // First check ARCADIA_ROOT env var
-      let arcadiaRoot = process.env.ARCADIA_ROOT;
+      // First, check if repository exists in workspace (projects/ directory)
+      const workspaceRepoPath = path.join(workspaceRoot, 'projects', path.basename(parsed.normalized));
+      if (fs.existsSync(workspaceRepoPath)) {
+        repoPath = workspaceRepoPath;
+      } else {
+        // Try to find arcadia root
+        // First check ARCADIA_ROOT env var
+        let arcadiaRoot = process.env.ARCADIA_ROOT;
 
-      // If not set, try to detect from current working directory
-      if (!arcadiaRoot) {
-        let currentDir = process.cwd();
-        const maxDepth = 10;
-        let depth = 0;
+        // If not set, try to detect from current working directory
+        if (!arcadiaRoot) {
+          let currentDir = process.cwd();
+          const maxDepth = 10;
+          let depth = 0;
 
-        while (depth < maxDepth) {
-          const arcadiaRootFile = path.join(currentDir, '.arcadia.root');
-          if (fs.existsSync(arcadiaRootFile)) {
-            arcadiaRoot = currentDir;
-            break;
-          }
-          const parent = path.dirname(currentDir);
-          if (parent === currentDir) {
-            break;
-          }
-          currentDir = parent;
-          depth++;
-        }
-      }
-
-      // Fallback to common arcadia locations
-      if (!arcadiaRoot) {
-        const possibleRoots = ['/Users/alex-nazarov/arcadia', '/arcadia', process.cwd()];
-
-        for (const possibleRoot of possibleRoots) {
-          if (fs.existsSync(path.join(possibleRoot, '.arcadia.root'))) {
-            arcadiaRoot = possibleRoot;
-            break;
+          while (depth < maxDepth) {
+            const arcadiaRootFile = path.join(currentDir, '.arcadia.root');
+            if (fs.existsSync(arcadiaRootFile)) {
+              arcadiaRoot = currentDir;
+              break;
+            }
+            const parent = path.dirname(currentDir);
+            if (parent === currentDir) {
+              break;
+            }
+            currentDir = parent;
+            depth++;
           }
         }
-      }
 
-      if (!arcadiaRoot) {
-        throw new Error('Cannot determine Arcadia root. Set ARCADIA_ROOT environment variable or run from Arcadia directory.');
-      }
+        // Fallback to common arcadia locations
+        if (!arcadiaRoot) {
+          const possibleRoots = ['/Users/alex-nazarov/arcadia', '/arcadia', process.cwd()];
 
-      repoPath = path.join(arcadiaRoot, parsed.normalized);
+          for (const possibleRoot of possibleRoots) {
+            if (fs.existsSync(path.join(possibleRoot, '.arcadia.root'))) {
+              arcadiaRoot = possibleRoot;
+              break;
+            }
+          }
+        }
+
+        if (!arcadiaRoot) {
+          throw new Error('Cannot determine Arcadia root. Set ARCADIA_ROOT environment variable or run from Arcadia directory.');
+        }
+
+        repoPath = path.join(arcadiaRoot, parsed.normalized);
+      }
     }
 
     if (!fs.existsSync(repoPath)) {

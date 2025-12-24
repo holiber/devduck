@@ -1617,6 +1617,20 @@ async function installWorkspace(): Promise<void> {
     }
   }
   
+  // Run pre-install checks (verify tokens before installing modules)
+  print(`\n${symbols.info} Running pre-install checks...`, 'cyan');
+  log(`Running pre-install checks`);
+  try {
+    const { runPreInstallChecks, validatePreInstallChecks } = await import('./install/pre-install-check.js');
+    const checkResults = await runPreInstallChecks(WORKSPACE_ROOT);
+    validatePreInstallChecks(checkResults, { print, log, symbols });
+  } catch (error) {
+    const err = error as Error;
+    print(`\n${symbols.error} Pre-install check error: ${err.message}`, 'red');
+    log(`Pre-install check error: ${err.message}\n${err.stack}`);
+    process.exit(1);
+  }
+  
   // Load modules from external repositories if specified
   const externalModules = [];
   if (config.repos && config.repos.length > 0) {
@@ -1878,6 +1892,20 @@ async function main(): Promise<void> {
   }
   
   log(`Configuration loaded from: ${CONFIG_FILE}`);
+  
+  // Run pre-install checks (verify tokens before installing modules)
+  print(`\n${symbols.info} Running pre-install checks...`, 'cyan');
+  log(`Running pre-install checks`);
+  try {
+    const { runPreInstallChecks, validatePreInstallChecks } = await import('./install/pre-install-check.js');
+    const checkResults = await runPreInstallChecks(WORKSPACE_ROOT);
+    validatePreInstallChecks(checkResults, { print, log, symbols });
+  } catch (error) {
+    const err = error as Error;
+    print(`\n${symbols.error} Pre-install check error: ${err.message}`, 'red');
+    log(`Pre-install check error: ${err.message}\n${err.stack}`);
+    process.exit(1);
+  }
   
   // Read existing cache if present
   let existingCache = readJSON(CACHE_FILE);
