@@ -47,9 +47,9 @@ Module description and usage instructions.
 - `name`: Unique module identifier
 - `version`: Module version
 - `description`: Brief module description
-- `tags`: Array of tags for categorization (e.g., `vcs`, `yandex`, `security`)
+- `tags`: Array of tags for categorization (e.g., `vcs`, `security`)
 - `dependencies`: Array of module names this module depends on
-- `defaultSettings`: Module-specific default settings (e.g., `cursorignore`, `arcignore`)
+- `defaultSettings`: Module-specific default settings (e.g., `cursorignore`)
 
 ### Module Types
 
@@ -64,11 +64,6 @@ Module description and usage instructions.
 - **Purpose**: Cursor IDE integration (commands, rules, MCP configuration)
 - **Dependencies**: `[core]`
 - **Special**: Automatically included in all workspace installations
-
-#### Yandex Infrastructure Modules
-Modules related to Yandex infrastructure must start with `ya-` prefix:
-- `ya-arc`: Yandex Arcadia integration
-- `ya-security`: Security checks and PR policies
 
 #### Other Modules
 - `containers`: Docker container orchestration
@@ -86,7 +81,6 @@ workspace/
 ├── workspace.config.json  # Workspace configuration
 ├── devduck/               # Link or copy to devduck tool
 ├── .cursorignore          # Created by core module hooks
-├── .arcignore            # Created by ya-arc module hooks (if installed)
 ├── .cache/
 │   └── devduck/          # Temporary files (fixed path)
 └── .cursor/
@@ -231,10 +225,6 @@ core (no dependencies, always available)
   ↑
   ├── cursor (depends on core, always available)
   │
-  ├── ya-arc (depends on core)
-  │     ↑
-  │     └── ya-security (depends on ya-arc)
-  │
   ├── containers (depends on core)
   │
   ├── evolution (depends on core)
@@ -278,7 +268,6 @@ External repositories can be specified in several formats:
   - `github.com/user/repo`
 - **Arcadia repositories**:
   - `arc://path/to/repo` (e.g., `arc://junk/user/modules`)
-  - `a.yandex-team.ru/arc/path/to/repo`
 
 ### Repository Structure
 
@@ -345,8 +334,7 @@ node scripts/workspace-installer.js --repos "github.com/user/modules,arc://path/
 ```json
 {
   "repos": [
-    "github.com/user/custom-modules",
-    "arc://junk/user/other-modules"
+    "github.com/user/custom-modules"
   ]
 }
 ```
@@ -425,7 +413,6 @@ The context object passed to hooks contains:
 Files are created by module hooks, not hardcoded in the installer:
 
 - **.cursorignore**: Created by `core` module's `install` hook from `settings.cursorignore`
-- **.arcignore**: Created by `ya-arc` module's `install` hook from `settings.arcignore`
 - **.cursor/commands/**: Created by `cursor` module's `post-install` hook (copies commands from all modules)
 - **.cursor/rules/devduck-rules.md**: Created by `cursor` module's `post-install` hook (merges rules from all modules)
 - **.cursor/mcp.json**: Created by `cursor` module's `post-install` hook (generates from all module MCP configs)
@@ -505,7 +492,6 @@ All temporary files are stored in `.cache/devduck/` directory within the workspa
 - Declare all dependencies explicitly
 - Provide defaultSettings for configurable behavior
 - Document module usage in MODULE.md
-- Follow naming conventions (ya-* for Yandex infrastructure)
 
 ## Architecture Evolution
 
