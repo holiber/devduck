@@ -1,12 +1,13 @@
 {
   "name": "devduck",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "AI assistant integration for Cursor IDE in Yandex Arcadia",
   "private": true,
+  "type": "module",
   "scripts": {
-    "install:check": "node scripts/install.js",
+    "install:check": "tsx scripts/install.ts",
     "postinstall": "npx playwright install chromium",
-    "test": "node --test 'tests/**/*.test.js'"
+    "test": "tsx scripts/run-tests.ts"
   },
   "dependencies": {
     "ink": "^5.1.0",
@@ -15,5 +16,10 @@
     "react": "^18.3.1",
     "yargs": "^18.0.0",
     "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0"
   }
 }
