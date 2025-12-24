@@ -1467,6 +1467,65 @@ function checkTokensOnly() {
   process.exit(allPresent ? 0 : 1);
 }
 
+function isSafeRelativePath(p: string): boolean {
+  const normalized = path.normalize(p);
+  if (!normalized || normalized.trim() === '') return false;
+  if (path.isAbsolute(normalized)) return false;
+  // Block path traversal outside the base directory/workspace root
+  if (normalized === '..' || normalized.startsWith(`..${path.sep}`)) return false;
+  return true;
+}
+
+function copySeedFilesFromProvidedWorkspaceConfig(params: {
+  workspaceRoot: string;
+  providedWorkspaceConfigPath: string;
+  files: unknown;
+}): void {
+  const { workspaceRoot, providedWorkspaceConfigPath, files } = params;
+
+  if (!Array.isArray(files) || files.length === 0) return;
+
+  const sourceRoot = path.dirname(providedWorkspaceConfigPath);
+
+  print(`\n${symbols.info} Copying seed files into workspace...`, 'cyan');
+  log(`Copying ${files.length} seed file(s) from ${sourceRoot} into ${workspaceRoot}`);
+
+  for (const entry of files) {
+    if (typeof entry !== 'string') {
+      print(`  ${symbols.warning} Skipping non-string entry in files[]`, 'yellow');
+      log(`Skipping non-string entry in files[]: ${JSON.stringify(entry)}`);
+      continue;
+    }
+
+    const relPath = entry.trim();
+    if (!isSafeRelativePath(relPath)) {
+      print(`  ${symbols.warning} Skipping unsafe path in files[]: ${entry}`, 'yellow');
+      log(`Skipping unsafe path in files[]: ${entry}`);
+      continue;
+    }
+
+    const srcPath = path.join(sourceRoot, relPath);
+    const destPath = path.join(workspaceRoot, relPath);
+
+    try {
+      if (!fs.existsSync(srcPath)) {
+        print(`  ${symbols.warning} Missing seed path: ${relPath}`, 'yellow');
+        log(`Seed path does not exist: ${srcPath}`);
+        continue;
+      }
+
+      fs.mkdirSync(path.dirname(destPath), { recursive: true });
+      fs.cpSync(srcPath, destPath, { recursive: true, force: true });
+      print(`  ${symbols.success} Copied: ${relPath}`, 'green');
+      log(`Copied seed path: ${srcPath} -> ${destPath}`);
+    } catch (error) {
+      const err = error as Error;
+      print(`  ${symbols.warning} Failed to copy ${relPath}: ${err.message}`, 'yellow');
+      log(`Failed to copy seed path ${srcPath} -> ${destPath}: ${err.message}`);
+    }
+  }
+}
+
 /**
  * Install workspace from scratch
  */
@@ -1513,6 +1572,14 @@ async function installWorkspace(): Promise<void> {
         if (providedWorkspaceConfig.modules) {
           config.modules = providedWorkspaceConfig.modules;
         }
+
+        // If files[] is provided, copy those paths from the provided config folder
+        // into the newly created workspace root.
+        copySeedFilesFromProvidedWorkspaceConfig({
+          workspaceRoot: WORKSPACE_ROOT,
+          providedWorkspaceConfigPath: WORKSPACE_CONFIG_PATH,
+          files: (providedWorkspaceConfig as Record<string, unknown>).files
+        });
       }
     }
     

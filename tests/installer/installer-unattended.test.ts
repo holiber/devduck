@@ -180,6 +180,52 @@ describe('Workspace Installer - Unattended Mode', () => {
       }
     });
 
+    test('Unattended Installation with workspace.config.json files[] copies seed files/folders', async () => {
+      const sourceWorkspace = await createTempWorkspace();
+      const destWorkspace = await createTempWorkspace();
+      const providedWorkspaceConfigPath = path.join(sourceWorkspace, 'workspace.config.json');
+
+      try {
+        // Create seed content next to the provided config file
+        await fs.writeFile(path.join(sourceWorkspace, 'seed.txt'), 'seed file\n', 'utf8');
+        await fs.mkdir(path.join(sourceWorkspace, 'seed-dir'), { recursive: true });
+        await fs.writeFile(path.join(sourceWorkspace, 'seed-dir', 'nested.txt'), 'nested\n', 'utf8');
+
+        const providedWorkspaceConfig = {
+          workspaceVersion: '0.1.0',
+          devduckPath: './devduck',
+          modules: ['core', 'cursor'],
+          files: ['seed.txt', 'seed-dir']
+        };
+        await fs.writeFile(providedWorkspaceConfigPath, JSON.stringify(providedWorkspaceConfig, null, 2), 'utf8');
+
+        const result = await runInstaller(destWorkspace, {
+          unattended: true,
+          aiAgent: 'cursor',
+          repoType: 'none',
+          modules: ['core', 'cursor'],
+          skipRepoInit: true,
+          workspaceConfig: providedWorkspaceConfigPath
+        });
+
+        checkInstallerResult(result);
+
+        const installed = await waitForInstallation(destWorkspace, 30000);
+        assert.ok(installed, 'Installation should complete');
+
+        // Verify seed file copied
+        const seedContent = await fs.readFile(path.join(destWorkspace, 'seed.txt'), 'utf8');
+        assert.strictEqual(seedContent, 'seed file\n', 'seed.txt should be copied into workspace root');
+
+        // Verify seed directory copied recursively
+        const nestedContent = await fs.readFile(path.join(destWorkspace, 'seed-dir', 'nested.txt'), 'utf8');
+        assert.strictEqual(nestedContent, 'nested\n', 'seed-dir should be copied into workspace root');
+      } finally {
+        await cleanupTempWorkspace(sourceWorkspace);
+        await cleanupTempWorkspace(destWorkspace);
+      }
+    });
+
     test('Unattended Installation - Full Structure Verification', async () => {
       const tempWorkspace = await createTempWorkspace();
       
