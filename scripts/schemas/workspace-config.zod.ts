@@ -74,6 +74,10 @@ const WorkspaceConfigSchema = z
     workspaceVersion: z.string(),
     devduckPath: z.string().optional(),
 
+    // Seed files/folders to copy into a *new* workspace when creating it via `--workspace-config`.
+    // Paths are relative to the folder containing the provided workspace config file.
+    files: z.array(z.string()).optional(),
+
     // Module selection: explicit module list or ["*"] to mean "all available modules".
     modules: z.array(z.string()).optional(),
     // Per-module override settings. Merge behavior is implemented in module resolver.
