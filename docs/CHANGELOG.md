@@ -9,11 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [0.2.0] - 2025-01-XX
+## [0.2.0] - 2025-12-24
 
-### Changed - 2025-01-XX
+### Changed - 2025-12-24
 
-- 🔄 **Full TypeScript migration** - Complete migration from JavaScript to TypeScript
+- 🔄 **Full TypeScript migration** - Complete migration from JavaScript to TypeScript ([PR #13](https://github.com/holiber/devduck/pull/13))
   - Converted all `.js` files to `.ts` with ES Modules
   - Replaced CommonJS (`require`/`module.exports`) with ES Modules (`import`/`export`)
   - Added TypeScript types and interfaces throughout the codebase
