@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed - 2025-12-24
+
+- 🔄 **Improved version compatibility check for external modules** - Modules with older `devduckVersion` can now be loaded (backward compatibility)
+  - Modules are compatible if their `devduckVersion <= current devduck version`
+  - Error is only raised if module requires newer devduck version than currently installed
+  - Allows using old modules with newer devduck versions
+
+### Added - 2025-12-24
+
+- ✨ **Support for loading modules from projects directory** - Modules in `projects/*/modules/` are now automatically discovered and loaded
+  - Modules from projects are loaded alongside workspace-local and external repository modules
+  - Enables easier module development and testing in workspace projects
+
+- 🧪 **Automatic test runner script** - Added `scripts/run-tests.ts` that automatically discovers and runs all test files
+  - No need to manually list test files in `package.json`
+  - Automatically finds all `.test.ts` files in `tests/` directory
+  - Scales better as new tests are added
+
 ---
 
 ## [0.2.0] - 2025-12-24
