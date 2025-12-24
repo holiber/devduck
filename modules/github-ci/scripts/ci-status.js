@@ -341,7 +341,7 @@ async function main() {
           if (config.projects && Array.isArray(config.projects)) {
             // Find first GitHub repo
             for (const project of config.projects) {
-              const projectSrc = project.src || project.path_in_arcadia;
+              const projectSrc = project.src;
               if (!projectSrc || !projectSrc.includes('github.com')) continue;
               
               const match = projectSrc.match(/github\.com[\/:]([^\/]+)\/([^\/\.]+)/);

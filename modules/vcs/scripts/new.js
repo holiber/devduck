@@ -455,7 +455,7 @@ function main() {
   // Check all git repositories
   if (workspaceConfig.projects && Array.isArray(workspaceConfig.projects)) {
     for (const project of workspaceConfig.projects) {
-      const projectSrc = project.src || project.path_in_arcadia;
+      const projectSrc = project.src;
       if (!projectSrc) continue;
       
       const repoInfo = parseRepoUrl(projectSrc);
