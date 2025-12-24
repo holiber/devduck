@@ -154,10 +154,11 @@ workspace/
 **Fields:**
 - **`workspaceVersion`**: workspace config version string (currently `0.1.0`)
 - **`devduckPath`**: path to the Devduck installation (relative to workspace root); used by tooling to locate scripts/modules
-- **`modules`**: list of module names to install; supports `["*"]` to mean “all available modules”
-- **`moduleSettings`**: per-module settings override, merged on top of each module’s `defaultSettings`
+- **`modules`**: list of module names to install; supports `["*"]` to mean "all available modules"
+- **`moduleSettings`**: per-module settings override, merged on top of each module's `defaultSettings`
 - **`repos`**: list of external repositories to load additional modules from (Git or Arcadia URLs)
 - **`projects`**: list of projects that should be available under `projects/` (via symlink/clone)
+- **`importScripts`**: optional array of additional script names to import from projects (default: `test`, `dev`, `build`, `start`, `lint`)
 - **`checks`**: workspace-level checks to run (and the source for generating `.cursor/mcp.json`)
 - **`env`**: a list of environment variables to write into the workspace `.env`
 
@@ -198,6 +199,7 @@ Each env entry is an object:
 - **`name`**: environment variable name
 - **`default`**: default value used when generating `.env`
 - **`description`**: shown to the user during interactive `.env` setup
+>>>>>>> origin/main
 
 ## Module Installation Process
 
@@ -429,6 +431,55 @@ Files are created by module hooks, not hardcoded in the installer:
 - **.cursor/mcp.json**: Created by `cursor` module's `post-install` hook (generates from all module MCP configs)
 
 This allows any module to create files during installation by defining appropriate hooks.
+
+## Project Scripts Installation
+
+DevDuck automatically installs scripts from project `package.json` files into the workspace `package.json` during installation. This allows you to run project scripts from the workspace root without changing directories.
+
+### Default Scripts
+
+By default, the following scripts are imported from each project:
+- `test`
+- `dev`
+- `build`
+- `start`
+- `lint`
+
+### Additional Scripts
+
+You can import additional scripts by specifying them in `workspace.config.json`:
+
+```json
+{
+  "importScripts": ["format", "type-check", "prepublish"]
+}
+```
+
+### Script Naming
+
+Scripts are installed with the format `{projectName}:{scriptName}`. For example, if project `myproject` has a `test` script, it will be available as `myproject:test` in the workspace.
+
+### Script Execution
+
+Scripts are executed using `npm run --prefix projects/{projectName} {scriptName}`, which ensures that:
+- The script runs in the correct project directory
+- The current working directory in your terminal is not changed
+- All project dependencies and environment are properly set up
+
+### Example
+
+If you have a project `myproject` with scripts `test` and `dev` in its `package.json`, after installation you can run:
+
+```bash
+npm run myproject:test
+npm run myproject:dev
+```
+
+These commands will execute the scripts in the `projects/myproject` directory without changing your current directory.
+
+### Script Cleanup
+
+When a project is removed from `workspace.config.json`, all scripts for that project are automatically removed from the workspace `package.json`.
 
 ## Cache Management
 

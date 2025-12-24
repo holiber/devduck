@@ -74,7 +74,7 @@ const WorkspaceConfigSchema = z
     workspaceVersion: z.string(),
     devduckPath: z.string().optional(),
 
-    // Module selection: explicit module list or ["*"] to mean “all available modules”.
+    // Module selection: explicit module list or ["*"] to mean "all available modules".
     modules: z.array(z.string()).optional(),
     // Per-module override settings. Merge behavior is implemented in module resolver.
     moduleSettings: z.record(z.string(), z.any()).optional(),
@@ -84,6 +84,9 @@ const WorkspaceConfigSchema = z
 
     // Workspace projects (Arcadia, GitHub/Git, local folders).
     projects: z.array(WorkspaceProjectSchema).optional(),
+
+    // Additional script names to import from projects (default: test, dev, build, start, lint).
+    importScripts: z.array(z.string()).optional(),
 
     // Workspace-level checks (also used to generate `.cursor/mcp.json` via mcpSettings).
     checks: z.array(WorkspaceCheckSchema).optional(),
@@ -100,4 +103,3 @@ module.exports = {
   WorkspaceEnvVarSchema,
   McpServerSettingsSchema,
 };
-

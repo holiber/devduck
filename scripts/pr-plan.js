@@ -1,1 +1,0 @@
-../../devduck-ya-modules/modules/ya-arc/scripts/pr-plan.js
