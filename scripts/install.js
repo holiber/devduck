@@ -2140,6 +2140,18 @@ async function main() {
       log(`Skipping projects processing due to ${failedChecks.length} failed check(s): ${failedChecks.map(c => c.name).join(', ')}`);
     } else {
       results.projects = await processProjects(config.projects, env);
+      
+      // Install project scripts to workspace package.json
+      try {
+        const { installProjectScripts } = require('./install/install-project-scripts');
+        print(`\n${symbols.info} Installing project scripts to workspace package.json...`, 'cyan');
+        log(`Installing project scripts to workspace package.json`);
+        installProjectScripts(WORKSPACE_ROOT, config.projects, config, log);
+        print(`  ${symbols.success} Project scripts installed`, 'green');
+      } catch (error) {
+        print(`  ${symbols.warning} Failed to install project scripts: ${error.message}`, 'yellow');
+        log(`ERROR: Failed to install project scripts: ${error.message}\n${error.stack}`);
+      }
     }
   }
   

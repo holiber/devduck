@@ -122,6 +122,7 @@ workspace/
 - `moduleSettings`: Override defaultSettings for specific modules
 - `repos`: Array of external repository URLs (optional)
 - `projects`: List of projects in Arcadia
+- `importScripts`: Optional array of additional script names to import from projects (default: `test`, `dev`, `build`, `start`, `lint`)
 - `checks`: Installation checks to run
 - `env`: Environment variables configuration
 
@@ -355,6 +356,55 @@ Files are created by module hooks, not hardcoded in the installer:
 - **.cursor/mcp.json**: Created by `cursor` module's `post-install` hook (generates from all module MCP configs)
 
 This allows any module to create files during installation by defining appropriate hooks.
+
+## Project Scripts Installation
+
+DevDuck automatically installs scripts from project `package.json` files into the workspace `package.json` during installation. This allows you to run project scripts from the workspace root without changing directories.
+
+### Default Scripts
+
+By default, the following scripts are imported from each project:
+- `test`
+- `dev`
+- `build`
+- `start`
+- `lint`
+
+### Additional Scripts
+
+You can import additional scripts by specifying them in `workspace.config.json`:
+
+```json
+{
+  "importScripts": ["format", "type-check", "prepublish"]
+}
+```
+
+### Script Naming
+
+Scripts are installed with the format `{projectName}:{scriptName}`. For example, if project `myproject` has a `test` script, it will be available as `myproject:test` in the workspace.
+
+### Script Execution
+
+Scripts are executed using `npm run --prefix projects/{projectName} {scriptName}`, which ensures that:
+- The script runs in the correct project directory
+- The current working directory in your terminal is not changed
+- All project dependencies and environment are properly set up
+
+### Example
+
+If you have a project `myproject` with scripts `test` and `dev` in its `package.json`, after installation you can run:
+
+```bash
+npm run myproject:test
+npm run myproject:dev
+```
+
+These commands will execute the scripts in the `projects/myproject` directory without changing your current directory.
+
+### Script Cleanup
+
+When a project is removed from `workspace.config.json`, all scripts for that project are automatically removed from the workspace `package.json`.
 
 ## Cache Management
 

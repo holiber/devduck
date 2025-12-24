@@ -5,7 +5,8 @@
   "private": true,
   "scripts": {
     "install:check": "node scripts/install.js",
-    "postinstall": "npx playwright install chromium"
+    "postinstall": "npx playwright install chromium",
+    "test": "node --test 'tests/**/*.test.js'"
   },
   "dependencies": {
     "ink": "^5.1.0",
