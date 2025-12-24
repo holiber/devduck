@@ -10,27 +10,14 @@ const { z } = require('zod');
 
 /**
  * `env[]` entries used to generate the workspace `.env` file.
- *
- * Supported key aliases (kept for backward compatibility):
- * - name | key
- * - default | value
- * - description | comment
  */
 const WorkspaceEnvVarSchema = z
   .object({
-    name: z.string().optional(),
-    key: z.string().optional(),
-
+    name: z.string(),
     default: z.string().optional(),
-    value: z.string().optional(),
-
     description: z.string().optional(),
-    comment: z.string().optional(),
   })
-  .passthrough()
-  .refine((v) => typeof v.name === 'string' || typeof v.key === 'string', {
-    message: 'env items must have `name` (or legacy `key`)',
-  });
+  .passthrough();
 
 /**
  * MCP server config shape (as written to `.cursor/mcp.json` under `mcpServers[check.name]`).
@@ -74,21 +61,13 @@ const WorkspaceCheckSchema = z
 
 /**
  * A project to materialize under `projects/` (symlink / clone).
- *
- * Supported key aliases:
- * - src (preferred)
- * - path_in_arcadia (legacy)
  */
 const WorkspaceProjectSchema = z
   .object({
-    src: z.string().optional(),
-    path_in_arcadia: z.string().optional(),
+    src: z.string(),
     checks: z.array(WorkspaceCheckSchema).optional(),
   })
-  .passthrough()
-  .refine((p) => typeof p.src === 'string' || typeof p.path_in_arcadia === 'string', {
-    message: 'project items must have `src` or legacy `path_in_arcadia`',
-  });
+  .passthrough();
 
 const WorkspaceConfigSchema = z
   .object({

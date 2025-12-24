@@ -311,30 +311,30 @@ function checkFileExists(filePath) {
 }
 
 /**
- * Get project name from path_in_arcadia or src
+ * Get project name from `src`
  * e.g., "crm/frontend/services/shell" -> "shell"
  * e.g., "github.com/holiber/devduck" -> "devduck"
  * e.g., "arc://junk/user/project" -> "project"
  */
-function getProjectName(projectSrcOrPath) {
-  if (!projectSrcOrPath) return 'unknown';
+function getProjectName(src) {
+  if (!src) return 'unknown';
   
   // Handle arc:// URLs
-  if (projectSrcOrPath.startsWith('arc://')) {
-    const pathPart = projectSrcOrPath.replace('arc://', '');
+  if (src.startsWith('arc://')) {
+    const pathPart = src.replace('arc://', '');
     return path.basename(pathPart);
   }
   
   // Handle GitHub URLs
-  if (projectSrcOrPath.includes('github.com/')) {
-    const match = projectSrcOrPath.match(/github\.com\/[^\/]+\/([^\/]+)/);
+  if (src.includes('github.com/')) {
+    const match = src.match(/github\.com\/[^\/]+\/([^\/]+)/);
     if (match) {
       return match[1].replace('.git', '');
     }
   }
   
   // Handle regular paths
-  return path.basename(projectSrcOrPath);
+  return path.basename(src);
 }
 
 /**
@@ -901,9 +901,15 @@ async function setupEnvFile() {
 
   const rl = AUTO_YES ? null : createReadlineInterface();
   for (const envVar of config.env) {
-    const key = envVar.name || envVar.key;
-    const defaultValue = envVar.default || envVar.value || '';
-    const comment = envVar.comment || envVar.description || '';
+    const key = envVar && typeof envVar === 'object' ? envVar.name : null;
+    const defaultValue = envVar && typeof envVar === 'object' ? (envVar.default || '') : '';
+    const comment = envVar && typeof envVar === 'object' ? (envVar.description || '') : '';
+
+    if (!key) {
+      print(`  ${symbols.warning} Skipping invalid env entry (missing name)`, 'yellow');
+      log(`Skipping invalid env entry: ${JSON.stringify(envVar)}`);
+      continue;
+    }
     
     // Show comment if available
     if (comment) {
@@ -1386,27 +1392,35 @@ async function checkHttpAccess(item, context = null) {
  * Create symlink for a project and return initial result object
  */
 function initProjectResult(project, env) {
-  // Support both old format (path_in_arcadia) and new format (src)
-  const projectSrcOrPath = project.path_in_arcadia || project.src;
-  const projectName = getProjectName(projectSrcOrPath);
+  const projectName = getProjectName(project.src);
   
   print(`\n${symbols.info} Processing project: ${projectName}`, 'cyan');
-  log(`Processing project: ${projectName} (${projectSrcOrPath})`);
+  log(`Processing project: ${projectName} (${project.src})`);
   
   const result = {
     name: projectName,
-    path_in_arcadia: projectSrcOrPath,
     src: project.src,
     symlink: null,
     checks: []
   };
+
+  if (!project.src || typeof project.src !== 'string') {
+    print(`  ${symbols.warning} Project is missing required field: src`, 'yellow');
+    log(`Project skipped: missing src field (${JSON.stringify(project)})`);
+    result.symlink = {
+      path: null,
+      target: null,
+      error: 'Missing required field: src'
+    };
+    return result;
+  }
   
-  // Create symlink only if path_in_arcadia is provided (Arcadia projects)
-  // GitHub projects don't need symlinks in workspace
-  if (project.path_in_arcadia || (project.src && project.src.startsWith('arc://'))) {
+  // Arcadia projects: create symlink into Arcadia checkout.
+  // GitHub projects don't need symlinks in workspace.
+  if (project.src.startsWith('arc://')) {
     print(`  Creating symlink...`, 'cyan');
     // Remove arc:// prefix if present
-    const pathForSymlink = projectSrcOrPath.replace(/^arc:\/\//, '');
+    const pathForSymlink = project.src.replace(/^arc:\/\//, '');
     const symlinkResult = createProjectSymlink(projectName, pathForSymlink, env);
     
     if (symlinkResult.success) {
@@ -1538,8 +1552,7 @@ function getProjectChecksByTier(project, env) {
     return {};
   }
   
-  const projectSrcOrPath = project.path_in_arcadia || project.src;
-  const projectName = getProjectName(projectSrcOrPath);
+  const projectName = getProjectName(project.src);
   const checksWithVars = replaceVariablesInObject(project.checks, env);
   
   const checksByTier = {};
@@ -1685,8 +1698,7 @@ async function runSelectedChecks(checkNames, testOnly = false) {
   if (config.projects && Array.isArray(config.projects)) {
     for (const project of config.projects) {
       if (project.checks && Array.isArray(project.checks)) {
-        const projectSrcOrPath = project.path_in_arcadia || project.src;
-        const projectName = getProjectName(projectSrcOrPath);
+        const projectName = getProjectName(project.src);
         for (const check of project.checks) {
           if (checkNames.includes(check.name)) {
             allChecks.push({ ...check, source: 'project', projectName });
@@ -1893,8 +1905,14 @@ function checkTokensOnly() {
   print(`\n${symbols.info} Checking ${config.env.length} token(s)...\n`, 'cyan');
   
   for (const envVar of config.env) {
-    const key = envVar.name || envVar.key;
-    const comment = envVar.comment || envVar.description || '';
+    const key = envVar && typeof envVar === 'object' ? envVar.name : null;
+    const comment = envVar && typeof envVar === 'object' ? (envVar.description || '') : '';
+
+    if (!key) {
+      print(`  ${symbols.warning} Skipping invalid env entry (missing name)`, 'yellow');
+      log(`Skipping invalid env entry: ${JSON.stringify(envVar)}`);
+      continue;
+    }
     
     // Check in process.env first, then .env file
     const value = process.env[key] || env[key];

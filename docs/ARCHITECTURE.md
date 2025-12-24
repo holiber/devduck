@@ -169,7 +169,7 @@ Some string fields support variable expansion using the `$$VARNAME$$` syntax (re
 
 Each project entry supports multiple source types:
 
-- **Arcadia**: `{ "src": "arc://path/in/arcadia" }` or legacy `{ "path_in_arcadia": "path/in/arcadia" }`  
+- **Arcadia**: `{ "src": "arc://path/in/arcadia" }`  
   The installer creates a symlink under `projects/<name>` pointing into the Arcadia checkout (uses `$ARCADIA` from `.env`/environment).
 - **Local folder**: `{ "src": "./relative/path" }` or `{ "src": "/absolute/path" }`  
   The installer creates a symlink under `projects/<name>` to that folder.
@@ -195,9 +195,9 @@ Checks are objects with (common) fields:
 
 Each env entry is an object:
 
-- **`name`** (or legacy **`key`**): environment variable name
-- **`default`** (or legacy **`value`**): default value used when generating `.env`
-- **`description`** (or legacy **`comment`**): shown to the user during interactive `.env` setup
+- **`name`**: environment variable name
+- **`default`**: default value used when generating `.env`
+- **`description`**: shown to the user during interactive `.env` setup
 
 ## Module Installation Process
 
