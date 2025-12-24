@@ -16,6 +16,7 @@ const fs = require('fs');
 const path = require('path');
 const { spawnSync } = require('child_process');
 const promptStore = require('../../core/scripts/prompt-store');
+const { createYargs, installEpipeHandler } = require('../../../scripts/lib/cli');
 
 function getProjectRoot() {
   return path.resolve(__dirname, '../../..');
@@ -497,12 +498,23 @@ function usage(code = 0) {
 }
 
 function main() {
-  const args = process.argv.slice(2);
-  if (args.includes('--help') || args.includes('-h')) return usage(0);
+  installEpipeHandler();
 
-  const snap = getSnapshot();
-  process.stdout.write(JSON.stringify(snap, null, 2));
-  if (!process.stdout.isTTY) process.stdout.write('\n');
+  createYargs(process.argv)
+    .scriptName('dashboard-snapshot')
+    .strict()
+    .usage('Usage: $0\n\nAlways outputs JSON snapshot.')
+    .command(
+      '$0',
+      'Output a JSON snapshot for the dashboard.',
+      (y) => y,
+      () => {
+        const snap = getSnapshot();
+        process.stdout.write(JSON.stringify(snap, null, 2));
+        if (!process.stdout.isTTY) process.stdout.write('\n');
+      },
+    )
+    .parse();
 }
 
 if (require.main === module) {

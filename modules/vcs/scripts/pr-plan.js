@@ -13,31 +13,8 @@
 
 const fs = require('fs');
 const path = require('path');
-
-/**
- * Find workspace root by looking for workspace.config.json
- */
-function findWorkspaceRoot(startPath = process.cwd()) {
-  let current = path.resolve(startPath);
-  const maxDepth = 10;
-  let depth = 0;
-
-  while (depth < maxDepth) {
-    const configPath = path.join(current, 'workspace.config.json');
-    if (fs.existsSync(configPath)) {
-      return current;
-    }
-
-    const parent = path.dirname(current);
-    if (parent === current) {
-      break;
-    }
-    current = parent;
-    depth++;
-  }
-
-  return null;
-}
+const { createYargs } = require('../../../scripts/lib/cli');
+const { findWorkspaceRoot } = require('../../../scripts/lib/workspace-root');
 
 /**
  * Get PR plan directory path
@@ -205,65 +182,78 @@ function archiveBranchPlans(branchName) {
 
 // CLI interface
 if (require.main === module) {
-  const args = process.argv.slice(2);
-  const command = args[0];
+  createYargs(process.argv)
+    .scriptName('pr-plan')
+    .strict()
+    .usage('Usage: $0 <command>\n\nManage PR plan markdown files.')
+    .command(
+      'archive <planPath>',
+      'Archive a PR plan file to trash directory.',
+      (y) =>
+        y.positional('planPath', {
+          describe: 'Path to plan markdown file',
+          type: 'string',
+          demandOption: true,
+        }),
+      (args) => {
+        const archived = archivePlanFile(args.planPath);
+        if (archived) console.log(`Archived: ${archived}`);
+      },
+    )
+    .command(
+      'validate <planPath>',
+      'Validate plan structure (title + PR Description section).',
+      (y) =>
+        y.positional('planPath', {
+          describe: 'Path to plan markdown file',
+          type: 'string',
+          demandOption: true,
+        }),
+      (args) => {
+        const result = validatePlan(args.planPath);
+        if (result.ok) {
+          console.log('Plan is valid');
+          console.log(`Title: ${result.title}`);
+          console.log(`Description length: ${result.description.length} chars`);
+          return;
+        }
 
-  try {
-    if (command === 'archive') {
-      const planPath = args[1];
-      if (!planPath) {
-        console.error('Usage: node pr-plan.js archive <plan-path>');
-        process.exit(1);
-      }
-      const archived = archivePlanFile(planPath);
-      if (archived) {
-        console.log(`Archived: ${archived}`);
-      }
-    } else if (command === 'validate') {
-      const planPath = args[1];
-      if (!planPath) {
-        console.error('Usage: node pr-plan.js validate <plan-path>');
-        process.exit(1);
-      }
-      const result = validatePlan(planPath);
-      if (result.ok) {
-        console.log('Plan is valid');
-        console.log(`Title: ${result.title}`);
-        console.log(`Description length: ${result.description.length} chars`);
-      } else {
         console.error('Plan validation failed:');
-        result.errors.forEach(err => console.error(`  - ${err}`));
+        result.errors.forEach((err) => console.error(`  - ${err}`));
         process.exit(1);
-      }
-    } else if (command === 'parse') {
-      const planPath = args[1];
-      if (!planPath) {
-        console.error('Usage: node pr-plan.js parse <plan-path>');
-        process.exit(1);
-      }
-      const content = readPlanFile(planPath);
-      const parsed = parsePlanTitleAndDescription(content);
-      console.log(JSON.stringify(parsed, null, 2));
-    } else if (command === 'archive-branch') {
-      const branchName = args[1];
-      if (!branchName) {
-        console.error('Usage: node pr-plan.js archive-branch <branch-name>');
-        process.exit(1);
-      }
-      archiveBranchPlans(branchName);
-    } else {
-      console.error('Usage: node pr-plan.js <command> [args]');
-      console.error('Commands:');
-      console.error('  archive <plan-path>        - Archive plan file to trash');
-      console.error('  validate <plan-path>       - Validate plan structure');
-      console.error('  parse <plan-path>          - Parse and output plan title/description');
-      console.error('  archive-branch <branch>    - Archive all plans for a branch');
-      process.exit(1);
-    }
-  } catch (error) {
-    console.error(`Error: ${error.message}`);
-    process.exit(1);
-  }
+      },
+    )
+    .command(
+      'parse <planPath>',
+      'Parse and output plan title/description as JSON.',
+      (y) =>
+        y.positional('planPath', {
+          describe: 'Path to plan markdown file',
+          type: 'string',
+          demandOption: true,
+        }),
+      (args) => {
+        const content = readPlanFile(args.planPath);
+        const parsed = parsePlanTitleAndDescription(content);
+        process.stdout.write(JSON.stringify(parsed, null, 2));
+        if (!process.stdout.isTTY) process.stdout.write('\n');
+      },
+    )
+    .command(
+      'archive-branch <branchName>',
+      'Archive all PR plans for a branch.',
+      (y) =>
+        y.positional('branchName', {
+          describe: 'Branch name',
+          type: 'string',
+          demandOption: true,
+        }),
+      (args) => {
+        archiveBranchPlans(args.branchName);
+      },
+    )
+    .demandCommand(1, 'Provide a command.')
+    .parse();
 }
 
 module.exports = {
