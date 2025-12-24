@@ -11,6 +11,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { createRequire } from 'module';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -71,21 +72,34 @@ export async function loadModuleHooks(modulePath: string): Promise<ModuleHooks |
   }
 
   try {
-    // Use dynamic import for ES modules (works with both .ts via tsx and .js)
-    // Convert file path to file:// URL for import
-    const fileUrl = hooksPath.startsWith('/') 
-      ? `file://${hooksPath}`
-      : `file://${path.resolve(hooksPath)}`;
-    
-    const hooksModule = await import(fileUrl);
-    
-    // Handle both default export and named exports
-    const hooks = hooksModule.default || hooksModule;
-    
-    return hooks as ModuleHooks;
+    // For .ts files, use dynamic import (tsx should handle them)
+    // For .js files, we can use either import or require
+    if (hooksPath.endsWith('.ts')) {
+      // Use dynamic import for .ts files (tsx loader should handle them)
+      const resolvedPath = path.resolve(hooksPath);
+      const fileUrl = `file://${resolvedPath}`;
+      const hooksModule = await import(fileUrl);
+      const hooks = hooksModule.default || hooksModule;
+      return hooks as ModuleHooks;
+    } else {
+      // For .js files, use require() directly for CommonJS compatibility
+      // CommonJS modules (using module.exports) work better with require()
+      const require = createRequire(import.meta.url);
+      // Clear require cache to allow hot-reloading during development
+      const resolvedPath = path.resolve(hooksPath);
+      delete require.cache[require.resolve(resolvedPath)];
+      const hooksModule = require(resolvedPath);
+      // Handle both default export and module.exports
+      const hooks = hooksModule.default || hooksModule;
+      return hooks as ModuleHooks;
+    }
   } catch (error) {
     const err = error as Error;
+    // Log more details for debugging
     console.warn(`Warning: Failed to load hooks from ${hooksPath}: ${err.message}`);
+    if (err.stack && process.env.NODE_ENV === 'test') {
+      console.warn(`Stack: ${err.stack}`);
+    }
     return null;
   }
 }
@@ -106,6 +120,10 @@ export async function executeHook(
   
   if (!hooks) {
     // No hooks file - module doesn't define hooks
+    // Log this for debugging (only in test mode to avoid noise)
+    if (process.env.NODE_ENV === 'test') {
+      console.log(`[DEBUG] No hooks found for module ${module.name} at path ${module.path}`);
+    }
     return {
       success: true,
       skipped: true,
