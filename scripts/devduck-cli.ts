@@ -159,11 +159,18 @@ async function main(argv = process.argv): Promise<void> {
               'Local folder to copy DevDuck from (no git clone). Intended for offline/CI tests.'
           }),
       (args) => {
-        const workspaceRoot = path.resolve(String(args.workspacePath));
+        // When invoked via npm/npx, process.cwd() may point to a temporary package folder
+        // (e.g. ~/.npm/_npx/.../node_modules/devduck). INIT_CWD is the directory where the user
+        // ran the command from, so resolve relative paths from there.
+        const invocationCwd = process.env.INIT_CWD ? path.resolve(process.env.INIT_CWD) : process.cwd();
+
+        const workspaceRoot = path.resolve(invocationCwd, String(args.workspacePath));
         fs.mkdirSync(workspaceRoot, { recursive: true });
 
         const configPath = path.join(workspaceRoot, 'workspace.config.json');
-        const templatePath = args['workspace-config'] ? path.resolve(String(args['workspace-config'])) : null;
+        const templatePath = args['workspace-config']
+          ? path.resolve(invocationCwd, String(args['workspace-config']))
+          : null;
 
         const templateCfg = templatePath ? readJsonIfExists<WorkspaceConfigLike>(templatePath) : null;
         const config: WorkspaceConfigLike = {
@@ -176,7 +183,9 @@ async function main(argv = process.argv): Promise<void> {
           config,
           devduckRepo: String(args['devduck-repo']),
           devduckRef: args['devduck-ref'] ? String(args['devduck-ref']) : undefined,
-          devduckSource: args['devduck-source'] ? path.resolve(String(args['devduck-source'])) : undefined
+          devduckSource: args['devduck-source']
+            ? path.resolve(invocationCwd, String(args['devduck-source']))
+            : undefined
         });
 
         writeJson(configPath, config);
