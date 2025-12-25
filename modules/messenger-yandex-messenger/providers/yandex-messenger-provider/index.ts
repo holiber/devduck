@@ -136,11 +136,11 @@ const provider: MessengerProvider = {
     let cursor: string | undefined = input.beforeMessageId;
     const seenCursors = new Set<string>();
     while (out.length < input.limit) {
-      const cursorKey = cursor || 'latest';
+      const cursorKey = String(cursor || '').trim() || 'latest';
       if (seenCursors.has(cursorKey)) break;
       seenCursors.add(cursorKey);
 
-      const pageKey = `yandex:getChatHistoryPage:${input.chatId}:${pageSize}:${cursor || 'latest'}`;
+      const pageKey = `yandex:getChatHistoryPage:${input.chatId}:${pageSize}:${cursorKey}`;
       const page = await getOrSetJsonCache({
         dir: cacheDir,
         key: pageKey,
@@ -148,7 +148,7 @@ const provider: MessengerProvider = {
         compute: async () => {
           if (mode !== 'mock') return await httpNotImplemented();
           const latest = mockLatestNum(input.chatId);
-          const beforeNum = cursor ? parseMockMessageNum(cursor) : null;
+          const beforeNum = cursorKey !== 'latest' ? parseMockMessageNum(cursorKey) : null;
           const beforeExclusive = beforeNum ? beforeNum : latest + 1;
           return mockPageDescending(input.chatId, beforeExclusive, pageSize);
         }
@@ -156,14 +156,14 @@ const provider: MessengerProvider = {
 
       const useSince = Number.isFinite(sinceMs);
       if (page.length === 0) break;
+      const filtered = useSince ? page.filter((m) => Date.parse(m.date) >= sinceMs) : page;
+
+      out.push(...filtered.slice(0, input.limit - out.length));
       if (useSince) {
         const oldest = page[page.length - 1];
         const oldestDateMs = oldest?.date ? Date.parse(oldest.date) : Number.NaN;
         if (Number.isFinite(oldestDateMs) && oldestDateMs < sinceMs) break;
       }
-      const filtered = useSince ? page.filter((m) => Date.parse(m.date) >= sinceMs) : page;
-
-      out.push(...filtered.slice(0, input.limit - out.length));
       if (page.length < pageSize) break;
       const last = page[page.length - 1];
       if (!last?.id) break;
@@ -206,7 +206,7 @@ const provider: MessengerProvider = {
       compute,
       providerName
     });
-    return { fileId: input.fileId, originalFileId: input.fileId, ...cached };
+    return { fileId: input.fileId, originalFileId: cached.originalFileId || input.fileId, ...cached };
   }
 };
 

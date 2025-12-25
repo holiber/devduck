@@ -21,3 +21,18 @@ test('messenger CLI exposes required inputs as options', () => {
   assert.match(helpFile.stdout, /--fileId\s+fileId \(string\)/);
 });
 
+test('ci CLI positional still works (no duplicate required flags)', () => {
+  const ciHelp = spawnSync('npx', ['tsx', 'modules/ci/scripts/ci.ts', 'fetchPR', '--help'], {
+    cwd: process.cwd(),
+    env: { ...process.env },
+    encoding: 'utf8',
+    timeout: 120_000
+  });
+  assert.equal(ciHelp.status, 0, ciHelp.stderr);
+  // Positional command signature should remain.
+  assert.match(ciHelp.stdout, /fetchPR <prIdOrBranch>/);
+  // Ensure we did not also expose both positional fields as separate flags.
+  assert.doesNotMatch(ciHelp.stdout, /--prId\s+/);
+  assert.doesNotMatch(ciHelp.stdout, /--branch\s+/);
+});
+

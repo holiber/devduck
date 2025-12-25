@@ -105,7 +105,8 @@ function maybeGcTmpFiles(dir: string): void {
     const entries = fs.readdirSync(dir, { withFileTypes: true });
     for (const e of entries) {
       if (!e.isFile()) continue;
-      if (!e.name.includes('.tmp-')) continue;
+      // Match our own temp naming: "<target> .tmp-<pid>-<timestamp>" (suffix).
+      if (!/\.tmp-\d+-\d+$/.test(e.name)) continue;
       const p = path.join(dir, e.name);
       try {
         const st = fs.statSync(p);
@@ -197,7 +198,14 @@ export async function getOrSetFileCache(opts: {
    * Provider name, used only when cache is disabled to write an ephemeral file instead of caching.
    */
   providerName?: string;
-}): Promise<{ path: string; cached: boolean; sizeBytes?: number; sha256?: string; mimeType?: string }> {
+}): Promise<{
+  path: string;
+  cached: boolean;
+  sizeBytes?: number;
+  sha256?: string;
+  mimeType?: string;
+  originalFileId?: string;
+}> {
   if (isMessengerCacheDisabled()) {
     const computed = await opts.compute();
     const tmp = writeTempBufferFile({
@@ -205,14 +213,28 @@ export async function getOrSetFileCache(opts: {
       key: `messenger:file:${opts.key}`,
       buffer: computed.buffer
     });
-    return { path: tmp.path, cached: false, sizeBytes: tmp.sizeBytes, sha256: tmp.sha256, mimeType: computed.mimeType };
+    return {
+      path: tmp.path,
+      cached: false,
+      sizeBytes: tmp.sizeBytes,
+      sha256: tmp.sha256,
+      mimeType: computed.mimeType,
+      originalFileId: computed.originalFileId
+    };
   }
 
   maybeGcTmpFiles(opts.dir);
 
   const inflightKey = `${opts.dir}::file::${opts.key}`;
   const existing = inflightFile.get(inflightKey) as
-    | Promise<{ path: string; cached: boolean; sizeBytes?: number; sha256?: string; mimeType?: string }>
+    | Promise<{
+        path: string;
+        cached: boolean;
+        sizeBytes?: number;
+        sha256?: string;
+        mimeType?: string;
+        originalFileId?: string;
+      }>
     | undefined;
   if (existing) return await existing;
 
@@ -230,7 +252,14 @@ export async function getOrSetFileCache(opts: {
       const cachedAt = Date.parse(meta.cachedAt);
       const ageMs = Number.isFinite(cachedAt) ? Date.now() - cachedAt : Number.POSITIVE_INFINITY;
       if (ageMs >= 0 && ageMs <= Math.max(0, opts.ttlMs)) {
-        return { path: binPath, cached: true, sizeBytes: meta.sizeBytes, sha256: meta.sha256, mimeType: meta.mimeType };
+        return {
+          path: binPath,
+          cached: true,
+          sizeBytes: meta.sizeBytes,
+          sha256: meta.sha256,
+          mimeType: meta.mimeType,
+          originalFileId: meta.originalFileId
+        };
       }
     }
   } catch {
@@ -262,7 +291,14 @@ export async function getOrSetFileCache(opts: {
     // ignore cache write errors
   }
 
-  return { path: binPath, cached: false, sizeBytes: meta.sizeBytes, sha256: meta.sha256, mimeType: meta.mimeType };
+  return {
+    path: binPath,
+    cached: false,
+    sizeBytes: meta.sizeBytes,
+    sha256: meta.sha256,
+    mimeType: meta.mimeType,
+    originalFileId: computed.originalFileId
+  };
   })();
 
   inflightFile.set(inflightKey, p as Promise<unknown>);
