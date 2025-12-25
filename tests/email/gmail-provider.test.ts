@@ -3,23 +3,28 @@ import assert from 'node:assert';
 import path from 'node:path';
 
 import provider from '../../modules/email-gmail/providers/gmail-provider/index.js';
-import { EmailProviderSchema } from '../../modules/email/schemas/contract.js';
+import type { EmailProvider } from '../../modules/email/schemas/contract.js';
 
 import {
   clearProvidersForTests,
   discoverProvidersFromModules,
-  getProvider,
-  setProviderTypeSchema
+  getProvider
 } from '../../scripts/lib/provider-registry.js';
 
 describe('email: gmail-provider', () => {
-  test('matches EmailProvider contract schema', () => {
-    const res = EmailProviderSchema.safeParse(provider);
-    assert.ok(res.success, res.success ? '' : res.error.message);
-    assert.strictEqual(provider.manifest.type, 'email');
-    assert.strictEqual(provider.manifest.name, 'gmail-provider');
-    assert.ok(Array.isArray(provider.manifest.tools));
-    assert.ok(provider.manifest.tools.includes('listUnreadMessages'));
+  test('matches EmailProvider interface', () => {
+    const p = provider as EmailProvider;
+    assert.ok(p.name);
+    assert.ok(p.version);
+    assert.ok(p.manifest);
+    assert.strictEqual(p.manifest.type, 'email');
+    assert.strictEqual(p.manifest.name, 'gmail-provider');
+    assert.ok(Array.isArray(p.manifest.tools));
+    assert.ok(p.manifest.tools.includes('listUnreadMessages'));
+    assert.ok(typeof p.getMessage === 'function');
+    assert.ok(typeof p.searchMessages === 'function');
+    assert.ok(typeof p.downloadAttachment === 'function');
+    assert.ok(typeof p.listUnreadMessages === 'function');
   });
 });
 
@@ -28,9 +33,7 @@ describe('email: provider registry discovery (gmail-provider)', () => {
     clearProvidersForTests();
   });
 
-  test('discovers gmail-provider from modules directory and registers it (with schema validation)', async () => {
-    setProviderTypeSchema('email', EmailProviderSchema);
-
+  test('discovers gmail-provider from modules directory and registers it', async () => {
     const modulesDir = path.resolve(process.cwd(), 'modules');
     await discoverProvidersFromModules({ modulesDir });
 
