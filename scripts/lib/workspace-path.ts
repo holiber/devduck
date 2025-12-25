@@ -1,7 +1,7 @@
 import path from 'path';
 import fs from 'fs';
-import { spawnSync } from 'child_process';
 import { URL } from 'url';
+import { execCmdSync } from './process.js';
 
 interface ResolveWorkspaceRootOptions {
   projectRoot?: string;
@@ -28,23 +28,19 @@ export function tryParseUrl(value: unknown): URL | null {
 }
 
 export function getGitRoot(cwd: string): string | null {
-  const res = spawnSync('git', ['rev-parse', '--show-toplevel'], {
+  const res = execCmdSync('git', ['rev-parse', '--show-toplevel'], {
     cwd,
-    encoding: 'utf8',
     stdio: ['ignore', 'pipe', 'pipe']
   });
-  if (res.status !== 0) return null;
-  const out = (res.stdout || '').trim();
+  if (!res.ok) return null;
+  const out = res.stdout;
   return out ? out : null;
 }
 
 export function getArcadiaRoot(): string | null {
-  const res = spawnSync('arc', ['root'], {
-    encoding: 'utf8',
-    stdio: ['ignore', 'pipe', 'pipe']
-  });
-  if (res.status !== 0) return null;
-  const out = (res.stdout || '').trim();
+  const res = execCmdSync('arc', ['root'], { stdio: ['ignore', 'pipe', 'pipe'] });
+  if (!res.ok) return null;
+  const out = res.stdout;
   return out ? out : null;
 }
 

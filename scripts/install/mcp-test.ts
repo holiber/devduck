@@ -7,10 +7,11 @@
  * and verifying responses.
  */
 
-import { spawn, ChildProcess } from 'child_process';
+import type { ExecaChildProcess } from 'execa';
 import { Readable } from 'stream';
 import { readEnvFile } from '../lib/env.js';
 import path from 'path';
+import { startProcess } from '../lib/process.js';
 
 export interface McpTestResult {
   success: boolean;
@@ -51,7 +52,7 @@ export async function testMcpServer(
     return process.env[varName] || envFile[varName];
   };
   
-  let mcpProcess: ChildProcess | null = null;
+  let mcpProcess: ExecaChildProcess<string> | null = null;
   let stdoutBuffer = '';
   let stderrBuffer = '';
   let requestId = 1;
@@ -103,7 +104,7 @@ export async function testMcpServer(
       return expanded;
     });
     
-    mcpProcess = spawn(command, commandArgs, {
+    mcpProcess = startProcess(command, commandArgs, {
       stdio: ['pipe', 'pipe', 'pipe'],
       env: { ...process.env }
     });

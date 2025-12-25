@@ -12,6 +12,8 @@ import { readJSON } from '../../scripts/lib/config.js';
 import path from 'path';
 import fs from 'fs';
 import { testMcpServer } from '../../scripts/install/mcp-test.js';
+import type { ExecaChildProcess } from 'execa';
+import { startProcess } from '../../scripts/lib/process.js';
 
 /**
  * MCP provider interface (no actual provider needed, just for consistency)
@@ -55,10 +57,9 @@ async function callMcpTool(
   params: Record<string, unknown>,
   serverConfig: { command?: string; args?: string[] }
 ): Promise<unknown> {
-  const { spawn, ChildProcess } = await import('child_process');
   const { Readable } = await import('stream');
   
-  let mcpProcess: ChildProcess | null = null;
+  let mcpProcess: ExecaChildProcess<string> | null = null;
   let requestId = 1;
   const timeout = 30000;
   
@@ -94,7 +95,7 @@ async function callMcpTool(
       return expanded;
     });
     
-    mcpProcess = spawn(command, commandArgs, {
+    mcpProcess = startProcess(command, commandArgs, {
       stdio: ['pipe', 'pipe', 'pipe'],
       env: { ...process.env }
     });

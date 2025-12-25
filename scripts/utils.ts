@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
-import { execSync, spawnSync } from 'child_process';
 import readline from 'readline';
 import type { Readline } from 'readline';
+import { execShellSync } from './lib/process.js';
 
 // ANSI color codes
 export const colors = {
@@ -84,18 +84,26 @@ export function executeCommand(
       };
     }
 
-    const output = execSync(command, options);
+    const { ok, stdout, stderr } = execShellSync(command, {
+      ...options,
+      // Keep execSync-like semantics for these helpers.
+      // execa uses `shell: true` by default in execShellSync().
+      shell: options.shell ?? true
+    });
+    if (!ok) {
+      return { success: false, output: stdout, error: stderr || 'Command failed' };
+    }
     return {
       success: true,
-      output: typeof output === 'string' ? output.trim() : output.toString().trim(),
+      output: stdout,
       error: null
     };
   } catch (error: unknown) {
-    const err = error as { stdout?: Buffer | string; stderr?: Buffer | string; message?: string };
+    const err = error as { message?: string };
     return {
       success: false,
-      output: err.stdout ? err.stdout.toString().trim() : '',
-      error: err.stderr ? err.stderr.toString().trim() : err.message || 'Unknown error'
+      output: '',
+      error: err.message || 'Unknown error'
     };
   }
 }
@@ -162,15 +170,12 @@ export function requiresSudo(command: string): boolean {
  */
 export function executeInteractiveCommand(command: string): ExecuteInteractiveCommandResult {
   try {
-    const result = spawnSync(command, {
-      shell: true,
-      stdio: 'inherit'
-    });
+    const { ok, exitCode } = execShellSync(command, { stdio: 'inherit' });
 
     return {
-      success: result.status === 0,
+      success: ok,
       output: null, // Cannot capture output with stdio: 'inherit'
-      error: result.status !== 0 ? `Exit code: ${result.status}` : null
+      error: ok ? null : `Exit code: ${exitCode}`
     };
   } catch (error: unknown) {
     const err = error as { message?: string };

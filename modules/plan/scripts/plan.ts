@@ -7,7 +7,7 @@
  * Loads resources, generates plans, tracks execution progress.
  */
 
-import { spawnSync } from 'child_process';
+import { execCmdSync } from '../../../scripts/lib/process.js';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
@@ -114,19 +114,24 @@ function translateTitleToEnglish(title) {
 
   try {
     // Use cursor-agent with cheap model for translation
-    const result = spawnSync(
+    const result = execCmdSync(
       'cursor-agent',
-      ['-p', '--force', `Translate this Russian task title to a short English phrase (max 5 words, no quotes): "${title}"`, '--model', 'composer-1'],
+      [
+        '-p',
+        '--force',
+        `Translate this Russian task title to a short English phrase (max 5 words, no quotes): "${title}"`,
+        '--model',
+        'composer-1'
+      ],
       {
         env: { ...process.env, CURSOR_API_KEY: apiKey },
-        encoding: 'utf8',
         timeout: 10000, // 10s timeout
         stdio: ['pipe', 'pipe', 'pipe']
       }
     );
 
-    if (result.status === 0 && result.stdout) {
-      const translated = result.stdout.trim().split('\n').pop().trim();
+    if (result.ok && result.stdout) {
+      const translated = result.stdout.trim().split('\n').pop()?.trim() || '';
       // Remove quotes if present
       const clean = translated.replace(/^["']|["']$/g, '');
       if (clean && clean.length > 0 && clean.length < 100) {

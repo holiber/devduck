@@ -12,10 +12,10 @@ import path from 'path';
 import https from 'https';
 import http from 'http';
 import { URL } from 'url';
-import { execSync } from 'child_process';
 import { readJSON, writeJSON } from '../lib/config.js';
 import { readEnvFile } from '../lib/env.js';
 import { writeEnvFile } from './env.js';
+import { execShellSync } from '../lib/process.js';
 import {
   expandModuleNames,
   getAllModules,
@@ -182,78 +182,52 @@ async function executeTestCheck(check: ModuleCheck, env: Record<string, string>)
   // Note: this is intentionally allowed for module "test" checks (e.g., verifying CLIs),
   // not just curl/HTTP auth validation.
   const executeShellCommand = (command: string): AuthCheckResult => {
-    try {
-      const output = execSync(command, {
-        encoding: 'utf8',
-        stdio: ['pipe', 'pipe', 'pipe'],
-        shell: '/bin/bash',
-        timeout: 20000
-      });
-      result.passed = true;
-      // Keep output out of result unless needed; callers only care pass/fail.
-      void output;
-      return result;
-    } catch (error) {
-      const err = error as { stdout?: Buffer | string; stderr?: Buffer | string; message?: string; status?: number };
-      result.passed = false;
-      const stderrStr = err.stderr ? err.stderr.toString().trim() : '';
-      const stdoutStr = err.stdout ? err.stdout.toString().trim() : '';
-      result.error = stderrStr || stdoutStr || err.message || 'Command failed';
-      return result;
+    const res = execShellSync(command, {
+      stdio: ['pipe', 'pipe', 'pipe'],
+      shell: '/bin/bash',
+      timeout: 20000
+    });
+    result.passed = res.ok;
+    if (!res.ok) {
+      result.error = res.stderr || res.stdout || 'Command failed';
     }
+    return result;
   };
 
   // Handle curl commands
   if (isCurlCommand(check.test)) {
-    try {
-      // Replace environment variables in curl command
-      const command = replaceEnvVarsInCommand(check.test, env);
-      
-      // Execute curl command
-      const output = execSync(command, { 
-        encoding: 'utf8',
-        stdio: ['pipe', 'pipe', 'pipe'],
-        timeout: 10000
-      });
-      
-      // Check if curl returned HTTP status code (if using -w '%{http_code}')
-      const statusCode = output.trim();
-      if (/^\d{3}$/.test(statusCode)) {
-        // Status code returned, check if it's 2xx
-        const code = parseInt(statusCode, 10);
-        result.passed = code >= 200 && code < 300;
-        if (!result.passed) {
-          result.error = `HTTP ${code}`;
-        }
-      } else {
-        // No status code in output, assume success if curl exited with 0
-        result.passed = true;
+    // Replace environment variables in curl command
+    const command = replaceEnvVarsInCommand(check.test, env);
+
+    // Execute curl command
+    const curlRes = execShellSync(command, {
+      stdio: ['pipe', 'pipe', 'pipe'],
+      timeout: 10000
+    });
+
+    // Check if curl returned HTTP status code (if using -w '%{http_code}')
+    const statusCode = curlRes.stdout;
+    if (/^\d{3}$/.test(statusCode)) {
+      // Status code returned, check if it's 2xx
+      const code = parseInt(statusCode, 10);
+      result.passed = code >= 200 && code < 300;
+      if (!result.passed) {
+        result.error = `HTTP ${code}`;
       }
-      
-      return result;
-    } catch (error) {
-      const err = error as { stdout?: Buffer | string; stderr?: Buffer | string; message?: string; status?: number };
-      result.passed = false;
-      
-      // Try to extract HTTP status code from stdout (curl might return it even on error)
-      let statusCode: number | null = null;
-      if (err.stdout) {
-        const stdoutStr = err.stdout.toString().trim();
-        if (/^\d{3}$/.test(stdoutStr)) {
-          statusCode = parseInt(stdoutStr, 10);
-        }
-      }
-      
-      // Build error message with status code if available
-      if (statusCode !== null) {
-        result.error = `HTTP ${statusCode}`;
-      } else {
-        const errorMsg = err.stderr ? err.stderr.toString().trim() : err.message || 'Command failed';
-        result.error = errorMsg;
-      }
-      
       return result;
     }
+
+    // No status code in output, consider it success if curl exited with 0.
+    result.passed = curlRes.ok;
+    if (!curlRes.ok) {
+      // Try to extract HTTP status code from stdout (curl might return it even on error)
+      if (/^\d{3}$/.test(curlRes.stdout)) {
+        result.error = `HTTP ${parseInt(curlRes.stdout, 10)}`;
+      } else {
+        result.error = curlRes.stderr || curlRes.stdout || 'Command failed';
+      }
+    }
+    return result;
   }
 
   // Handle HTTP requests (GET https://... format)
@@ -536,12 +510,15 @@ export async function runPreInstallChecks(workspaceRoot: string): Promise<PreIns
             if (testCheckObj.install && typeof testCheckObj.install === 'string') {
               try {
                 const installCommand = replaceEnvVarsInCommand(testCheckObj.install, env);
-                const installOutput = execSync(installCommand, {
-                  encoding: 'utf8',
+                const installRes = execShellSync(installCommand, {
                   stdio: ['pipe', 'pipe', 'pipe'],
                   shell: '/bin/bash',
                   timeout: 20000
-                }).trim();
+                });
+                if (!installRes.ok) {
+                  throw new Error(installRes.stderr || installRes.stdout || 'Install command failed');
+                }
+                const installOutput = installRes.stdout;
                 
                 if (installOutput) {
                   // Set the variable in env for this check

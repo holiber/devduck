@@ -11,7 +11,7 @@
 
 import fs from 'fs';
 import path from 'path';
-import { spawnSync } from 'child_process';
+import { execCmdSync } from './process.js';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -310,12 +310,8 @@ export async function resolveRepoPath(repoUrl: string, workspaceRoot: string): P
     if (fs.existsSync(repoPath) && fs.existsSync(path.join(repoPath, '.git'))) {
       // Update existing clone
       print(`  ${symbols.info} Updating existing git repository: ${repoName}`, 'cyan');
-      const pullResult = spawnSync('git', ['pull'], {
-        cwd: repoPath,
-        encoding: 'utf8'
-      });
-
-      if (pullResult.status !== 0) {
+      const pullResult = execCmdSync('git', ['pull'], { cwd: repoPath });
+      if (!pullResult.ok) {
         print(`  ${symbols.warning} Failed to update repository, using existing version`, 'yellow');
       }
 
@@ -326,12 +322,8 @@ export async function resolveRepoPath(repoUrl: string, workspaceRoot: string): P
     print(`  ${symbols.info} Cloning repository: ${parsed.normalized}`, 'cyan');
     fs.mkdirSync(devduckDir, { recursive: true });
 
-    const cloneResult = spawnSync('git', ['clone', parsed.normalized, repoPath], {
-      encoding: 'utf8',
-      stdio: 'inherit'
-    });
-
-    if (cloneResult.status !== 0) {
+    const cloneResult = execCmdSync('git', ['clone', parsed.normalized, repoPath], { stdio: 'inherit' });
+    if (!cloneResult.ok) {
       throw new Error(`Failed to clone repository: ${parsed.normalized}`);
     }
 

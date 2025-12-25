@@ -4,9 +4,9 @@
  * Test runner script that finds all test files and runs them with tsx
  */
 
-import { spawnSync } from 'child_process';
 import { readdirSync, statSync } from 'fs';
 import { join } from 'path';
+import { execCmdSync } from './lib/process.js';
 
 function findTestFiles(dir: string, testFiles: string[] = []): string[] {
   const entries = readdirSync(dir, { withFileTypes: true });
@@ -33,14 +33,10 @@ if (testFiles.length === 0) {
 }
 
 // Run tests with tsx (use npx to ensure tsx is available)
-const result = spawnSync(
-  'npx',
-  ['tsx', '--test', ...testFiles],
-  {
-    stdio: 'inherit',
-    cwd: process.cwd()
-  }
-);
+const result = execCmdSync('npx', ['tsx', '--test', ...testFiles], {
+  stdio: 'inherit',
+  cwd: process.cwd()
+});
 
-process.exit(result.status ?? 1);
+process.exit(result.exitCode);
 

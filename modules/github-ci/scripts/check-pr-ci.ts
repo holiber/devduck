@@ -6,11 +6,11 @@
 
 import path from 'path';
 import fs from 'fs';
-import { spawnSync } from 'child_process';
 import { GitRepo } from '../../git/scripts/git-repo.js';
 import { GitHubCI } from './github-ci.js';
 import { createYargs, installEpipeHandler } from '../../../scripts/lib/cli.js';
 import { findWorkspaceRoot } from '../../../scripts/lib/workspace-root.js';
+import { execCmdSync } from '../../../scripts/lib/process.js';
 
 /**
  * Main function
@@ -60,13 +60,14 @@ export async function main(): Promise<void> {
     const ci = new GitHubCI(repo);
 
     // Get PR info first
-    const ghResult = spawnSync('gh', ['pr', 'view', prNumber.toString(), '--json', 'number,headRefName,headRefOid,url,title'], {
-      cwd: repoPath,
-      encoding: 'utf8'
-    });
+    const ghResult = execCmdSync(
+      'gh',
+      ['pr', 'view', prNumber.toString(), '--json', 'number,headRefName,headRefOid,url,title'],
+      { cwd: repoPath }
+    );
 
-    if (ghResult.status !== 0) {
-      console.error(`Error: Failed to get PR info: ${ghResult.stderr}`);
+    if (!ghResult.ok) {
+      console.error(`Error: Failed to get PR info: ${ghResult.stderr || ghResult.stdout}`);
       process.exit(1);
     }
 
