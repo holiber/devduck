@@ -5,7 +5,8 @@ import type {
   Comment,
   FetchPRInput,
   FetchCheckStatusInput,
-  FetchCommentsInput
+  FetchCommentsInput,
+  FetchReviewInput
 } from '../../schemas/contract.js';
 import { CI_PROVIDER_PROTOCOL_VERSION } from '../../schemas/contract.js';
 
@@ -261,7 +262,7 @@ const provider: CIProvider = {
     version: '0.1.0',
     description: 'Test provider for CI module',
     protocolVersion: CI_PROVIDER_PROTOCOL_VERSION,
-    tools: ['fetchPR', 'fetchCheckStatus', 'fetchComments'],
+    tools: ['fetchPR', 'fetchCheckStatus', 'fetchComments', 'fetchReview'],
     events: { publish: [], subscribe: [] },
     auth: { type: 'none', requiredTokens: [] },
     capabilities: ['pr', 'checks', 'comments']
@@ -332,6 +333,43 @@ const provider: CIProvider = {
 
     const comments = MOCK_COMMENTS[prId] || [];
     return comments;
+  },
+
+  async fetchReview(input: FetchReviewInput): Promise<PRInfo> {
+    // For smogcheck provider, treat review as PR
+    let reviewId: string | number | null = null;
+
+    if (input.reviewUrl) {
+      // Extract review ID from URL like https://a.yandex-team.ru/review/10930804
+      const match = input.reviewUrl.match(/review\/(\d+)/);
+      if (match) {
+        reviewId = Number.parseInt(match[1], 10);
+      }
+    } else if (input.reviewId) {
+      reviewId = typeof input.reviewId === 'string' ? Number.parseInt(input.reviewId, 10) : input.reviewId;
+    }
+
+    if (!reviewId) {
+      throw new Error(`Review not found: ${input.reviewId || input.reviewUrl || 'unknown'}`);
+    }
+
+    // For mock provider, return a mock PR based on review ID
+    const pr = findPRById(reviewId);
+    if (pr) {
+      return pr;
+    }
+
+    // Return a default mock PR for review
+    return {
+      id: `review-${reviewId}`,
+      number: reviewId,
+      title: `Review ${reviewId}`,
+      status: 'open',
+      commentCount: 0,
+      url: input.reviewUrl || `https://a.yandex-team.ru/review/${reviewId}`,
+      createdAt: nowMinusDays(1),
+      updatedAt: nowMinusDays(1)
+    };
   }
 };
 

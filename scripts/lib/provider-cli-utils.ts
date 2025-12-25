@@ -43,7 +43,7 @@ export interface GenerateCommandsFromContractOptions<TProvider, TToolName extend
 /**
  * Extract yargs options from a Zod schema
  */
-function extractYargsOptionsFromSchema(schema: z.ZodObject<any>): {
+export function extractYargsOptionsFromSchema(schema: z.ZodObject<any>): {
   positional?: { name: string; describe: string };
   options: Record<string, { type: string; describe: string; default?: unknown }>;
 } {
@@ -59,6 +59,21 @@ function extractYargsOptionsFromSchema(schema: z.ZodObject<any>): {
       name: 'prIdOrBranch',
       describe: 'PR ID (number) or branch name'
     };
+  }
+
+  // Check if schema has issueId as a required field (positional argument pattern)
+  const hasIssueId = 'issueId' in shape;
+  if (hasIssueId && !positional) {
+    const issueIdField = shape.issueId as z.ZodTypeAny;
+    const issueIdDef = issueIdField._def;
+    const isIssueIdOptional = issueIdDef.typeName === 'ZodOptional' || issueIdDef.typeName === 'ZodDefault';
+    if (!isIssueIdOptional) {
+      // issueId is required and no other positional pattern exists
+      positional = {
+        name: 'issueId',
+        describe: 'Issue ID or key'
+      };
+    }
   }
 
   for (const [key, field] of Object.entries(shape)) {
@@ -111,7 +126,7 @@ function extractYargsOptionsFromSchema(schema: z.ZodObject<any>): {
 /**
  * Build input object from parsed args, handling positional arguments
  */
-function buildInputFromArgs(
+export function buildInputFromArgs(
   args: Record<string, unknown>,
   schema: z.ZodObject<any>,
   positionalName?: string
@@ -119,22 +134,32 @@ function buildInputFromArgs(
   const input: Record<string, unknown> = {};
   const shape = schema.shape;
 
-  // Handle positional argument (prId|branch pattern)
+  // Handle positional argument (prId|branch pattern or issueId)
   if (positionalName && args[positionalName]) {
     const value = String(args[positionalName]);
-    // Check if it's a number (PR ID) or string (branch name)
-    if (value.match(/^\d+$/)) {
-      input.prId = Number.parseInt(value, 10);
-    } else {
-      input.branch = value;
+    if (positionalName === 'prIdOrBranch') {
+      // Check if it's a number (PR ID) or string (branch name)
+      if (value.match(/^\d+$/)) {
+        input.prId = Number.parseInt(value, 10);
+      } else {
+        input.branch = value;
+      }
+    } else if (positionalName === 'issueId') {
+      // Handle issueId as positional
+      input.issueId = value;
     }
   }
 
   // Copy other options
   for (const [key] of Object.entries(shape)) {
-    if (key === 'prId' || key === 'branch') {
-      // Already handled by positional argument
-      continue;
+    if (key === 'prId' || key === 'branch' || key === 'issueId') {
+      // Already handled by positional argument if applicable
+      if (positionalName === 'issueId' && key === 'issueId') {
+        continue;
+      }
+      if (positionalName === 'prIdOrBranch' && (key === 'prId' || key === 'branch')) {
+        continue;
+      }
     }
     if (args[key] !== undefined && args[key] !== null && args[key] !== '') {
       input[key] = args[key];

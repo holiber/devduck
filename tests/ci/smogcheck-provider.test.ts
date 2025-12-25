@@ -4,30 +4,34 @@ import path from 'node:path';
 
 import provider from '../../modules/ci/providers/smogcheck-provider/index.js';
 import {
-  CIProviderSchema,
   PRInfoSchema,
   CheckStatusSchema,
-  CommentSchema
+  CommentSchema,
+  type CIProvider
 } from '../../modules/ci/schemas/contract.js';
 
 import {
   clearProvidersForTests,
   discoverProvidersFromModules,
   getProvider,
-  getProvidersByType,
-  setProviderTypeSchema
+  getProvidersByType
 } from '../../scripts/lib/provider-registry.js';
 
 describe('ci: smogcheck-provider', () => {
-  test('matches CIProvider contract schema', () => {
-    const res = CIProviderSchema.safeParse(provider);
-    assert.ok(res.success, res.success ? '' : res.error.message);
-    assert.strictEqual(provider.manifest.type, 'ci');
-    assert.strictEqual(provider.manifest.name, 'smogcheck-provider');
-    assert.ok(Array.isArray(provider.manifest.tools));
-    assert.ok(provider.manifest.tools.includes('fetchPR'));
-    assert.ok(provider.manifest.tools.includes('fetchCheckStatus'));
-    assert.ok(provider.manifest.tools.includes('fetchComments'));
+  test('matches CIProvider interface', () => {
+    const p = provider as CIProvider;
+    assert.ok(p.name);
+    assert.ok(p.version);
+    assert.ok(p.manifest);
+    assert.strictEqual(p.manifest.type, 'ci');
+    assert.strictEqual(p.manifest.name, 'smogcheck-provider');
+    assert.ok(Array.isArray(p.manifest.tools));
+    assert.ok(p.manifest.tools.includes('fetchPR'));
+    assert.ok(p.manifest.tools.includes('fetchCheckStatus'));
+    assert.ok(p.manifest.tools.includes('fetchComments'));
+    assert.ok(typeof p.fetchPR === 'function');
+    assert.ok(typeof p.fetchCheckStatus === 'function');
+    assert.ok(typeof p.fetchComments === 'function');
   });
 
   test('fetchPR returns PR info that matches PRInfo schema', async () => {
@@ -134,9 +138,7 @@ describe('ci: provider registry discovery', () => {
     clearProvidersForTests();
   });
 
-  test('discovers smogcheck-provider from modules directory and registers it (with schema validation)', async () => {
-    setProviderTypeSchema('ci', CIProviderSchema);
-
+  test('discovers smogcheck-provider from modules directory and registers it', async () => {
     const modulesDir = path.resolve(process.cwd(), 'modules');
     await discoverProvidersFromModules({ modulesDir });
 

@@ -2009,6 +2009,19 @@ async function main(): Promise<void> {
         print(`  ${symbols.warning} Failed to install project scripts: ${err.message}`, 'yellow');
         log(`ERROR: Failed to install project scripts: ${err.message}\n${err.stack}`);
       }
+
+      // Install API script to workspace package.json
+      try {
+        const { installApiScript } = await import('./install/install-project-scripts.js');
+        print(`\n${symbols.info} Installing API script to workspace package.json...`, 'cyan');
+        log(`Installing API script to workspace package.json`);
+        installApiScript(WORKSPACE_ROOT, log);
+        print(`  ${symbols.success} API script installed`, 'green');
+      } catch (error) {
+        const err = error as Error;
+        print(`  ${symbols.warning} Failed to install API script: ${err.message}`, 'yellow');
+        log(`ERROR: Failed to install API script: ${err.message}\n${err.stack}`);
+      }
     }
   }
   

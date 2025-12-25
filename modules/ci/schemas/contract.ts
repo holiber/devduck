@@ -143,10 +143,6 @@ export const CommentSchema = z.object({
 });
 export type Comment = z.infer<typeof CommentSchema>;
 
-// Tool names
-export const CIToolNameSchema = z.enum(['fetchPR', 'fetchCheckStatus', 'fetchComments']);
-export type CIToolName = z.infer<typeof CIToolNameSchema>;
-
 // Tool input schemas
 export const FetchPRInputSchema = z.object({
   prId: z.union([IdSchema, z.number().int().positive()]).optional(),
@@ -174,6 +170,15 @@ export const FetchCommentsInputSchema = z.object({
 });
 export type FetchCommentsInput = z.infer<typeof FetchCommentsInputSchema>;
 
+export const FetchReviewInputSchema = z.object({
+  reviewId: z.union([IdSchema, z.number().int().positive()]).optional(),
+  reviewUrl: z.string().url().optional() // For Arcanum: review URL like https://a.yandex-team.ru/review/10930804
+});
+export type FetchReviewInput = z.infer<typeof FetchReviewInputSchema>;
+
+// Tool names type
+export type CIToolName = 'fetchPR' | 'fetchCheckStatus' | 'fetchComments' | 'fetchReview';
+
 /**
  * Mapping of tool names to their input schemas
  * This is automatically used to generate CLI commands
@@ -181,7 +186,8 @@ export type FetchCommentsInput = z.infer<typeof FetchCommentsInputSchema>;
 export const CIToolInputSchemas: Record<CIToolName, z.ZodObject<any>> = {
   fetchPR: FetchPRInputSchema,
   fetchCheckStatus: FetchCheckStatusInputSchema,
-  fetchComments: FetchCommentsInputSchema
+  fetchComments: FetchCommentsInputSchema,
+  fetchReview: FetchReviewInputSchema
 };
 
 /**
@@ -190,7 +196,8 @@ export const CIToolInputSchemas: Record<CIToolName, z.ZodObject<any>> = {
 export const CIToolDescriptions: Record<CIToolName, string> = {
   fetchPR: 'Fetch PR information',
   fetchCheckStatus: 'Fetch check status with annotations',
-  fetchComments: 'Fetch PR comments and reactions'
+  fetchComments: 'Fetch PR comments and reactions',
+  fetchReview: 'Fetch Arcanum review information by review ID or URL'
 };
 
 // Provider manifest (metadata)
@@ -201,7 +208,7 @@ export const CIProviderManifestSchema = z
     version: z.string().min(1),
     description: z.string().optional(),
     protocolVersion: z.literal(CI_PROVIDER_PROTOCOL_VERSION),
-    tools: z.array(CIToolNameSchema),
+    tools: z.array(z.enum(['fetchPR', 'fetchCheckStatus', 'fetchComments', 'fetchReview'])),
     events: z
       .object({
         publish: z.array(z.string()).default([]),
@@ -221,25 +228,15 @@ export const CIProviderManifestSchema = z
 export type CIProviderManifest = z.infer<typeof CIProviderManifestSchema>;
 
 /**
- * CI provider interface (validated at registration time).
- *
- * Note: Zod cannot fully validate function signatures without executing them.
- * We validate that required methods exist and that metadata matches the contract.
+ * CI provider interface
  */
-export const CIProviderSchema = z.object({
-  name: z.string().min(1),
-  version: z.string().min(1),
-  manifest: CIProviderManifestSchema,
-
-  // CI provider methods
-  fetchPR: z.function(),
-  fetchCheckStatus: z.function(),
-  fetchComments: z.function()
-});
-
-export type CIProvider = z.infer<typeof CIProviderSchema> & {
+export interface CIProvider {
+  name: string;
+  version: string;
+  manifest: CIProviderManifest;
   fetchPR(input: FetchPRInput): Promise<PRInfo>;
   fetchCheckStatus(input: FetchCheckStatusInput): Promise<CheckStatus[]>;
   fetchComments(input: FetchCommentsInput): Promise<Comment[]>;
-};
+  fetchReview(input: FetchReviewInput): Promise<PRInfo>;
+}
 
