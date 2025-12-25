@@ -328,11 +328,11 @@ checks:
         symbols
       });
       
-      assert.strictEqual(exitCode, 1);
-      assert.ok(printMessages.some(msg => msg.includes('Pre-install checks failed')));
+      assert.strictEqual(exitCode, 0);
+      assert.ok(printMessages.some(msg => msg.includes('Pre-install checks require your input')));
       assert.ok(printMessages.some(msg => msg.includes('MISSING_TOKEN')));
       assert.ok(printMessages.some(msg => msg.includes('Missing token description')));
-      assert.ok(logMessages.some(msg => msg.includes('Pre-install checks failed')));
+      assert.ok(logMessages.some(msg => msg.includes('Pre-install checks require user input')));
     } finally {
       process.exit = originalExit;
     }
@@ -394,6 +394,66 @@ checks:
       assert.ok(printMessages.some(msg => msg.includes('Pre-install checks failed')));
       assert.ok(printMessages.some(msg => msg.includes('Failed test checks')));
       assert.ok(logMessages.some(msg => msg.includes('Auth test check failed')));
+    } finally {
+      process.exit = originalExit;
+    }
+  });
+
+  test('validatePreInstallChecks treats token-dependent test failures as non-fatal', () => {
+    const checkResults = {
+      projects: [],
+      modules: [
+        {
+          name: 'ya-core',
+          checks: [
+            {
+              type: 'test',
+              name: 'mcp-proxy-compiled',
+              var: 'ARCADIA_ROOT',
+              passed: false,
+              error: 'Required token ARCADIA_ROOT is not present'
+            }
+          ]
+        }
+      ]
+    };
+    
+    const logMessages: string[] = [];
+    const printMessages: string[] = [];
+    
+    const mockPrint = (msg: string) => {
+      printMessages.push(msg);
+    };
+    
+    const mockLog = (msg: string) => {
+      logMessages.push(msg);
+    };
+    
+    const symbols = {
+      success: '✓',
+      error: '✗',
+      info: 'ℹ'
+    };
+    
+    // Mock process.exit
+    const originalExit = process.exit;
+    let exitCode: number | undefined;
+    process.exit = ((code?: number) => {
+      exitCode = code;
+    }) as typeof process.exit;
+    
+    try {
+      validatePreInstallChecks(checkResults, {
+        print: mockPrint,
+        log: mockLog,
+        symbols
+      });
+      
+      assert.strictEqual(exitCode, 0);
+      assert.ok(printMessages.some(msg => msg.includes('Pre-install checks require your input')));
+      assert.ok(printMessages.some(msg => msg.includes('Token-dependent checks blocked')));
+      assert.ok(printMessages.some(msg => msg.includes('ARCADIA_ROOT')));
+      assert.ok(logMessages.some(msg => msg.includes('Pre-install checks require user input')));
     } finally {
       process.exit = originalExit;
     }
