@@ -12,6 +12,7 @@ import { Readable } from 'stream';
 import { readEnvFile } from '../lib/env.js';
 import path from 'path';
 import { startProcess } from '../lib/process.js';
+import { replaceVariables } from '../lib/config.js';
 
 export interface McpTestResult {
   success: boolean;
@@ -47,11 +48,6 @@ export async function testMcpServer(
   // Load .env file if workspaceRoot is provided
   const envFile = workspaceRoot ? readEnvFile(path.join(workspaceRoot, '.env')) : {};
   
-  // Helper to expand variables (checks process.env first, then .env file)
-  const expandVar = (varName: string): string | undefined => {
-    return process.env[varName] || envFile[varName];
-  };
-  
   let mcpProcess: ExecaChildProcess<string> | null = null;
   let stdoutBuffer = '';
   let stderrBuffer = '';
@@ -59,21 +55,9 @@ export async function testMcpServer(
   
   try {
     // Spawn MCP server process
-    const commandParts = serverConfig.command.split(/\s+/);
-    let command = commandParts[0];
-    
-    // Expand ~ to home directory
-    if (command.startsWith('~/')) {
-      command = command.replace('~/', (process.env.HOME || process.env.USERPROFILE || '~') + '/');
-    }
-    
-    // Expand $VAR and $$VAR$$ in command
-    command = command.replace(/\$\$([A-Za-z_][A-Za-z0-9_]*)\$\$/g, (match, varName) => {
-      return expandVar(varName) || match;
-    });
-    command = command.replace(/\$([A-Za-z_][A-Za-z0-9_]*)/g, (match, varName) => {
-      return expandVar(varName) || match;
-    });
+    const expandedCommandLine = replaceVariables(serverConfig.command, envFile);
+    const commandParts = expandedCommandLine.split(/\s+/).filter(Boolean);
+    const command = commandParts[0] || '';
     
     // Check if command still contains unexpanded variables
     if (command.includes('$')) {
@@ -87,22 +71,10 @@ export async function testMcpServer(
     }
     
     // Expand variables in args
-    const commandArgs = [...commandParts.slice(1), ...(serverConfig.args || [])].map(arg => {
-      let expanded = arg;
-      // Expand ~
-      if (expanded.startsWith('~/')) {
-        expanded = expanded.replace('~/', (process.env.HOME || process.env.USERPROFILE || '~') + '/');
-      }
-      // Expand $$VAR$$
-      expanded = expanded.replace(/\$\$([A-Za-z_][A-Za-z0-9_]*)\$\$/g, (match, varName) => {
-        return expandVar(varName) || match;
-      });
-      // Expand $VAR
-      expanded = expanded.replace(/\$([A-Za-z_][A-Za-z0-9_]*)/g, (match, varName) => {
-        return expandVar(varName) || match;
-      });
-      return expanded;
-    });
+    const commandArgs = [
+      ...commandParts.slice(1),
+      ...(serverConfig.args || []).map((arg) => replaceVariables(arg, envFile))
+    ];
     
     mcpProcess = startProcess(command, commandArgs, {
       stdio: ['pipe', 'pipe', 'pipe'],

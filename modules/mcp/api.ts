@@ -14,6 +14,7 @@ import fs from 'fs';
 import { testMcpServer } from '../../scripts/install/mcp-test.js';
 import type { ExecaChildProcess } from 'execa';
 import { startProcess } from '../../scripts/lib/process.js';
+import { replaceVariables } from '../../scripts/lib/config.js';
 
 /**
  * MCP provider interface (no actual provider needed, just for consistency)
@@ -65,35 +66,14 @@ async function callMcpTool(
   
   try {
     // Spawn MCP server process (similar to testMcpServer)
-    const commandParts = (serverConfig.command || '').split(/\s+/);
-    let command = commandParts[0];
-    
-    // Expand ~ to home directory
-    if (command.startsWith('~/')) {
-      command = command.replace('~/', (process.env.HOME || process.env.USERPROFILE || '~') + '/');
-    }
-    
-    // Expand variables
-    command = command.replace(/\$\$([A-Za-z_][A-Za-z0-9_]*)\$\$/g, (match, varName) => {
-      return process.env[varName] || match;
-    });
-    command = command.replace(/\$([A-Za-z_][A-Za-z0-9_]*)/g, (match, varName) => {
-      return process.env[varName] || match;
-    });
-    
-    const commandArgs = [...commandParts.slice(1), ...(serverConfig.args || [])].map(arg => {
-      let expanded = arg;
-      if (expanded.startsWith('~/')) {
-        expanded = expanded.replace('~/', (process.env.HOME || process.env.USERPROFILE || '~') + '/');
-      }
-      expanded = expanded.replace(/\$\$([A-Za-z_][A-Za-z0-9_]*)\$\$/g, (match, varName) => {
-        return process.env[varName] || match;
-      });
-      expanded = expanded.replace(/\$([A-Za-z_][A-Za-z0-9_]*)/g, (match, varName) => {
-        return process.env[varName] || match;
-      });
-      return expanded;
-    });
+    const expandedCommandLine = replaceVariables(serverConfig.command || '', {});
+    const commandParts = expandedCommandLine.split(/\s+/).filter(Boolean);
+    const command = commandParts[0] || '';
+
+    const commandArgs = [
+      ...commandParts.slice(1),
+      ...(serverConfig.args || []).map((arg) => replaceVariables(arg, {}))
+    ];
     
     mcpProcess = startProcess(command, commandArgs, {
       stdio: ['pipe', 'pipe', 'pipe'],
