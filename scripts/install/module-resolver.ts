@@ -231,7 +231,12 @@ export function resolveDependencies(moduleNames: string[], allModules: Module[])
 
   const moduleMap = new Map<string, Module>();
   for (const module of allModules) {
-    moduleMap.set(module.name, module);
+    // Resolution priority: the *first* occurrence wins.
+    // The caller is expected to pass `allModules` ordered by priority:
+    // 1) workspace modules, 2) project modules, 3) devduck modules.
+    if (!moduleMap.has(module.name)) {
+      moduleMap.set(module.name, module);
+    }
   }
 
   while (toResolve.length > 0) {
