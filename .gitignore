@@ -24,6 +24,7 @@ node_modules/
 
 # Test output files
 tests/installer/output/
+test-results/
 
 # Projects (workspace-specific, not part of devduck repo)
 projects/

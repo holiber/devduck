@@ -114,9 +114,11 @@ export class ProcessManager {
     child.stderr?.pipe(err);
     child.unref();
 
+    const pgid = this.getProcessGroupId(child.pid) ?? child.pid;
     const record: ProcessRecord = {
       name: spec.name,
       pid: child.pid,
+      pgid,
       startedAt: new Date().toISOString(),
       command: spec.command,
       args: spec.args ?? [],
@@ -142,7 +144,7 @@ export class ProcessManager {
     const pid = record.pid;
     const descendants = this.listDescendantPids(pid);
     if (isPidAlive(pid)) {
-      const pgid = this.getProcessGroupId(pid) ?? pid;
+      const pgid = record.pgid ?? this.getProcessGroupId(pid) ?? pid;
       try {
         // Kill the whole process group (requires detached spawn).
         process.kill(-pgid, 'SIGTERM');

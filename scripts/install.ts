@@ -1585,6 +1585,8 @@ function isSafeRelativePath(p: string): boolean {
 
 function copyPathRecursiveSync(srcPath: string, destPath: string): void {
   const st = fs.lstatSync(srcPath);
+  // Skip special files (sockets/FIFOs) which cannot be copied.
+  if (st.isSocket?.() || st.isFIFO?.()) return;
   if (st.isSymbolicLink()) {
     const link = fs.readlinkSync(srcPath);
     fs.mkdirSync(path.dirname(destPath), { recursive: true });

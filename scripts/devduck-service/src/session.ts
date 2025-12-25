@@ -14,6 +14,7 @@ export type ProcessSpec = z.infer<typeof ProcessSpecSchema>;
 export const ProcessRecordSchema = z.object({
   name: z.string().min(1),
   pid: z.number().int().positive(),
+  pgid: z.number().int().positive().optional(),
   startedAt: z.string().min(1),
   command: z.string().min(1),
   args: z.array(z.string()),

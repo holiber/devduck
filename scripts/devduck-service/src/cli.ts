@@ -4,6 +4,7 @@ import { spawn } from 'child_process';
 import net from 'net';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import fs from 'fs';
 import { getDevduckServicePaths } from './paths.js';
 import { createDevduckServiceClient } from './ipc/ipc-client.js';
 
@@ -26,13 +27,20 @@ async function ensureServiceRunning(socketPath: string): Promise<void> {
   if (await canConnect(socketPath)) return;
 
   // Start service in the background.
+  const paths = getDevduckServicePaths(process.cwd());
+  fs.mkdirSync(paths.logsDir, { recursive: true });
+  const outFd = fs.openSync(path.join(paths.logsDir, 'service.out.log'), 'a');
+  const errFd = fs.openSync(path.join(paths.logsDir, 'service.err.log'), 'a');
+
   const serviceEntry = path.join(path.dirname(fileURLToPath(import.meta.url)), 'service.ts');
   const child = spawn('npx', ['tsx', serviceEntry], {
     detached: true,
-    stdio: 'ignore',
+    stdio: ['ignore', outFd, errFd],
     env: { ...process.env }
   });
   child.unref();
+  fs.closeSync(outFd);
+  fs.closeSync(errFd);
 
   const started = Date.now();
   while (Date.now() - started < 5_000) {
