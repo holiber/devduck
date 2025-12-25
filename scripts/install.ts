@@ -1760,13 +1760,50 @@ async function installWorkspace(): Promise<void> {
   });
   
   // Load module checks early (before generating mcp.json) to include their mcpSettings
+  // This includes both local modules and modules from external repositories
   let moduleChecks: Array<{ name?: string; mcpSettings?: Record<string, unknown> }> = [];
   try {
-    const { getAllModules, resolveModules } = await import('./install/module-resolver.js');
+    const { getAllModules, resolveModules, loadModuleFromPath } = await import('./install/module-resolver.js');
+    const { loadModulesFromRepo, getDevduckVersion } = await import('./lib/repo-modules.js');
+    
+    // Load local modules
     const allModules = getAllModules();
     const resolvedModules = resolveModules(config as WorkspaceConfig, allModules);
     moduleChecks = resolvedModules.flatMap(module => module.checks || []);
-    log(`Loaded ${moduleChecks.length} checks from ${resolvedModules.length} modules for MCP generation`);
+    log(`Loaded ${moduleChecks.length} checks from ${resolvedModules.length} local modules for MCP generation`);
+    
+    // Also load modules from external repositories
+    if (config.repos && config.repos.length > 0) {
+      const devduckVersion = getDevduckVersion();
+      for (const repoUrl of config.repos) {
+        try {
+          log(`Loading modules from ${repoUrl} for MCP generation...`);
+          const repoModulesPath = await loadModulesFromRepo(repoUrl, WORKSPACE_ROOT, devduckVersion);
+          
+          if (fs.existsSync(repoModulesPath)) {
+            const repoModuleEntries = fs.readdirSync(repoModulesPath, { withFileTypes: true });
+            
+            for (const entry of repoModuleEntries) {
+              if (entry.isDirectory()) {
+                const modulePath = path.join(repoModulesPath, entry.name);
+                const module = loadModuleFromPath(modulePath, entry.name);
+                
+                if (module && module.checks) {
+                  moduleChecks.push(...module.checks);
+                  log(`Loaded ${module.checks.length} checks from external module ${module.name}`);
+                }
+              }
+            }
+          }
+        } catch (error) {
+          const err = error as Error;
+          log(`Warning: Failed to load modules from ${repoUrl} for MCP generation: ${err.message}`);
+          // Continue with other repos
+        }
+      }
+    }
+    
+    log(`Total: Loaded ${moduleChecks.length} checks from all modules for MCP generation`);
   } catch (error) {
     const err = error as Error;
     log(`Warning: Failed to load module checks for MCP generation: ${err.message}`);
