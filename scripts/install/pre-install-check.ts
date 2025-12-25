@@ -16,6 +16,7 @@ import { execSync } from 'child_process';
 import { readJSON, writeJSON } from '../lib/config.js';
 import { readEnvFile } from '../lib/env.js';
 import { writeEnvFile } from './env.js';
+import { findWorkspaceRoot } from '../lib/workspace-root.js';
 import {
   expandModuleNames,
   getAllModules,
@@ -24,6 +25,8 @@ import {
   type Module,
   type ModuleCheck
 } from './module-resolver.js';
+import { processCheck } from './process-check.js';
+import type { CheckItem, CheckResult } from './types.js';
 
 interface AuthCheckResult {
   type: string;
@@ -48,9 +51,11 @@ interface ProjectCheckResult {
 interface ModuleCheckResult {
   name: string;
   checks: AuthCheckResult[];
+  modulePath?: string;
 }
 
 interface PreInstallCheckResult {
+  arcadiaRoot?: string;
   projects: ProjectCheckResult[];
   modules: ModuleCheckResult[];
 }
@@ -165,54 +170,146 @@ function replaceEnvVarsInCommand(command: string, env: Record<string, string>): 
 }
 
 /**
- * Execute test check (HTTP request or curl command)
+ * Resolve tsx command with module-relative path
+ * Handles commands like "tsx scripts/install-proxy-client.ts" by resolving relative to module path
  */
-async function executeTestCheck(check: ModuleCheck, env: Record<string, string>): Promise<AuthCheckResult> {
-  const result: AuthCheckResult = {
-    type: check.type,
-    name: check.name,
-    description: check.description,
-    test: check.test
-  };
-
-  if (!check.test) {
-    result.passed = false;
-    result.error = 'No test specified';
-    return result;
+function resolveTsxCommand(command: string, modulePath?: string): string {
+  const trimmed = command.trim();
+  
+  // Check if command starts with "tsx " or "npx tsx "
+  if (trimmed.startsWith('tsx ')) {
+    const scriptPath = trimmed.substring(4).trim();
+    
+    // If it's an absolute path, use as-is
+    if (path.isAbsolute(scriptPath)) {
+      return `npx tsx ${scriptPath}`;
+    }
+    
+    // If module path is provided, resolve relative to module
+    if (modulePath) {
+      const resolvedPath = path.resolve(modulePath, scriptPath);
+      if (fs.existsSync(resolvedPath)) {
+        return `npx tsx ${resolvedPath}`;
+      }
+    }
+    
+    // Fallback: try to find the script in workspace
+    const workspaceRoot = findWorkspaceRoot(process.cwd());
+    if (workspaceRoot) {
+      // Search in common module locations
+      const searchPaths = [
+        path.join(workspaceRoot, 'modules'),
+        path.join(workspaceRoot, 'devduck'),
+        path.join(workspaceRoot, 'projects')
+      ];
+      
+      for (const searchPath of searchPaths) {
+        if (fs.existsSync(searchPath)) {
+          const found = findScriptInDirectory(searchPath, scriptPath);
+          if (found) {
+            return `npx tsx ${found}`;
+          }
+        }
+      }
+    }
+    
+    // If not found, return as-is (will fail with clear error)
+    return `npx tsx ${scriptPath}`;
   }
+  
+  // Not a tsx command, return as-is
+  return command;
+}
 
-  // Handle generic shell commands (sh -c '...' etc.)
-  // Note: this is intentionally allowed for module "test" checks (e.g., verifying CLIs),
-  // not just curl/HTTP auth validation.
-  const executeShellCommand = (command: string): AuthCheckResult => {
+/**
+ * Recursively find script in directory
+ */
+function findScriptInDirectory(dir: string, scriptName: string): string | null {
+  try {
+    const entries = fs.readdirSync(dir, { withFileTypes: true });
+    
+    for (const entry of entries) {
+      const fullPath = path.join(dir, entry.name);
+      
+      if (entry.isFile() && entry.name === scriptName) {
+        return fullPath;
+      }
+      
+      if (entry.isDirectory() && !entry.name.startsWith('.') && entry.name !== 'node_modules') {
+        const found = findScriptInDirectory(fullPath, scriptName);
+        if (found) {
+          return found;
+        }
+      }
+    }
+  } catch {
+    // Ignore errors
+  }
+  
+  return null;
+}
+
+/**
+ * Wrapper for checkCommand that handles special cases (api commands, curl commands)
+ */
+async function checkCommandWrapper(item: CheckItem, _context: string | null = null, _skipInstall = false): Promise<CheckResult> {
+  const { name, test } = item;
+  
+  if (!test) {
+    return {
+      name: name,
+      passed: false,
+      error: 'No test specified'
+    };
+  }
+  
+  // Handle API calls (commands starting with "api ")
+  if (test.trim().startsWith('api ')) {
     try {
+      const apiCommand = test.trim().substring(4); // Remove "api " prefix
+      const command = `npm run call -- ${apiCommand}`;
+      
       const output = execSync(command, {
         encoding: 'utf8',
         stdio: ['pipe', 'pipe', 'pipe'],
         shell: '/bin/bash',
-        timeout: 20000
+        timeout: 30000,
+        cwd: findWorkspaceRoot(process.cwd()) || process.cwd()
       });
-      result.passed = true;
-      // Keep output out of result unless needed; callers only care pass/fail.
-      void output;
-      return result;
+      
+      const resultValue = output.trim().split('\n').pop()?.trim() || '';
+      
+      if (resultValue === 'true') {
+        return {
+          name: name,
+          passed: true
+        };
+      } else {
+        return {
+          name: name,
+          passed: false,
+          error: `api ${apiCommand} returned ${resultValue}`
+        };
+      }
     } catch (error) {
-      const err = error as { stdout?: Buffer | string; stderr?: Buffer | string; message?: string; status?: number };
-      result.passed = false;
+      const err = error as { stdout?: Buffer | string; stderr?: Buffer | string; message?: string };
       const stderrStr = err.stderr ? err.stderr.toString().trim() : '';
       const stdoutStr = err.stdout ? err.stdout.toString().trim() : '';
-      result.error = stderrStr || stdoutStr || err.message || 'Command failed';
-      return result;
+      const apiCommand = test.trim().substring(4);
+      return {
+        name: name,
+        passed: false,
+        error: stderrStr || stdoutStr || err.message || `api ${apiCommand} failed`
+      };
     }
-  };
-
+  }
+  
   // Handle curl commands
-  if (isCurlCommand(check.test)) {
+  if (isCurlCommand(test)) {
     try {
-      // Replace environment variables in curl command
-      const command = replaceEnvVarsInCommand(check.test, env);
+      const env = readEnvFile(path.join(findWorkspaceRoot(process.cwd()) || process.cwd(), '.env'));
+      const command = replaceEnvVarsInCommand(test, env);
       
-      // Execute curl command
       const output = execSync(command, { 
         encoding: 'utf8',
         stdio: ['pipe', 'pipe', 'pipe'],
@@ -225,19 +322,21 @@ async function executeTestCheck(check: ModuleCheck, env: Record<string, string>)
         // Status code returned, check if it's 2xx
         const code = parseInt(statusCode, 10);
         // Treat 429 as "valid but rate-limited" for cheap auth probes.
-        result.passed = (code >= 200 && code < 300) || code === 429;
-        if (!result.passed) {
-          result.error = `HTTP ${code}`;
-        }
+        const passed = (code >= 200 && code < 300) || code === 429;
+        return {
+          name: name,
+          passed: passed,
+          error: passed ? undefined : `HTTP ${code}`
+        };
       } else {
         // No status code in output, assume success if curl exited with 0
-        result.passed = true;
+        return {
+          name: name,
+          passed: true
+        };
       }
-      
-      return result;
     } catch (error) {
       const err = error as { stdout?: Buffer | string; stderr?: Buffer | string; message?: string; status?: number };
-      result.passed = false;
       
       // Try to extract HTTP status code from stdout (curl might return it even on error)
       let statusCode: number | null = null;
@@ -249,34 +348,72 @@ async function executeTestCheck(check: ModuleCheck, env: Record<string, string>)
       }
       
       // Build error message with status code if available
-      if (statusCode !== null) {
-        result.error = `HTTP ${statusCode}`;
-      } else {
-        const errorMsg = err.stderr ? err.stderr.toString().trim() : err.message || 'Command failed';
-        result.error = errorMsg;
-      }
+      const errorMsg = statusCode !== null 
+        ? `HTTP ${statusCode}`
+        : (err.stderr ? err.stderr.toString().trim() : err.message || 'Command failed');
       
-      return result;
+      return {
+        name: name,
+        passed: false,
+        error: errorMsg
+      };
     }
   }
-
-  // Handle HTTP requests (GET https://... format)
-  if (!isHttpRequest(check.test)) {
-    // Not HTTP or curl: treat as a shell command.
-    const command = replaceEnvVarsInCommand(check.test, env);
-    return executeShellCommand(command);
+  
+  // For other commands, use a simple shell execution
+  try {
+    const env = readEnvFile(path.join(findWorkspaceRoot(process.cwd()) || process.cwd(), '.env'));
+    const command = replaceEnvVarsInCommand(test, env);
+    
+    execSync(command, {
+      encoding: 'utf8',
+      stdio: ['pipe', 'pipe', 'pipe'],
+      shell: '/bin/bash',
+      timeout: 20000
+    });
+    
+    return {
+      name: name,
+      passed: true
+    };
+  } catch (error) {
+    const err = error as { stdout?: Buffer | string; stderr?: Buffer | string; message?: string; status?: number };
+    const stderrStr = err.stderr ? err.stderr.toString().trim() : '';
+    const stdoutStr = err.stdout ? err.stdout.toString().trim() : '';
+    return {
+      name: name,
+      passed: false,
+      error: stderrStr || stdoutStr || err.message || 'Command failed'
+    };
   }
+}
 
+/**
+ * Wrapper for checkHttpAccess that handles auth headers
+ */
+async function checkHttpAccessWrapper(item: CheckItem, _context: string | null = null): Promise<CheckResult> {
+  const { name, test } = item;
+  
+  if (!test) {
+    return {
+      name: name,
+      passed: false,
+      error: 'No test specified'
+    };
+  }
+  
   try {
     // Parse "GET https://..." format
-    const parts = check.test.trim().split(/\s+/);
+    const parts = test.trim().split(/\s+/);
     const method = parts[0] || 'GET';
     const url = parts.slice(1).join(' ');
     
     if (!url) {
-      result.passed = false;
-      result.error = 'Invalid test format: missing URL';
-      return result;
+      return {
+        name: name,
+        passed: false,
+        error: 'Invalid test format: missing URL'
+      };
     }
 
     // Build headers
@@ -285,8 +422,10 @@ async function executeTestCheck(check: ModuleCheck, env: Record<string, string>)
     };
 
     // Check if check has var property and we need to add auth header
-    if (check.var) {
-      const token = process.env[check.var] || env[check.var];
+    const env = readEnvFile(path.join(findWorkspaceRoot(process.cwd()) || process.cwd(), '.env'));
+    const checkVar = (item as { var?: string }).var;
+    if (checkVar) {
+      const token = process.env[checkVar] || env[checkVar];
       if (token) {
         // Use Bearer token for non-GitHub APIs
         headers['Authorization'] = `Bearer ${token}`;
@@ -295,18 +434,29 @@ async function executeTestCheck(check: ModuleCheck, env: Record<string, string>)
 
     const httpResult = await makeHttpRequest(method, url, headers);
     
-    result.passed = httpResult.success;
-    if (!httpResult.success) {
-      result.error = httpResult.error || `HTTP ${httpResult.statusCode}`;
-    }
-
-    return result;
+    return {
+      name: name,
+      passed: httpResult.success,
+      statusCode: httpResult.statusCode ?? undefined,
+      error: httpResult.success ? undefined : (httpResult.error || (httpResult.statusCode ? `HTTP ${httpResult.statusCode}` : 'Request failed'))
+    };
   } catch (error) {
     const err = error as Error;
-    result.passed = false;
-    result.error = err.message;
-    return result;
+    return {
+      name: name,
+      passed: false,
+      error: err.message
+    };
   }
+}
+
+/**
+ * Wrapper for replaceVariablesInObject
+ */
+function replaceVariablesInObjectWrapper(obj: unknown, _env: Record<string, string>): unknown {
+  // Simple implementation - just return the object as-is since variables are already replaced
+  // in the calling code
+  return obj;
 }
 
 /**
@@ -366,38 +516,62 @@ async function collectModuleChecks(
   const localModules = getAllModules();
   
   // Load external modules from repos
+  // Optimize: Try to reuse already-loaded repos from main install script
+  // by checking if the repo path already exists before calling expensive operations
   const externalModules: Module[] = [];
   if (config.repos && Array.isArray(config.repos)) {
-    const { loadModulesFromRepo, getDevduckVersion, checkRepoVersion } = await import('../lib/repo-modules.js');
+    const { loadModulesFromRepo, parseRepoUrl, getDevduckVersion } = await import('../lib/repo-modules.js');
     const devduckVersion = getDevduckVersion();
     
     for (const repoUrl of config.repos) {
       try {
-        const repoModulesPath = await loadModulesFromRepo(repoUrl, workspaceRoot, devduckVersion);
+        // Fast path: Check if repo is already loaded in devduck/ directory
+        // This avoids expensive resolveRepoPath and loadModulesFromRepo calls
+        const parsed = parseRepoUrl(repoUrl);
+        let repoName: string;
+        if (parsed.type === 'arc') {
+          repoName = path.basename(parsed.normalized);
+        } else {
+          repoName = parsed.normalized
+            .replace(/^git@/, '')
+            .replace(/\.git$/, '')
+            .replace(/[:\/]/g, '_');
+        }
+        
+        const devduckRepoPath = path.join(workspaceRoot, 'devduck', repoName);
+        const repoModulesPath = path.join(devduckRepoPath, 'modules');
+        
+        // If modules directory already exists, skip expensive operations
         if (fs.existsSync(repoModulesPath)) {
+          // Repo already loaded, just use it directly
+          console.log(`  Loading modules [${repoUrl}]...`);
           const repoModuleEntries = fs.readdirSync(repoModulesPath, { withFileTypes: true });
-          let moduleCount = 0;
           for (const entry of repoModuleEntries) {
             if (entry.isDirectory()) {
               const modulePath = path.join(repoModulesPath, entry.name);
               const module = loadModuleFromPath(modulePath, entry.name);
               if (module) {
                 externalModules.push(module);
-                moduleCount++;
               }
             }
           }
-          // Print success message after modules are loaded to avoid appearing "stuck"
-          // Get version info for the message
-          let version = 'unknown';
-          try {
-            const repoPath = repoModulesPath.replace(/\/modules$/, '');
-            const versionCheck = await checkRepoVersion(repoPath, devduckVersion);
-            version = versionCheck.version || 'unknown';
-          } catch {
-            // Version check failed, use default
+          // Don't print success message - main install script already printed it
+        } else {
+          // Repo not loaded yet, need to load it properly
+          console.log(`  Loading modules [${repoUrl}]...`);
+          const loadedModulesPath = await loadModulesFromRepo(repoUrl, workspaceRoot, devduckVersion);
+          if (fs.existsSync(loadedModulesPath)) {
+            const repoModuleEntries = fs.readdirSync(loadedModulesPath, { withFileTypes: true });
+            for (const entry of repoModuleEntries) {
+              if (entry.isDirectory()) {
+                const modulePath = path.join(loadedModulesPath, entry.name);
+                const module = loadModuleFromPath(modulePath, entry.name);
+                if (module) {
+                  externalModules.push(module);
+                }
+              }
+            }
           }
-          console.log(`  ✓ Repository ${repoUrl} loaded (version ${version}, ${moduleCount} module${moduleCount !== 1 ? 's' : ''})`);
         }
       } catch (error) {
         // Skip failed repos
@@ -467,7 +641,8 @@ async function collectModuleChecks(
     if (moduleChecks.length > 0) {
       results.push({
         name: module.name,
-        checks: moduleChecks
+        checks: moduleChecks,
+        modulePath: module.path
       });
     }
   }
@@ -518,16 +693,72 @@ export async function runPreInstallChecks(workspaceRoot: string): Promise<PreIns
       if (check.type === 'auth' && check.var) {
         check.present = checkEnvVar(check.var, env);
         
+        // If auth check variable is missing and has install command, try to run it
+        if (!check.present && check.install && typeof check.install === 'string') {
+          const thingToInstall = check.name || check.description || check.var || 'required component';
+          console.log(`  ℹ Installing ${thingToInstall}...`);
+          try {
+            let installCommand = replaceEnvVarsInCommand(check.install, env);
+            // Resolve tsx commands with module-relative paths
+            installCommand = resolveTsxCommand(installCommand, moduleResult.modulePath);
+            const installOutput = execSync(installCommand, {
+              encoding: 'utf8',
+              stdio: ['pipe', 'pipe', 'pipe'],
+              shell: '/bin/bash',
+              timeout: 60000 // Allow more time for compilation
+            }).trim();
+            
+            if (installOutput && !installOutput.includes('not set') && !installOutput.includes('not found')) {
+              // Set the variable in env for this check
+              env[check.var] = installOutput;
+              // Also set in process.env for the test execution
+              process.env[check.var] = installOutput;
+              
+              // Write to .env file to persist the variable
+              const envPath = path.join(workspaceRoot, '.env');
+              const existingEnv = readEnvFile(envPath);
+              existingEnv[check.var] = installOutput;
+              writeEnvFile(envPath, existingEnv);
+              
+              // Mark as present now
+              check.present = true;
+            }
+          } catch (error) {
+            const err = error as { message?: string; stderr?: Buffer | string };
+            // Don't fail the check if install command fails - it will be reported as missing
+            // Just log the error for debugging
+            check.error = `Install command failed: ${err.message || 'Command failed'}`;
+          }
+        }
+        
         // If auth check has test field, execute it only if token is present
         if (check.test) {
           if (!check.present) {
             // Don't execute test if token is missing - test will be skipped
             // The missing token will be reported separately, no need to set passed/error
           } else {
-            // Execute test check only if token is present
-            const testCheck = await executeTestCheck(check as ModuleCheck, env);
-            check.passed = testCheck.passed;
-            check.error = testCheck.error;
+            // Execute test check only if token is present using processCheck
+            const checkItem: CheckItem = {
+              name: check.name || check.var || 'unknown',
+              description: check.description,
+              test: check.test,
+              var: check.var,
+              type: check.type
+            };
+            const checkResult = await processCheck(
+              'pre-install',
+              moduleResult.name,
+              checkItem,
+              {
+                workspaceRoot: workspaceRoot,
+                checkCommand: checkCommandWrapper,
+                checkHttpAccess: checkHttpAccessWrapper,
+                isHttpRequest: isHttpRequest,
+                replaceVariablesInObjectWithLog: replaceVariablesInObjectWrapper
+              }
+            );
+            check.passed = checkResult.passed === true;
+            check.error = checkResult.error;
           }
         }
       } else if (check.type === 'test') {
@@ -538,6 +769,8 @@ export async function runPreInstallChecks(workspaceRoot: string): Promise<PreIns
           if (!tokenPresent) {
             // If install command is available, try to run it to get the value
             if (testCheckObj.install && typeof testCheckObj.install === 'string') {
+              const thingToInstall = testCheckObj.name || testCheckObj.description || testCheckObj.var || 'required component';
+              console.log(`  ℹ Installing ${thingToInstall}...`);
               try {
                 const installCommand = replaceEnvVarsInCommand(testCheckObj.install, env);
                 const installOutput = execSync(installCommand, {
@@ -559,10 +792,28 @@ export async function runPreInstallChecks(workspaceRoot: string): Promise<PreIns
                   existingEnv[testCheckObj.var] = installOutput;
                   writeEnvFile(envPath, existingEnv);
                   
-                  // Now execute the test check with the variable set
-                  const testCheck = await executeTestCheck(testCheckObj, env);
-                  check.passed = testCheck.passed;
-                  check.error = testCheck.error;
+                  // Now execute the test check with the variable set using processCheck
+                  const checkItem: CheckItem = {
+                    name: testCheckObj.name || 'unknown',
+                    description: testCheckObj.description,
+                    test: testCheckObj.test,
+                    var: testCheckObj.var,
+                    type: testCheckObj.type
+                  };
+                  const checkResult = await processCheck(
+                    'pre-install',
+                    moduleResult.name,
+                    checkItem,
+                    {
+                      workspaceRoot: workspaceRoot,
+                      checkCommand: checkCommandWrapper,
+                      checkHttpAccess: checkHttpAccessWrapper,
+                      isHttpRequest: isHttpRequest,
+                      replaceVariablesInObjectWithLog: replaceVariablesInObjectWrapper
+                    }
+                  );
+                  check.passed = checkResult.passed === true;
+                  check.error = checkResult.error;
                 } else {
                   check.passed = false;
                   check.error = `Required token ${testCheckObj.var} is not present and install command returned empty output`;
@@ -577,22 +828,80 @@ export async function runPreInstallChecks(workspaceRoot: string): Promise<PreIns
               check.error = `Required token ${testCheckObj.var} is not present`;
             }
           } else {
-            // Execute test check
-            const testCheck = await executeTestCheck(testCheckObj, env);
-            check.passed = testCheck.passed;
-            check.error = testCheck.error;
+            // Execute test check using processCheck
+            const checkItem: CheckItem = {
+              name: testCheckObj.name || 'unknown',
+              description: testCheckObj.description,
+              test: testCheckObj.test,
+              var: testCheckObj.var,
+              type: testCheckObj.type
+            };
+            const checkResult = await processCheck(
+              'pre-install',
+              moduleResult.name,
+              checkItem,
+              {
+                workspaceRoot: workspaceRoot,
+                checkCommand: checkCommandWrapper,
+                checkHttpAccess: checkHttpAccessWrapper,
+                isHttpRequest: isHttpRequest,
+                replaceVariablesInObjectWithLog: replaceVariablesInObjectWrapper
+              }
+            );
+            check.passed = checkResult.passed === true;
+            check.error = checkResult.error;
           }
         } else {
-          // Execute test check even without var (for tests that don't require tokens)
-          const testCheck = await executeTestCheck(testCheckObj, env);
-          check.passed = testCheck.passed;
-          check.error = testCheck.error;
+          // Execute test check even without var (for tests that don't require tokens) using processCheck
+          const checkItem: CheckItem = {
+            name: testCheckObj.name || 'unknown',
+            description: testCheckObj.description,
+            test: testCheckObj.test,
+            var: testCheckObj.var,
+            type: testCheckObj.type
+          };
+          const checkResult = await processCheck(
+            'pre-install',
+            moduleResult.name,
+            checkItem,
+            {
+              workspaceRoot: workspaceRoot,
+              checkCommand: checkCommandWrapper,
+              checkHttpAccess: checkHttpAccessWrapper,
+              isHttpRequest: isHttpRequest,
+              replaceVariablesInObjectWithLog: replaceVariablesInObjectWrapper
+            }
+          );
+          check.passed = checkResult.passed === true;
+          check.error = checkResult.error;
         }
       }
     }
   }
   
+  // Get Arcadia root and cache it
+  let arcadiaRoot: string | null = null;
+  try {
+    // First check ARCADIA_ROOT env var
+    const envRoot = process.env.ARCADIA_ROOT;
+    if (envRoot && fs.existsSync(path.join(envRoot, '.arcadia.root'))) {
+      arcadiaRoot = envRoot;
+    } else {
+      // Execute `arc root` command
+      const output = execSync('arc root', { encoding: 'utf8', stdio: 'pipe' });
+      const lines = output.trim().split('\n');
+      const rootPath = lines[lines.length - 1].trim();
+      
+      if (rootPath && fs.existsSync(path.join(rootPath, '.arcadia.root'))) {
+        arcadiaRoot = rootPath;
+      }
+    }
+  } catch (error) {
+    // Command failed or not in Arcadia, arcadiaRoot will remain null
+  }
+  
   const result: PreInstallCheckResult = {
+    ...(arcadiaRoot && { arcadiaRoot }),
     projects: projectResults,
     modules: moduleResults
   };
@@ -817,4 +1126,5 @@ export function validatePreInstallChecks(
   log(`Pre-install checks passed`);
   return 'ok';
 }
+
 

@@ -29,6 +29,13 @@ export interface McpServerResult {
   timeout?: boolean;
 }
 
+export interface McpToolsResult {
+  name: string;
+  tools?: string[];
+  error?: string;
+  statusCode?: number | null;
+}
+
 interface HttpRequestResult {
   success: boolean;
   statusCode: number | null;
@@ -474,7 +481,7 @@ export function generateMcpJson(
       continue;
     }
 
-    // Replace $$VARS$$ in mcpSettings
+    // Replace $VARS in mcpSettings
     mcpServers[serverName] = replaceVariablesInObject(item.mcpSettings, env, log, print, symbols) as Record<string, unknown>;
   }
 

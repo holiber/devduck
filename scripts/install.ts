@@ -629,21 +629,9 @@ async function checkCommand(item: CheckItem, context: string | null = null, skip
         command = `source ~/.nvm/nvm.sh && ${testWithVars}`;
       }
       
-      // Handle API calls (commands starting with "api ")
-      let apiCommandHandled = false;
-      if (command.trim().startsWith('api ')) {
-        const apiCommand = command.trim().substring(4); // Remove "api " prefix
-        command = `npm run call -- ${apiCommand}`;
-        apiCommandHandled = true;
-      }
-      
       // For project checks, run command from projects/<projectName> if it exists
-      // For API commands, always run from workspace root
-      const execOptions: { cwd?: string } = {};
-      if (apiCommandHandled) {
-        // API commands should run from workspace root
-        execOptions.cwd = WORKSPACE_ROOT || process.cwd();
-      } else if (context) {
+      const execOptions = {};
+      if (context) {
         const projectCwd = path.join(PROJECTS_DIR, context);
         try {
           if (fs.existsSync(projectCwd) && fs.statSync(projectCwd).isDirectory()) {
@@ -658,14 +646,7 @@ async function checkCommand(item: CheckItem, context: string | null = null, skip
       const isSudo = requiresSudo(command);
       const result = isSudo ? executeInteractiveCommand(command) : executeCommand(command, execOptions);
       
-      // For API commands, check if output is "true" to determine success
-      let commandSuccess = result.success;
-      if (apiCommandHandled && result.success) {
-        const resultValue = result.output?.trim().split('\n').pop()?.trim() || '';
-        commandSuccess = resultValue === 'true';
-      }
-      
-      if (commandSuccess) {
+      if (result.success) {
         // For test-type checks or auth checks with test commands that produce no output,
         // show "OK" instead of "unknown" to indicate the check passed
         const isTestCheck = item.type === 'test' || (item.type === 'auth' && item.test);
@@ -686,10 +667,7 @@ async function checkCommand(item: CheckItem, context: string | null = null, skip
         const isAuth = item.type === 'auth' && itemVar;
         // If this is an auth check using API command, show return value for clarity
         let errorLabel: string;
-        if (apiCommandHandled && itemVar) {
-          const returnValue = result.output?.trim().split('\n').pop()?.trim() || result.error || 'failed';
-          errorLabel = `the ${itemVar} exist but "${testWithVars}" returned ${returnValue}`;
-        } else if (item.type === 'auth' && itemVar && testWithVars && testWithVars.trim().startsWith('api ')) {
+        if (item.type === 'auth' && itemVar && testWithVars && testWithVars.trim().startsWith('api ')) {
           const returnValue = result.output || result.error || 'failed';
           errorLabel = `the ${itemVar} exist but "${testWithVars}" returned ${returnValue}`;
         } else if (item.type === 'auth' && itemVar) {

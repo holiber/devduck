@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.25.1",
+    "compare-versions": "^6.1.1",
     "dotenv": "^16.4.7",
     "ink": "^5.1.0",
     "ink-text-input": "^6.0.0",

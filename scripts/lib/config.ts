@@ -29,7 +29,7 @@ export function writeJSON(filePath: string, data: unknown): void {
 }
 
 /**
- * Replace variables in string using $$VARNAME$$ and $VARNAME syntax
+ * Replace variables in string using $VARNAME syntax
  * Variables are resolved from process.env first, then from env parameter
  * @param str - String with variables to replace
  * @param env - Environment variables from .env file
@@ -48,30 +48,24 @@ export function replaceVariables(
     return str;
   }
   
-  // Replace $$VAR$$ format
-  let result = str.replace(/\$\$([A-Za-z_][A-Za-z0-9_]*)\$\$/g, (match, varName) => {
+  // Replace $VAR format
+  let result = str.replace(/\$([A-Za-z_][A-Za-z0-9_]*)/g, (match, varName, offset) => {
     // First check environment variables, then .env file
     const value = process.env[varName] || env[varName];
     if (value !== undefined) {
       return value;
     }
-    // If not found, return original match with warning
-    if (print && symbols && log) {
-      print(`  ${symbols.warning} Variable ${match} not found, keeping as is`, 'yellow');
-      log(`Warning: Variable ${match} not found in environment or .env file`);
-    }
-    return match;
-  });
-  
-  // Replace $VAR format (after $$VAR$$ to avoid conflicts)
-  result = result.replace(/\$([A-Za-z_][A-Za-z0-9_]*)/g, (match, varName) => {
-    // First check environment variables, then .env file
-    const value = process.env[varName] || env[varName];
-    if (value !== undefined) {
-      return value;
-    }
-    // If not found, return original match with warning
-    if (print && symbols && log) {
+    
+    // Check if this variable is being assigned in the same command string
+    // (e.g., VARNAME="value"; later $VARNAME is used - the $VARNAME is meant to be set by the script)
+    // Look backwards to see if there's an assignment like "VARNAME=" before this occurrence
+    const beforeMatch = str.substring(0, offset);
+    // Check if VARNAME= appears before this $VARNAME (could be VARNAME="..." or VARNAME=$OTHER)
+    const assignmentPattern = new RegExp(`${varName}\\s*=\\s*`, 's');
+    const isInAssignment = assignmentPattern.test(beforeMatch);
+    
+    // If not found and not in assignment, return original match with warning
+    if (!isInAssignment && print && symbols && log) {
       print(`  ${symbols.warning} Variable ${match} not found, keeping as is`, 'yellow');
       log(`Warning: Variable ${match} not found in environment or .env file`);
     }

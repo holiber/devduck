@@ -66,10 +66,7 @@ export async function testMcpServer(
       command = command.replace('~/', (process.env.HOME || process.env.USERPROFILE || '~') + '/');
     }
     
-    // Expand $VAR and $$VAR$$ in command
-    command = command.replace(/\$\$([A-Za-z_][A-Za-z0-9_]*)\$\$/g, (match, varName) => {
-      return expandVar(varName) || match;
-    });
+    // Expand $VAR in command
     command = command.replace(/\$([A-Za-z_][A-Za-z0-9_]*)/g, (match, varName) => {
       return expandVar(varName) || match;
     });
@@ -92,10 +89,6 @@ export async function testMcpServer(
       if (expanded.startsWith('~/')) {
         expanded = expanded.replace('~/', (process.env.HOME || process.env.USERPROFILE || '~') + '/');
       }
-      // Expand $$VAR$$
-      expanded = expanded.replace(/\$\$([A-Za-z_][A-Za-z0-9_]*)\$\$/g, (match, varName) => {
-        return expandVar(varName) || match;
-      });
       // Expand $VAR
       expanded = expanded.replace(/\$([A-Za-z_][A-Za-z0-9_]*)/g, (match, varName) => {
         return expandVar(varName) || match;

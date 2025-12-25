@@ -229,7 +229,7 @@ workspace/
 
 #### Variable expansion in config
 
-Some string fields support variable expansion using the `$$VARNAME$$` syntax (resolved from `process.env` first, then the workspace `.env`). This is used for check commands and MCP settings.
+Some string fields support variable expansion using the `$VARNAME` syntax (resolved from `process.env` first, then the workspace `.env`). This is used for check commands and MCP settings.
 
 #### `projects[]`
 

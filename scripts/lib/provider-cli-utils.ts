@@ -44,52 +44,98 @@ export interface GenerateCommandsFromContractOptions<TProvider, TToolName extend
  * Extract yargs options from a Zod schema
  */
 export function extractYargsOptionsFromSchema(schema: z.ZodObject<any>): {
-  positional?: { name: string; describe: string };
+  positionals: Array<{ name: string; describe: string; optional?: boolean }>;
   options: Record<string, { type: string; describe: string; default?: unknown }>;
 } {
   const shape = schema.shape;
   const options: Record<string, { type: string; describe: string; default?: unknown }> = {};
-  let positional: { name: string; describe: string } | undefined;
+  const positionals: Array<{ name: string; describe: string; optional?: boolean }> = [];
 
-  // Check if schema has prId and branch fields (positional argument pattern)
-  const hasPrId = 'prId' in shape;
-  const hasBranch = 'branch' in shape;
-  if (hasPrId && hasBranch) {
-    positional = {
-      name: 'prIdOrBranch',
-      describe: 'PR ID (number) or branch name'
-    };
-  }
-
-  // Check if schema has issueId as a required field (positional argument pattern)
-  const hasIssueId = 'issueId' in shape;
-  if (hasIssueId && !positional) {
-    const issueIdField = shape.issueId as z.ZodTypeAny;
-    const issueIdDef = issueIdField._def;
-    const isIssueIdOptional = issueIdDef.typeName === 'ZodOptional' || issueIdDef.typeName === 'ZodDefault';
-    if (!isIssueIdOptional) {
-      // issueId is required and no other positional pattern exists
-      positional = {
-        name: 'issueId',
-        describe: 'Issue ID or key'
-      };
-    }
-  }
+  // Collect all required and optional fields
+  const requiredFields: Array<{ name: string; field: z.ZodTypeAny }> = [];
+  const optionalFields: Array<{ name: string; field: z.ZodTypeAny }> = [];
 
   for (const [key, field] of Object.entries(shape)) {
-    // Skip prId and branch if they're used as positional
-    if ((key === 'prId' || key === 'branch') && positional) {
-      continue;
-    }
-
     const zodField = field as z.ZodTypeAny;
     const def = zodField._def;
 
     // Check if field is optional or has default
     const isOptional = def.typeName === 'ZodOptional' || def.typeName === 'ZodDefault';
-    if (!isOptional) {
-      continue; // Skip required fields that aren't positional
+    
+    if (isOptional) {
+      optionalFields.push({ name: key, field: zodField });
+    } else {
+      // Required field - will be positional
+      requiredFields.push({ name: key, field: zodField });
     }
+  }
+
+  // Add all required fields as positionals (in order)
+  for (const { name, field } of requiredFields) {
+    const zodField = field as z.ZodTypeAny;
+    const def = zodField._def;
+    
+    // Determine type for description
+    let typeDesc = 'string';
+    if (def.typeName === 'ZodString') {
+      typeDesc = 'string';
+    } else if (def.typeName === 'ZodNumber') {
+      typeDesc = 'number';
+    } else if (def.typeName === 'ZodBoolean') {
+      typeDesc = 'boolean';
+    }
+    
+    positionals.push({
+      name,
+      describe: `${name} (${typeDesc})`
+    });
+  }
+
+  // If no required fields but exactly one optional field, make it optional positional
+  let skipFirstOptional = false;
+  if (positionals.length === 0 && optionalFields.length === 1) {
+    const { name, field } = optionalFields[0];
+    const zodField = field as z.ZodTypeAny;
+    const def = zodField._def;
+    
+    // Get inner type
+    let innerType = zodField;
+    if (def.typeName === 'ZodOptional') {
+      innerType = def.innerType;
+    } else if (def.typeName === 'ZodDefault') {
+      innerType = def.innerType;
+    }
+    
+    const innerDef = (innerType as z.ZodTypeAny)._def;
+    
+    // Determine type for description
+    let typeDesc = 'string';
+    if (innerDef.typeName === 'ZodString') {
+      typeDesc = 'string';
+    } else if (innerDef.typeName === 'ZodNumber') {
+      typeDesc = 'number';
+    } else if (innerDef.typeName === 'ZodBoolean') {
+      typeDesc = 'boolean';
+    }
+    
+    positionals.push({
+      name,
+      describe: `${name} (${typeDesc})`,
+      optional: true
+    });
+    // Mark to skip this field when processing options
+    skipFirstOptional = true;
+  }
+
+  // Process optional fields as options
+  for (let i = 0; i < optionalFields.length; i++) {
+    // Skip the first optional field if it was made positional
+    if (skipFirstOptional && i === 0) {
+      continue;
+    }
+    const { name, field } = optionalFields[i];
+    const zodField = field as z.ZodTypeAny;
+    const def = zodField._def;
 
     // Get inner type
     let innerType = zodField;
@@ -114,13 +160,20 @@ export function extractYargsOptionsFromSchema(schema: z.ZodObject<any>): {
       type = 'string';
     }
 
-    options[key] = {
+    // Check for default value
+    let defaultValue: unknown = undefined;
+    if (def.typeName === 'ZodDefault') {
+      defaultValue = def.defaultValue();
+    }
+
+    options[name] = {
       type,
-      describe: `${key} (${type})`
+      describe: `${name} (${type})`,
+      default: defaultValue
     };
   }
 
-  return { positional, options };
+  return { positionals, options };
 }
 
 /**
@@ -129,37 +182,29 @@ export function extractYargsOptionsFromSchema(schema: z.ZodObject<any>): {
 export function buildInputFromArgs(
   args: Record<string, unknown>,
   schema: z.ZodObject<any>,
-  positionalName?: string
+  positionalNames?: string[]
 ): Record<string, unknown> {
   const input: Record<string, unknown> = {};
   const shape = schema.shape;
+  const handledKeys = new Set<string>();
 
-  // Handle positional argument (prId|branch pattern or issueId)
-  if (positionalName && args[positionalName]) {
-    const value = String(args[positionalName]);
-    if (positionalName === 'prIdOrBranch') {
-      // Check if it's a number (PR ID) or string (branch name)
-      if (value.match(/^\d+$/)) {
-        input.prId = Number.parseInt(value, 10);
-      } else {
-        input.branch = value;
+  // Handle positional arguments
+  if (positionalNames && positionalNames.length > 0) {
+    for (let i = 0; i < positionalNames.length; i++) {
+      const positionalName = positionalNames[i];
+      if (args[positionalName] !== undefined && args[positionalName] !== null && args[positionalName] !== '') {
+        const value = args[positionalName];
+        // Use the value directly for the positional field
+        input[positionalName] = value;
+        handledKeys.add(positionalName);
       }
-    } else if (positionalName === 'issueId') {
-      // Handle issueId as positional
-      input.issueId = value;
     }
   }
 
-  // Copy other options
+  // Copy other options (skip already handled positionals)
   for (const [key] of Object.entries(shape)) {
-    if (key === 'prId' || key === 'branch' || key === 'issueId') {
-      // Already handled by positional argument if applicable
-      if (positionalName === 'issueId' && key === 'issueId') {
-        continue;
-      }
-      if (positionalName === 'prIdOrBranch' && (key === 'prId' || key === 'branch')) {
-        continue;
-      }
+    if (handledKeys.has(key)) {
+      continue;
     }
     if (args[key] !== undefined && args[key] !== null && args[key] !== '') {
       input[key] = args[key];
@@ -222,23 +267,26 @@ export function generateProviderCommands<TProvider>(
   const { toolDefinitions, commonOptions = {}, getProvider } = options;
 
   return toolDefinitions.map((tool) => {
-    const { positional, options: schemaOptions } = extractYargsOptionsFromSchema(tool.inputSchema);
+    const { positionals, options: schemaOptions } = extractYargsOptionsFromSchema(tool.inputSchema);
 
     // Build command name and description
-    const commandName = positional
-      ? `${tool.name} <${positional.name}>`
-      : tool.name;
+    let commandName = tool.name;
+    if (positionals.length > 0) {
+      const positionalNames = positionals.map(p => p.optional ? `[${p.name}]` : `<${p.name}>`).join(' ');
+      commandName = `${tool.name} ${positionalNames}`;
+    }
     const description = tool.description || `Execute ${tool.name}`;
 
     // Build yargs builder
     const builder = (yargs: Argv) => {
       let y = yargs;
 
-      // Add positional argument if needed
-      if (positional) {
+      // Add positional arguments
+      for (const positional of positionals) {
         y = y.positional(positional.name, {
           type: 'string',
-          describe: positional.describe
+          describe: positional.describe,
+          demandOption: !positional.optional
         });
       }
 
@@ -274,7 +322,8 @@ export function generateProviderCommands<TProvider>(
       }
 
       // Build input from args
-      const input = buildInputFromArgs(args, tool.inputSchema, positional?.name);
+      const positionalNames = positionals.map(p => p.name);
+      const input = buildInputFromArgs(args, tool.inputSchema, positionalNames);
 
       // Validate input with schema
       const validatedInput = tool.inputSchema.parse(input);
