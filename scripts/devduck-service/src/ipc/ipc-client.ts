@@ -84,7 +84,11 @@ export function ipcLink(params: { socketPath: string }): TRPCLink<AppRouter> {
           if (op.signal) op.signal.removeEventListener('abort', onAbort);
           if (!done) {
             done = true;
-            observer.error?.(TRPCClientError.from(new Error('Connection closed')));
+            const hint =
+              'Connection closed. The service may have rejected the request. ' +
+              'See .cache/devduck-service/logs/service.err.log';
+            const snippet = buffer.trim() ? `\nResponse snippet:\n${buffer.slice(0, 500)}` : '';
+            observer.error?.(TRPCClientError.from(new Error(hint + snippet)));
           }
         });
 
