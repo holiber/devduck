@@ -176,27 +176,30 @@ describe('Workspace Installer - Unattended Mode', () => {
         const installed = await waitForInstallation(tempWorkspace, 30000);
         assert.ok(installed, 'Installation should complete');
 
-        // Ensure project check ran and succeeded
+        // Ensure project check ran and succeeded.
+        // Check both stdout and stderr as output may go to either.
+        // Note: installer may include project context like "Checking NodeJS [my-local-project]...".
+        const output = result.stdout + result.stderr;
         assert.ok(
-          result.stdout.includes('Checking NodeJS...'),
+          output.includes('Checking NodeJS'),
           'Installer output should include NodeJS check'
         );
         assert.ok(
-          result.stdout.includes('NodeJS (Node.js should be installed) - v'),
+          output.includes('NodeJS (Node.js should be installed) - v') || output.includes('NodeJS - v'),
           'Installer output should include NodeJS version output'
         );
 
         // Ensure hello.js check ran, got installed, and succeeded
         assert.ok(
-          result.stdout.includes('Checking HelloJS...'),
+          output.includes('Checking HelloJS'),
           'Installer output should include HelloJS check'
         );
         assert.ok(
-          result.stdout.includes('Re-checking HelloJS after installation...'),
+          output.includes('Re-checking HelloJS'),
           'Installer output should show HelloJS was installed and re-checked'
         );
         assert.ok(
-          result.stdout.includes('HelloJS (hello.js should exist and contain hello world) - hello world (installed)'),
+          output.includes('HelloJS (hello.js should exist and contain hello world) - hello world (installed)') || output.includes('HelloJS - hello world'),
           'Installer output should include HelloJS output after installation'
         );
 

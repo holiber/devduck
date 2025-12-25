@@ -14,6 +14,7 @@ import { readJSON, writeJSON, replaceVariables, replaceVariablesInObject } from 
 import { readEnvFile } from './lib/env.js';
 import { setupEnvFile } from './install/env.js';
 import { generateMcpJson, checkMcpServers } from './install/mcp.js';
+import { processCheck } from './install/process-check.js';
 import type { WorkspaceConfig } from './schemas/workspace-config.zod.js';
 import { fileURLToPath } from 'url';
 
@@ -501,10 +502,16 @@ interface CheckResult {
  */
 async function checkCommand(item: CheckItem, context: string | null = null, skipInstall = false): Promise<CheckResult> {
   const { name, description, test, install } = item;
-  const logPrefix = context ? `[${context}] ` : '';
+  const contextSuffix = context ? ` [${context}]` : '';
   
-  print(`${logPrefix}Checking ${name}...`, 'cyan');
-  log(`${logPrefix}Checking command: ${name} (${description})`);
+  print(`Checking ${name}${contextSuffix}...`, 'cyan');
+  log(`Checking command: ${name} (${description})`);
+  
+  // Read .env file for variable substitution
+  const env = readEnvFile(ENV_FILE);
+  
+  // Note: Token checking for auth checks is handled by processCheck function
+  // This function is called from processCheck after token validation
   
   // Default test for MCP checks: if no explicit test provided, verify MCP via tools/list
   // using scripts/test-mcp.js against the generated .cursor/mcp.json configuration.
@@ -515,8 +522,11 @@ async function checkCommand(item: CheckItem, context: string | null = null, skip
 
   // If no test command, skip verification
   if (!effectiveTest) {
-    print(`${logPrefix}  ${symbols.warning} ${name} - No test command specified`, 'yellow');
-    log(`${logPrefix}  No test command specified for ${name}`);
+    print(`${symbols.warning} ${name} - No test command specified`, 'yellow');
+    if (description) {
+      print(description, 'yellow');
+    }
+    log(`No test command specified for ${name}`);
     return {
       name: name,
       passed: false,
@@ -524,9 +534,6 @@ async function checkCommand(item: CheckItem, context: string | null = null, skip
       note: 'No test command specified'
     };
   }
-  
-  // Read .env file for variable substitution
-  const env = readEnvFile(ENV_FILE);
   
   // Replace variables in test and install commands
   const testWithVars = replaceVariablesWithLog(effectiveTest, env);
@@ -536,14 +543,14 @@ async function checkCommand(item: CheckItem, context: string | null = null, skip
     // Check if test is a file path or a command
     if (isFilePath(testWithVars)) {
       // It's a file/directory path - check if it exists
-      log(`${logPrefix}File/directory path: ${testWithVars}`);
+      log(`File/directory path: ${testWithVars}`);
       
       const fileCheck = checkFileExists(testWithVars);
       
       if (fileCheck.exists && (fileCheck.isFile || fileCheck.isDirectory)) {
         const typeLabel = fileCheck.isDirectory ? 'Directory' : 'File';
-        print(`${logPrefix}  ${symbols.success} ${name} (${description}) - ${typeLabel} exists: ${fileCheck.path}`, 'green');
-        log(`${logPrefix}  Result: SUCCESS - ${typeLabel} exists: ${fileCheck.path}`);
+        print(`${symbols.success} ${name} - OK`, 'green');
+        log(`Result: SUCCESS - ${typeLabel} exists: ${fileCheck.path}`);
         
         return {
           name: name,
@@ -553,8 +560,15 @@ async function checkCommand(item: CheckItem, context: string | null = null, skip
         };
       } else {
         // File/directory not found
-        print(`${logPrefix}  ${symbols.error} ${name} (${description}) - Path not found: ${testWithVars}`, 'red');
-        log(`${logPrefix}  Result: FAILED - Path not found: ${fileCheck.path}`);
+        print(`${symbols.error} ${name} - Path not found: ${testWithVars}`, 'red');
+        if (description) {
+          print(description, 'red');
+        }
+        const docs = (item as { docs?: string }).docs;
+        if (docs) {
+          print(docs, 'red');
+        }
+        log(`Result: FAILED - Path not found: ${fileCheck.path}`);
         
         // If install command is available, offer to install (unless skipInstall is true)
         if (installWithVars && !skipInstall) {
@@ -564,15 +578,15 @@ async function checkCommand(item: CheckItem, context: string | null = null, skip
           
           if (installed) {
             // Re-check after installation
-            print(`${logPrefix}  Re-checking ${name} after installation...`, 'cyan');
-            log(`${logPrefix}Re-checking ${name} after installation`);
+            print(`Re-checking ${name}${contextSuffix}...`, 'cyan');
+            log(`Re-checking ${name} after installation`);
             
             const recheckFile = checkFileExists(testWithVars);
             
             if (recheckFile.exists && (recheckFile.isFile || recheckFile.isDirectory)) {
               const typeLabel = recheckFile.isDirectory ? 'Directory' : 'File';
-              print(`${logPrefix}  ${symbols.success} ${name} (${description}) - ${typeLabel} exists: ${recheckFile.path} (installed)`, 'green');
-              log(`${logPrefix}  Re-check SUCCESS - ${typeLabel} exists: ${recheckFile.path}`);
+              print(`${symbols.success} ${name} - OK`, 'green');
+              log(`Re-check SUCCESS - ${typeLabel} exists: ${recheckFile.path}`);
               
               return {
                 name: name,
@@ -582,8 +596,11 @@ async function checkCommand(item: CheckItem, context: string | null = null, skip
                 note: 'Installed during setup'
               };
             } else {
-              print(`${logPrefix}  ${symbols.warning} ${name} - Installation completed but path not found`, 'yellow');
-              log(`${logPrefix}  Re-check FAILED - Installation may have succeeded but path not found`);
+              print(`${symbols.warning} ${name} - Installation completed but path not found`, 'yellow');
+              if (description) {
+                print(description, 'yellow');
+              }
+              log(`Re-check FAILED - Installation may have succeeded but path not found`);
               
               return {
                 name: name,
@@ -604,7 +621,7 @@ async function checkCommand(item: CheckItem, context: string | null = null, skip
       }
     } else {
       // It's a command - execute it
-      log(`${logPrefix}Command: ${testWithVars}`);
+      log(`Command: ${testWithVars}`);
       
       // Special handling for nvm - need to source it first
       let command = testWithVars;
@@ -612,9 +629,21 @@ async function checkCommand(item: CheckItem, context: string | null = null, skip
         command = `source ~/.nvm/nvm.sh && ${testWithVars}`;
       }
       
+      // Handle API calls (commands starting with "api ")
+      let apiCommandHandled = false;
+      if (command.trim().startsWith('api ')) {
+        const apiCommand = command.trim().substring(4); // Remove "api " prefix
+        command = `npm run call -- ${apiCommand}`;
+        apiCommandHandled = true;
+      }
+      
       // For project checks, run command from projects/<projectName> if it exists
-      const execOptions = {};
-      if (context) {
+      // For API commands, always run from workspace root
+      const execOptions: { cwd?: string } = {};
+      if (apiCommandHandled) {
+        // API commands should run from workspace root
+        execOptions.cwd = WORKSPACE_ROOT || process.cwd();
+      } else if (context) {
         const projectCwd = path.join(PROJECTS_DIR, context);
         try {
           if (fs.existsSync(projectCwd) && fs.statSync(projectCwd).isDirectory()) {
@@ -629,10 +658,22 @@ async function checkCommand(item: CheckItem, context: string | null = null, skip
       const isSudo = requiresSudo(command);
       const result = isSudo ? executeInteractiveCommand(command) : executeCommand(command, execOptions);
       
-      if (result.success) {
-        const version = isSudo ? 'passed' : (result.output || 'unknown');
-        print(`${logPrefix}  ${symbols.success} ${name} (${description}) - ${version}`, 'green');
-        log(`${logPrefix}  Result: SUCCESS - Version: ${version}`);
+      // For API commands, check if output is "true" to determine success
+      let commandSuccess = result.success;
+      if (apiCommandHandled && result.success) {
+        const resultValue = result.output?.trim().split('\n').pop()?.trim() || '';
+        commandSuccess = resultValue === 'true';
+      }
+      
+      if (commandSuccess) {
+        // For test-type checks or auth checks with test commands that produce no output,
+        // show "OK" instead of "unknown" to indicate the check passed
+        const isTestCheck = item.type === 'test' || (item.type === 'auth' && item.test);
+        const version = isSudo 
+          ? 'passed' 
+          : (result.output || (isTestCheck ? 'OK' : 'unknown'));
+        print(`${symbols.success} ${name} - ${version}`, 'green');
+        log(`Result: SUCCESS - Version: ${version}`);
         
         return {
           name: name,
@@ -640,9 +681,28 @@ async function checkCommand(item: CheckItem, context: string | null = null, skip
           version: version
         };
       } else {
-        // Software not installed
-        print(`${logPrefix}  ${symbols.error} ${name} (${description}) - Not installed`, 'red');
-        log(`${logPrefix}  Result: FAILED - ${result.error || 'Command failed'}`);
+        // Software not installed or auth check failed
+        const itemVar = (item as { var?: string }).var;
+        const isAuth = item.type === 'auth' && itemVar;
+        // If this is an auth check using API command, show return value for clarity
+        let errorLabel: string;
+        if (item.type === 'auth' && itemVar && testWithVars && testWithVars.trim().startsWith('api ')) {
+          const returnValue = result.output || result.error || 'failed';
+          errorLabel = `the ${itemVar} exist but "${testWithVars}" returned ${returnValue}`;
+        } else if (item.type === 'auth' && itemVar) {
+          errorLabel = `${itemVar} check failed`;
+        } else {
+          errorLabel = 'Not installed';
+        }
+        print(`${symbols.error} ${name} - ${errorLabel}`, 'red');
+        if (description) {
+          print(description, 'red');
+        }
+        const docs = (item as { docs?: string }).docs;
+        if (docs) {
+          print(docs, 'red');
+        }
+        log(`Result: FAILED - ${errorLabel}${result.error ? ` (${result.error})` : ''}`);
         
         // If install command is available, offer to install (unless skipInstall is true)
         if (install && !skipInstall) {
@@ -651,15 +711,20 @@ async function checkCommand(item: CheckItem, context: string | null = null, skip
           
           if (installed) {
             // Re-check after installation
-            print(`${logPrefix}  Re-checking ${name} after installation...`, 'cyan');
-            log(`${logPrefix}Re-checking ${name} after installation`);
+            print(`Re-checking ${name}${contextSuffix}...`, 'cyan');
+            log(`Re-checking ${name} after installation`);
             
             const recheckResult = isSudo ? executeInteractiveCommand(command) : executeCommand(command, execOptions);
             
             if (recheckResult.success) {
-              const version = isSudo ? 'passed' : (recheckResult.output || 'unknown');
-              print(`${logPrefix}  ${symbols.success} ${name} (${description}) - ${version} (installed)`, 'green');
-              log(`${logPrefix}  Re-check SUCCESS - Version: ${version}`);
+              // For test-type checks or auth checks with test commands that produce no output,
+              // show "OK" instead of "unknown" to indicate the check passed
+              const isTestCheck = item.type === 'test' || (item.type === 'auth' && item.test);
+              const version = isSudo 
+                ? 'passed' 
+                : (recheckResult.output || (isTestCheck ? 'OK' : 'unknown'));
+              print(`${symbols.success} ${name} - ${version}`, 'green');
+              log(`Re-check SUCCESS - Version: ${version}`);
               
               return {
                 name: name,
@@ -668,14 +733,20 @@ async function checkCommand(item: CheckItem, context: string | null = null, skip
                 note: 'Installed during setup'
               };
             } else {
-              print(`${logPrefix}  ${symbols.warning} ${name} - Installation completed but verification failed`, 'yellow');
-              log(`${logPrefix}  Re-check FAILED - Installation may have succeeded but verification failed`);
+              const retryErrorLabel = isAuth
+                ? `${itemVar} check failed`
+                : 'Installation completed but verification failed';
+              print(`${symbols.warning} ${name} - ${retryErrorLabel}`, 'yellow');
+              if (description) {
+                print(description, 'yellow');
+              }
+              log(`Re-check FAILED - ${retryErrorLabel}`);
               
               return {
                 name: name,
                 passed: false,
                 version: null,
-                note: 'Installation attempted but verification failed'
+                note: isAuth ? retryErrorLabel : 'Installation attempted but verification failed'
               };
             }
           }
@@ -684,14 +755,22 @@ async function checkCommand(item: CheckItem, context: string | null = null, skip
         return {
           name: name,
           passed: false,
-          version: null
+          version: null,
+          note: isAuth ? `${itemVar} check failed` : undefined
         };
       }
     }
   } catch (error) {
     const err = error as Error;
-    print(`${logPrefix}  ${symbols.error} ${name} (${description}) - Error: ${err.message}`, 'red');
-    log(`${logPrefix}  Result: ERROR - ${err.message}`);
+    print(`${symbols.error} ${name} - Error: ${err.message}`, 'red');
+    if (description) {
+      print(description, 'red');
+    }
+    const docs = (item as { docs?: string }).docs;
+    if (docs) {
+      print(docs, 'red');
+    }
+    log(`Result: ERROR - ${err.message}`);
     
     return {
       name: name,
@@ -780,7 +859,7 @@ function makeHttpRequest(method: string, url: string, headers: Record<string, st
 // readEnvFile is imported from lib/env.ts
 
 /**
- * Replace variables in string (format: $$VAR_NAME$$)
+ * Replace variables in string (format: $VAR_NAME)
  */
 // Helper wrappers for replaceVariables with logging
 function replaceVariablesWithLog(str: string, env: Record<string, string>): string {
@@ -855,11 +934,11 @@ function checkCommandExists(commandPath: string): CommandCheckResult {
  */
 async function checkHttpAccess(item: CheckItem, context: string | null = null): Promise<CheckResult> {
   const { name, description, test } = item;
-  const logPrefix = context ? `[${context}] ` : '';
+  const contextSuffix = context ? ` [${context}]` : '';
   
-  print(`${logPrefix}Checking ${name}...`, 'cyan');
-  log(`${logPrefix}Checking HTTP access: ${name} (${description})`);
-  log(`${logPrefix}Request: ${test}`);
+  print(`Checking ${name}${contextSuffix}...`, 'cyan');
+  log(`Checking HTTP access: ${name} (${description})`);
+  log(`Request: ${test}`);
   
   try {
     // Parse "GET https://..." format
@@ -874,8 +953,8 @@ async function checkHttpAccess(item: CheckItem, context: string | null = null): 
     const result = await makeHttpRequest(method, url);
     
     if (result.success) {
-      print(`${logPrefix}  ${symbols.success} ${name} - OK (${result.statusCode})`, 'green');
-      log(`${logPrefix}  Result: SUCCESS - Status: ${result.statusCode}`);
+      print(`${symbols.success} ${name} - OK`, 'green');
+      log(`Result: SUCCESS - Status: ${result.statusCode}`);
       
       return {
         name: name,
@@ -883,8 +962,15 @@ async function checkHttpAccess(item: CheckItem, context: string | null = null): 
         statusCode: result.statusCode
       };
     } else {
-      print(`${logPrefix}  ${symbols.error} ${name} - Failed (${result.statusCode || result.error})`, 'red');
-      log(`${logPrefix}  Result: FAILED - Status: ${result.statusCode || 'N/A'}, Error: ${result.error || 'N/A'}`);
+      print(`${symbols.error} ${name} - Failed (${result.statusCode || result.error})`, 'red');
+      if (description) {
+        print(description, 'red');
+      }
+      const docs = (item as { docs?: string }).docs;
+      if (docs) {
+        print(docs, 'red');
+      }
+      log(`Result: FAILED - Status: ${result.statusCode || 'N/A'}, Error: ${result.error || 'N/A'}`);
       
       return {
         name: name,
@@ -894,8 +980,15 @@ async function checkHttpAccess(item: CheckItem, context: string | null = null): 
     }
   } catch (error) {
     const err = error as Error;
-    print(`${logPrefix}  ${symbols.error} ${name} - Error: ${err.message}`, 'red');
-    log(`${logPrefix}  Result: ERROR - ${err.message}`);
+    print(`${symbols.error} ${name} - Error: ${err.message}`, 'red');
+    if (description) {
+      print(description, 'red');
+    }
+    const docs = (item as { docs?: string }).docs;
+    if (docs) {
+      print(docs, 'red');
+    }
+    log(`Result: ERROR - ${err.message}`);
     
     return {
       name: name,
@@ -1118,12 +1211,19 @@ async function runCheck(check: CheckItem, projectName: string | undefined): Prom
     };
   }
   
-  let checkResult;
-  if (isHttpRequest(check.test)) {
-    checkResult = await checkHttpAccess(check, projectName);
-  } else {
-    checkResult = await checkCommand(check, projectName);
-  }
+  // Use unified processCheck function
+  const checkResult = await processCheck(
+    'project',
+    projectName,
+    check,
+    {
+      workspaceRoot: WORKSPACE_ROOT,
+      checkCommand,
+      checkHttpAccess,
+      isHttpRequest,
+      replaceVariablesInObjectWithLog
+    }
+  );
   return checkResult;
 }
 
@@ -1256,14 +1356,16 @@ async function runSelectedChecks(checkNames: string[], testOnly = false): Promis
   const results = [];
   
   for (const check of allChecks) {
-    const context = check.projectName ? check.projectName : null;
+    // Determine context type based on source
+    const contextType = check.source === 'project' ? 'project' : 'workspace';
+    const contextName = check.projectName || null;
     
     // Replace variables in check
     const checkWithVars = replaceVariablesInObjectWithLog(check, env);
     
     // Skip check if skip=true in config
     if (checkWithVars.skip === true) {
-      const prefix = context ? `[${context}] ` : '';
+      const prefix = contextName ? `[${contextName}] ` : '';
       print(`  ${symbols.warning} ${prefix}${check.name}: skipped`, 'yellow');
       log(`${prefix}CHECK SKIPPED: ${check.name}`);
       results.push({
@@ -1275,15 +1377,20 @@ async function runSelectedChecks(checkNames: string[], testOnly = false): Promis
       continue;
     }
     
-    // Detect check type by test format
-    let checkResult;
-    if (isHttpRequest(checkWithVars.test)) {
-      // HTTP access check
-      checkResult = await checkHttpAccess(checkWithVars, context);
-    } else {
-      // Command/software check
-      checkResult = await checkCommand(checkWithVars, context, testOnly);
-    }
+    // Use unified processCheck function
+    const checkResult = await processCheck(
+      contextType,
+      contextName,
+      checkWithVars as CheckItem,
+      {
+        skipInstall: testOnly,
+        workspaceRoot: WORKSPACE_ROOT,
+        checkCommand,
+        checkHttpAccess,
+        isHttpRequest,
+        replaceVariablesInObjectWithLog
+      }
+    );
     results.push(checkResult);
   }
   
@@ -1657,10 +1764,11 @@ async function installWorkspace(): Promise<void> {
     const { loadModule } = await import('./install/module-resolver.js');
     const devduckVersion = getDevduckVersion();
     
-    for (const repoUrl of config.repos) {
-      try {
-        log(`Loading modules from repository: ${repoUrl}`);
-        const repoModulesPath = await loadModulesFromRepo(repoUrl, WORKSPACE_ROOT, devduckVersion);
+      for (const repoUrl of config.repos) {
+        try {
+          print(`  Loading modules [${repoUrl}]...`, 'cyan');
+          log(`Loading modules from repository: ${repoUrl}`);
+          const repoModulesPath = await loadModulesFromRepo(repoUrl, WORKSPACE_ROOT, devduckVersion);
         
         // repoModulesPath is the path to modules directory
         // Load modules from the repository
@@ -1967,19 +2075,120 @@ async function main(): Promise<void> {
   // Read .env file for variable substitution
   const env = readEnvFile(ENV_FILE);
   
+  // Load modules to collect checks from them (same logic as installWorkspace)
+  const moduleResolver = await import('./install/module-resolver.js');
+  const { getAllModules, getAllModulesFromDirectory, expandModuleNames, resolveDependencies, mergeModuleSettings, loadModuleFromPath } = moduleResolver;
+  type Module = Awaited<ReturnType<typeof getAllModules>>[number];
+  const { loadModulesFromRepo, getDevduckVersion } = await import('./lib/repo-modules.js');
+  const { loadModuleResources } = await import('./install/module-loader.js');
+  
+  // Load external modules from repos
+  const externalModules: Module[] = [];
+  if (config.repos && config.repos.length > 0) {
+    log(`Loading modules from ${config.repos.length} repository/repositories for checks`);
+    const devduckVersion = getDevduckVersion();
+    
+    for (const repoUrl of config.repos) {
+      try {
+        print(`  Loading modules [${repoUrl}]...`, 'cyan');
+        const repoModulesPath = await loadModulesFromRepo(repoUrl, WORKSPACE_ROOT, devduckVersion);
+        if (fs.existsSync(repoModulesPath)) {
+          const repoModuleEntries = fs.readdirSync(repoModulesPath, { withFileTypes: true });
+          for (const entry of repoModuleEntries) {
+            if (entry.isDirectory()) {
+              const modulePath = path.join(repoModulesPath, entry.name);
+              const module = loadModuleFromPath(modulePath, entry.name);
+              if (module) {
+                externalModules.push(module);
+              }
+            }
+          }
+        }
+      } catch (error) {
+        const err = error as Error;
+        log(`Failed to load modules from ${repoUrl} for checks: ${err.message}`);
+      }
+    }
+  }
+  
+  // Load all modules with priority: workspace > projects > external > built-in
+  const localModules = getAllModules();
+  const workspaceModulesDir = path.join(WORKSPACE_ROOT, 'modules');
+  const workspaceModules = getAllModulesFromDirectory(workspaceModulesDir);
+  
+  const projectsModules: Module[] = [];
+  if (config.projects && Array.isArray(config.projects)) {
+    for (const project of config.projects) {
+      const projectName = project.src.split('/').pop()?.replace(/\.git$/, '') || '';
+      const projectPath = path.join(WORKSPACE_ROOT, 'projects', projectName);
+      const projectModulesDir = path.join(projectPath, 'modules');
+      if (fs.existsSync(projectModulesDir)) {
+        const projectModules = getAllModulesFromDirectory(projectModulesDir);
+        projectsModules.push(...projectModules);
+      }
+    }
+  }
+  
+  const allModules = [...workspaceModules, ...projectsModules, ...externalModules, ...localModules];
+  const moduleNames = expandModuleNames(config.modules || ['*'], allModules);
+  const resolvedModules = resolveDependencies(moduleNames, allModules);
+  
+  const loadedModules = resolvedModules.map(module => {
+    const resources = loadModuleResources(module);
+    const mergedSettings = mergeModuleSettings(module, config.moduleSettings);
+    return {
+      ...resources,
+      settings: mergedSettings
+    };
+  });
+  
+  log(`Loaded ${loadedModules.length} module(s) for checks collection (${workspaceModules.length} workspace, ${projectsModules.length} projects, ${externalModules.length} external, ${localModules.length} devduck)`);
+  
+  // Collect checks from all modules
+  const moduleChecks: Array<{ name?: string; description?: string; tier?: string; [key: string]: unknown }> = [];
+  for (const module of loadedModules) {
+    if (module.checks && Array.isArray(module.checks) && module.checks.length > 0) {
+      log(`Module ${module.name} has ${module.checks.length} check(s)`);
+      for (const check of module.checks) {
+        // Add module name to check for identification
+        const moduleCheck = {
+          ...check,
+          module: module.name,
+          name: check.name || `${module.name}-${check.type || 'check'}`
+        };
+        moduleChecks.push(moduleCheck);
+      }
+    }
+  }
+  
+  // Merge workspace config checks with module checks
+  const allChecks = [
+    ...(config.checks || []),
+    ...moduleChecks
+  ];
+  
+  // Build installedModules map for cache
+  const installedModules: Record<string, string> = {};
+  for (const m of loadedModules) {
+    if (m && typeof m.name === 'string' && typeof m.path === 'string') {
+      installedModules[m.name] = m.path;
+    }
+  }
+  
   const results = {
     checks: [],
     mcpServers: mcpResults,
-    projects: []
+    projects: [],
+    installedModules
   };
   
-  // Check all items in checks array, grouped by tier
-  if (config.checks && config.checks.length > 0) {
+  // Check all items in checks array (from config and modules), grouped by tier
+  if (allChecks.length > 0) {
     print(`\n${symbols.info} Running checks...`, 'cyan');
     
     // Group checks by tier
     const checksByTier = {};
-    for (const item of config.checks) {
+    for (const item of allChecks) {
       const tier = item.tier || DEFAULT_TIER;
       if (!checksByTier[tier]) {
         checksByTier[tier] = [];
@@ -2015,20 +2224,51 @@ async function main(): Promise<void> {
           continue;
         }
         
-        // Replace variables in check item
-        const itemWithVars = replaceVariablesInObjectWithLog(item, env);
-        
-        // Detect check type by test format
-        let checkResult;
-        if (isHttpRequest(itemWithVars.test)) {
-          // HTTP access check
-          checkResult = await checkHttpAccess(itemWithVars);
-        } else {
-          // Command/software check
-          checkResult = await checkCommand(itemWithVars);
+        // Mark auth checks without test commands as failed
+        if (item.type === 'auth' && (!item.test || typeof item.test !== 'string' || !item.test.trim())) {
+          const moduleName = (item as { module?: string }).module;
+          const contextType = moduleName ? 'module' : 'workspace';
+          const contextName = moduleName || null;
+          print(`Checking ${item.name}${contextName ? ` [${contextName}]` : ''}...`, 'cyan');
+          log(`CHECK FAILED: ${item.name} (${contextType}: ${contextName || 'workspace'}) - auth check without test command`);
+          print(`${symbols.error} ${item.name} - No test command specified for auth check`, 'red');
+          if (item.description) {
+            print(item.description, 'red');
+          }
+          const docs = (item as { docs?: string }).docs;
+          if (docs) {
+            print(docs, 'red');
+          }
+          results.checks.push({
+            name: item.name,
+            description: item.description || '',
+            passed: false,
+            skipped: false,
+            tier: tier,
+            note: 'No test command specified for auth check'
+          });
+          continue;
         }
-        // Add tier info to result
-        checkResult.tier = tier;
+        
+        // Determine context type: 'workspace' for config.checks, 'module' for module checks
+        const moduleName = (item as { module?: string }).module;
+        const contextType = moduleName ? 'module' : 'workspace';
+        const contextName = moduleName || null;
+        
+        // Use unified processCheck function
+        const checkResult = await processCheck(
+          contextType,
+          contextName,
+          item,
+          {
+            tier: tier,
+            workspaceRoot: WORKSPACE_ROOT,
+            checkCommand,
+            checkHttpAccess,
+            isHttpRequest,
+            replaceVariablesInObjectWithLog
+          }
+        );
         results.checks.push(checkResult);
       }
     }
@@ -2120,7 +2360,11 @@ async function main(): Promise<void> {
   if (checksSkipped > 0) {
     checksMsg += ` (${checksSkipped} skipped)`;
   }
-  print(checksMsg, checksPassed === checksRan ? 'green' : 'yellow');
+  const checksColor = checksPassed === checksRan ? 'green' : 'red';
+  print(checksMsg, checksColor);
+  if (checksPassed !== checksRan) {
+    print(`  ${symbols.error} Some checks failed. Please review the output above.`, 'red');
+  }
   if (mcpTotal > 0) {
     // Show required servers status, and optional if any failed
     if (mcpRequiredTotal > 0) {
@@ -2140,7 +2384,7 @@ async function main(): Promise<void> {
   }
   if (projectsTotal > 0) {
     print(`  Projects: ${projectsWithSymlink}/${projectsTotal} linked`, 
-      projectsWithSymlink === projectsTotal ? 'green' : 'yellow');
+      projectsWithSymlink === projectsTotal ? 'green' : 'red');
     if (projectChecksTotal > 0) {
       const projectChecksRan = projectChecksTotal - projectChecksSkipped;
       let projectChecksMsg = `  Project checks: ${projectChecksPassed}/${projectChecksRan} passed`;

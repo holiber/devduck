@@ -1,17 +1,17 @@
 #!/usr/bin/env node
 
 /**
- * MCP module API - tRPC-like router definition
+ * MCP API - tRPC-like router definition
  * Provides access to MCP server information and tools
  */
 
 import { z } from 'zod';
-import { initProviderContract } from '../../scripts/lib/provider-router.js';
-import { findWorkspaceRoot } from '../../scripts/lib/workspace-root.js';
-import { readJSON } from '../../scripts/lib/config.js';
+import { initProviderContract } from '../provider-router.js';
+import { findWorkspaceRoot } from '../workspace-root.js';
+import { readJSON } from '../config.js';
 import path from 'path';
 import fs from 'fs';
-import { testMcpServer } from '../../scripts/install/mcp-test.js';
+import { testMcpServer } from '../../install/mcp-test.js';
 
 /**
  * MCP provider interface (no actual provider needed, just for consistency)
@@ -218,6 +218,14 @@ const CallToolInputSchema = z.object({
 });
 
 /**
+ * Schema for checking if a tool exists
+ */
+const HasToolInputSchema = z.object({
+  serverName: z.string().min(1, 'Server name is required'),
+  toolName: z.string().min(1, 'Tool name is required')
+});
+
+/**
  * MCP router - provides MCP server and tool information
  */
 export const mcpRouter = t.router({
@@ -330,6 +338,116 @@ export const mcpRouter = t.router({
         input.params || {},
         serverConfig
       );
+    }),
+
+  hasTool: t.procedure
+    .input(HasToolInputSchema)
+    .output(z.boolean())
+    .meta({
+      title: 'Check if MCP tool exists',
+      description: 'Check if a specific tool exists in the given MCP server',
+      idempotent: true,
+      timeoutMs: 30_000
+    })
+    .handler(async ({ input }) => {
+      const workspaceRoot = findWorkspaceRoot(process.cwd());
+      if (!workspaceRoot) {
+        throw new Error('Workspace root not found');
+      }
+
+      const mcpJsonPath = path.join(workspaceRoot, '.cursor', 'mcp.json');
+      if (!fs.existsSync(mcpJsonPath)) {
+        return false;
+      }
+
+      const mcpConfig = readJSON<{ mcpServers?: Record<string, unknown> }>(mcpJsonPath);
+      if (!mcpConfig || !mcpConfig.mcpServers) {
+        return false;
+      }
+
+      const servers = mcpConfig.mcpServers;
+      const serverConfig = servers[input.serverName] as { command?: string; args?: string[] } | undefined;
+      if (!serverConfig) {
+        throw new Error(`MCP server "${input.serverName}" not found`);
+      }
+
+      try {
+        const result = await testMcpServer(input.serverName, {
+          command: serverConfig.command || '',
+          args: serverConfig.args || []
+        }, {
+          timeout: 10000,
+          log: () => {} // Silent logging
+        });
+
+        if (result.success && result.methods) {
+          return result.methods.includes(input.toolName);
+        }
+      } catch {
+        // ignore and return false
+      }
+
+      return false;
+    })
+  ,
+
+  listTools: t.procedure
+    .input(z.object({ serverName: z.string() }))
+    .output(z.array(MCPToolInfoSchema))
+    .meta({
+      title: 'List tools for a specific MCP server',
+      description: 'Return tools exposed by the given MCP server from .cursor/mcp.json',
+      idempotent: true,
+      timeoutMs: 30_000
+    })
+    .handler(async ({ input }) => {
+      const workspaceRoot = findWorkspaceRoot(process.cwd());
+      if (!workspaceRoot) {
+        throw new Error('Workspace root not found');
+      }
+
+      const mcpJsonPath = path.join(workspaceRoot, '.cursor', 'mcp.json');
+      if (!fs.existsSync(mcpJsonPath)) {
+        throw new Error('MCP configuration not found');
+      }
+
+      const mcpConfig = readJSON<{ mcpServers?: Record<string, unknown> }>(mcpJsonPath);
+      if (!mcpConfig || !mcpConfig.mcpServers) {
+        throw new Error('No MCP servers configured');
+      }
+
+      const servers = mcpConfig.mcpServers;
+      const serverConfig = servers[input.serverName] as { command?: string; args?: string[] } | undefined;
+
+      if (!serverConfig) {
+        throw new Error(`MCP server "${input.serverName}" not found`);
+      }
+
+      try {
+        const result = await testMcpServer(
+          input.serverName,
+          {
+            command: serverConfig.command || '',
+            args: serverConfig.args || []
+          },
+          {
+            timeout: 10000,
+            log: () => {} // silent
+          }
+        );
+
+        if (result.success && result.methods) {
+          return result.methods.map((name) => ({
+            name,
+            description: undefined
+          }));
+        }
+
+        return [];
+      } catch (error) {
+        const err = error as Error;
+        throw new Error(`Failed to list tools for "${input.serverName}": ${err.message}`);
+      }
     })
 });
 

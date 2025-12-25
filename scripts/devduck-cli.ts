@@ -48,6 +48,9 @@ function ensureWorkspacePackageJson(workspaceRoot: string): void {
       install: 'tsx ./devduck/src/install.ts --workspace-path . --unattended'
     },
     dependencies: {
+      // Needed by DevDuck installer/runtime (imported from devduck/src/scripts/*)
+      '@modelcontextprotocol/sdk': '^1.25.1',
+      'compare-versions': '^6.1.1',
       dotenv: '^16.4.7',
       tsx: '^4.19.0',
       yaml: '^2.8.1',

@@ -74,6 +74,8 @@ export function loadModuleResources(module: Module): ModuleResource {
     tags: module.tags,
     dependencies: module.dependencies,
     defaultSettings: module.defaultSettings,
+    checks: module.checks,
+    mcpSettings: module.mcpSettings,
     path: module.path,
     scripts: collectModuleFiles(module.path, 'scripts'),
     commands: collectModuleFiles(module.path, 'commands'),

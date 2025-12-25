@@ -167,16 +167,18 @@ async function generateExample(moduleName: string, procedureName: string, proced
       return `  api-cli ${moduleName}.${procedureName}`;
     }
     
-    const { positional, options } = extractYargsOptionsFromSchema(inputSchema);
+    const { positionals, options } = extractYargsOptionsFromSchema(inputSchema);
     
-    // Build example with positional argument if present
+    // Build example with positional arguments if present
     let example = `  api-cli ${moduleName}.${procedureName}`;
     
-    if (positional) {
+    for (const positional of positionals) {
       // Use a sample value based on the positional name
       const sampleValue = positional.name.includes('branch') || positional.name.includes('Branch') ? 'feature/new-feature' :
                          positional.name.includes('pr') || positional.name.includes('Pr') ? 'feature/new-feature' :
                          positional.name.includes('id') || positional.name.includes('Id') ? '123' :
+                         positional.name.includes('tool') || positional.name.includes('Tool') ? 'generate_answer' :
+                         positional.name.includes('server') || positional.name.includes('Server') ? 'server-name' :
                          'value';
       example += ` ${sampleValue}`;
     }
@@ -268,8 +270,8 @@ async function main(argv = process.argv): Promise<void> {
     }
   }
 
-  // Get unified API
-  const unifiedAPI = await getUnifiedAPI();
+  // Get unified API (quiet mode to suppress side effects)
+  const unifiedAPI = await getUnifiedAPI(true);
 
   // Parse command from arguments
   const args = argv.slice(2);
@@ -357,36 +359,13 @@ async function main(argv = process.argv): Promise<void> {
 
   // Create command module manually (similar to router.toCli but for single procedure)
   const { extractYargsOptionsFromSchema, buildInputFromArgs } = await import('./lib/provider-cli-utils.js');
-  const { positional, options: schemaOptions } = extractYargsOptionsFromSchema(procedure.input as any);
+  const { positionals, options: schemaOptions } = extractYargsOptionsFromSchema(procedure.input as any);
 
-  // Special handling for mcp procedures: make arguments positional
-  let effectivePositional = positional;
-  if (moduleName === 'mcp') {
-    if (procedureName === 'list' && !positional && 'serverName' in schemaOptions) {
-      effectivePositional = {
-        name: 'serverName',
-        describe: 'MCP server name (optional, omit to list all servers)'
-      };
-      delete schemaOptions.serverName;
-    } else if (procedureName === 'call' && !positional) {
-      // For call, we need two positionals: serverName and toolName
-      // We'll handle this specially in the builder
-      effectivePositional = {
-        name: 'serverName',
-        describe: 'MCP server name'
-      };
-      // toolName will be handled as second positional
-      delete schemaOptions.serverName;
-      delete schemaOptions.toolName;
-    }
-  }
-
-  // Build command name
+  // Build command name from positionals
   let commandName = procedureName;
-  if (moduleName === 'mcp' && procedureName === 'call') {
-    commandName = `${procedureName} <serverName> <toolName>`;
-  } else if (effectivePositional) {
-    commandName = `${procedureName} [${effectivePositional.name}]`;
+  if (positionals.length > 0) {
+    const positionalNames = positionals.map(p => p.optional ? `[${p.name}]` : `<${p.name}>`).join(' ');
+    commandName = `${procedureName} ${positionalNames}`;
   }
   const description = procedure.meta.title || procedure.meta.description || `Execute ${procedureName}`;
 
@@ -394,29 +373,12 @@ async function main(argv = process.argv): Promise<void> {
   const builder = (yargs: any) => {
     let y = yargs;
 
-    // Special handling for mcp.call: two positionals + params option
-    if (moduleName === 'mcp' && procedureName === 'call') {
-      y = y.positional('serverName', {
+    // Add positional arguments
+    for (const positional of positionals) {
+      y = y.positional(positional.name, {
         type: 'string',
-        describe: 'MCP server name',
-        demandOption: true
-      });
-      y = y.positional('toolName', {
-        type: 'string',
-        describe: 'Tool/method name to call',
-        demandOption: true
-      });
-      y = y.option('params', {
-        type: 'string',
-        describe: 'Parameters as JSON string (e.g., \'{"message":"test"}\')',
-        default: '{}'
-      });
-    } else if (effectivePositional) {
-      // Add positional argument if needed
-      y = y.positional(effectivePositional.name, {
-        type: 'string',
-        describe: effectivePositional.describe,
-        optional: true // Make it optional for mcp.list
+        describe: positional.describe,
+        demandOption: !positional.optional
       });
     }
 
@@ -451,36 +413,8 @@ async function main(argv = process.argv): Promise<void> {
     }
 
     // Build input from args
-    // Special handling for mcp.call: two positionals + optional params JSON
-    if (moduleName === 'mcp' && procedureName === 'call') {
-      const input: Record<string, unknown> = {
-        serverName: args.serverName,
-        toolName: args.toolName
-      };
-      if (args.params && typeof args.params === 'string') {
-        input.params = args.params;
-      }
-      // Call procedure with manually built input
-      const result = await router.call(procedureName as any, input, { provider });
-      
-      // Output JSON
-      const output: Record<string, unknown> = {
-        result
-      };
-      
-      if (requiresProvider && provider) {
-        output.provider = (provider as { name?: string })?.name || 'unknown';
-      }
-      
-      process.stdout.write(JSON.stringify(output, null, 2));
-      if (!process.stdout.isTTY) {
-        process.stdout.write('\n');
-      }
-      return;
-    }
-    
-    const inputArgName = effectivePositional?.name;
-    const input = buildInputFromArgs(args, procedure.input as any, inputArgName);
+    const positionalNames = positionals.map(p => p.name);
+    const input = buildInputFromArgs(args, procedure.input as any, positionalNames);
 
     // Call procedure through router
     const result = await router.call(procedureName as any, input, { provider });
