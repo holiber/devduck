@@ -11,10 +11,15 @@
   "scripts": {
     "install:check": "tsx scripts/install.ts",
     "postinstall": "npx playwright install chromium",
+    "devduck:service": "tsx scripts/devduck-service/src/service.ts",
+    "devduck:launch": "tsx scripts/devduck-service/src/cli.ts",
     "test": "tsx scripts/run-tests.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.25.1",
+    "@playwright/test": "^1.57.0",
+    "@trpc/client": "^11.8.1",
+    "@trpc/server": "^11.8.1",
     "compare-versions": "^6.1.1",
     "dotenv": "^16.4.7",
     "ink": "^5.1.0",

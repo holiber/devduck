@@ -23,6 +23,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Ensures every workspace with github-ci module gets a proper `.gitignore` file automatically
   - Similar to how ya-arc module handles `.arcignore` files
 
+- 🦆 **DevduckService (local dev service) MVP** - Added a local background service for dev + AI agents with IPC control plane and file-based logs
+  - tRPC API over Unix domain socket: `.cache/devduck-service/ipc/devduck.sock`
+  - Process supervision (start/stop/status) with persistent session: `.cache/devduck-service/session.json`
+  - Per-process stdout/stderr logs in `.cache/devduck-service/logs/` (e.g. `server.out.log`, `client.err.log`)
+  - Playwright smokecheck runner with browser console capture to `.cache/devduck-service/logs/browser-console.log`
+  - New npm scripts: `devduck:service` and `devduck:launch`
+  - Added CI-friendly tests covering process lifecycle, readiness, smokecheck, browser console capture, session reuse, and stop semantics
+
 ### Changed - 2025-12-25
 
 - 🧹 **Removed external repository references** - Removed all traces of external repositories (ya-* modules) from documentation and code
