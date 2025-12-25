@@ -181,6 +181,7 @@ export async function processCheck(
     checkResult = await checkHttpAccess(checkWithVars, contextName);
   } else {
     // Command/software check
+    // Note: checkCommand should print "Checking..." message
     checkResult = await checkCommand(checkWithVars, contextName, skipInstall);
   }
   

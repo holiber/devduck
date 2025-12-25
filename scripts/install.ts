@@ -2167,10 +2167,19 @@ async function main(): Promise<void> {
     ...moduleChecks
   ];
   
+  // Build installedModules map for cache
+  const installedModules: Record<string, string> = {};
+  for (const m of loadedModules) {
+    if (m && typeof m.name === 'string' && typeof m.path === 'string') {
+      installedModules[m.name] = m.path;
+    }
+  }
+  
   const results = {
     checks: [],
     mcpServers: mcpResults,
-    projects: []
+    projects: [],
+    installedModules
   };
   
   // Check all items in checks array (from config and modules), grouped by tier

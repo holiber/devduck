@@ -395,18 +395,25 @@ export async function ensureRepoAvailable(
  * @returns Version check result
  */
 export async function checkRepoVersion(repoPath: string, devduckVersion: string): Promise<VersionCheckResult> {
+  // Backward compatibility:
+  // - New format: devduck.manifest.json
+  // - Legacy/test format: manifest.json
   const manifestPath = path.join(repoPath, 'devduck.manifest.json');
+  const legacyManifestPath = path.join(repoPath, 'manifest.json');
+  const effectiveManifestPath = fs.existsSync(manifestPath)
+    ? manifestPath
+    : (fs.existsSync(legacyManifestPath) ? legacyManifestPath : null);
 
-  if (fs.existsSync(manifestPath)) {
+  if (effectiveManifestPath) {
     try {
-      const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+      const manifest = JSON.parse(fs.readFileSync(effectiveManifestPath, 'utf8'));
       const repoVersion = manifest.devduckVersion;
 
       if (!repoVersion) {
         return {
           compatible: false,
           version: null,
-          error: `devduck.manifest.json found but devduckVersion is missing`
+          error: `${path.basename(effectiveManifestPath)} found but devduckVersion is missing`
         };
       }
 
@@ -431,7 +438,7 @@ export async function checkRepoVersion(repoPath: string, devduckVersion: string)
       return {
         compatible: false,
         version: null,
-        error: `Failed to parse devduck.manifest.json: ${error.message}`
+        error: `Failed to parse ${effectiveManifestPath}: ${error.message}`
       };
     }
   }
@@ -439,7 +446,7 @@ export async function checkRepoVersion(repoPath: string, devduckVersion: string)
   return {
     compatible: false,
     version: null,
-    error: 'devduck.manifest.json not found'
+    error: 'No manifest found (devduck.manifest.json or manifest.json)'
   };
 }
 
