@@ -11,10 +11,17 @@ import { readEnvFile } from '../../../scripts/lib/env.js';
 import {
   discoverProvidersFromModules,
   getProvidersByType,
-  getProvider
+  getProvider,
+  setProviderTypeSchema
 } from '../../../scripts/lib/provider-registry.js';
-import type { CIProvider } from '../schemas/contract.js';
-import { ciRouter } from '../api.js';
+import { generateProviderCommandsFromContract } from '../../../scripts/lib/provider-cli-utils.js';
+import type { IssueTrackerProvider, IssueTrackerToolName } from '../schemas/contract.js';
+import {
+  IssueTrackerProviderSchema,
+  IssueTrackerToolNameSchema,
+  IssueTrackerToolInputSchemas,
+  IssueTrackerToolDescriptions
+} from '../schemas/contract.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -23,12 +30,12 @@ type WorkspaceConfigLike = {
   repos?: string[];
 };
 
-function asCIProvider(p: unknown): CIProvider {
-  return p as CIProvider;
+function asIssueTrackerProvider(p: unknown): IssueTrackerProvider {
+  return p as IssueTrackerProvider;
 }
 
 function pickProviderNameFromConfig(workspaceRoot: string | null): string | null {
-  const envName = (process.env.CI_PROVIDER || '').trim();
+  const envName = (process.env.ISSUE_TRACKER_PROVIDER || '').trim();
   if (envName) return envName;
 
   const root = workspaceRoot || findWorkspaceRoot(process.cwd());
@@ -39,15 +46,19 @@ function pickProviderNameFromConfig(workspaceRoot: string | null): string | null
 
   const cfg = readJSON<WorkspaceConfigLike>(configPath);
   const moduleSettings = (cfg && cfg.moduleSettings) || {};
-  const ciSettings = (moduleSettings as Record<string, unknown>).ci as Record<string, unknown> | undefined;
-  const name = ciSettings && typeof ciSettings.provider === 'string' ? ciSettings.provider : '';
+  const issueTrackerSettings = (moduleSettings as Record<string, unknown>).issueTracker as
+    | Record<string, unknown>
+    | undefined;
+  const name = issueTrackerSettings && typeof issueTrackerSettings.provider === 'string' ? issueTrackerSettings.provider : '';
   return name.trim() || null;
 }
 
 async function initializeProviders(workspaceRoot: string | null): Promise<{
-  getProvider: (providerName?: string) => CIProvider | null;
+  getProvider: (providerName?: string) => IssueTrackerProvider | null;
 }> {
   const { devduckRoot } = resolveDevduckRoot({ cwd: process.cwd(), moduleDir: __dirname });
+
+  setProviderTypeSchema('issue-tracker', IssueTrackerProviderSchema);
 
   // Discover providers from devduck modules
   await discoverProvidersFromModules({ modulesDir: path.join(devduckRoot, 'modules') });
@@ -77,9 +88,9 @@ async function initializeProviders(workspaceRoot: string | null): Promise<{
     }
   }
 
-  const providers = getProvidersByType('ci');
+  const providers = getProvidersByType('issue-tracker');
   if (providers.length === 0) {
-    throw new Error('No CI providers discovered');
+    throw new Error('No issue tracker providers discovered');
   }
 
   return {
@@ -88,10 +99,19 @@ async function initializeProviders(workspaceRoot: string | null): Promise<{
       const configured = pickProviderNameFromConfig(workspaceRoot);
       const selectedName = explicit || configured || providers[0].name;
 
-      const selected = getProvider('ci', selectedName);
-      return selected ? asCIProvider(selected) : asCIProvider(providers[0]);
+      const selected = getProvider('issue-tracker', selectedName);
+      return selected ? asIssueTrackerProvider(selected) : asIssueTrackerProvider(providers[0]);
     }
   };
+}
+
+/**
+ * Get all available tool names from contract
+ */
+function getAvailableTools(): IssueTrackerToolName[] {
+  // Extract enum values from IssueTrackerToolNameSchema
+  const enumDef = IssueTrackerToolNameSchema._def;
+  return enumDef.values as IssueTrackerToolName[];
 }
 
 async function main(argv = process.argv): Promise<void> {
@@ -111,25 +131,34 @@ async function main(argv = process.argv): Promise<void> {
     }
   }
   
-  const { getProvider: getCIProvider } = await initializeProviders(workspaceRoot);
+  const { getProvider: getIssueTrackerProvider } = await initializeProviders(workspaceRoot);
 
-  // Build yargs with commands generated from router
-  const yargsInstance = ciRouter.toCli(
-    createYargs(argv)
-      .scriptName('ci')
-      .strict()
-      .usage('Usage: $0 <command> [options]'),
-    {
-      getProvider: getCIProvider,
-      commonOptions: {
-        provider: {
-          type: 'string',
-          describe: 'Provider name (overrides config/env)',
-          default: ''
-        }
+  // Generate commands from contract automatically
+  const commands = generateProviderCommandsFromContract<IssueTrackerProvider, IssueTrackerToolName>({
+    contract: {
+      toolNames: getAvailableTools(),
+      inputSchemas: IssueTrackerToolInputSchemas,
+      descriptions: IssueTrackerToolDescriptions
+    },
+    commonOptions: {
+      provider: {
+        type: 'string',
+        describe: 'Provider name (overrides config/env)',
+        default: ''
       }
-    }
-  );
+    },
+    getProvider: getIssueTrackerProvider
+  });
+
+  // Build yargs with generated commands
+  let yargsInstance = createYargs(argv)
+    .scriptName('issue-tracker')
+    .strict()
+    .usage('Usage: $0 <command> [options]');
+
+  for (const command of commands) {
+    yargsInstance = yargsInstance.command(command);
+  }
 
   await yargsInstance
     .demandCommand(1, 'You need at least one command before moving on')
@@ -147,3 +176,4 @@ if (import.meta.url === `file://${process.argv[1]}`) {
 }
 
 export { main };
+

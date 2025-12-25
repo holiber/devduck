@@ -143,10 +143,6 @@ export const CommentSchema = z.object({
 });
 export type Comment = z.infer<typeof CommentSchema>;
 
-// Tool names
-export const CIToolNameSchema = z.enum(['fetchPR', 'fetchCheckStatus', 'fetchComments']);
-export type CIToolName = z.infer<typeof CIToolNameSchema>;
-
 // Tool input schemas
 export const FetchPRInputSchema = z.object({
   prId: z.union([IdSchema, z.number().int().positive()]).optional(),
@@ -174,25 +170,6 @@ export const FetchCommentsInputSchema = z.object({
 });
 export type FetchCommentsInput = z.infer<typeof FetchCommentsInputSchema>;
 
-/**
- * Mapping of tool names to their input schemas
- * This is automatically used to generate CLI commands
- */
-export const CIToolInputSchemas: Record<CIToolName, z.ZodObject<any>> = {
-  fetchPR: FetchPRInputSchema,
-  fetchCheckStatus: FetchCheckStatusInputSchema,
-  fetchComments: FetchCommentsInputSchema
-};
-
-/**
- * Descriptions for tools (used in CLI help)
- */
-export const CIToolDescriptions: Record<CIToolName, string> = {
-  fetchPR: 'Fetch PR information',
-  fetchCheckStatus: 'Fetch check status with annotations',
-  fetchComments: 'Fetch PR comments and reactions'
-};
-
 // Provider manifest (metadata)
 export const CIProviderManifestSchema = z
   .object({
@@ -201,7 +178,7 @@ export const CIProviderManifestSchema = z
     version: z.string().min(1),
     description: z.string().optional(),
     protocolVersion: z.literal(CI_PROVIDER_PROTOCOL_VERSION),
-    tools: z.array(CIToolNameSchema),
+    tools: z.array(z.enum(['fetchPR', 'fetchCheckStatus', 'fetchComments'])),
     events: z
       .object({
         publish: z.array(z.string()).default([]),
@@ -221,25 +198,14 @@ export const CIProviderManifestSchema = z
 export type CIProviderManifest = z.infer<typeof CIProviderManifestSchema>;
 
 /**
- * CI provider interface (validated at registration time).
- *
- * Note: Zod cannot fully validate function signatures without executing them.
- * We validate that required methods exist and that metadata matches the contract.
+ * CI provider interface
  */
-export const CIProviderSchema = z.object({
-  name: z.string().min(1),
-  version: z.string().min(1),
-  manifest: CIProviderManifestSchema,
-
-  // CI provider methods
-  fetchPR: z.function(),
-  fetchCheckStatus: z.function(),
-  fetchComments: z.function()
-});
-
-export type CIProvider = z.infer<typeof CIProviderSchema> & {
+export interface CIProvider {
+  name: string;
+  version: string;
+  manifest: CIProviderManifest;
   fetchPR(input: FetchPRInput): Promise<PRInfo>;
   fetchCheckStatus(input: FetchCheckStatusInput): Promise<CheckStatus[]>;
   fetchComments(input: FetchCommentsInput): Promise<Comment[]>;
-};
+}
 

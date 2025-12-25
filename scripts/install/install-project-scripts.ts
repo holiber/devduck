@@ -11,6 +11,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { resolveDevduckRoot } from '../lib/devduck-paths.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -207,5 +208,69 @@ export function installProjectScripts(
   // Write updated package.json
   writeJSON(workspacePackageJsonPath, workspacePackageJson);
   log(`Updated workspace package.json at ${workspacePackageJsonPath}`);
+}
+
+/**
+ * Install API script to workspace package.json
+ * 
+ * Adds a single "api" script that calls api-cli.ts with all arguments
+ * Usage: npm run api ci.fetchPR feature/new-feature
+ * 
+ * @param workspaceRoot - Path to workspace root
+ * @param log - Optional logging function
+ */
+export function installApiScript(
+  workspaceRoot: string,
+  log: (message: string) => void = () => {}
+): void {
+  const workspacePackageJsonPath = path.join(workspaceRoot, 'package.json');
+  const { devduckRoot } = resolveDevduckRoot({ cwd: workspaceRoot, moduleDir: __dirname });
+
+  // Read workspace package.json
+  const workspacePackageJson = readJSON(workspacePackageJsonPath);
+  if (!workspacePackageJson) {
+    log(`ERROR: Cannot read workspace package.json at ${workspacePackageJsonPath}`);
+    return;
+  }
+
+  // Initialize scripts object if it doesn't exist
+  if (!workspacePackageJson.scripts) {
+    workspacePackageJson.scripts = {};
+  }
+
+  // Remove old API scripts (scripts that match pattern "module.procedure" and call api-cli)
+  const scriptsToRemove: string[] = [];
+  if (workspacePackageJson.scripts) {
+    for (const scriptName in workspacePackageJson.scripts) {
+      // Check if script matches pattern {module}.{procedure}
+      if (scriptName.includes('.') && !scriptName.startsWith('.')) {
+        // Check if it's an API script by checking if it calls api-cli
+        const scriptValue = workspacePackageJson.scripts[scriptName];
+        if (scriptValue && scriptValue.includes('api-cli')) {
+          scriptsToRemove.push(scriptName);
+        }
+      }
+    }
+  }
+
+  // Remove old scripts
+  for (const scriptName of scriptsToRemove) {
+    if (workspacePackageJson.scripts) {
+      delete workspacePackageJson.scripts[scriptName];
+    }
+    log(`Removed old API script: ${scriptName}`);
+  }
+
+  // Calculate relative path from workspace root to devduck scripts
+  const apiCliPath = path.relative(workspaceRoot, path.join(devduckRoot, 'scripts', 'api-cli.ts'));
+  const apiCliCommand = apiCliPath.startsWith('.') ? apiCliPath : `./${apiCliPath}`;
+
+  // Add or update the "api" script
+  // Arguments will be passed through npm run api arg1 arg2
+  workspacePackageJson.scripts['api'] = `npx tsx ${apiCliCommand}`;
+
+  // Write updated package.json
+  writeJSON(workspacePackageJsonPath, workspacePackageJson);
+  log(`Added/updated API script: api -> npx tsx ${apiCliCommand} "$@"`);
 }
 

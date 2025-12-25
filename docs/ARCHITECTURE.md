@@ -115,6 +115,7 @@ Modules related to Yandex infrastructure must start with `ya-` prefix:
 - `containers`: Docker container orchestration
 - `evolution`: Self-modification capabilities
 - `unsecure-sudo`: Temporary sudo command execution
+- `mcp`: MCP server management and tool discovery
 
 ## Workspace System
 
@@ -547,6 +548,83 @@ All temporary files are stored in `.cache/devduck/` directory within the workspa
 - Provide defaultSettings for configurable behavior
 - Document module usage in MODULE.md
 - Follow naming conventions (ya-* for Yandex infrastructure)
+
+## Unified API System
+
+DevDuck provides a unified API system that allows modules to expose their functionality through a tRPC-like router pattern. This enables consistent API access across all modules and automatic CLI generation.
+
+### Module API Definition
+
+Modules can define their API by creating an `api.ts` file in the module directory. The API uses a tRPC-like router pattern:
+
+```typescript
+import { initProviderContract } from '../../scripts/lib/provider-router.js';
+import { z } from 'zod';
+
+const t = initProviderContract<ProviderType>();
+
+export const moduleRouter = t.router({
+  procedureName: t.procedure
+    .input(InputSchema)
+    .output(OutputSchema)
+    .meta({
+      title: 'Procedure title',
+      description: 'Procedure description',
+      idempotent: true,
+      timeoutMs: 10_000
+    })
+    .handler(async ({ input, ctx }) => {
+      // Implementation
+      return result;
+    })
+});
+```
+
+### Router Features
+
+- **Type-safe**: Input and output schemas using Zod
+- **Metadata**: Title, description, idempotency, timeout information
+- **Provider support**: Optional provider context for modules that need external services
+- **CLI generation**: Automatic yargs command generation via `router.toCli()`
+- **Uniform calling**: All procedures called via `router.call(procedureName, input, context)`
+
+### Unified API Collection
+
+The unified API system automatically discovers and collects routers from all modules:
+
+1. **Discovery**: Scans `modules/` directories for `api.ts` files
+2. **External repos**: Also discovers modules from external repositories defined in `workspace.config.json`
+3. **Environment loading**: Automatically loads `.env` variables before importing modules
+4. **Caching**: API is collected once and cached for performance
+
+### API CLI
+
+The unified API is accessible via CLI through `api-cli.ts`:
+
+```bash
+npm run api <module>.<procedure> [options]
+```
+
+The CLI:
+- Lists all available API methods when called without arguments
+- Generates help for each procedure automatically
+- Handles provider initialization for modules that require providers
+- Supports modules without providers (e.g., `mcp`)
+
+### Module API Examples
+
+#### CI Module
+- `ci.fetchPR` - Fetch pull request information
+- `ci.fetchCheckStatus` - Fetch CI check statuses
+- `ci.fetchComments` - Fetch PR comments
+
+#### MCP Module
+- `mcp.list` - List MCP servers or tools for a specific server
+- `mcp.call` - Call a specific MCP tool/method on a server
+
+### Provider-less Modules
+
+Some modules (like `mcp`) don't require providers. These modules can use `initProviderContract<void>()` or handle provider initialization differently in their handlers.
 
 ## Architecture Evolution
 
