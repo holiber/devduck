@@ -772,7 +772,9 @@ export async function runPreInstallChecks(workspaceRoot: string): Promise<PreIns
               const thingToInstall = testCheckObj.name || testCheckObj.description || testCheckObj.var || 'required component';
               console.log(`  ℹ Installing ${thingToInstall}...`);
               try {
-                const installCommand = replaceEnvVarsInCommand(testCheckObj.install, env);
+                let installCommand = replaceEnvVarsInCommand(testCheckObj.install, env);
+                // Resolve tsx commands with module-relative paths (e.g. "tsx scripts/install-proxy-client.ts")
+                installCommand = resolveTsxCommand(installCommand, moduleResult.modulePath);
                 const installOutput = execSync(installCommand, {
                   encoding: 'utf8',
                   stdio: ['pipe', 'pipe', 'pipe'],
