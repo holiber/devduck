@@ -122,7 +122,14 @@ async function runCommandToLogs(params: {
   child.stderr?.pipe(err);
 
   const exitCode: number = await new Promise(resolve => {
-    child.on('exit', code => resolve(code ?? 1));
+    const finish = (code: number) => {
+      out.end();
+      err.end();
+      resolve(code);
+    };
+
+    child.on('close', code => finish(code ?? 1));
+    child.on('error', () => finish(1));
   });
   return { exitCode, stdoutLogPath, stderrLogPath };
 }
