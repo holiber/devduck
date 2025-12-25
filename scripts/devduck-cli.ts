@@ -102,13 +102,39 @@ function configListsDevduckAsProject(config: WorkspaceConfigLike | null): boolea
 }
 
 function copyDirSync(srcDir: string, destDir: string): void {
-  fs.mkdirSync(destDir, { recursive: true });
-  fs.cpSync(srcDir, destDir, {
-    recursive: true,
-    force: true,
-    // avoid copying nested node_modules if present in a source checkout
-    filter: (p) => !p.includes(`${path.sep}node_modules${path.sep}`)
-  });
+  // Avoid fs.cpSync: it can hit Node internal assertions on some Node versions.
+  // This is a small, predictable copy tailored for "copy this repo into workspace/devduck/src".
+  const skipDirNames = new Set(['node_modules', '.cache']);
+
+  function copyEntry(src: string, dest: string): void {
+    const st = fs.lstatSync(src);
+    // Skip special files (e.g. unix sockets) that can exist in runtime caches.
+    if (st.isSocket() || st.isFIFO()) return;
+    if (st.isSymbolicLink()) {
+      const link = fs.readlinkSync(src);
+      fs.mkdirSync(path.dirname(dest), { recursive: true });
+      try {
+        fs.unlinkSync(dest);
+      } catch {
+        // ignore
+      }
+      fs.symlinkSync(link, dest);
+      return;
+    }
+    if (st.isDirectory()) {
+      if (skipDirNames.has(path.basename(src))) return;
+      fs.mkdirSync(dest, { recursive: true });
+      for (const ent of fs.readdirSync(src, { withFileTypes: true })) {
+        if (skipDirNames.has(ent.name)) continue;
+        copyEntry(path.join(src, ent.name), path.join(dest, ent.name));
+      }
+      return;
+    }
+    fs.mkdirSync(path.dirname(dest), { recursive: true });
+    fs.copyFileSync(src, dest);
+  }
+
+  copyEntry(srcDir, destDir);
 }
 
 function cloneGitRepoSync(repoUrl: string, destDir: string, ref?: string): void {

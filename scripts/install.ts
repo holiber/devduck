@@ -1583,6 +1583,31 @@ function isSafeRelativePath(p: string): boolean {
   return true;
 }
 
+function copyPathRecursiveSync(srcPath: string, destPath: string): void {
+  const st = fs.lstatSync(srcPath);
+  if (st.isSymbolicLink()) {
+    const link = fs.readlinkSync(srcPath);
+    fs.mkdirSync(path.dirname(destPath), { recursive: true });
+    try {
+      fs.unlinkSync(destPath);
+    } catch {
+      // ignore
+    }
+    fs.symlinkSync(link, destPath);
+    return;
+  }
+  if (st.isDirectory()) {
+    fs.mkdirSync(destPath, { recursive: true });
+    const entries = fs.readdirSync(srcPath, { withFileTypes: true });
+    for (const entry of entries) {
+      copyPathRecursiveSync(path.join(srcPath, entry.name), path.join(destPath, entry.name));
+    }
+    return;
+  }
+  fs.mkdirSync(path.dirname(destPath), { recursive: true });
+  fs.copyFileSync(srcPath, destPath);
+}
+
 function copySeedFilesFromProvidedWorkspaceConfig(params: {
   workspaceRoot: string;
   providedWorkspaceConfigPath: string;
@@ -1622,7 +1647,7 @@ function copySeedFilesFromProvidedWorkspaceConfig(params: {
       }
 
       fs.mkdirSync(path.dirname(destPath), { recursive: true });
-      fs.cpSync(srcPath, destPath, { recursive: true, force: true });
+      copyPathRecursiveSync(srcPath, destPath);
       print(`  ${symbols.success} Copied: ${relPath}`, 'green');
       log(`Copied seed path: ${srcPath} -> ${destPath}`);
     } catch (error) {
