@@ -9,7 +9,6 @@ checks:
     var: "CURSOR_API_KEY"
     description: "Checks that CURSOR_API_KEY is set and valid (cheap GET /v1/models probe)"
     docs: "Get a key at https://cursor.com/dashboard?tab=integrations"
-    optional: true
     test: "sh -c 'test -n \"$CURSOR_API_KEY\" || exit 0; curl -s -o /dev/null -w \"%{http_code}\" https://api.cursor.sh/v1/models -H \"Authorization: Bearer $CURSOR_API_KEY\"'"
 ---
 # Cursor Module
