@@ -543,8 +543,12 @@ export async function runPreInstallChecks(workspaceRoot: string): Promise<PreIns
 }
 
 /**
- * Check pre-install check results and exit if there are failures
+ * Check pre-install check results and return the validation status.
+ *
+ * Important: this function must NOT terminate the process. Callers decide whether to exit.
  */
+export type PreInstallValidationStatus = 'ok' | 'needs_input' | 'failed';
+
 export function validatePreInstallChecks(
   checkResults: PreInstallCheckResult,
   options: {
@@ -556,7 +560,7 @@ export function validatePreInstallChecks(
       info: string;
     };
   }
-): void {
+): PreInstallValidationStatus {
   const { print, log, symbols } = options;
 
   const isRequiredTokenMissingError = (err: string | undefined): boolean => {
@@ -680,8 +684,7 @@ export function validatePreInstallChecks(
       print(`\n${symbols.info} Please set missing tokens in .env file or environment variables`, 'cyan');
       print(`${symbols.info} Results saved to .cache/pre-install-check.json`, 'cyan');
       log(`Pre-install checks failed: real test failures detected`);
-      process.exit(1);
-      return;
+      return 'failed';
     }
 
     // Missing-token-only case: not a crash. Ask the user to provide tokens and rerun install.
@@ -705,11 +708,11 @@ export function validatePreInstallChecks(
     print(`\n${symbols.info} Set these tokens in .env (or env vars) and re-run: npm run install`, 'cyan');
     print(`${symbols.info} Results saved to .cache/pre-install-check.json`, 'cyan');
     log(`Pre-install checks require user input: missing tokens`);
-    process.exit(0);
-    return;
+    return 'needs_input';
   }
   
   print(`  ${symbols.success} All pre-install checks passed`, 'green');
   log(`Pre-install checks passed`);
+  return 'ok';
 }
 

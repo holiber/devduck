@@ -313,29 +313,18 @@ checks:
       error: '✗',
       info: 'ℹ'
     };
+
+    const status = validatePreInstallChecks(checkResults, {
+      print: mockPrint,
+      log: mockLog,
+      symbols
+    });
     
-    // Mock process.exit to prevent actual exit
-    const originalExit = process.exit;
-    let exitCode: number | undefined;
-    process.exit = ((code?: number) => {
-      exitCode = code;
-    }) as typeof process.exit;
-    
-    try {
-      validatePreInstallChecks(checkResults, {
-        print: mockPrint,
-        log: mockLog,
-        symbols
-      });
-      
-      assert.strictEqual(exitCode, 0);
-      assert.ok(printMessages.some(msg => msg.includes('Pre-install checks require your input')));
-      assert.ok(printMessages.some(msg => msg.includes('MISSING_TOKEN')));
-      assert.ok(printMessages.some(msg => msg.includes('Missing token description')));
-      assert.ok(logMessages.some(msg => msg.includes('Pre-install checks require user input')));
-    } finally {
-      process.exit = originalExit;
-    }
+    assert.strictEqual(status, 'needs_input');
+    assert.ok(printMessages.some(msg => msg.includes('Pre-install checks require your input')));
+    assert.ok(printMessages.some(msg => msg.includes('MISSING_TOKEN')));
+    assert.ok(printMessages.some(msg => msg.includes('Missing token description')));
+    assert.ok(logMessages.some(msg => msg.includes('Pre-install checks require user input')));
   });
 
   test('validatePreInstallChecks reports failed test checks', () => {
@@ -375,28 +364,17 @@ checks:
       error: '✗',
       info: 'ℹ'
     };
+
+    const status = validatePreInstallChecks(checkResults, {
+      print: mockPrint,
+      log: mockLog,
+      symbols
+    });
     
-    // Mock process.exit
-    const originalExit = process.exit;
-    let exitCode: number | undefined;
-    process.exit = ((code?: number) => {
-      exitCode = code;
-    }) as typeof process.exit;
-    
-    try {
-      validatePreInstallChecks(checkResults, {
-        print: mockPrint,
-        log: mockLog,
-        symbols
-      });
-      
-      assert.strictEqual(exitCode, 1);
-      assert.ok(printMessages.some(msg => msg.includes('Pre-install checks failed')));
-      assert.ok(printMessages.some(msg => msg.includes('Failed test checks')));
-      assert.ok(logMessages.some(msg => msg.includes('Auth test check failed')));
-    } finally {
-      process.exit = originalExit;
-    }
+    assert.strictEqual(status, 'failed');
+    assert.ok(printMessages.some(msg => msg.includes('Pre-install checks failed')));
+    assert.ok(printMessages.some(msg => msg.includes('Failed test checks')));
+    assert.ok(logMessages.some(msg => msg.includes('Auth test check failed')));
   });
 
   test('validatePreInstallChecks treats token-dependent test failures as non-fatal', () => {
@@ -434,29 +412,18 @@ checks:
       error: '✗',
       info: 'ℹ'
     };
+
+    const status = validatePreInstallChecks(checkResults, {
+      print: mockPrint,
+      log: mockLog,
+      symbols
+    });
     
-    // Mock process.exit
-    const originalExit = process.exit;
-    let exitCode: number | undefined;
-    process.exit = ((code?: number) => {
-      exitCode = code;
-    }) as typeof process.exit;
-    
-    try {
-      validatePreInstallChecks(checkResults, {
-        print: mockPrint,
-        log: mockLog,
-        symbols
-      });
-      
-      assert.strictEqual(exitCode, 0);
-      assert.ok(printMessages.some(msg => msg.includes('Pre-install checks require your input')));
-      assert.ok(printMessages.some(msg => msg.includes('Token-dependent checks blocked')));
-      assert.ok(printMessages.some(msg => msg.includes('ARCADIA_ROOT')));
-      assert.ok(logMessages.some(msg => msg.includes('Pre-install checks require user input')));
-    } finally {
-      process.exit = originalExit;
-    }
+    assert.strictEqual(status, 'needs_input');
+    assert.ok(printMessages.some(msg => msg.includes('Pre-install checks require your input')));
+    assert.ok(printMessages.some(msg => msg.includes('Token-dependent checks blocked')));
+    assert.ok(printMessages.some(msg => msg.includes('ARCADIA_ROOT')));
+    assert.ok(logMessages.some(msg => msg.includes('Pre-install checks require user input')));
   });
 
   test('validatePreInstallChecks passes when all checks succeed', () => {
@@ -506,26 +473,15 @@ checks:
       error: '✗',
       info: 'ℹ'
     };
+
+    const status = validatePreInstallChecks(checkResults, {
+      print: mockPrint,
+      log: mockLog,
+      symbols
+    });
     
-    // Mock process.exit
-    const originalExit = process.exit;
-    let exitCalled = false;
-    process.exit = (() => {
-      exitCalled = true;
-    }) as typeof process.exit;
-    
-    try {
-      validatePreInstallChecks(checkResults, {
-        print: mockPrint,
-        log: mockLog,
-        symbols
-      });
-      
-      assert.strictEqual(exitCalled, false);
-      assert.ok(printMessages.some(msg => msg.includes('All pre-install checks passed')));
-    } finally {
-      process.exit = originalExit;
-    }
+    assert.strictEqual(status, 'ok');
+    assert.ok(printMessages.some(msg => msg.includes('All pre-install checks passed')));
   });
 
   test('handles empty workspace.config.json gracefully', async () => {
