@@ -250,32 +250,37 @@ function findScriptInDirectory(dir: string, scriptName: string): string | null {
 }
 
 /**
- * Wrapper for checkCommand that handles special cases (api commands, curl commands)
+ * Create a wrapper for checkCommand that handles special cases (api commands, curl commands)
+ * This is a factory function that captures the workspace root
  */
-async function checkCommandWrapper(item: CheckItem, _context: string | null = null, _skipInstall = false): Promise<CheckResult> {
-  const { name, test } = item;
-  
-  if (!test) {
-    return {
-      name: name,
-      passed: false,
-      error: 'No test specified'
-    };
-  }
-  
-  // Handle API calls (commands starting with "api ")
-  if (test.trim().startsWith('api ')) {
-    try {
-      const apiCommand = test.trim().substring(4); // Remove "api " prefix
-      const command = `npm run call -- ${apiCommand}`;
+function createCheckCommandWrapper(workspaceRoot: string) {
+  return async function checkCommandWrapper(item: CheckItem, _context: string | null = null, _skipInstall = false): Promise<CheckResult> {
+    const { name, test } = item;
+    
+    if (!test) {
+      return {
+        name: name,
+        passed: false,
+        error: 'No test specified'
+      };
+    }
+    
+    // Handle API calls (commands starting with "api ")
+    if (test.trim().startsWith('api ')) {
+      try {
+        const apiCommand = test.trim().substring(4); // Remove "api " prefix
       
-      const output = execSync(command, {
-        encoding: 'utf8',
-        stdio: ['pipe', 'pipe', 'pipe'],
-        shell: '/bin/bash',
-        timeout: 30000,
-        cwd: findWorkspaceRoot(process.cwd()) || process.cwd()
-      });
+        // Use npx tsx directly to execute api-call.ts, bypassing npm script resolution
+        // This is more reliable than using npm run call
+        const command = `npx tsx ./devduck/src/scripts/api-call.ts ${apiCommand}`;
+        
+        const output = execSync(command, {
+          encoding: 'utf8',
+          stdio: ['pipe', 'pipe', 'pipe'],
+          shell: '/bin/bash',
+          timeout: 30000,
+          cwd: workspaceRoot
+        }).toString();
       
       const resultValue = output.trim().split('\n').pop()?.trim() || '';
       
@@ -295,11 +300,13 @@ async function checkCommandWrapper(item: CheckItem, _context: string | null = nu
       const err = error as { stdout?: Buffer | string; stderr?: Buffer | string; message?: string };
       const stderrStr = err.stderr ? err.stderr.toString().trim() : '';
       const stdoutStr = err.stdout ? err.stdout.toString().trim() : '';
+      const errorMessage = stderrStr || stdoutStr || err.message || '';
       const apiCommand = test.trim().substring(4);
+      
       return {
         name: name,
         passed: false,
-        error: stderrStr || stdoutStr || err.message || `api ${apiCommand} failed`
+        error: errorMessage || `api ${apiCommand} failed`
       };
     }
   }
@@ -386,6 +393,7 @@ async function checkCommandWrapper(item: CheckItem, _context: string | null = nu
       error: stderrStr || stdoutStr || err.message || 'Command failed'
     };
   }
+  };
 }
 
 /**
@@ -651,6 +659,68 @@ async function collectModuleChecks(
 }
 
 /**
+ * Ensure required npm scripts exist in workspace package.json
+ * This is needed for API checks to work
+ */
+function ensureWorkspaceScripts(workspaceRoot: string): void {
+  const packageJsonPath = path.join(workspaceRoot, 'package.json');
+  let pkg: { scripts?: Record<string, string>; [key: string]: unknown } = {};
+  let pkgUpdated = false;
+  
+  if (fs.existsSync(packageJsonPath)) {
+    pkg = readJSON(packageJsonPath) as { scripts?: Record<string, string>; [key: string]: unknown } || {};
+  } else {
+    // If package.json doesn't exist, create a minimal one
+    pkg = {
+      name: path.basename(workspaceRoot) || 'devduck-workspace',
+      private: true,
+      type: 'module',
+      scripts: {}
+    };
+    pkgUpdated = true;
+  }
+  
+  if (!pkg.scripts) {
+    pkg.scripts = {};
+    pkgUpdated = true;
+  }
+  
+  // Add 'call' script if it doesn't exist
+  if (!pkg.scripts.call) {
+    pkg.scripts.call = 'tsx ./devduck/src/scripts/api-call.ts';
+    pkgUpdated = true;
+  }
+  
+  // Add 'api' script if it doesn't exist
+  if (!pkg.scripts.api) {
+    pkg.scripts.api = 'tsx ./devduck/src/scripts/api-cli.ts';
+    pkgUpdated = true;
+  }
+  
+  // Write updated package.json if we added scripts
+  if (pkgUpdated) {
+    writeJSON(packageJsonPath, pkg);
+    // Force a sync to ensure the file is written to disk
+    const fd = fs.openSync(packageJsonPath, 'r+');
+    fs.fsyncSync(fd);
+    fs.closeSync(fd);
+    
+    // Verify the scripts were written by reading the file back
+    const verifyPkg = readJSON(packageJsonPath) as { scripts?: Record<string, string> };
+    if (!verifyPkg?.scripts?.call || !verifyPkg?.scripts?.api) {
+      const rawContent = fs.readFileSync(packageJsonPath, 'utf8');
+      throw new Error(`Failed to add scripts to package.json at ${packageJsonPath}. Written: ${JSON.stringify(verifyPkg?.scripts)}. Raw: ${rawContent.substring(0, 1000)}`);
+    }
+    // Ensure the file is readable and has correct permissions
+    try {
+      fs.accessSync(packageJsonPath, fs.constants.R_OK);
+    } catch {
+      throw new Error(`package.json at ${packageJsonPath} is not readable`);
+    }
+  }
+}
+
+/**
  * Run pre-install checks
  */
 export async function runPreInstallChecks(workspaceRoot: string): Promise<PreInstallCheckResult> {
@@ -663,6 +733,9 @@ export async function runPreInstallChecks(workspaceRoot: string): Promise<PreIns
   if (!fs.existsSync(cacheDir)) {
     fs.mkdirSync(cacheDir, { recursive: true });
   }
+  
+  // Ensure required npm scripts exist before running checks
+  ensureWorkspaceScripts(workspaceRoot);
   
   // Read config
   const config = readJSON<Record<string, unknown>>(configPath);
@@ -751,13 +824,14 @@ export async function runPreInstallChecks(workspaceRoot: string): Promise<PreIns
               checkItem,
               {
                 workspaceRoot: workspaceRoot,
-                checkCommand: checkCommandWrapper,
+                checkCommand: createCheckCommandWrapper(workspaceRoot),
                 checkHttpAccess: checkHttpAccessWrapper,
                 isHttpRequest: isHttpRequest,
                 replaceVariablesInObjectWithLog: replaceVariablesInObjectWrapper
               }
             );
-            check.passed = checkResult.passed === true;
+            // Convert null (skipped) to undefined, true to true, false to false
+            check.passed = checkResult.passed === true ? true : (checkResult.passed === null ? undefined : false);
             check.error = checkResult.error;
           }
         }
@@ -806,7 +880,7 @@ export async function runPreInstallChecks(workspaceRoot: string): Promise<PreIns
                     checkItem,
                     {
                       workspaceRoot: workspaceRoot,
-                      checkCommand: checkCommandWrapper,
+                      checkCommand: createCheckCommandWrapper(workspaceRoot),
                       checkHttpAccess: checkHttpAccessWrapper,
                       isHttpRequest: isHttpRequest,
                       replaceVariablesInObjectWithLog: replaceVariablesInObjectWrapper
@@ -842,13 +916,14 @@ export async function runPreInstallChecks(workspaceRoot: string): Promise<PreIns
               checkItem,
               {
                 workspaceRoot: workspaceRoot,
-                checkCommand: checkCommandWrapper,
+                checkCommand: createCheckCommandWrapper(workspaceRoot),
                 checkHttpAccess: checkHttpAccessWrapper,
                 isHttpRequest: isHttpRequest,
                 replaceVariablesInObjectWithLog: replaceVariablesInObjectWrapper
               }
             );
-            check.passed = checkResult.passed === true;
+            // Convert null (skipped) to undefined, true to true, false to false
+            check.passed = checkResult.passed === true ? true : (checkResult.passed === null ? undefined : false);
             check.error = checkResult.error;
           }
         } else {
@@ -866,7 +941,7 @@ export async function runPreInstallChecks(workspaceRoot: string): Promise<PreIns
             checkItem,
             {
               workspaceRoot: workspaceRoot,
-              checkCommand: checkCommandWrapper,
+              checkCommand: createCheckCommandWrapper(workspaceRoot),
               checkHttpAccess: checkHttpAccessWrapper,
               isHttpRequest: isHttpRequest,
               replaceVariablesInObjectWithLog: replaceVariablesInObjectWrapper
