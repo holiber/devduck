@@ -560,10 +560,10 @@ export async function runPreInstallChecks(workspaceRoot: string): Promise<PreIns
               check.error = `Required token ${testCheckObj.var} is not present`;
             }
           } else {
-            // Token is present - execute test check first
+            // Token is present - try test first, but if it fails and install command exists, run install
             let testCheck = await executeTestCheck(testCheckObj, env);
             
-            // If test fails and install command is available, try running install first
+            // If test fails and install command is available, run install command to fix the issue
             if (!testCheck.passed && testCheckObj.install && typeof testCheckObj.install === 'string') {
               try {
                 const installCommand = replaceEnvVarsInCommand(testCheckObj.install, env);
@@ -605,7 +605,7 @@ export async function runPreInstallChecks(workspaceRoot: string): Promise<PreIns
           // Execute test check even without var (for tests that don't require tokens)
           let testCheck = await executeTestCheck(testCheckObj, env);
           
-          // If test fails and install command is available, try running install first
+          // If test fails and install command is available, run install command to fix the issue
           if (!testCheck.passed && testCheckObj.install && typeof testCheckObj.install === 'string') {
             try {
               const installCommand = replaceEnvVarsInCommand(testCheckObj.install, env);
