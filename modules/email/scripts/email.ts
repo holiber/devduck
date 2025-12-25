@@ -10,11 +10,10 @@ import { findWorkspaceRoot } from '../../../scripts/lib/workspace-root.js';
 import {
   discoverProvidersFromModules,
   getProvidersByType,
-  getProvider,
-  setProviderTypeSchema
+  getProvider
 } from '../../../scripts/lib/provider-registry.js';
 import type { EmailProvider, Message } from '../schemas/contract.js';
-import { EmailProviderSchema } from '../schemas/contract.js';
+import { emailRouter } from '../api.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -98,9 +97,6 @@ async function main(argv = process.argv): Promise<void> {
   const { devduckRoot } = resolveDevduckRoot({ cwd: process.cwd(), moduleDir: __dirname });
   const workspaceRoot = findWorkspaceRoot(process.cwd());
 
-  // Enable contract validation for email providers.
-  setProviderTypeSchema('email', EmailProviderSchema);
-
   // Discover providers from modules.
   await discoverProvidersFromModules({ modulesDir: path.join(devduckRoot, 'modules') });
 
@@ -120,7 +116,7 @@ async function main(argv = process.argv): Promise<void> {
   const since = String(args.since || '').trim() || safeIsoNowMinusDays(days);
   const limit = typeof args.limit === 'number' && Number.isFinite(args.limit) ? Math.max(1, Math.floor(args.limit)) : 50;
 
-  const unread = await provider.listUnreadMessages({ since, limit });
+  const unread = await emailRouter.call('listUnreadMessages', { since, limit }, { provider });
 
   if (args.json) {
     process.stdout.write(

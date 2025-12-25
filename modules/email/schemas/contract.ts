@@ -59,13 +59,15 @@ export const ErrorCodeSchema = z.enum([
 ]);
 export type ErrorCode = z.infer<typeof ErrorCodeSchema>;
 
+// Tool names type
+export type EmailToolName = 'getMessage' | 'searchMessages' | 'downloadAttachment' | 'listUnreadMessages';
+
 export const EmailToolNameSchema = z.enum([
   'getMessage',
   'searchMessages',
   'downloadAttachment',
   'listUnreadMessages'
 ]);
-export type EmailToolName = z.infer<typeof EmailToolNameSchema>;
 
 // Tool inputs
 export const GetMessageInputSchema = z.object({
@@ -101,6 +103,27 @@ export type Attachment = z.infer<typeof AttachmentSchema>;
 export type Thread = z.infer<typeof ThreadSchema>;
 export type Message = z.infer<typeof MessageSchema>;
 
+/**
+ * Mapping of tool names to their input schemas
+ * This is automatically used to generate CLI commands (when using routers)
+ */
+export const EmailToolInputSchemas: Record<EmailToolName, z.ZodObject<any>> = {
+  getMessage: GetMessageInputSchema,
+  searchMessages: SearchMessagesInputSchema,
+  downloadAttachment: DownloadAttachmentInputSchema,
+  listUnreadMessages: ListUnreadInputSchema
+};
+
+/**
+ * Descriptions for tools (used in CLI help)
+ */
+export const EmailToolDescriptions: Record<EmailToolName, string> = {
+  getMessage: 'Get a message by ID',
+  searchMessages: 'Search messages',
+  downloadAttachment: 'Download an attachment',
+  listUnreadMessages: 'List unread messages'
+};
+
 // Provider manifest (metadata)
 export const EmailProviderManifestSchema = z
   .object({
@@ -129,24 +152,12 @@ export const EmailProviderManifestSchema = z
 export type EmailProviderManifest = z.infer<typeof EmailProviderManifestSchema>;
 
 /**
- * Email provider interface (validated at registration time).
- *
- * Note: Zod cannot fully validate function signatures without executing them.
- * We validate that required methods exist and that metadata matches the contract.
+ * Email provider interface
  */
-export const EmailProviderSchema = z.object({
-  name: z.string().min(1),
-  version: z.string().min(1),
-  manifest: EmailProviderManifestSchema,
-
-  // MCP tools
-  getMessage: z.function(),
-  searchMessages: z.function(),
-  downloadAttachment: z.function(),
-  listUnreadMessages: z.function()
-});
-
-export type EmailProvider = z.infer<typeof EmailProviderSchema> & {
+export interface EmailProvider {
+  name: string;
+  version: string;
+  manifest: EmailProviderManifest;
   getMessage(input: GetMessageInput): Promise<Message>;
   searchMessages(input: SearchMessagesInput): Promise<Message[]>;
   downloadAttachment(input: DownloadAttachmentInput): Promise<Buffer>;

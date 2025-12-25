@@ -5,16 +5,15 @@ import path from 'node:path';
 import provider from '../../modules/email/providers/smogcheck-provider/index.js';
 import {
   AttachmentSchema,
-  EmailProviderSchema,
-  MessageSchema
+  MessageSchema,
+  type EmailProvider
 } from '../../modules/email/schemas/contract.js';
 
 import {
   clearProvidersForTests,
   discoverProvidersFromModules,
   getProvider,
-  getProvidersByType,
-  setProviderTypeSchema
+  getProvidersByType
 } from '../../scripts/lib/provider-registry.js';
 
 function toIsoDaysAgo(days: number): string {
@@ -24,13 +23,19 @@ function toIsoDaysAgo(days: number): string {
 }
 
 describe('email: smogcheck-provider', () => {
-  test('matches EmailProvider contract schema', () => {
-    const res = EmailProviderSchema.safeParse(provider);
-    assert.ok(res.success, res.success ? '' : res.error.message);
-    assert.strictEqual(provider.manifest.type, 'email');
-    assert.strictEqual(provider.manifest.name, 'smogcheck-provider');
-    assert.ok(Array.isArray(provider.manifest.tools));
-    assert.ok(provider.manifest.tools.includes('listUnreadMessages'));
+  test('matches EmailProvider interface', () => {
+    const p = provider as EmailProvider;
+    assert.ok(p.name);
+    assert.ok(p.version);
+    assert.ok(p.manifest);
+    assert.strictEqual(p.manifest.type, 'email');
+    assert.strictEqual(p.manifest.name, 'smogcheck-provider');
+    assert.ok(Array.isArray(p.manifest.tools));
+    assert.ok(p.manifest.tools.includes('listUnreadMessages'));
+    assert.ok(typeof p.getMessage === 'function');
+    assert.ok(typeof p.searchMessages === 'function');
+    assert.ok(typeof p.downloadAttachment === 'function');
+    assert.ok(typeof p.listUnreadMessages === 'function');
   });
 
   test('listUnreadMessages returns messages that match Message schema', async () => {
@@ -104,9 +109,7 @@ describe('email: provider registry discovery', () => {
     clearProvidersForTests();
   });
 
-  test('discovers smogcheck-provider from modules directory and registers it (with schema validation)', async () => {
-    setProviderTypeSchema('email', EmailProviderSchema);
-
+  test('discovers smogcheck-provider from modules directory and registers it', async () => {
     const modulesDir = path.resolve(process.cwd(), 'modules');
     await discoverProvidersFromModules({ modulesDir });
 
