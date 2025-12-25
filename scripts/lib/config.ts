@@ -48,23 +48,8 @@ export function replaceVariables(
     return str;
   }
   
-  // Replace $VAR format (preferred, non-deprecated syntax)
+  // Replace $VAR format
   let result = str.replace(/\$([A-Za-z_][A-Za-z0-9_]*)/g, (match, varName) => {
-    // First check environment variables, then .env file
-    const value = process.env[varName] || env[varName];
-    if (value !== undefined) {
-      return value;
-    }
-    // If not found, return original match with warning
-    if (print && symbols && log) {
-      print(`  ${symbols.warning} Variable ${match} not found, keeping as is`, 'yellow');
-      log(`Warning: Variable ${match} not found in environment or .env file`);
-    }
-    return match;
-  });
-  
-  // Also support deprecated $$VAR$$ format for backward compatibility
-  result = result.replace(/\$\$([A-Za-z_][A-Za-z0-9_]*)\$\$/g, (match, varName) => {
     // First check environment variables, then .env file
     const value = process.env[varName] || env[varName];
     if (value !== undefined) {
