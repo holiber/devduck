@@ -73,7 +73,7 @@ function runNpmInstall(workspaceRoot: string): void {
     stdio
   });
 
-  if (!res.ok) {
+  if (res.exitCode !== 0) {
     const details = (res.stderr || res.stdout || '').toString().trim();
     throw new Error(`npm install failed (exit ${res.exitCode}). ${details}`);
   }
@@ -116,13 +116,13 @@ function cloneGitRepoSync(repoUrl: string, destDir: string, ref?: string): void 
 
   const args = ['clone', repoUrl, destDir];
   const clone = execCmdSync('git', args, { stdio: 'inherit' });
-  if (!clone.ok) {
+  if (clone.exitCode !== 0) {
     throw new Error(`git clone failed with exit code ${clone.exitCode}`);
   }
 
   if (ref) {
     const checkout = execCmdSync('git', ['checkout', ref], { stdio: 'inherit', cwd: destDir });
-    if (!checkout.ok) {
+    if (checkout.exitCode !== 0) {
       throw new Error(`git checkout ${ref} failed with exit code ${checkout.exitCode}`);
     }
   }

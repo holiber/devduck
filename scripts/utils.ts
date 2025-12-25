@@ -84,18 +84,18 @@ export function executeCommand(
       };
     }
 
-    const { ok, stdout, stderr } = execShellSync(command, {
+    const res = execShellSync(command, {
       ...options,
       // Keep execSync-like semantics for these helpers.
       // execa uses `shell: true` by default in execShellSync().
       shell: options.shell ?? true
     });
-    if (!ok) {
-      return { success: false, output: stdout, error: stderr || 'Command failed' };
+    if (res.exitCode !== 0) {
+      return { success: false, output: (res.stdout || '').trim(), error: (res.stderr || '').trim() || 'Command failed' };
     }
     return {
       success: true,
-      output: stdout,
+      output: (res.stdout || '').trim(),
       error: null
     };
   } catch (error: unknown) {
@@ -170,12 +170,12 @@ export function requiresSudo(command: string): boolean {
  */
 export function executeInteractiveCommand(command: string): ExecuteInteractiveCommandResult {
   try {
-    const { ok, exitCode } = execShellSync(command, { stdio: 'inherit' });
+    const res = execShellSync(command, { stdio: 'inherit' });
 
     return {
-      success: ok,
+      success: res.exitCode === 0,
       output: null, // Cannot capture output with stdio: 'inherit'
-      error: ok ? null : `Exit code: ${exitCode}`
+      error: res.exitCode === 0 ? null : `Exit code: ${res.exitCode}`
     };
   } catch (error: unknown) {
     const err = error as { message?: string };

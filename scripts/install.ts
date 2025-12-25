@@ -1098,7 +1098,7 @@ function initProjectResult(project: Project, env: Record<string, string>): Proje
       log(`Updating existing git repository: ${projectPath}`);
       const pullResult = execCmdSync('git', ['pull'], { cwd: projectPath });
       
-      if (pullResult.ok) {
+      if (pullResult.exitCode === 0) {
         print(`  ${symbols.success} Repository updated: projects/${projectName}`, 'green');
         log(`Repository updated successfully: ${projectPath}`);
       } else {
@@ -1110,7 +1110,7 @@ function initProjectResult(project: Project, env: Record<string, string>): Proje
         path: `projects/${projectName}`,
         target: projectPath,
         exists: true,
-        updated: pullResult.ok
+        updated: pullResult.exitCode === 0
       };
     } else {
       // Clone repository
@@ -1131,7 +1131,7 @@ function initProjectResult(project: Project, env: Record<string, string>): Proje
       
       const cloneResult = execCmdSync('git', ['clone', gitUrl, projectPath], { stdio: 'inherit' });
       
-      if (cloneResult.ok) {
+      if (cloneResult.exitCode === 0) {
         print(`  ${symbols.success} Repository cloned: projects/${projectName}`, 'green');
         log(`Repository cloned successfully: ${projectPath}`);
         result.symlink = {

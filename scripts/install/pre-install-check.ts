@@ -274,7 +274,6 @@ async function checkCommandWrapper(item: CheckItem, _context: string | null = nu
       timeout: 30000,
       cwd: findWorkspaceRoot(process.cwd()) || process.cwd()
     });
-
     const output = String(res.stdout || '').trim();
     const resultValue = output.split('\n').pop()?.trim() || '';
     if (res.exitCode === 0 && resultValue === 'true') {
@@ -304,7 +303,6 @@ async function checkCommandWrapper(item: CheckItem, _context: string | null = nu
       const passed = (code >= 200 && code < 300) || code === 429;
       return { name, passed, error: passed ? undefined : `HTTP ${code}` };
     }
-
     if (res.exitCode === 0) {
       return { name, passed: true };
     }

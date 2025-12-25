@@ -97,7 +97,7 @@ export default {
   async 'test'(context: HookContext): Promise<HookResult> {
     // Check if vhs command is available
     const res = execCmdSync('vhs', ['--version'], { stdio: 'ignore' });
-    if (res.ok) {
+    if (res.exitCode === 0) {
       return {
         success: true,
         message: 'VHS is installed and available'

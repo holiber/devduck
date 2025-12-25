@@ -130,7 +130,7 @@ function translateTitleToEnglish(title) {
       }
     );
 
-    if (result.ok && result.stdout) {
+    if (result.exitCode === 0 && result.stdout) {
       const translated = result.stdout.trim().split('\n').pop()?.trim() || '';
       // Remove quotes if present
       const clean = translated.replace(/^["']|["']$/g, '');

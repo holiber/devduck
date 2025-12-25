@@ -118,7 +118,7 @@ function runTaskCmd(args: string[]): RunTaskResult {
   const __filename = fileURLToPath(import.meta.url);
   const __dirname = path.dirname(__filename);
   const res = execCmdSync(process.execPath, [path.join(__dirname, 'task.ts'), ...args], { stdio: 'pipe' });
-  return { ok: res.ok, stdout: res.stdout, stderr: res.stderr, code: res.exitCode };
+  return { ok: res.exitCode === 0, stdout: String(res.stdout || ''), stderr: String(res.stderr || ''), code: res.exitCode ?? 1 };
 }
 
 function enqueuePrompt(promptText: string): RunTaskResult & { error?: string } {
@@ -134,7 +134,7 @@ function ensureBgRunners(): void {
 
 function openPathOnHost(p: string): boolean {
   const r = execCmdSync('open', [p], { stdio: 'pipe' });
-  return r.ok;
+  return r.exitCode === 0;
 }
 
 interface HeaderProps {
