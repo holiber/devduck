@@ -558,7 +558,7 @@ describe('Workspace Installer - Unattended Mode', () => {
         const expectedRepoName = expectedGitUrl
           .replace(/\.git$/, '')
           .replace(/[:\/]/g, '_');
-        const repoRoot = path.join(tempWorkspace, 'devduck', 'repos', expectedRepoName);
+        const repoRoot = path.join(tempWorkspace, 'devduck', expectedRepoName);
 
         // Ensure the repo clone exists and contains the expected module.
         await fs.access(path.join(repoRoot, '.git'));

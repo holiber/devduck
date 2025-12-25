@@ -367,7 +367,7 @@ The module resolver supports multiple sources:
 
 1. Parse repository URL to determine type (git/arcadia)
 2. Resolve to local path:
-   - **Git**: Clone to `devduck/repos/{repo-name}/` (reused if exists)
+   - **Git**: Clone to `devduck/{repo-name}/` (reused if exists)
    - **Arcadia**: Use direct filesystem path
 3. Check for `manifest.json` or `devduck.manifest.json`
 4. Verify version compatibility
