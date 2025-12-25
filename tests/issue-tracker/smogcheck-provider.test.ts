@@ -117,11 +117,8 @@ describe('issue-tracker: smogcheck-provider', () => {
   });
 
   test('downloadResources creates correct directory structure', async () => {
-    const workspaceRoot = findWorkspaceRoot(process.cwd());
-    if (!workspaceRoot) {
-      // Skip test if workspace root is not available (e.g., in CI)
-      return;
-    }
+    // Use workspace root if found, otherwise use current working directory (project root)
+    const workspaceRoot = findWorkspaceRoot(process.cwd()) || process.cwd();
 
     const issueId = 'issue-1';
     const result = await provider.downloadResources({ issueId, maxDistance: 2 });
@@ -152,11 +149,8 @@ describe('issue-tracker: smogcheck-provider', () => {
   });
 
   test('downloadResources creates resources.json with correct metadata', async () => {
-    const workspaceRoot = findWorkspaceRoot(process.cwd());
-    if (!workspaceRoot) {
-      // Skip test if workspace root is not available (e.g., in CI)
-      return;
-    }
+    // Use workspace root if found, otherwise use current working directory (project root)
+    const workspaceRoot = findWorkspaceRoot(process.cwd()) || process.cwd();
 
     const issueId = 'issue-1';
     await provider.downloadResources({ issueId, maxDistance: 2 });
@@ -184,11 +178,8 @@ describe('issue-tracker: smogcheck-provider', () => {
   });
 
   test('downloadResources downloads resources with distance <= 2', async () => {
-    const workspaceRoot = findWorkspaceRoot(process.cwd());
-    if (!workspaceRoot) {
-      // Skip test if workspace root is not available (e.g., in CI)
-      return;
-    }
+    // Use workspace root if found, otherwise use current working directory (project root)
+    const workspaceRoot = findWorkspaceRoot(process.cwd()) || process.cwd();
 
     const issueId = 'issue-1';
     await provider.downloadResources({ issueId, maxDistance: 2 });
@@ -214,11 +205,8 @@ describe('issue-tracker: smogcheck-provider', () => {
   });
 
   test('downloadResources tracks resources with distance == 3 without downloading', async () => {
-    const workspaceRoot = findWorkspaceRoot(process.cwd());
-    if (!workspaceRoot) {
-      // Skip test if workspace root is not available (e.g., in CI)
-      return;
-    }
+    // Use workspace root if found, otherwise use current working directory (project root)
+    const workspaceRoot = findWorkspaceRoot(process.cwd()) || process.cwd();
 
     const issueId = 'issue-1';
     await provider.downloadResources({ issueId, maxDistance: 3 });
@@ -248,11 +236,8 @@ describe('issue-tracker: smogcheck-provider', () => {
   });
 
   test('downloadResources creates issue.json with comments and PRs', async () => {
-    const workspaceRoot = findWorkspaceRoot(process.cwd());
-    if (!workspaceRoot) {
-      // Skip test if workspace root is not available (e.g., in CI)
-      return;
-    }
+    // Use workspace root if found, otherwise use current working directory (project root)
+    const workspaceRoot = findWorkspaceRoot(process.cwd()) || process.cwd();
 
     const issueId = 'issue-1';
     await provider.downloadResources({ issueId, maxDistance: 2 });
@@ -285,11 +270,8 @@ describe('issue-tracker: smogcheck-provider', () => {
   });
 
   test('downloadResources creates PR directories when PRs exist', async () => {
-    const workspaceRoot = findWorkspaceRoot(process.cwd());
-    if (!workspaceRoot) {
-      // Skip test if workspace root is not available (e.g., in CI)
-      return;
-    }
+    // Use workspace root if found, otherwise use current working directory (project root)
+    const workspaceRoot = findWorkspaceRoot(process.cwd()) || process.cwd();
 
     const issueId = 'issue-1';
     await provider.downloadResources({ issueId, maxDistance: 2 });
