@@ -10,13 +10,13 @@ import path from 'path';
 import { promises as fs } from 'fs';
 import {
   createTempWorkspace,
+  createWorkspaceFromFixture,
   cleanupTempWorkspace,
   runInstaller,
   verifyWorkspaceStructure,
   verifyWorkspaceConfig,
   verifyModuleInstallation,
-  waitForInstallation,
-  createMockWorkspace
+  waitForInstallation
 } from './helpers.js';
 
 describe('Workspace Installer - GUI/Interactive Mode', () => {
@@ -70,9 +70,8 @@ describe('Workspace Installer - GUI/Interactive Mode', () => {
     let tempWorkspace;
 
     before(async () => {
-      tempWorkspace = await createTempWorkspace();
-      await createMockWorkspace(tempWorkspace, {
-        modules: ['core', 'cursor']
+      tempWorkspace = await createWorkspaceFromFixture('existing-workspace', {
+        prefix: 'devduck-existing-workspace-test-'
       });
     });
 

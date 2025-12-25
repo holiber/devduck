@@ -8,30 +8,8 @@ import { test, describe, before, after } from 'node:test';
 import assert from 'node:assert';
 import path from 'path';
 import { promises as fs } from 'fs';
-import os from 'os';
 import { installProjectScripts } from '../../scripts/install/install-project-scripts.js';
-
-/**
- * Create a temporary directory for testing
- */
-async function createTempWorkspace() {
-  const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'devduck-scripts-test-'));
-  return tmpDir;
-}
-
-/**
- * Clean up temporary workspace
- */
-async function cleanupTempWorkspace(workspacePath) {
-  if (!workspacePath || !workspacePath.includes('devduck-scripts-test-')) {
-    throw new Error('Safety check: Only cleaning up test directories');
-  }
-  try {
-    await fs.rm(workspacePath, { recursive: true, force: true });
-  } catch (error) {
-    console.warn(`Warning: Failed to cleanup ${workspacePath}: ${error.message}`);
-  }
-}
+import { createWorkspaceFromFixture, cleanupTempWorkspace } from './helpers.js';
 
 /**
  * Read JSON file
@@ -49,7 +27,9 @@ describe('Install Project Scripts', () => {
   let tempWorkspace;
 
   before(async () => {
-    tempWorkspace = await createTempWorkspace();
+    tempWorkspace = await createWorkspaceFromFixture('empty', {
+      prefix: 'devduck-scripts-test-'
+    });
   });
 
   after(async () => {

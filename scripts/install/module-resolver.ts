@@ -271,16 +271,61 @@ export interface WorkspaceConfig {
   moduleSettings?: Record<string, Record<string, unknown>>;
 }
 
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function isPattern(s: string): boolean {
+  return s.includes('*') || s.includes('?');
+}
+
+/**
+ * Expand workspace module selectors into explicit module names.
+ *
+ * Supported selectors:
+ * - "*" (all modules)
+ * - "prefix-*" (simple glob with `*` / `?`)
+ * - exact module names
+ */
+export function expandModuleNames(selectors: string[], allModules: Module[]): string[] {
+  const allNames = allModules.map((m) => m.name);
+
+  if (selectors.includes('*')) {
+    return allNames;
+  }
+
+  const out: string[] = [];
+  const seen = new Set<string>();
+
+  for (const sel of selectors) {
+    if (typeof sel !== 'string' || sel.trim() === '') continue;
+    const s = sel.trim();
+
+    if (!isPattern(s)) {
+      if (!seen.has(s)) {
+        seen.add(s);
+        out.push(s);
+      }
+      continue;
+    }
+
+    const re = new RegExp(`^${escapeRegExp(s).replace(/\\\*/g, '.*').replace(/\\\?/g, '.')}$`);
+    for (const name of allNames) {
+      if (re.test(name) && !seen.has(name)) {
+        seen.add(name);
+        out.push(name);
+      }
+    }
+  }
+
+  return out;
+}
+
 /**
  * Resolve modules from workspace config
  */
 export function resolveModules(workspaceConfig: WorkspaceConfig, allModules: Module[]): Module[] {
-  let moduleNames = workspaceConfig.modules || ['*'];
-
-  // Handle wildcard
-  if (moduleNames.includes('*')) {
-    moduleNames = allModules.map(m => m.name);
-  }
+  const moduleNames = expandModuleNames(workspaceConfig.modules || ['*'], allModules);
 
   // Filter by tags if needed (future feature)
   // For now, just resolve by name

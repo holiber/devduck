@@ -15,7 +15,14 @@ import { URL } from 'url';
 import { execSync } from 'child_process';
 import { readJSON, writeJSON } from '../lib/config.js';
 import { readEnvFile } from '../lib/env.js';
-import { getAllModules, getAllModulesFromDirectory, loadModuleFromPath, type Module, type ModuleCheck } from './module-resolver.js';
+import {
+  expandModuleNames,
+  getAllModules,
+  getAllModulesFromDirectory,
+  loadModuleFromPath,
+  type Module,
+  type ModuleCheck
+} from './module-resolver.js';
 
 interface AuthCheckResult {
   type: string;
@@ -407,10 +414,7 @@ async function collectModuleChecks(
   const allModules = [...workspaceModules, ...projectsModules, ...externalModules, ...localModules];
   
   // Resolve which modules to check based on config
-  let moduleNames: string[] = Array.isArray(config.modules) ? config.modules : ['*'];
-  if (moduleNames.includes('*')) {
-    moduleNames = allModules.map(m => m.name);
-  }
+  const moduleNames: string[] = expandModuleNames(Array.isArray(config.modules) ? config.modules : ['*'], allModules);
   
   // Get unique modules by name (first occurrence wins)
   const moduleMap = new Map<string, Module>();

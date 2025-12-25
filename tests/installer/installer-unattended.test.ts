@@ -10,6 +10,7 @@ import path from 'path';
 import { promises as fs } from 'fs';
 import {
   createTempWorkspace,
+  createWorkspaceFromFixture,
   cleanupTempWorkspace,
   runInstaller,
   verifyWorkspaceStructure,
@@ -181,24 +182,15 @@ describe('Workspace Installer - Unattended Mode', () => {
     });
 
     test('Unattended Installation with workspace.config.json seedFiles[] copies seed files/folders', async () => {
-      const sourceWorkspace = await createTempWorkspace();
-      const destWorkspace = await createTempWorkspace();
+      const sourceWorkspace = await createWorkspaceFromFixture('seed-source', {
+        prefix: 'devduck-seed-source-test-'
+      });
+      const destWorkspace = await createWorkspaceFromFixture('empty', {
+        prefix: 'devduck-seed-dest-test-'
+      });
       const providedWorkspaceConfigPath = path.join(sourceWorkspace, 'workspace.config.json');
 
       try {
-        // Create seed content next to the provided config file
-        await fs.writeFile(path.join(sourceWorkspace, 'seed.txt'), 'seed file\n', 'utf8');
-        await fs.mkdir(path.join(sourceWorkspace, 'seed-dir'), { recursive: true });
-        await fs.writeFile(path.join(sourceWorkspace, 'seed-dir', 'nested.txt'), 'nested\n', 'utf8');
-
-        const providedWorkspaceConfig = {
-          workspaceVersion: '0.1.0',
-          devduckPath: './devduck',
-          modules: ['core', 'cursor'],
-          seedFiles: ['seed.txt', 'seed-dir']
-        };
-        await fs.writeFile(providedWorkspaceConfigPath, JSON.stringify(providedWorkspaceConfig, null, 2), 'utf8');
-
         const result = await runInstaller(destWorkspace, {
           unattended: true,
           aiAgent: 'cursor',
