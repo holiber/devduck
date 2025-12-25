@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed - 2025-12-25
+
+- 📦 **External repositories clone location** - Git repositories listed in `workspace.config.json.repos` are now cloned under `<workspace>/devduck/` (instead of `.cache/...`).
+- 🧭 **Module resolution priority** - When installing a module by name, resolution now prefers:
+  - `<workspace>/modules/`
+  - `<workspace>/projects/*/modules/`
+  - DevDuck built-in `modules/`
+- 🗂️ **Persist resolved module paths** - Installer now records installed module name → path mapping in `.cache/install-check.json` (`installedModules`) for downstream tooling.
+
 ### Added - 2025-12-24
 
 - ✅ **Pre-install checks system** - Modules can now define pre-install checks to verify required environment variables and validate token functionality
