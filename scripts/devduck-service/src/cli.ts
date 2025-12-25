@@ -122,14 +122,17 @@ async function runCommandToLogs(params: {
   child.stderr?.pipe(err);
 
   const exitCode: number = await new Promise(resolve => {
+    let done = false;
     const finish = (code: number) => {
+      if (done) return;
+      done = true;
       out.end();
       err.end();
       resolve(code);
     };
 
-    child.on('close', code => finish(code ?? 1));
-    child.on('error', () => finish(1));
+    child.once('close', code => finish(code ?? 1));
+    child.once('error', () => finish(1));
   });
   return { exitCode, stdoutLogPath, stderrLogPath };
 }
@@ -169,8 +172,6 @@ async function cmdDev(
   const launchDev = tryReadLaunchDevFromWorkspaceConfig(process.cwd());
   const session = await client.process.readSession.query();
   const status = await client.process.status.query();
-  const serverRunning = status.processes.find(p => p.name === 'server')?.running ?? false;
-  const clientRunning = status.processes.find(p => p.name === 'client')?.running ?? false;
 
   let baseURL = session.baseURL;
   if (launchDev?.baseURL) {
@@ -290,6 +291,9 @@ async function cmdDev(
   const fixturesDir = path.join(process.cwd(), 'tests', 'devduck-service', 'fixtures');
   const serverScript = path.join(fixturesDir, 'http-server.mjs');
   const loggyScript = path.join(fixturesDir, 'loggy-process.mjs');
+
+  const serverRunning = status.processes.find(p => p.name === 'server')?.running ?? false;
+  const clientRunning = status.processes.find(p => p.name === 'client')?.running ?? false;
 
   if (!serverRunning) {
     const url = new URL(baseURL);

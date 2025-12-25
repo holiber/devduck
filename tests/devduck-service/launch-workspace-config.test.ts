@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'fs';
+import http from 'node:http';
+import https from 'node:https';
 import net from 'net';
 import os from 'os';
 import path from 'path';
@@ -33,15 +35,31 @@ async function getFreePort(): Promise<number> {
   });
 }
 
+async function httpOk(url: string): Promise<boolean> {
+  return await new Promise(resolve => {
+    const u = new URL(url);
+    const mod = u.protocol === 'https:' ? https : http;
+    const req = mod.request(
+      {
+        method: 'GET',
+        hostname: u.hostname,
+        port: u.port ? Number(u.port) : undefined,
+        path: u.pathname + u.search
+      },
+      res => {
+        res.resume(); // drain
+        resolve((res.statusCode ?? 0) >= 200 && (res.statusCode ?? 0) < 300);
+      }
+    );
+    req.on('error', () => resolve(false));
+    req.end();
+  });
+}
+
 async function waitForUrl(url: string, timeoutMs: number) {
   const started = Date.now();
   while (Date.now() - started < timeoutMs) {
-    try {
-      const res = await fetch(url);
-      if (res.ok) return;
-    } catch {
-      // ignore
-    }
+    if (await httpOk(url)) return;
     await new Promise<void>(r => setTimeout(r, 50));
   }
   throw new Error(`Timeout waiting for url: ${url}`);
@@ -105,7 +123,11 @@ test(
 
     try {
       const dev = runLaunch(repoRoot, tmp, ['dev'], { timeoutMs: 240_000 });
-      assert.equal(dev.status, 0, `dev exit code: ${dev.status}\n${dev.stderr}\n${dev.stdout}`);
+      assert.equal(
+        dev.status,
+        0,
+        `dev exit code: ${dev.status}\nerror: ${String(dev.error)}\n${dev.stderr}\n${dev.stdout}`
+      );
       const out = JSON.parse(dev.stdout) as { ok: boolean; baseURL: string };
       assert.equal(out.ok, true);
       assert.equal(out.baseURL, baseURL);
@@ -115,7 +137,11 @@ test(
 
       // smokecheck (no args) should reuse session + run config smokecheck
       const smoke = runLaunch(repoRoot, tmp, ['smokecheck'], { timeoutMs: 240_000 });
-      assert.equal(smoke.status, 0, `smokecheck exit code: ${smoke.status}\n${smoke.stderr}\n${smoke.stdout}`);
+      assert.equal(
+        smoke.status,
+        0,
+        `smokecheck exit code: ${smoke.status}\nerror: ${String(smoke.error)}\n${smoke.stderr}\n${smoke.stdout}`
+      );
 
       const status = runLaunch(repoRoot, tmp, ['status']);
       assert.equal(status.status, 0, status.stderr);

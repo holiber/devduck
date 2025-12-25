@@ -5,3 +5,6 @@ This fixture is a small multi-project workspace used for launch/smokecheck testi
 
 The intended workflow is described in `workspace.config.json` under `launch.dev`.
 
+Notes:
+- `launch.dev.processes[].ready.url` may be absolute (recommended) or relative. If relative, it is currently resolved against `launch.dev.baseURL`.
+

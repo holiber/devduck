@@ -73,6 +73,9 @@ const WorkspaceProjectSchema = z
  * Workspace "launch" configuration (dev/smokecheck workflows).
  *
  * This is intentionally permissive: launch runners may support additional fields.
+ *
+ * Current runner behavior:
+ * - If `ready.url` is relative (e.g. "/healthz"), it is resolved against `launch.dev.baseURL`.
  */
 const LaunchReadySchema = z
   .object({
