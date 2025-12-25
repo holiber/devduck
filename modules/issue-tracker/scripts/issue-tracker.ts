@@ -11,17 +11,10 @@ import { readEnvFile } from '../../../scripts/lib/env.js';
 import {
   discoverProvidersFromModules,
   getProvidersByType,
-  getProvider,
-  setProviderTypeSchema
+  getProvider
 } from '../../../scripts/lib/provider-registry.js';
-import { generateProviderCommandsFromContract } from '../../../scripts/lib/provider-cli-utils.js';
-import type { IssueTrackerProvider, IssueTrackerToolName } from '../schemas/contract.js';
-import {
-  IssueTrackerProviderSchema,
-  IssueTrackerToolNameSchema,
-  IssueTrackerToolInputSchemas,
-  IssueTrackerToolDescriptions
-} from '../schemas/contract.js';
+import type { IssueTrackerProvider } from '../schemas/contract.js';
+import { issueTrackerRouter } from '../api.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -57,8 +50,6 @@ async function initializeProviders(workspaceRoot: string | null): Promise<{
   getProvider: (providerName?: string) => IssueTrackerProvider | null;
 }> {
   const { devduckRoot } = resolveDevduckRoot({ cwd: process.cwd(), moduleDir: __dirname });
-
-  setProviderTypeSchema('issue-tracker', IssueTrackerProviderSchema);
 
   // Discover providers from devduck modules
   await discoverProvidersFromModules({ modulesDir: path.join(devduckRoot, 'modules') });
@@ -105,15 +96,6 @@ async function initializeProviders(workspaceRoot: string | null): Promise<{
   };
 }
 
-/**
- * Get all available tool names from contract
- */
-function getAvailableTools(): IssueTrackerToolName[] {
-  // Extract enum values from IssueTrackerToolNameSchema
-  const enumDef = IssueTrackerToolNameSchema._def;
-  return enumDef.values as IssueTrackerToolName[];
-}
-
 async function main(argv = process.argv): Promise<void> {
   installEpipeHandler();
 
@@ -133,32 +115,23 @@ async function main(argv = process.argv): Promise<void> {
   
   const { getProvider: getIssueTrackerProvider } = await initializeProviders(workspaceRoot);
 
-  // Generate commands from contract automatically
-  const commands = generateProviderCommandsFromContract<IssueTrackerProvider, IssueTrackerToolName>({
-    contract: {
-      toolNames: getAvailableTools(),
-      inputSchemas: IssueTrackerToolInputSchemas,
-      descriptions: IssueTrackerToolDescriptions
-    },
-    commonOptions: {
-      provider: {
-        type: 'string',
-        describe: 'Provider name (overrides config/env)',
-        default: ''
+  // Build yargs with commands generated from router
+  const yargsInstance = issueTrackerRouter.toCli(
+    createYargs(argv)
+      .scriptName('issue-tracker')
+      .strict()
+      .usage('Usage: $0 <command> [options]'),
+    {
+      getProvider: getIssueTrackerProvider,
+      commonOptions: {
+        provider: {
+          type: 'string',
+          describe: 'Provider name (overrides config/env)',
+          default: ''
+        }
       }
-    },
-    getProvider: getIssueTrackerProvider
-  });
-
-  // Build yargs with generated commands
-  let yargsInstance = createYargs(argv)
-    .scriptName('issue-tracker')
-    .strict()
-    .usage('Usage: $0 <command> [options]');
-
-  for (const command of commands) {
-    yargsInstance = yargsInstance.command(command);
-  }
+    }
+  );
 
   await yargsInstance
     .demandCommand(1, 'You need at least one command before moving on')

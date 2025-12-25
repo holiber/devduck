@@ -12,6 +12,7 @@ import {
   FetchPRInputSchema,
   FetchCheckStatusInputSchema,
   FetchCommentsInputSchema,
+  FetchReviewInputSchema,
   PRInfoSchema,
   CheckStatusSchema,
   CommentSchema
@@ -61,6 +62,19 @@ export const ciRouter = t.router({
     })
     .handler(async ({ input, ctx }) => {
       return ctx.provider.fetchComments(input);
+    }),
+
+  fetchReview: t.procedure
+    .input(FetchReviewInputSchema)
+    .output(PRInfoSchema)
+    .meta({
+      title: 'Fetch Arcanum review information',
+      description: 'Fetch Arcanum review information by review ID or URL',
+      idempotent: true,
+      timeoutMs: 10_000
+    })
+    .handler(async ({ input, ctx }) => {
+      return ctx.provider.fetchReview(input);
     })
 });
 
