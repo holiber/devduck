@@ -552,6 +552,19 @@ describe('Workspace Installer - Unattended Mode', () => {
           'Config should include devduck-test-repo in repos'
         );
 
+        // Repos from workspace.config.json should be cloned under <workspace>/devduck/
+        // (not hidden under .cache/), so users can inspect/edit them easily.
+        const expectedGitUrl = 'https://github.com/holiber/devduck-test-repo.git';
+        const expectedRepoName = expectedGitUrl
+          .replace(/\.git$/, '')
+          .replace(/[:\/]/g, '_');
+        const repoRoot = path.join(tempWorkspace, 'devduck', 'repos', expectedRepoName);
+
+        // Ensure the repo clone exists and contains the expected module.
+        await fs.access(path.join(repoRoot, '.git'));
+        await fs.access(path.join(repoRoot, 'modules'));
+        await fs.access(path.join(repoRoot, 'modules', 'smogcheck', 'MODULE.md'));
+
         // Verify smogchecked.txt file exists (created by smogcheck module hook)
         const smogcheckedPath = path.join(tempWorkspace, 'smogchecked.txt');
         try {
