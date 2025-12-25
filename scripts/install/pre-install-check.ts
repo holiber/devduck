@@ -560,14 +560,74 @@ export async function runPreInstallChecks(workspaceRoot: string): Promise<PreIns
               check.error = `Required token ${testCheckObj.var} is not present`;
             }
           } else {
-            // Execute test check
-            const testCheck = await executeTestCheck(testCheckObj, env);
+            // Token is present - execute test check first
+            let testCheck = await executeTestCheck(testCheckObj, env);
+            
+            // If test fails and install command is available, try running install first
+            if (!testCheck.passed && testCheckObj.install && typeof testCheckObj.install === 'string') {
+              try {
+                const installCommand = replaceEnvVarsInCommand(testCheckObj.install, env);
+                const installOutput = execSync(installCommand, {
+                  encoding: 'utf8',
+                  stdio: ['pipe', 'pipe', 'pipe'],
+                  shell: '/bin/bash',
+                  timeout: 60000 // Longer timeout for compilation
+                }).trim();
+                
+                // If install command outputs a value, update the variable
+                if (installOutput && installOutput !== env[testCheckObj.var]) {
+                  env[testCheckObj.var] = installOutput;
+                  process.env[testCheckObj.var] = installOutput;
+                  
+                  // Write to .env file to persist the variable
+                  const envPath = path.join(workspaceRoot, '.env');
+                  const existingEnv = readEnvFile(envPath);
+                  existingEnv[testCheckObj.var] = installOutput;
+                  writeEnvFile(envPath, existingEnv);
+                }
+                
+                // Re-run the test check after install
+                testCheck = await executeTestCheck(testCheckObj, env);
+              } catch (error) {
+                const err = error as { message?: string; stderr?: Buffer | string };
+                // If install fails, keep the original test error but add install error info
+                testCheck.passed = false;
+                testCheck.error = testCheck.error 
+                  ? `${testCheck.error} (install also failed: ${err.message || 'Command failed'})`
+                  : `Install command failed: ${err.message || 'Command failed'}`;
+              }
+            }
+            
             check.passed = testCheck.passed;
             check.error = testCheck.error;
           }
         } else {
           // Execute test check even without var (for tests that don't require tokens)
-          const testCheck = await executeTestCheck(testCheckObj, env);
+          let testCheck = await executeTestCheck(testCheckObj, env);
+          
+          // If test fails and install command is available, try running install first
+          if (!testCheck.passed && testCheckObj.install && typeof testCheckObj.install === 'string') {
+            try {
+              const installCommand = replaceEnvVarsInCommand(testCheckObj.install, env);
+              execSync(installCommand, {
+                encoding: 'utf8',
+                stdio: ['pipe', 'pipe', 'pipe'],
+                shell: '/bin/bash',
+                timeout: 60000 // Longer timeout for compilation
+              });
+              
+              // Re-run the test check after install
+              testCheck = await executeTestCheck(testCheckObj, env);
+            } catch (error) {
+              // If install fails, keep the original test error but add install error info
+              const err = error as { message?: string };
+              testCheck.passed = false;
+              testCheck.error = testCheck.error 
+                ? `${testCheck.error} (install also failed: ${err.message || 'Command failed'})`
+                : `Install command failed: ${err.message || 'Command failed'}`;
+            }
+          }
+          
           check.passed = testCheck.passed;
           check.error = testCheck.error;
         }
