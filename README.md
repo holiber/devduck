@@ -14,7 +14,7 @@ Explain the problem, and the duck will write code, close tickets, and ship chang
 ### Create a new workspace (npx)
 
 ```bash
-npx devduck new ./my-devduck-workspace
+npx --yes github:holiber/devduck new ./my-devduck-workspace
 ```
 
 This will:

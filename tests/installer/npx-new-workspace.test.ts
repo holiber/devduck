@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Tests for `npx devduck new` workspace bootstrap.
+ * Tests for `npx github:holiber/devduck new` workspace bootstrap.
  *
  * This test runs offline by using --devduck-source to copy the current repo
  * into <workspace>/devduck/src.
