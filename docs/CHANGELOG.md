@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - 2025-12-25
+
+- 🧰 **`npx` workspace bootstrap via GitHub** - You can now create a new DevDuck workspace without a local checkout:
+  - `npx --yes github:holiber/devduck new ./my-devduck-workspace`
+  - Supports `--workspace-config` to seed `workspace.config.json`
+  - For new workspaces, DevDuck is materialized into `devduck/src` when it is not listed in `projects[]`
+
 ### Added - 2025-12-24
 
 - ✅ **Pre-install checks system** - Modules can now define pre-install checks to verify required environment variables and validate token functionality

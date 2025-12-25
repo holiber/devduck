@@ -14,12 +14,19 @@ Explain the problem, and the duck will write code, close tickets, and ship chang
 ### Create a new workspace (npx)
 
 ```bash
-npx devduck new ./my-devduck-workspace
+# DevDuck is not published to npm yet, so use the GitHub repo directly:
+npx --yes github:holiber/devduck new ./my-devduck-workspace
 ```
 
 This will:
 - create `./my-devduck-workspace/workspace.config.json`
 - clone DevDuck into `./my-devduck-workspace/devduck/src` (unless DevDuck is already listed in `projects[]`)
+
+### Create a new workspace (npx) using a provided workspace config
+
+```bash
+npx --yes github:holiber/devduck new ./my-devduck-workspace --workspace-config ./workspace.config.json
+```
 
 Your workspace can reference local projects too, for example:
 
