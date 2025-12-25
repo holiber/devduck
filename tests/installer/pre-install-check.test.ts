@@ -589,7 +589,7 @@ checks:
     });
     
     assert.strictEqual(status, 'ok');
-    assert.ok(printMessages.some(msg => msg.includes('All pre-install checks passed')));
+    assert.ok(printMessages.some(msg => msg.includes('All required pre-install checks passed')));
   });
 
   test('handles empty workspace.config.json gracefully', async () => {

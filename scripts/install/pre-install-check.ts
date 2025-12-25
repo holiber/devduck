@@ -1003,8 +1003,12 @@ export function validatePreInstallChecks(
 
   const projectChecksCount = checkResults.projects.reduce((acc, p) => acc + p.checks.length, 0);
   const moduleChecksCount = checkResults.modules.reduce((acc, m) => acc + m.checks.length, 0);
+
+  const requiredTotal = totals.total - totals.optionalMissing;
+  const requiredPassed = totals.passed;
+
   print(
-    `  ${symbols.info} Pre-install checks summary: ${totals.passed}/${totals.total} passed (projects: ${projectChecksCount}, modules: ${moduleChecksCount}; missing tokens: ${totals.missingTokens}, failed: ${totals.failed}, blocked: ${totals.blocked}, skipped: ${totals.skipped})`,
+    `  ${symbols.info} Pre-install checks summary: required ${requiredPassed}/${requiredTotal} passed (optional missing: ${totals.optionalMissing}; projects: ${projectChecksCount}, modules: ${moduleChecksCount}; missing tokens: ${totals.missingTokens}, failed: ${totals.failed}, blocked: ${totals.blocked}, skipped: ${totals.skipped})`,
     'cyan'
   );
   
@@ -1171,8 +1175,12 @@ export function validatePreInstallChecks(
     return 'needs_input';
   }
   
-  // Keep the legacy phrase for compatibility (tests and user expectations), but add useful counts.
-  print(`  ${symbols.success} All pre-install checks passed (${totals.passed}/${totals.total})`, 'green');
+  // Important nuance: optional checks can be missing while all REQUIRED checks pass.
+  // Do not print a confusing totals ratio like "1/2" and call it "all passed".
+  print(
+    `  ${symbols.success} All required pre-install checks passed (${requiredPassed}/${requiredTotal}). Optional missing: ${totals.optionalMissing}`,
+    'green'
+  );
   log(`Pre-install checks passed`);
   return 'ok';
 }
