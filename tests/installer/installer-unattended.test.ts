@@ -22,6 +22,41 @@ import {
 
 describe('Workspace Installer - Unattended Mode', () => {
   describe('Fresh Workspace Installation', () => {
+    test('Unattended Installation from fixture - cursor-only', async () => {
+      const tempWorkspace = await createWorkspaceFromFixture('cursor-only', {
+        prefix: 'devduck-cursor-only-fixture-test-'
+      });
+
+      try {
+        const result = await runInstaller(tempWorkspace, {
+          unattended: true,
+          skipRepoInit: true
+        });
+
+        checkInstallerResult(result);
+
+        const installed = await waitForInstallation(tempWorkspace, 30000);
+        assert.ok(installed, 'Installation should complete');
+
+        const structure = await verifyWorkspaceStructure(tempWorkspace);
+        assert.ok(structure.workspaceConfigExists, 'workspace.config.json should exist');
+        assert.ok(structure.cursorDirExists, '.cursor directory should exist');
+        assert.ok(structure.mcpJsonExists, '.cursor/mcp.json should exist');
+
+        // Verify installed module paths were recorded and include cursor (+ always-included git).
+        const installCheckPath = path.join(tempWorkspace, '.cache', 'install-check.json');
+        const installCheckRaw = await fs.readFile(installCheckPath, 'utf8');
+        const installCheck = JSON.parse(installCheckRaw) as { installedModules?: Record<string, string> };
+        assert.ok(installCheck.installedModules, 'install-check.json should include installedModules');
+        assert.ok(installCheck.installedModules.cursor, 'cursor should be installed');
+        assert.ok(installCheck.installedModules.git, 'git should be installed (always included)');
+
+        assert.strictEqual(result.exitCode, 0, 'Installer should exit with code 0');
+      } finally {
+        await cleanupTempWorkspace(tempWorkspace);
+      }
+    });
+
     test('Unattended Installation - Fresh Workspace', async () => {
       const tempWorkspace = await createTempWorkspace();
       

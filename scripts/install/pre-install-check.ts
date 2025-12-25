@@ -90,8 +90,11 @@ function makeHttpRequest(method: string, url: string, headers: Record<string, st
       
       res.on('end', () => {
         const statusCode = res.statusCode ?? null;
-        // Consider 2xx as success
-        const isSuccess = statusCode !== null && statusCode >= 200 && statusCode < 300;
+        // Consider 2xx as success.
+        // Also treat 429 as "token is valid but rate-limited" for cheap auth probes like GET /models.
+        const isSuccess =
+          statusCode !== null &&
+          ((statusCode >= 200 && statusCode < 300) || statusCode === 429);
         
         resolve({
           success: isSuccess,
@@ -221,7 +224,8 @@ async function executeTestCheck(check: ModuleCheck, env: Record<string, string>)
       if (/^\d{3}$/.test(statusCode)) {
         // Status code returned, check if it's 2xx
         const code = parseInt(statusCode, 10);
-        result.passed = code >= 200 && code < 300;
+        // Treat 429 as "valid but rate-limited" for cheap auth probes.
+        result.passed = (code >= 200 && code < 300) || code === 429;
         if (!result.passed) {
           result.error = `HTTP ${code}`;
         }

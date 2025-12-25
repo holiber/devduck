@@ -8,6 +8,7 @@ import { describe, test, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert';
 import fs from 'fs';
 import path from 'path';
+import http from 'node:http';
 import { fileURLToPath } from 'url';
 import { runPreInstallChecks, validatePreInstallChecks } from '../../scripts/install/pre-install-check.js';
 import { createWorkspaceFromFixture, cleanupTempWorkspace } from './helpers.js';
@@ -209,6 +210,69 @@ checks:
       // that the logic exists in the code, not that it always finds modules
       // This can happen if getAllModulesFromDirectory has issues with temp directories
       console.log('Note: test-module not found in results, skipping detailed check verification');
+    }
+  });
+
+  test('treats HTTP 429 as success for auth probe checks', async () => {
+    // Start a local HTTP server that always returns 429 (rate limit).
+    const server = http.createServer((_req, res) => {
+      res.statusCode = 429;
+      res.setHeader('content-type', 'application/json');
+      res.end(JSON.stringify({ error: 'rate_limited' }));
+    });
+
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+    const addr = server.address();
+    if (!addr || typeof addr === 'string') {
+      server.close();
+      throw new Error('Failed to bind local test server');
+    }
+
+    const baseUrl = `http://127.0.0.1:${addr.port}/v1/models`;
+
+    try {
+      // Create workspace.config.json that includes ONLY our test module.
+      // This avoids running other modules' auth probes (which may hit external networks).
+      const config = {
+        workspaceVersion: '0.1.0',
+        devduckPath: path.resolve(__dirname, '../..'),
+        modules: ['cursor-like-auth'],
+        projects: []
+      };
+
+      fs.writeFileSync(path.join(tempWorkspace, 'workspace.config.json'), JSON.stringify(config, null, 2));
+
+      // Create test module with auth check that uses curl and prints status code.
+      const modulesDir = path.join(tempWorkspace, 'modules');
+      const testModuleDir = path.join(modulesDir, 'cursor-like-auth');
+      fs.mkdirSync(testModuleDir, { recursive: true });
+
+      const moduleMd = `---
+name: cursor-like-auth
+version: 0.1.0
+checks:
+  - type: "auth"
+    var: "CURSOR_API_KEY"
+    description: "Cursor API key probe via GET /v1/models"
+    test: "GET ${baseUrl}"
+---
+# cursor-like-auth
+`;
+
+      fs.writeFileSync(path.join(testModuleDir, 'MODULE.md'), moduleMd);
+
+      // Set token so the auth test will execute.
+      process.env.CURSOR_API_KEY = 'dummy';
+
+      const results = await runPreInstallChecks(tempWorkspace);
+      const moduleResult = results.modules.find((m) => m.name === 'cursor-like-auth');
+      assert.ok(moduleResult, 'cursor-like-auth module should be found');
+      assert.strictEqual(moduleResult!.checks.length, 1);
+      assert.strictEqual(moduleResult!.checks[0].type, 'auth');
+      assert.strictEqual(moduleResult!.checks[0].present, true);
+      assert.strictEqual(moduleResult!.checks[0].passed, true, 'HTTP 429 should be treated as a valid token');
+    } finally {
+      await new Promise<void>((resolve) => server.close(() => resolve()));
     }
   });
 
