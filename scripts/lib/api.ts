@@ -114,7 +114,27 @@ function pathToFileURL(filePath: string): URL {
  * Collect unified API from all installed modules
  */
 export async function collectUnifiedAPI(): Promise<UnifiedAPI> {
-  const { devduckRoot } = resolveDevduckRoot({ cwd: process.cwd(), moduleDir: __dirname });
+  // Try to resolve devduck root - in CI, we might be running from the repo root
+  let { devduckRoot } = resolveDevduckRoot({ cwd: process.cwd(), moduleDir: __dirname });
+  
+  // Verify that devduckRoot actually contains modules directory
+  // If not, try to resolve from current working directory (for CI environments)
+  const modulesDir = path.join(devduckRoot, 'modules');
+  if (!fs.existsSync(modulesDir)) {
+    // In CI, we might be in the repo root, so try that
+    const cwdModulesDir = path.join(process.cwd(), 'modules');
+    if (fs.existsSync(cwdModulesDir)) {
+      devduckRoot = process.cwd();
+    } else {
+      // Last resort: try to find modules relative to this file
+      const fileBasedRoot = path.resolve(__dirname, '../..');
+      const fileBasedModulesDir = path.join(fileBasedRoot, 'modules');
+      if (fs.existsSync(fileBasedModulesDir)) {
+        devduckRoot = fileBasedRoot;
+      }
+    }
+  }
+  
   const workspaceRoot = findWorkspaceRoot(process.cwd());
   
   // Load environment variables from .env file in workspace root
