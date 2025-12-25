@@ -69,6 +69,26 @@ const WorkspaceProjectSchema = z
   })
   .passthrough();
 
+/**
+ * Launch checks are workspace-run scenarios (bring up services, run e2e, etc).
+ *
+ * This is intentionally permissive: the launch module owns the semantics.
+ */
+const WorkspaceLaunchCheckSchema = z
+  .object({
+    name: z.string(),
+    type: z.string(),
+  })
+  .passthrough();
+
+const WorkspaceLaunchSchema = z
+  .object({
+    // Example:
+    // launch: { dev: [ ...checks ] }
+    dev: z.array(WorkspaceLaunchCheckSchema).optional(),
+  })
+  .passthrough();
+
 const WorkspaceConfigSchema = z
   .object({
     workspaceVersion: z.string(),
@@ -95,6 +115,9 @@ const WorkspaceConfigSchema = z
     // Workspace-level checks (also used to generate `.cursor/mcp.json` via mcpSettings).
     checks: z.array(WorkspaceCheckSchema).optional(),
 
+    // Launch scenarios (e.g., dev: start services + run e2e).
+    launch: WorkspaceLaunchSchema.optional(),
+
     // Variables written into `.env`.
     env: z.array(WorkspaceEnvVarSchema).optional(),
   })
@@ -104,6 +127,8 @@ export {
   WorkspaceConfigSchema,
   WorkspaceProjectSchema,
   WorkspaceCheckSchema,
+  WorkspaceLaunchSchema,
+  WorkspaceLaunchCheckSchema,
   WorkspaceEnvVarSchema,
   McpServerSettingsSchema,
 };

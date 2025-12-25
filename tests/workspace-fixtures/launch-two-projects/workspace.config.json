@@ -1,0 +1,41 @@
+{
+  "workspaceVersion": "0.1.0",
+  "devduckPath": "./devduck",
+  "modules": ["core", "cursor", "launch"],
+  "projects": [
+    { "src": "./src/server" },
+    { "src": "./src/client" }
+  ],
+  "launch": {
+    "dev": [
+      {
+        "name": "server",
+        "type": "start",
+        "project": "server",
+        "command": "npm run dev",
+        "readyUrl": "http://localhost:3004/api/tab4",
+        "readyText": "Hello from tab4 - server"
+      },
+      {
+        "name": "server-api",
+        "type": "http",
+        "url": "http://localhost:3004/api/tab4",
+        "expectText": "Hello from tab4 - server"
+      },
+      {
+        "name": "client",
+        "type": "start",
+        "project": "client",
+        "command": "npm run dev",
+        "readyUrl": "AUTO"
+      },
+      {
+        "name": "client-e2e",
+        "type": "playwright",
+        "project": "client",
+        "command": "npm run test:e2e"
+      }
+    ]
+  }
+}
+

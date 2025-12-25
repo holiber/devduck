@@ -1,0 +1,25 @@
+{
+  "name": "client",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "rspack serve --config rspack.config.ts",
+    "build": "rspack build --config rspack.config.ts",
+    "test:e2e": "playwright test"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@rspack/cli": "^1.6.0",
+    "@rspack/core": "^1.6.0",
+    "@rspack/dev-server": "^1.6.0",
+    "@rspack/plugin-html": "^1.6.0",
+    "@types/react": "^18.3.24",
+    "@types/react-dom": "^18.3.7",
+    "playwright": "^1.57.0",
+    "typescript": "^5.6.3"
+  }
+}
+
