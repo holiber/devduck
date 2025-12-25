@@ -364,7 +364,7 @@ async function collectModuleChecks(
   // Load external modules from repos
   const externalModules: Module[] = [];
   if (config.repos && Array.isArray(config.repos)) {
-    const { loadModulesFromRepo, getDevduckVersion } = await import('../lib/repo-modules.js');
+    const { loadModulesFromRepo, getDevduckVersion, checkRepoVersion } = await import('../lib/repo-modules.js');
     const devduckVersion = getDevduckVersion();
     
     for (const repoUrl of config.repos) {
@@ -372,15 +372,28 @@ async function collectModuleChecks(
         const repoModulesPath = await loadModulesFromRepo(repoUrl, workspaceRoot, devduckVersion);
         if (fs.existsSync(repoModulesPath)) {
           const repoModuleEntries = fs.readdirSync(repoModulesPath, { withFileTypes: true });
+          let moduleCount = 0;
           for (const entry of repoModuleEntries) {
             if (entry.isDirectory()) {
               const modulePath = path.join(repoModulesPath, entry.name);
               const module = loadModuleFromPath(modulePath, entry.name);
               if (module) {
                 externalModules.push(module);
+                moduleCount++;
               }
             }
           }
+          // Print success message after modules are loaded to avoid appearing "stuck"
+          // Get version info for the message
+          let version = 'unknown';
+          try {
+            const repoPath = repoModulesPath.replace(/\/modules$/, '');
+            const versionCheck = await checkRepoVersion(repoPath, devduckVersion);
+            version = versionCheck.version || 'unknown';
+          } catch {
+            // Version check failed, use default
+          }
+          console.log(`  ✓ Repository ${repoUrl} loaded (version ${version}, ${moduleCount} module${moduleCount !== 1 ? 's' : ''})`);
         }
       } catch (error) {
         // Skip failed repos
@@ -612,12 +625,12 @@ export function validatePreInstallChecks(
     return /^Required token [A-Za-z_][A-Za-z0-9_]* is not present$/.test(err.trim());
   };
   
-  // Show successful auth token checks
+  // Show successful auth token checks (without description to avoid duplication)
   for (const project of checkResults.projects) {
     for (const check of project.checks) {
       if (check.type === 'auth' && check.present && check.var) {
-        const desc = check.description ? ` (${check.description})` : '';
-        print(`  ${symbols.success} ${check.var}${desc} - token exist`, 'green');
+        // Don't show description for successful checks to avoid duplication
+        print(`  ${symbols.success} ${check.var} - token exist`, 'green');
       }
     }
   }
@@ -625,13 +638,10 @@ export function validatePreInstallChecks(
   for (const module of checkResults.modules) {
     for (const check of module.checks) {
       if (check.type === 'auth' && check.present && check.var) {
-        const desc = check.description ? ` (${check.description})` : '';
+        // Don't show description for successful checks to avoid duplication
         const moduleName = module.name ? ` (module: ${module.name})` : '';
-        print(`  ${symbols.success} ${check.var}${desc}${moduleName} - token exist`, 'green');
-        // If test was executed and passed, show success
-        if (check.test && check.passed === true) {
-          print(`    ${symbols.success} Test check passed`, 'green');
-        }
+        print(`  ${symbols.success} ${check.var}${moduleName} - token exist`, 'green');
+        // Don't show "Test check passed" line - it's redundant if check passed
       }
     }
   }
@@ -666,8 +676,8 @@ export function validatePreInstallChecks(
   
   // Check for failed test checks (both standalone test checks and test within auth checks)
   let hasFailedTests = false;
-  const tokenBlockedTests: Array<{ name: string; error?: string }> = [];
-  const realFailedTests: Array<{ name: string; error?: string }> = [];
+  const tokenBlockedTests: Array<{ name: string; error?: string; description?: string; docs?: string }> = [];
+  const realFailedTests: Array<{ name: string; error?: string; description?: string; docs?: string }> = [];
   
   for (const module of checkResults.modules) {
     for (const check of module.checks) {
@@ -675,7 +685,12 @@ export function validatePreInstallChecks(
       if (check.type === 'test' && check.passed === false && check.optional !== true) {
         hasFailedTests = true;
         const checkName = check.name || check.test || 'unknown';
-        const entry = { name: `${checkName} (module: ${module.name})`, error: check.error };
+        const entry = { 
+          name: `${checkName} (module: ${module.name})`, 
+          error: check.error,
+          description: check.description,
+          docs: check.docs
+        };
         if (isRequiredTokenMissingError(check.error)) {
           tokenBlockedTests.push(entry);
         } else {
@@ -689,7 +704,12 @@ export function validatePreInstallChecks(
       if (check.type === 'auth' && check.test && check.passed !== undefined && check.passed === false && check.optional !== true) {
         hasFailedTests = true;
         const checkName = check.name || check.test || `${check.var} test`;
-        realFailedTests.push({ name: `${checkName} (module: ${module.name})`, error: check.error });
+        realFailedTests.push({ 
+          name: `${checkName} (module: ${module.name})`, 
+          error: check.error,
+          description: check.description,
+          docs: check.docs
+        });
         if (check.error) {
           log(`Auth test check failed: ${checkName} - ${check.error}`);
         }
@@ -724,19 +744,23 @@ export function validatePreInstallChecks(
       }
       print(`  Failed test checks:`, 'red');
       for (const test of realFailedTests) {
+        const desc = test.description ? ` - ${test.description}` : '';
+        const docs = test.docs ? `\n      ${test.docs}` : '';
         if (test.error) {
-          print(`    - ${test.name} - ${test.error}`, 'red');
+          print(`    - ${test.name}${desc} - ${test.error}${docs}`, 'red');
         } else {
-          print(`    - ${test.name}`, 'red');
+          print(`    - ${test.name}${desc}${docs}`, 'red');
         }
       }
       if (tokenBlockedTests.length > 0) {
         print(`  Token-dependent checks blocked:`, 'yellow');
         for (const test of tokenBlockedTests) {
+          const desc = test.description ? ` - ${test.description}` : '';
+          const docs = test.docs ? `\n      ${test.docs}` : '';
           if (test.error) {
-            print(`    - ${test.name} - ${test.error}`, 'yellow');
+            print(`    - ${test.name}${desc} - ${test.error}${docs}`, 'yellow');
           } else {
-            print(`    - ${test.name}`, 'yellow');
+            print(`    - ${test.name}${desc}${docs}`, 'yellow');
           }
         }
       }
