@@ -11,13 +11,37 @@ Explain the problem, and the duck will write code, close tickets, and ship chang
 
 ## Quick Start
 
-Install and setup everything:
+### Create a new workspace (npx)
+
+```bash
+npx devduck new ./my-devduck-workspace
+```
+
+This will:
+- create `./my-devduck-workspace/workspace.config.json`
+- clone DevDuck into `./my-devduck-workspace/devduck/src` (unless DevDuck is already listed in `projects[]`)
+
+Your workspace can reference local projects too, for example:
+
+```json
+{
+  "projects": [{ "src": "./my-app" }]
+}
+```
+
+Then open the workspace in Cursor and run:
+
+```bash
+node install.js --workspace-path ./my-devduck-workspace
+```
+
+Or use `/install` command in Cursor IDE.
+
+### Install and setup everything (inside an existing workspace)
 
 ```bash
 node install.js
 ```
-
-Or use `/install` command in Cursor IDE.
 
 The installation script will:
 - Set up environment variables
