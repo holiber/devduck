@@ -1,6 +1,7 @@
 import net from 'net';
 import { createTRPCProxyClient, type TRPCLink, TRPCClientError } from '@trpc/client';
 import { observable } from '@trpc/server/observable';
+import path from 'path';
 import type { TRPCRequestMessage, TRPCResponse } from '@trpc/server/rpc';
 import type { AppRouter } from '../router.js';
 
@@ -85,10 +86,10 @@ export function ipcLink(params: { socketPath: string }): TRPCLink<AppRouter> {
           if (!done) {
             done = true;
             const hint =
-              'Connection closed. The service may have rejected the request. ' +
-              'See .cache/devduck-service/logs/service.err.log';
-            const snippet = buffer.trim() ? `\nResponse snippet:\n${buffer.slice(0, 500)}` : '';
-            observer.error?.(TRPCClientError.from(new Error(hint + snippet)));
+              `Connection closed by service before responding. ` +
+              `Check service logs in ${path.join(process.cwd(), '.cache', 'devduck-service', 'logs')} ` +
+              `(service.out.log / service.err.log).`;
+            observer.error?.(TRPCClientError.from(new Error(hint)));
           }
         });
 
