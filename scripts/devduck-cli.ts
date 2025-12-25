@@ -45,7 +45,7 @@ function ensureWorkspacePackageJson(workspaceRoot: string): void {
     type: 'module',
     scripts: {
       // This runs automatically on `npm install` and bootstraps the workspace.
-      install: 'tsx ./devduck/src/install.ts --workspace-path . --unattended'
+      install: 'tsx ./devduck/src/scripts/install.ts --workspace-path . --unattended'
     },
     dependencies: {
       // Needed by DevDuck installer/runtime (imported from devduck/src/scripts/*)
