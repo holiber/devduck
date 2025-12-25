@@ -156,14 +156,12 @@ export function ensurePRCacheDir(workspaceRoot: string, prId: string): string {
 }
 
 /**
- * Get workspace root or throw error
+ * Get workspace root or use current working directory as fallback
  */
 export function getWorkspaceRootOrThrow(): string {
   const workspaceRoot = findWorkspaceRoot(process.cwd());
-  if (!workspaceRoot) {
-    throw new Error('Workspace root not found. Ensure you are in a workspace directory.');
-  }
-  return workspaceRoot;
+  // If workspace root not found, use current working directory (project root)
+  return workspaceRoot || process.cwd();
 }
 
 /**
