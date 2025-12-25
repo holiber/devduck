@@ -33,6 +33,49 @@ function writeJson(p: string, obj: unknown): void {
   fs.writeFileSync(p, JSON.stringify(obj, null, 2) + '\n', 'utf8');
 }
 
+function ensureWorkspacePackageJson(workspaceRoot: string): void {
+  const pkgPath = path.join(workspaceRoot, 'package.json');
+  if (fs.existsSync(pkgPath)) return;
+
+  // Keep dependencies minimal: only what's needed to run DevDuck installer via TSX.
+  // Avoid pulling the DevDuck npm package itself to prevent heavy postinstall steps.
+  const pkg = {
+    name: path.basename(workspaceRoot) || 'devduck-workspace',
+    private: true,
+    type: 'module',
+    scripts: {
+      // This runs automatically on `npm install` and bootstraps the workspace.
+      install: 'tsx ./devduck/src/install.ts --workspace-path . --unattended'
+    },
+    dependencies: {
+      dotenv: '^16.4.7',
+      tsx: '^4.19.0',
+      yaml: '^2.8.1',
+      yargs: '^18.0.0',
+      zod: '^3.25.76'
+    }
+  };
+
+  writeJson(pkgPath, pkg);
+}
+
+function runNpmInstall(workspaceRoot: string): void {
+  const npmCmd = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+  const stdio =
+    process.env.NODE_ENV === 'test' ? ('pipe' as const) : ('inherit' as const);
+
+  const res = spawnSync(npmCmd, ['install', '--no-audit', '--no-fund'], {
+    cwd: workspaceRoot,
+    encoding: 'utf8',
+    stdio
+  });
+
+  if (res.status !== 0) {
+    const details = (res.stderr || res.stdout || '').toString().trim();
+    throw new Error(`npm install failed (exit ${res.status ?? 'unknown'}). ${details}`);
+  }
+}
+
 function isDevduckProjectSrc(src: string): boolean {
   const s = src.trim();
 
@@ -189,6 +232,11 @@ async function main(argv = process.argv): Promise<void> {
         });
 
         writeJson(configPath, config);
+
+        // Create workspace package.json and install dependencies.
+        // `npm install` will automatically run the workspace "install" script, which bootstraps the workspace.
+        ensureWorkspacePackageJson(workspaceRoot);
+        runNpmInstall(workspaceRoot);
       }
     )
     .demandCommand(1)
