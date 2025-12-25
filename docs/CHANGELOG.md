@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed - 2025-12-25
+
+- 🔧 **API command handling in install checks** - Fixed issue where `api` commands (e.g., `api mcp.hasTool deepagent generate_answer`) were not properly handled during installation checks
+  - Commands starting with `api ` are now automatically transformed to `npm run call -- ...` before execution
+  - API commands now run from workspace root directory to ensure proper context
+  - Result parsing correctly checks for `true` output to determine success
+  - Fixes error: "api: command not found" when running `npm run install` with auth checks that use API commands
+  - Pre-install checks already had this handling; now install checks have the same functionality
+
 ### Added - 2025-12-25
 
 - 📝 **Default .gitignore file for github-ci module** - Added `gitignore.default` file to github-ci module that is automatically used to create `.gitignore` files in workspaces
