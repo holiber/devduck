@@ -15,7 +15,7 @@ const __dirname = path.dirname(__filename);
 
 const PROJECT_ROOT = path.resolve(__dirname, '../..');
 const INSTALLER_SCRIPT = path.join(PROJECT_ROOT, 'scripts', 'install.ts');
-const WORKSPACE_FIXTURES_ROOT = path.resolve(__dirname, '..', 'workspaces');
+const WORKSPACE_FIXTURES_ROOT = path.resolve(__dirname, '..', 'workspace-fixtures');
 
 interface RunInstallerOptions {
   unattended?: boolean;
@@ -102,7 +102,7 @@ async function copyDirContents(srcDir: string, destDir: string): Promise<void> {
 }
 
 /**
- * Create a temp workspace and seed it with a fixture from tests/workspaces/<fixtureName>.
+ * Create a temp workspace and seed it with a fixture from tests/workspace-fixtures/<fixtureName>.
  *
  * Note: the fixture is copied into a temp dir so tests can freely mutate it.
  */
