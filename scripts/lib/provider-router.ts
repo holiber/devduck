@@ -332,17 +332,15 @@ export class ProviderRouter<TProcedures extends Record<string, Procedure<any, an
       if ((key === 'prId' || key === 'branch') && positional) {
         continue;
       }
+      // Skip issueId if it's used as positional
+      if (key === 'issueId' && positional?.name === 'issueId') {
+        continue;
+      }
 
       const zodField = field as z.ZodTypeAny;
       const def = zodField._def;
 
-      // Check if field is optional or has default
-      const isOptional = def.typeName === 'ZodOptional' || def.typeName === 'ZodDefault';
-      if (!isOptional) {
-        continue; // Skip required fields that aren't positional
-      }
-
-      // Get inner type
+      // Get inner type (unwrap optional/default)
       let innerType = zodField;
       if (def.typeName === 'ZodOptional') {
         innerType = def.innerType;
