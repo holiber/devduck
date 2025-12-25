@@ -23,6 +23,9 @@ interface AuthCheckResult {
   name?: string;
   description?: string;
   test?: string;
+  optional?: boolean;
+  install?: string;
+  docs?: string;
   present?: boolean;
   passed?: boolean;
   error?: string;
@@ -167,6 +170,31 @@ async function executeTestCheck(check: ModuleCheck, env: Record<string, string>)
     return result;
   }
 
+  // Handle generic shell commands (sh -c '...' etc.)
+  // Note: this is intentionally allowed for module "test" checks (e.g., verifying CLIs),
+  // not just curl/HTTP auth validation.
+  const executeShellCommand = (command: string): AuthCheckResult => {
+    try {
+      const output = execSync(command, {
+        encoding: 'utf8',
+        stdio: ['pipe', 'pipe', 'pipe'],
+        shell: '/bin/bash',
+        timeout: 20000
+      });
+      result.passed = true;
+      // Keep output out of result unless needed; callers only care pass/fail.
+      void output;
+      return result;
+    } catch (error) {
+      const err = error as { stdout?: Buffer | string; stderr?: Buffer | string; message?: string; status?: number };
+      result.passed = false;
+      const stderrStr = err.stderr ? err.stderr.toString().trim() : '';
+      const stdoutStr = err.stdout ? err.stdout.toString().trim() : '';
+      result.error = stderrStr || stdoutStr || err.message || 'Command failed';
+      return result;
+    }
+  };
+
   // Handle curl commands
   if (isCurlCommand(check.test)) {
     try {
@@ -222,9 +250,9 @@ async function executeTestCheck(check: ModuleCheck, env: Record<string, string>)
 
   // Handle HTTP requests (GET https://... format)
   if (!isHttpRequest(check.test)) {
-    result.passed = false;
-    result.error = 'Test is not an HTTP request or curl command';
-    return result;
+    // Not HTTP or curl: treat as a shell command.
+    const command = replaceEnvVarsInCommand(check.test, env);
+    return executeShellCommand(command);
   }
 
   try {
@@ -405,7 +433,10 @@ async function collectModuleChecks(
           var: check.var,
           name: check.name,
           description: check.description,
-          test: check.test
+          test: check.test,
+          optional: (check as { optional?: boolean }).optional === true,
+          install: (check as { install?: string }).install,
+          docs: (check as { docs?: string }).docs
         });
       }
     }
@@ -570,7 +601,7 @@ export function validatePreInstallChecks(
   
   for (const module of checkResults.modules) {
     for (const check of module.checks) {
-      if (check.type === 'auth' && !check.present) {
+      if (check.type === 'auth' && !check.present && check.optional !== true) {
         hasMissingAuth = true;
         if (check.var) {
           const desc = check.description ? ` - ${check.description}` : '';
@@ -587,7 +618,7 @@ export function validatePreInstallChecks(
   for (const module of checkResults.modules) {
     for (const check of module.checks) {
       // Check standalone test checks
-      if (check.type === 'test' && check.passed === false) {
+      if (check.type === 'test' && check.passed === false && check.optional !== true) {
         hasFailedTests = true;
         const checkName = check.name || check.test || 'unknown';
         failedTests.push({ 
@@ -599,7 +630,7 @@ export function validatePreInstallChecks(
         }
       }
       // Check test within auth checks (only if test was actually executed, i.e. passed is defined)
-      if (check.type === 'auth' && check.test && check.passed !== undefined && check.passed === false) {
+      if (check.type === 'auth' && check.test && check.passed !== undefined && check.passed === false && check.optional !== true) {
         hasFailedTests = true;
         const checkName = check.name || check.test || `${check.var} test`;
         failedTests.push({ 
