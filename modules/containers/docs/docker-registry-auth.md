@@ -60,8 +60,8 @@ If there is no ready-made image, you can create your own base image with arc/ya 
 
 1. Create `package.json` in Arcadia with Docker image description
 2. Build image: `ya package <package.json> --docker`
-3. Push to registry: `docker push registry.yandex.net/<your-namespace>/arc-ya-base:latest`
-4. Use: `export DOCKER_BASE_IMAGE=registry.yandex.net/<your-namespace>/arc-ya-base:latest`
+3. Push to registry: `docker push <your-registry>/<your-namespace>/<image-name>:latest`
+4. Use: `export DOCKER_BASE_IMAGE=<your-registry>/<your-namespace>/<image-name>:latest`
 
 #### Option 2: Fix arc/ya Installation in Current Dockerfile
 

@@ -9,6 +9,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added - 2025-12-25
 
+- 📝 **Default .gitignore file for github-ci module** - Added `gitignore.default` file to github-ci module that is automatically used to create `.gitignore` files in workspaces
+  - If `gitignore` setting is not provided in module settings, the default file is used
+  - Ensures every workspace with github-ci module gets a proper `.gitignore` file automatically
+  - Similar to how ya-arc module handles `.arcignore` files
+
+### Changed - 2025-12-25
+
+- 🧹 **Removed external repository references** - Removed all traces of external repositories (ya-* modules) from documentation and code
+  - Removed specific ya-* module references from ARCHITECTURE.md
+  - Updated MODULE.md files to use generic "external modules" instead of specific ya-* module names
+  - Refactored plan module to use dynamic provider discovery instead of hardcoded imports
+  - Generalize example paths and registry references
+  - Ensures the public DevDuck repository remains focused on core framework features
+
+### Changed - 2025-12-25
+
+- 🔗 **Symlink support for external repositories** - External repositories from `workspace.config.json.repos` now create symlinks when the same repo exists in `projects/`
+  - Repositories appear in `devduck/%repo_name%` directory
+  - If the same repo is listed in `projects`, a symlink is created from `devduck/%repo_name%` to `projects/%repo_name%`
+  - For Arcadia repos not in projects, symlinks are created to the actual Arcadia path
+  - Eliminates duplication and ensures consistency between repos and projects
+
+- 📊 **Improved pre-install check output** - Reduced information duplication in check results
+  - Successful checks now show only token name and module (without description)
+  - Removed redundant "Test check passed" line for successful checks
+  - Failed checks continue to show full details including description and docs for better debugging
+
+- ⚡ **Fixed repository loading delay** - Moved success message to after modules are loaded to avoid appearing "stuck"
+  - Repository loading message now appears after all modules are parsed
+  - Message includes module count for better visibility
+
+### Added - 2025-12-25
+
 - 🔧 **Automatic environment variable installation from install commands** - Pre-install checks now automatically run install commands when required environment variables are missing
   - When a test check requires a variable (e.g., `ARCADIA_ROOT`) and has an `install` field, the install command is executed automatically
   - The install command output is captured and used to set the variable for the test execution

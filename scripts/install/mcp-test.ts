@@ -124,6 +124,13 @@ export async function testMcpServer(
         }
       });
       
+      // Handle process exit
+      mcpProcess!.on('exit', (code, signal) => {
+        if (code !== null && code !== 0) {
+          reject(new Error(`Process exited with code ${code}${signal ? ` (signal: ${signal})` : ''}`));
+        }
+      });
+      
       // Wait a bit for process to start (or error)
       setTimeout(() => {
         if (mcpProcess && mcpProcess.killed === false) {
@@ -140,11 +147,20 @@ export async function testMcpServer(
     }
     
     // Set up timeout
-    const timeoutId = setTimeout(() => {
+    let timeoutId: NodeJS.Timeout | null = null;
+    const cleanup = () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+        timeoutId = null;
+      }
       if (mcpProcess) {
         mcpProcess.kill();
         mcpProcess = null;
       }
+    };
+    
+    timeoutId = setTimeout(() => {
+      cleanup();
     }, timeout);
     
     // Collect stdout
@@ -157,126 +173,143 @@ export async function testMcpServer(
       stderrBuffer += data.toString();
     });
     
-    if (!mcpProcess || !mcpProcess.stdin || !mcpProcess.stdout) {
+    // Helper to check if process is still valid
+    const checkProcess = () => {
+      if (!mcpProcess || !mcpProcess.stdin || !mcpProcess.stdout) {
+        throw new Error('Process no longer available');
+      }
+    };
+    
+    try {
+      // Send initialize request
+      const initRequest = {
+        jsonrpc: '2.0',
+        id: requestId++,
+        method: 'initialize',
+        params: {
+          protocolVersion: '2024-11-05',
+          capabilities: {},
+          clientInfo: {
+            name: 'devduck-mcp-test',
+            version: '1.0.0'
+          }
+        }
+      };
+      
+      log(`  Sending initialize request...`);
+      checkProcess();
+      mcpProcess.stdin.write(JSON.stringify(initRequest) + '\n');
+      
+      // Wait for initialize response
+      await waitForResponse(mcpProcess.stdout, timeout);
+      
+      // Send tools/list request
+      const toolsRequest = {
+        jsonrpc: '2.0',
+        id: requestId++,
+        method: 'tools/list',
+        params: {}
+      };
+      
+      log(`  Sending tools/list request...`);
+      checkProcess();
+      mcpProcess.stdin.write(JSON.stringify(toolsRequest) + '\n');
+      
+      // Wait for tools/list response
+      const toolsResponse = await waitForResponse(mcpProcess.stdout, timeout);
+      
+      // Send resources/list request
+      const resourcesRequest = {
+        jsonrpc: '2.0',
+        id: requestId++,
+        method: 'resources/list',
+        params: {}
+      };
+      
+      log(`  Sending resources/list request...`);
+      checkProcess();
+      mcpProcess.stdin.write(JSON.stringify(resourcesRequest) + '\n');
+      
+      // Wait for resources/list response
+      const resourcesResponse = await waitForResponse(mcpProcess.stdout, timeout);
+      
+      clearTimeout(timeoutId);
+      timeoutId = null;
+      
+      // Parse responses
+      const methods: string[] = [];
+      const resources: string[] = [];
+      
+      if (toolsResponse) {
+        try {
+          const toolsData = JSON.parse(toolsResponse);
+          if (toolsData.result && Array.isArray(toolsData.result.tools)) {
+            for (const tool of toolsData.result.tools) {
+              if (tool.name) {
+                methods.push(tool.name);
+              }
+            }
+          }
+        } catch (e) {
+          log(`  Warning: Failed to parse tools/list response`);
+        }
+      }
+      
+      if (resourcesResponse) {
+        try {
+          const resourcesData = JSON.parse(resourcesResponse);
+          if (resourcesData.result && Array.isArray(resourcesData.result.resources)) {
+            for (const resource of resourcesData.result.resources) {
+              if (resource.uri) {
+                resources.push(resource.uri);
+              }
+            }
+          }
+        } catch (e) {
+          log(`  Warning: Failed to parse resources/list response`);
+        }
+      }
+    
+      // Clean up
+      cleanup();
+      
+      // Success if we got at least initialize response
+      if (stdoutBuffer.trim()) {
+        log(`  Success: Server responded (methods: ${methods.length}, resources: ${resources.length})`);
+        return {
+          success: true,
+          methods: methods.length > 0 ? methods : undefined,
+          resources: resources.length > 0 ? resources : undefined
+        };
+      }
+      
       return {
         success: false,
-        error: 'Process stdio streams not available'
+        error: 'No response from server',
+        timeout: true
       };
-    }
-    
-    // Send initialize request
-    const initRequest = {
-      jsonrpc: '2.0',
-      id: requestId++,
-      method: 'initialize',
-      params: {
-        protocolVersion: '2024-11-05',
-        capabilities: {},
-        clientInfo: {
-          name: 'devduck-mcp-test',
-          version: '1.0.0'
-        }
+    } catch (error) {
+      const err = error as Error;
+      log(`  Error: ${err.message}`);
+      if (stderrBuffer) {
+        log(`  Stderr: ${stderrBuffer}`);
       }
-    };
-    
-    log(`  Sending initialize request...`);
-    mcpProcess.stdin.write(JSON.stringify(initRequest) + '\n');
-    
-    // Wait for initialize response
-    await waitForResponse(mcpProcess.stdout, timeout);
-    
-    // Send tools/list request
-    const toolsRequest = {
-      jsonrpc: '2.0',
-      id: requestId++,
-      method: 'tools/list',
-      params: {}
-    };
-    
-    log(`  Sending tools/list request...`);
-    mcpProcess.stdin.write(JSON.stringify(toolsRequest) + '\n');
-    
-    // Wait for tools/list response
-    const toolsResponse = await waitForResponse(mcpProcess.stdout, timeout);
-    
-    // Send resources/list request
-    const resourcesRequest = {
-      jsonrpc: '2.0',
-      id: requestId++,
-      method: 'resources/list',
-      params: {}
-    };
-    
-    log(`  Sending resources/list request...`);
-    mcpProcess.stdin.write(JSON.stringify(resourcesRequest) + '\n');
-    
-    // Wait for resources/list response
-    const resourcesResponse = await waitForResponse(mcpProcess.stdout, timeout);
-    
-    clearTimeout(timeoutId);
-    
-    // Parse responses
-    const methods: string[] = [];
-    const resources: string[] = [];
-    
-    if (toolsResponse) {
-      try {
-        const toolsData = JSON.parse(toolsResponse);
-        if (toolsData.result && Array.isArray(toolsData.result.tools)) {
-          for (const tool of toolsData.result.tools) {
-            if (tool.name) {
-              methods.push(tool.name);
-            }
-          }
-        }
-      } catch (e) {
-        log(`  Warning: Failed to parse tools/list response`);
-      }
-    }
-    
-    if (resourcesResponse) {
-      try {
-        const resourcesData = JSON.parse(resourcesResponse);
-        if (resourcesData.result && Array.isArray(resourcesData.result.resources)) {
-          for (const resource of resourcesData.result.resources) {
-            if (resource.uri) {
-              resources.push(resource.uri);
-            }
-          }
-        }
-      } catch (e) {
-        log(`  Warning: Failed to parse resources/list response`);
-      }
-    }
-    
-    // Clean up
-    if (mcpProcess) {
-      mcpProcess.kill();
-      mcpProcess = null;
-    }
-    
-    // Success if we got at least initialize response
-    if (stdoutBuffer.trim()) {
-      log(`  Success: Server responded (methods: ${methods.length}, resources: ${resources.length})`);
+      
+      cleanup();
+      
       return {
-        success: true,
-        methods: methods.length > 0 ? methods : undefined,
-        resources: resources.length > 0 ? resources : undefined
+        success: false,
+        error: err.message,
+        timeout: err.message.includes('timeout') || err.message.includes('Process no longer available')
       };
     }
-    
-    return {
-      success: false,
-      error: 'No response from server',
-      timeout: true
-    };
-    
   } catch (error) {
     const err = error as Error;
     log(`  Error: ${err.message}`);
     
     if (mcpProcess) {
       mcpProcess.kill();
+      mcpProcess = null;
     }
     
     return {

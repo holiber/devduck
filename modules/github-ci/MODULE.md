@@ -4,6 +4,49 @@ version: 0.1.0
 description: GitHub CI setup and status checking for GitHub repositories
 tags: [ci, github, testing]
 dependencies: [core]
+defaultSettings:
+  gitignore: |
+    # environment variables
+    .env
+    .env.local
+    .env.*.local
+    
+    # Cache directory
+    .cache/
+    
+    # IDE and editor files
+    .vscode/
+    .idea/
+    *.swp
+    *.swo
+    *~
+    
+    # OS files
+    .DS_Store
+    Thumbs.db
+    
+    # Cursor files
+    .cursor/mcp.json
+    
+    # node modules
+    node_modules/
+    package-lock.json
+    yarn.lock
+    
+    # Test output files
+    tests/installer/output/
+    
+    # Build outputs
+    dist/
+    build/
+    *.log
+    
+    # Temporary files
+    *.tmp
+    *.temp
+    
+    # Workspace projects directory
+    projects/
 ---
 # GitHub CI Module
 
@@ -27,6 +70,11 @@ This module provides:
   - Uses GitHub CLI (`gh`) or GitHub API
   - Returns all checks with their statuses
   - Provides summary of check results
+
+- **Gitignore Management**: Automatically creates `.gitignore` file in workspace
+  - Uses `gitignore` setting from module settings if provided
+  - Falls back to `gitignore.default` file in module directory
+  - Ensures every workspace with github-ci module gets a proper `.gitignore` file
 
 ## Usage
 

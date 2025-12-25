@@ -29,7 +29,7 @@ The module defines a Zod contract that CI providers must implement:
 
 - `smogcheck-provider` - Test provider (included in this module)
 - `github-provider` - GitHub provider (in `ci-github` module)
-- `arc-provider` - Arcanum provider (in `ya-ci-arc` module)
+- Additional providers can be provided by external modules
 
 ## Provider selection
 

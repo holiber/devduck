@@ -134,11 +134,6 @@ checks:
 - **Dependencies**: `[core]`
 - **Special**: Automatically included in all workspace installations
 
-#### Yandex Infrastructure Modules
-Modules related to Yandex infrastructure must start with `ya-` prefix:
-- `ya-arc`: Yandex Arcadia integration
-- `ya-security`: Security checks and PR policies
-
 #### Other Modules
 - `containers`: Docker container orchestration
 - `evolution`: Self-modification capabilities
@@ -156,7 +151,7 @@ workspace/
 ├── workspace.config.json  # Workspace configuration
 ├── devduck/               # Link or copy to devduck tool
 ├── .cursorignore          # Created by core module hooks
-├── .arcignore            # Created by ya-arc module hooks (if installed)
+├── .arcignore            # Created by external modules (if installed)
 ├── .cache/
 │   └── devduck/          # Temporary files (fixed path)
 └── .cursor/
@@ -300,10 +295,6 @@ Modules can declare dependencies on other modules:
 core (no dependencies, always available)
   ↑
   ├── cursor (depends on core, always available)
-  │
-  ├── ya-arc (depends on core)
-  │     ↑
-  │     └── ya-security (depends on ya-arc)
   │
   ├── containers (depends on core)
   │
@@ -495,7 +486,7 @@ The context object passed to hooks contains:
 Files are created by module hooks, not hardcoded in the installer:
 
 - **.cursorignore**: Created by `core` module's `install` hook from `settings.cursorignore`
-- **.arcignore**: Created by `ya-arc` module's `install` hook from `settings.arcignore`
+- **.arcignore**: Created by external modules' `install` hooks from `settings.arcignore` (if configured)
 - **.cursor/commands/**: Created by `cursor` module's `post-install` hook (copies commands from all modules)
 - **.cursor/rules/devduck-rules.md**: Created by `cursor` module's `post-install` hook (merges rules from all modules)
 - **.cursor/mcp.json**: Created by `cursor` module's `post-install` hook (generates from all module MCP configs)
@@ -575,7 +566,7 @@ All temporary files are stored in `.cache/devduck/` directory within the workspa
 - Declare all dependencies explicitly
 - Provide defaultSettings for configurable behavior
 - Document module usage in MODULE.md
-- Follow naming conventions (ya-* for Yandex infrastructure)
+- Follow naming conventions for your organization's modules
 
 ## Unified API System
 

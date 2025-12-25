@@ -19,5 +19,5 @@ This module provides:
 
 ## Note
 
-VCS-specific implementations (like `arc` commands for Arcadia) are provided by other modules (e.g., `ya-arc` for Yandex Arcadia).
+VCS-specific implementations (like `arc` commands for Arcadia) are provided by external modules.
 

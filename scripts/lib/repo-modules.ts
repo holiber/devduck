@@ -151,93 +151,160 @@ export function parseRepoUrl(repoUrl: string): RepoUrlParseResult {
  * Resolve repository path to local filesystem path
  * @param repoUrl - Repository URL
  * @param workspaceRoot - Workspace root directory
- * @returns Local path to repository
+ * @returns Local path to repository (in devduck/ directory, or symlink to projects/)
  */
 export async function resolveRepoPath(repoUrl: string, workspaceRoot: string): Promise<string> {
   const parsed = parseRepoUrl(repoUrl);
   // External module repositories should be materialized inside the workspace's `devduck/` folder
   // (so they are easy to inspect/edit), not hidden under `.cache/`.
   // Note: place them directly under `devduck/` (e.g. `devduck/<repo-id>/`) rather than `devduck/repos/`.
-  const cacheDir = path.join(workspaceRoot, 'devduck');
+  const devduckDir = path.join(workspaceRoot, 'devduck');
+  const projectsDir = path.join(workspaceRoot, 'projects');
 
+  // Extract repo name from URL
+  let repoName: string;
   if (parsed.type === 'arc') {
-    // Arcadia: use direct filesystem path
-    // Normalized path can be:
-    // - Relative to arcadia root: "junk/alex-nazarov/devduck-ya-modules"
-    // - Absolute path: "/Users/alex-nazarov/arcadia/junk/alex-nazarov/devduck-ya-modules"
-
-    let repoPath: string;
-
-    // Check if it's already an absolute path
-    if (path.isAbsolute(parsed.normalized)) {
-      repoPath = parsed.normalized;
-    } else {
-      // First, check if repository exists in workspace (projects/ directory)
-      const workspaceRepoPath = path.join(workspaceRoot, 'projects', path.basename(parsed.normalized));
-      if (fs.existsSync(workspaceRepoPath)) {
-        repoPath = workspaceRepoPath;
-      } else {
-        // Try to find arcadia root
-        // First check ARCADIA_ROOT env var
-        let arcadiaRoot = process.env.ARCADIA_ROOT;
-
-        // If not set, try to detect from current working directory
-        if (!arcadiaRoot) {
-          let currentDir = process.cwd();
-          const maxDepth = 10;
-          let depth = 0;
-
-          while (depth < maxDepth) {
-            const arcadiaRootFile = path.join(currentDir, '.arcadia.root');
-            if (fs.existsSync(arcadiaRootFile)) {
-              arcadiaRoot = currentDir;
-              break;
-            }
-            const parent = path.dirname(currentDir);
-            if (parent === currentDir) {
-              break;
-            }
-            currentDir = parent;
-            depth++;
-          }
-        }
-
-        // Fallback to common arcadia locations
-        if (!arcadiaRoot) {
-          const possibleRoots = ['/Users/alex-nazarov/arcadia', '/arcadia', process.cwd()];
-
-          for (const possibleRoot of possibleRoots) {
-            if (fs.existsSync(path.join(possibleRoot, '.arcadia.root'))) {
-              arcadiaRoot = possibleRoot;
-              break;
-            }
-          }
-        }
-
-        if (!arcadiaRoot) {
-          throw new Error('Cannot determine Arcadia root. Set ARCADIA_ROOT environment variable or run from Arcadia directory.');
-        }
-
-        repoPath = path.join(arcadiaRoot, parsed.normalized);
-      }
-    }
-
-    if (!fs.existsSync(repoPath)) {
-      throw new Error(`Arcadia repository not found: ${repoPath}`);
-    }
-
-    return repoPath;
-  }
-
-  if (parsed.type === 'git') {
-    // Git: clone to cache directory
-    // Use repo name as directory name
-    const repoName = parsed.normalized
+    repoName = path.basename(parsed.normalized);
+  } else {
+    // Git: extract repo name from URL
+    repoName = parsed.normalized
       .replace(/^git@/, '')
       .replace(/\.git$/, '')
       .replace(/[:\/]/g, '_');
+  }
 
-    const repoPath = path.join(cacheDir, repoName);
+  const devduckRepoPath = path.join(devduckDir, repoName);
+  const projectsRepoPath = path.join(projectsDir, repoName);
+
+  // Check if repo exists in projects/ directory
+  if (fs.existsSync(projectsRepoPath)) {
+    // Create symlink from devduck/%repo_name% to projects/%repo_name%
+    fs.mkdirSync(devduckDir, { recursive: true });
+    
+    // Remove existing symlink or directory if it exists
+    if (fs.existsSync(devduckRepoPath)) {
+      try {
+        const stats = fs.lstatSync(devduckRepoPath);
+        if (stats.isSymbolicLink()) {
+          fs.unlinkSync(devduckRepoPath);
+        } else if (stats.isDirectory()) {
+          // If it's a directory (not a symlink), we should not overwrite it
+          // Return the existing directory path
+          return devduckRepoPath;
+        }
+      } catch (error) {
+        // If we can't check/remove, continue and try to create symlink
+      }
+    }
+
+    // Create symlink
+    try {
+      fs.symlinkSync(projectsRepoPath, devduckRepoPath, 'dir');
+      print(`  ${symbols.info} Created symlink: devduck/${repoName} -> projects/${repoName}`, 'cyan');
+      return devduckRepoPath;
+    } catch (error) {
+      const err = error as Error;
+      // If symlink creation fails, fall back to using projects path directly
+      print(`  ${symbols.warning} Failed to create symlink, using projects path directly: ${err.message}`, 'yellow');
+      return projectsRepoPath;
+    }
+  }
+
+  // Repo doesn't exist in projects/, use normal resolution logic
+  if (parsed.type === 'arc') {
+    // Arcadia: use direct filesystem path
+    // Normalized path can be:
+    // - Relative to arcadia root: "junk/user/repo-name"
+    // - Absolute path: "/path/to/arcadia/junk/user/repo-name"
+
+    let actualRepoPath: string;
+
+    // Check if it's already an absolute path
+    if (path.isAbsolute(parsed.normalized)) {
+      actualRepoPath = parsed.normalized;
+    } else {
+      // Try to find arcadia root
+      // First check ARCADIA_ROOT env var
+      let arcadiaRoot = process.env.ARCADIA_ROOT;
+
+      // If not set, try to detect from current working directory
+      if (!arcadiaRoot) {
+        let currentDir = process.cwd();
+        const maxDepth = 10;
+        let depth = 0;
+
+        while (depth < maxDepth) {
+          const arcadiaRootFile = path.join(currentDir, '.arcadia.root');
+          if (fs.existsSync(arcadiaRootFile)) {
+            arcadiaRoot = currentDir;
+            break;
+          }
+          const parent = path.dirname(currentDir);
+          if (parent === currentDir) {
+            break;
+          }
+          currentDir = parent;
+          depth++;
+        }
+      }
+
+      // Fallback to common arcadia locations
+      if (!arcadiaRoot) {
+        const possibleRoots = ['/Users/alex-nazarov/arcadia', '/arcadia', process.cwd()];
+
+        for (const possibleRoot of possibleRoots) {
+          if (fs.existsSync(path.join(possibleRoot, '.arcadia.root'))) {
+            arcadiaRoot = possibleRoot;
+            break;
+          }
+        }
+      }
+
+      if (!arcadiaRoot) {
+        throw new Error('Cannot determine Arcadia root. Set ARCADIA_ROOT environment variable or run from Arcadia directory.');
+      }
+
+      actualRepoPath = path.join(arcadiaRoot, parsed.normalized);
+    }
+
+    if (!fs.existsSync(actualRepoPath)) {
+      throw new Error(`Arcadia repository not found: ${actualRepoPath}`);
+    }
+
+    // Create symlink from devduck/%repo_name% to actual repo path
+    fs.mkdirSync(devduckDir, { recursive: true });
+    
+    // Remove existing symlink or directory if it exists
+    if (fs.existsSync(devduckRepoPath)) {
+      try {
+        const stats = fs.lstatSync(devduckRepoPath);
+        if (stats.isSymbolicLink()) {
+          fs.unlinkSync(devduckRepoPath);
+        } else if (stats.isDirectory()) {
+          // If it's a directory (not a symlink), return it
+          return devduckRepoPath;
+        }
+      } catch (error) {
+        // If we can't check/remove, continue and try to create symlink
+      }
+    }
+
+    // Create symlink
+    try {
+      fs.symlinkSync(actualRepoPath, devduckRepoPath, 'dir');
+      print(`  ${symbols.info} Created symlink: devduck/${repoName} -> ${actualRepoPath}`, 'cyan');
+      return devduckRepoPath;
+    } catch (error) {
+      const err = error as Error;
+      // If symlink creation fails, fall back to using actual path directly
+      print(`  ${symbols.warning} Failed to create symlink, using actual path directly: ${err.message}`, 'yellow');
+      return actualRepoPath;
+    }
+  }
+
+  if (parsed.type === 'git') {
+    // Git: clone to devduck directory
+    const repoPath = devduckRepoPath;
 
     // Check if already cloned
     if (fs.existsSync(repoPath) && fs.existsSync(path.join(repoPath, '.git'))) {
@@ -257,7 +324,7 @@ export async function resolveRepoPath(repoUrl: string, workspaceRoot: string): P
 
     // Clone repository
     print(`  ${symbols.info} Cloning repository: ${parsed.normalized}`, 'cyan');
-    fs.mkdirSync(cacheDir, { recursive: true });
+    fs.mkdirSync(devduckDir, { recursive: true });
 
     const cloneResult = spawnSync('git', ['clone', parsed.normalized, repoPath], {
       encoding: 'utf8',
@@ -368,7 +435,8 @@ export async function loadModulesFromRepo(
     throw new Error(`modules directory not found in repository: ${repoUrl}`);
   }
 
-  print(`  ${symbols.success} Repository ${repoUrl} loaded (version ${versionCheck.version})`, 'green');
+  // Don't print success message here - let caller print it after modules are loaded
+  // This avoids the appearance of the script being "stuck" while loading modules
 
   return modulesPath;
 }

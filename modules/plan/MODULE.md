@@ -3,7 +3,7 @@ name: plan
 version: 0.1.0
 description: Implementation plan creation and management for Tracker issues
 tags: [plan, tracker, implementation]
-dependencies: [core, ya-tracker]
+dependencies: [core]
 ---
 # Plan Module
 
@@ -31,5 +31,8 @@ Or use Cursor command:
 ## Dependencies
 
 - `core` - uses `prompt-store` for prompt queue
-- `ya-tracker` - uses tracker API for loading issues
+
+## External Providers
+
+- Issue tracker providers - uses issue tracker API for loading issues (provided by external modules)
 
