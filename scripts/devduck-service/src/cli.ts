@@ -172,6 +172,7 @@ async function cmdDev(
   const launchDev = tryReadLaunchDevFromWorkspaceConfig(process.cwd());
   const session = await client.process.readSession.query();
   const status = await client.process.status.query();
+  const serverRunning = status.processes.find(p => p.name === 'server')?.running ?? false;
 
   let baseURL = session.baseURL;
   if (launchDev?.baseURL) {
@@ -185,6 +186,8 @@ async function cmdDev(
 
   if (launchDev?.processes?.length) {
     for (const p of launchDev.processes) {
+      const running = status.processes.find(s => s.name === p.name)?.running ?? false;
+      if (running) continue;
       await client.process.start.mutate({
         name: p.name,
         command: p.command,
@@ -292,10 +295,10 @@ async function cmdDev(
   const serverScript = path.join(fixturesDir, 'http-server.mjs');
   const loggyScript = path.join(fixturesDir, 'loggy-process.mjs');
 
-  const serverRunning = status.processes.find(p => p.name === 'server')?.running ?? false;
-  const clientRunning = status.processes.find(p => p.name === 'client')?.running ?? false;
+  const legacyServerRunning = status.processes.find(p => p.name === 'server')?.running ?? false;
+  const legacyClientRunning = status.processes.find(p => p.name === 'client')?.running ?? false;
 
-  if (!serverRunning) {
+  if (!legacyServerRunning) {
     const url = new URL(baseURL);
     await client.process.start.mutate({
       name: 'server',
@@ -305,7 +308,7 @@ async function cmdDev(
     });
   }
 
-  if (!clientRunning) {
+  if (!legacyClientRunning) {
     await client.process.start.mutate({
       name: 'client',
       command: process.execPath,
