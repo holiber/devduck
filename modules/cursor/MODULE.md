@@ -7,10 +7,15 @@ dependencies: [core]
 checks:
   - type: "auth"
     var: "CURSOR_API_KEY"
-    description: "Checks that CURSOR_API_KEY is set and valid (cheap GET /v1/models probe)"
+    description: "Checks that CURSOR_API_KEY is set"
     docs: "Get a key at https://cursor.com/dashboard?tab=integrations"
+    test: "sh -c 'test -n \"$CURSOR_API_KEY\"'"
+  - type: "test"
+    name: "cursor-api-key-valid"
+    description: "Optional: probes Cursor API to check the key works (best-effort)"
     optional: true
-    test: "sh -c 'test -n \"$CURSOR_API_KEY\" || exit 0; curl -s -o /dev/null -w \"%{http_code}\" https://api.cursor.sh/v1/models -H \"Authorization: Bearer $CURSOR_API_KEY\"'"
+    var: "CURSOR_API_KEY"
+    test: "sh -c 'test -n \"$CURSOR_API_KEY\" || exit 1; code=\"$(curl -s -o /dev/null -w \"%{http_code}\" https://api.cursor.sh/v1/models -H \"Authorization: Bearer $CURSOR_API_KEY\")\"; test \"$code\" = \"200\" -o \"$code\" = \"429\"'"
 ---
 # Cursor Module
 

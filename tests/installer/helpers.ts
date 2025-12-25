@@ -159,9 +159,15 @@ export function runInstaller(workspacePath: string, options: RunInstallerOptions
     let stderr = '';
     let inputIndex = 0;
     
+    // Installer tests run in CI without user secrets; however some modules (e.g. cursor) require tokens.
+    // Provide deterministic dummy values so pre-install checks don't block unattended installs.
     const proc = spawn('tsx', [INSTALLER_SCRIPT, ...args], {
       cwd: PROJECT_ROOT,
-      env: { ...process.env, NODE_ENV: 'test' }
+      env: {
+        ...process.env,
+        NODE_ENV: 'test',
+        CURSOR_API_KEY: process.env.CURSOR_API_KEY || 'test-cursor-api-key'
+      }
     });
 
     // Handle inputs for interactive mode
