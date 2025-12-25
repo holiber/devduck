@@ -534,5 +534,75 @@ version: 0.1.0
     const testModule = results.modules.find(m => m.name === 'test-module');
     assert.strictEqual(testModule, undefined, 'test-module without checks should not appear in results');
   });
+
+  test('automatically writes env var to .env when install command succeeds', async () => {
+    // Create workspace.config.json
+    const config = {
+      workspaceVersion: '0.1.0',
+      devduckPath: path.resolve(__dirname, '../..'),
+      modules: ['*'],
+      projects: []
+    };
+    
+    fs.writeFileSync(
+      path.join(tempWorkspace, 'workspace.config.json'),
+      JSON.stringify(config, null, 2)
+    );
+    
+    // Create test module with a check that has install command
+    const modulesDir = path.join(tempWorkspace, 'modules');
+    const testModuleDir = path.join(modulesDir, 'test-install-env');
+    fs.mkdirSync(testModuleDir, { recursive: true });
+    
+    const moduleMd = `---
+name: test-install-env
+version: 0.1.0
+checks:
+  - type: "test"
+    name: "test-env-var"
+    description: "Test env var with install command"
+    var: "TEST_INSTALL_VAR"
+    install: "echo /test/path"
+    test: "sh -c 'test -n \\"$TEST_INSTALL_VAR\\" && test \\"$TEST_INSTALL_VAR\\" = \\"/test/path\\"'"
+---
+# Test Module
+`;
+    
+    fs.writeFileSync(path.join(testModuleDir, 'MODULE.md'), moduleMd);
+    
+    // Ensure TEST_INSTALL_VAR is not set
+    delete process.env.TEST_INSTALL_VAR;
+    
+    // Ensure .env doesn't exist or doesn't have the variable
+    const envPath = path.join(tempWorkspace, '.env');
+    if (fs.existsSync(envPath)) {
+      const existingEnv = fs.readFileSync(envPath, 'utf8');
+      if (existingEnv.includes('TEST_INSTALL_VAR')) {
+        // Remove the variable from .env
+        const lines = existingEnv.split('\n').filter(line => !line.trim().startsWith('TEST_INSTALL_VAR='));
+        fs.writeFileSync(envPath, lines.join('\n'));
+      }
+    }
+    
+    // Run pre-install checks
+    const results = await runPreInstallChecks(tempWorkspace);
+    
+    // Verify the check was found and executed
+    const testModule = results.modules.find(m => m.name === 'test-install-env');
+    assert.ok(testModule, 'test-install-env module should be found');
+    assert.strictEqual(testModule!.checks.length, 1);
+    
+    const check = testModule!.checks[0];
+    assert.strictEqual(check.type, 'test');
+    assert.strictEqual(check.name, 'test-env-var');
+    
+    // Verify the variable was written to .env
+    assert.ok(fs.existsSync(envPath), '.env file should be created');
+    const envContent = fs.readFileSync(envPath, 'utf8');
+    assert.ok(envContent.includes('TEST_INSTALL_VAR=/test/path'), '.env should contain TEST_INSTALL_VAR=/test/path');
+    
+    // Verify the check passed (since install command succeeded and set the variable)
+    assert.strictEqual(check.passed, true, 'Check should pass after install command sets the variable');
+  });
 });
 

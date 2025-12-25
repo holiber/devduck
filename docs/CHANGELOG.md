@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - 2025-12-25
+
+- 🔧 **Automatic environment variable installation from install commands** - Pre-install checks now automatically run install commands when required environment variables are missing
+  - When a test check requires a variable (e.g., `ARCADIA_ROOT`) and has an `install` field, the install command is executed automatically
+  - The install command output is captured and used to set the variable for the test execution
+  - Variables are automatically written to `.env` file to persist them for future runs
+  - Eliminates the need to manually set variables that can be derived from commands (e.g., `arc root` for `ARCADIA_ROOT`)
+  - See `ARCHITECTURE.md` for configuration details
+
+- 📚 **Documentation links in auth check failures** - Auth checks can now include a `docs` field that provides helpful links when checks fail
+  - The `docs` field is displayed in cyan below the error message when an auth check fails
+  - Helps users quickly find documentation on how to obtain required tokens
+  - Example: `docs: "Obtain your token here: https://docs.example.com/tokens"`
+
 ### Changed - 2025-12-25
 
 - 📦 **External repositories clone location** - Git repositories listed in `workspace.config.json.repos` are now cloned under `<workspace>/devduck/` (instead of `.cache/...`).
