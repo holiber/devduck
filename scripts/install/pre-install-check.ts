@@ -402,8 +402,9 @@ async function collectModuleChecks(
     }
   }
   
-  // Combine all modules
-  const allModules = [...localModules, ...externalModules, ...workspaceModules, ...projectsModules];
+  // Combine all modules with explicit priority (first occurrence wins):
+  // 1) workspace modules, 2) project modules, 3) external repos, 4) built-in devduck modules.
+  const allModules = [...workspaceModules, ...projectsModules, ...externalModules, ...localModules];
   
   // Resolve which modules to check based on config
   let moduleNames: string[] = Array.isArray(config.modules) ? config.modules : ['*'];

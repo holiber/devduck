@@ -155,7 +155,10 @@ export function parseRepoUrl(repoUrl: string): RepoUrlParseResult {
  */
 export async function resolveRepoPath(repoUrl: string, workspaceRoot: string): Promise<string> {
   const parsed = parseRepoUrl(repoUrl);
-  const cacheDir = path.join(workspaceRoot, '.cache', 'devduck', 'repos');
+  // External module repositories should be materialized inside the workspace's `devduck/` folder
+  // (so they are easy to inspect/edit), not hidden under `.cache/`.
+  // Note: place them directly under `devduck/` (e.g. `devduck/<repo-id>/`) rather than `devduck/repos/`.
+  const cacheDir = path.join(workspaceRoot, 'devduck');
 
   if (parsed.type === 'arc') {
     // Arcadia: use direct filesystem path
