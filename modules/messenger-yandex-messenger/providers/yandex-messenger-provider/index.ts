@@ -206,7 +206,7 @@ const provider: MessengerProvider = {
       compute,
       providerName
     });
-    return { fileId: input.fileId, originalFileId: cached.originalFileId || input.fileId, ...cached };
+    return { fileId: input.fileId, ...cached, originalFileId: cached.originalFileId || input.fileId };
   }
 };
 
