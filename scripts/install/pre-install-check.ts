@@ -938,26 +938,75 @@ export function validatePreInstallChecks(
     return /^Required token [A-Za-z_][A-Za-z0-9_]* is not present$/.test(err.trim());
   };
   
-  // Show successful auth token checks (without description to avoid duplication)
+  // Print a detailed per-check breakdown so users can see what exactly was checked.
+  // This also makes it obvious when *no* checks were discovered (e.g. module patterns matched nothing).
+  type FlatCheck = {
+    scopeType: 'project' | 'module';
+    scopeName: string;
+    check: AuthCheckResult;
+  };
+
+  const flatChecks: FlatCheck[] = [];
   for (const project of checkResults.projects) {
     for (const check of project.checks) {
-      if (check.type === 'auth' && check.present && check.var) {
-        // Don't show description for successful checks to avoid duplication
-        print(`  ${symbols.success} ${check.var} - token exist`, 'green');
-      }
+      flatChecks.push({ scopeType: 'project', scopeName: project.name, check });
     }
   }
-  
   for (const module of checkResults.modules) {
     for (const check of module.checks) {
-      if (check.type === 'auth' && check.present && check.var) {
-        // Don't show description for successful checks to avoid duplication
-        const moduleName = module.name ? ` (module: ${module.name})` : '';
-        print(`  ${symbols.success} ${check.var}${moduleName} - token exist`, 'green');
-        // Don't show "Test check passed" line - it's redundant if check passed
-      }
+      flatChecks.push({ scopeType: 'module', scopeName: module.name, check });
     }
   }
+
+  const totals = {
+    total: flatChecks.length,
+    passed: 0,
+    failed: 0,
+    missingTokens: 0,
+    blocked: 0,
+    skipped: 0,
+    optionalMissing: 0
+  };
+
+  const formatScope = (fc: FlatCheck): string => `${fc.scopeType}: ${fc.scopeName}`;
+  const formatCheckLabel = (c: AuthCheckResult): string => {
+    if (c.type === 'auth') return c.var ? `auth ${c.var}` : 'auth';
+    return c.name ? `test ${c.name}` : c.test ? `test ${c.test}` : 'test';
+  };
+
+  const classify = (c: AuthCheckResult): { icon: string; color: 'green' | 'red' | 'yellow' | 'cyan'; bucket: keyof typeof totals } => {
+    if (c.type === 'auth') {
+      if (c.present) return { icon: symbols.success, color: 'green', bucket: 'passed' };
+      if (c.optional === true) return { icon: symbols.info, color: 'cyan', bucket: 'optionalMissing' };
+      return { icon: symbols.info, color: 'yellow', bucket: 'missingTokens' };
+    }
+
+    // type === 'test'
+    if (c.passed === true) return { icon: symbols.success, color: 'green', bucket: 'passed' };
+    if (c.passed === false) {
+      if (isRequiredTokenMissingError(c.error)) return { icon: symbols.info, color: 'yellow', bucket: 'blocked' };
+      return { icon: symbols.error, color: 'red', bucket: 'failed' };
+    }
+
+    // no explicit result -> treat as skipped
+    return { icon: symbols.info, color: 'cyan', bucket: 'skipped' };
+  };
+
+  for (const fc of flatChecks) {
+    const { icon, color, bucket } = classify(fc.check);
+    totals[bucket] += 1;
+    const desc = fc.check.description ? ` - ${fc.check.description}` : '';
+    const err = fc.check.error ? ` - ${fc.check.error}` : '';
+    const optional = fc.check.optional === true ? ' (optional)' : '';
+    print(`  ${icon} [${formatScope(fc)}] ${formatCheckLabel(fc.check)}${optional}${desc}${err}`, color);
+  }
+
+  const projectChecksCount = checkResults.projects.reduce((acc, p) => acc + p.checks.length, 0);
+  const moduleChecksCount = checkResults.modules.reduce((acc, m) => acc + m.checks.length, 0);
+  print(
+    `  ${symbols.info} Pre-install checks summary: ${totals.passed}/${totals.total} passed (projects: ${projectChecksCount}, modules: ${moduleChecksCount}; missing tokens: ${totals.missingTokens}, failed: ${totals.failed}, blocked: ${totals.blocked}, skipped: ${totals.skipped})`,
+    'cyan'
+  );
   
   // Check for missing auth tokens
   let hasMissingAuth = false;
@@ -1122,7 +1171,8 @@ export function validatePreInstallChecks(
     return 'needs_input';
   }
   
-  print(`  ${symbols.success} All pre-install checks passed`, 'green');
+  // Keep the legacy phrase for compatibility (tests and user expectations), but add useful counts.
+  print(`  ${symbols.success} All pre-install checks passed (${totals.passed}/${totals.total})`, 'green');
   log(`Pre-install checks passed`);
   return 'ok';
 }
