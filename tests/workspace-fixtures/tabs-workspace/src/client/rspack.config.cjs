@@ -9,6 +9,7 @@ const ReactRefreshPlugin = ReactRefreshPluginMod.default ?? ReactRefreshPluginMo
 
 module.exports = defineConfig((_env, argv) => {
   const isDev = argv.mode !== 'production';
+  const port = Number(process.env.PORT || 4020);
 
   return {
     mode: isDev ? 'development' : 'production',
@@ -48,6 +49,7 @@ module.exports = defineConfig((_env, argv) => {
     ),
     devServer: {
       host: '127.0.0.1',
+      port,
       historyApiFallback: true
     }
   };

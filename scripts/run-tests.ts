@@ -35,7 +35,7 @@ if (testFiles.length === 0) {
 // Run tests with tsx (use npx to ensure tsx is available)
 const result = spawnSync(
   'npx',
-  ['tsx', '--test', ...testFiles],
+  ['tsx', '--test', '--test-concurrency=1', ...testFiles],
   {
     stdio: 'inherit',
     cwd: process.cwd()

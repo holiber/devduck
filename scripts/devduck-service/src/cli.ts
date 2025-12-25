@@ -92,6 +92,41 @@ async function waitHttpReady(url: string, timeoutMs: number): Promise<void> {
   throw new Error(`Readiness timeout: ${url}`);
 }
 
+function resolveReadyUrl(baseURL: string | undefined, url: string): string {
+  if (/^https?:\/\//.test(url)) return url;
+  if (!baseURL) throw new Error(`Relative ready.url "${url}" requires baseURL`);
+  return new URL(url, baseURL).toString();
+}
+
+async function runCommandToLogs(params: {
+  cwd: string;
+  command: string;
+  args: string[];
+  env: Record<string, string | undefined>;
+  logBaseName: string;
+}): Promise<{ exitCode: number; stdoutLogPath: string; stderrLogPath: string }> {
+  const paths = getDevduckServicePaths(process.cwd());
+  fs.mkdirSync(paths.logsDir, { recursive: true });
+  const stdoutLogPath = path.join(paths.logsDir, `${params.logBaseName}.out.log`);
+  const stderrLogPath = path.join(paths.logsDir, `${params.logBaseName}.err.log`);
+
+  const out = fs.createWriteStream(stdoutLogPath, { flags: 'a' });
+  const err = fs.createWriteStream(stderrLogPath, { flags: 'a' });
+
+  const child = spawn(params.command, params.args, {
+    cwd: params.cwd,
+    env: { ...process.env, ...params.env },
+    stdio: ['ignore', 'pipe', 'pipe']
+  });
+  child.stdout?.pipe(out);
+  child.stderr?.pipe(err);
+
+  const exitCode: number = await new Promise(resolve => {
+    child.on('exit', code => resolve(code ?? 1));
+  });
+  return { exitCode, stdoutLogPath, stderrLogPath };
+}
+
 type LaunchReady = { type?: string; url?: string };
 type LaunchProcess = {
   name: string;
@@ -120,7 +155,10 @@ function tryReadLaunchDevFromWorkspaceConfig(cwd: string): LaunchDev | null {
   }
 }
 
-async function cmdDev(client: ReturnType<typeof createDevduckServiceClient>) {
+async function cmdDev(
+  client: ReturnType<typeof createDevduckServiceClient>,
+  opts?: { skipSmokecheck?: boolean }
+) {
   const launchDev = tryReadLaunchDevFromWorkspaceConfig(process.cwd());
   const session = await client.process.readSession.query();
   const status = await client.process.status.query();
@@ -139,8 +177,6 @@ async function cmdDev(client: ReturnType<typeof createDevduckServiceClient>) {
 
   if (launchDev?.processes?.length) {
     for (const p of launchDev.processes) {
-      const running = status.processes.find(s => s.name === p.name)?.running ?? false;
-      if (running) continue;
       await client.process.start.mutate({
         name: p.name,
         command: p.command,
@@ -153,38 +189,76 @@ async function cmdDev(client: ReturnType<typeof createDevduckServiceClient>) {
     for (const p of launchDev.processes) {
       const ready = p.ready;
       if (ready?.type === 'http' && ready.url) {
-        await waitHttpReady(ready.url, 120_000);
+        await waitHttpReady(resolveReadyUrl(baseURL, ready.url), 120_000);
       }
     }
 
     const smoke = launchDev.smokecheck;
-    if (smoke && 'testFile' in smoke) {
-      const configFile = smoke.configFile ? path.resolve(process.cwd(), smoke.configFile) : undefined;
-      const result = await client.playwright.runSmokecheck.mutate({
-        testFile: path.resolve(process.cwd(), smoke.testFile),
-        baseURL: baseURL || '',
-        configFile
-      });
+    if (smoke && !opts?.skipSmokecheck) {
+      if ('testFile' in smoke) {
+        const configFile = smoke.configFile ? path.resolve(process.cwd(), smoke.configFile) : undefined;
+        const result = await client.playwright.runSmokecheck.mutate({
+          testFile: path.resolve(process.cwd(), smoke.testFile),
+          baseURL: baseURL || '',
+          configFile
+        });
 
-      if (!result.ok) {
-        // eslint-disable-next-line no-console
-        console.error(
-          JSON.stringify(
-            {
-              ok: false,
-              exitCode: result.exitCode,
-              logs: {
-                playwrightStdout: result.stdoutLogPath,
-                playwrightStderr: result.stderrLogPath,
-                browserConsole: (await client.playwright.ensureBrowserConsoleLogging.mutate()).logPath
-              }
-            },
-            null,
-            2
-          )
-        );
-        process.exitCode = result.exitCode || 1;
-        return;
+        if (!result.ok) {
+          // eslint-disable-next-line no-console
+          console.error(
+            JSON.stringify(
+              {
+                ok: false,
+                exitCode: result.exitCode,
+                logs: {
+                  playwrightStdout: result.stdoutLogPath,
+                  playwrightStderr: result.stderrLogPath,
+                  browserConsole: (await client.playwright.ensureBrowserConsoleLogging.mutate()).logPath
+                }
+              },
+              null,
+              2
+            )
+          );
+          process.exitCode = result.exitCode || 1;
+          return;
+        }
+      } else {
+        const browserConsole = (await client.playwright.ensureBrowserConsoleLogging.mutate()).logPath;
+        const cwd = smoke.cwd ? path.resolve(process.cwd(), smoke.cwd) : process.cwd();
+        const res = await runCommandToLogs({
+          cwd,
+          command: smoke.command,
+          args: smoke.args ?? [],
+          env: {
+            CI: '1',
+            BASE_URL: baseURL,
+            BROWSER_CONSOLE_LOG_PATH: browserConsole,
+            PW_TEST_HTML_REPORT_OPEN: 'never',
+            ...(smoke.env ?? {})
+          },
+          logBaseName: 'launch-smokecheck'
+        });
+        if (res.exitCode !== 0) {
+          // eslint-disable-next-line no-console
+          console.error(
+            JSON.stringify(
+              {
+                ok: false,
+                exitCode: res.exitCode,
+                logs: {
+                  smokecheckStdout: res.stdoutLogPath,
+                  smokecheckStderr: res.stderrLogPath,
+                  browserConsole
+                }
+              },
+              null,
+              2
+            )
+          );
+          process.exitCode = res.exitCode || 1;
+          return;
+        }
       }
     }
 
@@ -297,21 +371,43 @@ async function cmdSmokecheck(client: ReturnType<typeof createDevduckServiceClien
 
 async function cmdSmokecheckFromConfig(client: ReturnType<typeof createDevduckServiceClient>) {
   const session = await client.process.readSession.query();
-  const baseURL = session.baseURL;
+  if (!session.baseURL) {
+    await cmdDev(client, { skipSmokecheck: true });
+  }
+  const session2 = await client.process.readSession.query();
+  const baseURL = session2.baseURL;
   if (!baseURL) throw new Error('No baseURL in session (run `dev` first)');
 
   const launchDev = tryReadLaunchDevFromWorkspaceConfig(process.cwd());
   const smoke = launchDev?.smokecheck;
-  if (!smoke || !('testFile' in smoke)) {
-    throw new Error('No launch.dev.smokecheck.testFile in workspace.config.json');
+  if (!smoke) throw new Error('No launch.dev.smokecheck in workspace.config.json');
+
+  if ('testFile' in smoke) {
+    const result = await client.playwright.runSmokecheck.mutate({
+      testFile: path.resolve(process.cwd(), smoke.testFile),
+      baseURL,
+      configFile: smoke.configFile ? path.resolve(process.cwd(), smoke.configFile) : undefined
+    });
+    process.exitCode = result.exitCode;
+    return;
   }
 
-  const result = await client.playwright.runSmokecheck.mutate({
-    testFile: path.resolve(process.cwd(), smoke.testFile),
-    baseURL,
-    configFile: smoke.configFile ? path.resolve(process.cwd(), smoke.configFile) : undefined
+  const browserConsole = (await client.playwright.ensureBrowserConsoleLogging.mutate()).logPath;
+  const cwd = smoke.cwd ? path.resolve(process.cwd(), smoke.cwd) : process.cwd();
+  const res = await runCommandToLogs({
+    cwd,
+    command: smoke.command,
+    args: smoke.args ?? [],
+    env: {
+      CI: '1',
+      BASE_URL: baseURL,
+      BROWSER_CONSOLE_LOG_PATH: browserConsole,
+      PW_TEST_HTML_REPORT_OPEN: 'never',
+      ...(smoke.env ?? {})
+    },
+    logBaseName: 'launch-smokecheck'
   });
-  process.exitCode = result.exitCode;
+  process.exitCode = res.exitCode;
 }
 
 async function cmdStatus(client: ReturnType<typeof createDevduckServiceClient>) {
