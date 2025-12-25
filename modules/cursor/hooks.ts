@@ -77,8 +77,13 @@ export default {
     
     // 3. Generate mcp.json from all modules
     // Load environment variables for variable substitution
+    // Re-read .env file right before generating mcp.json to pick up any variables
+    // set by other post-install hooks (e.g., MCP_STORE_PROXY_PATH from ya-core)
     const envFilePath = path.join(context.workspaceRoot, '.env');
-    const env = readEnvFile(envFilePath);
+    let env = readEnvFile(envFilePath);
+    
+    // Also merge in process.env to catch variables set by hooks
+    env = { ...env, ...process.env };
     
     const mcpServers: Record<string, unknown> = {};
     for (const module of context.allModules) {
