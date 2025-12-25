@@ -1623,7 +1623,14 @@ async function installWorkspace(): Promise<void> {
   try {
     const { runPreInstallChecks, validatePreInstallChecks } = await import('./install/pre-install-check.js');
     const checkResults = await runPreInstallChecks(WORKSPACE_ROOT);
-    validatePreInstallChecks(checkResults, { print, log, symbols });
+    const validation = validatePreInstallChecks(checkResults, { print, log, symbols });
+    if (validation === 'needs_input') {
+      // Not a failure, but we must not continue workspace installation until tokens are provided.
+      return;
+    }
+    if (validation === 'failed') {
+      process.exit(1);
+    }
   } catch (error) {
     const err = error as Error;
     print(`\n${symbols.error} Pre-install check error: ${err.message}`, 'red');
@@ -1709,7 +1716,7 @@ async function installWorkspace(): Promise<void> {
   }
   
   // Merge external modules with local modules
-  const { getAllModules, getAllModulesFromDirectory, resolveModules, resolveDependencies, mergeModuleSettings } = await import('./install/module-resolver.js');
+  const { getAllModules, getAllModulesFromDirectory, expandModuleNames, resolveDependencies, mergeModuleSettings } = await import('./install/module-resolver.js');
   const localModules = getAllModules();
   
   // Also load workspace-local modules (if workspace has its own modules/ folder)
@@ -1734,11 +1741,8 @@ async function installWorkspace(): Promise<void> {
   
   const allModules = [...localModules, ...externalModules, ...workspaceModules, ...projectsModules];
   
-  // Resolve modules manually with merged list
-  let moduleNames = config.modules || ['*'];
-  if (moduleNames.includes('*')) {
-    moduleNames = allModules.map(m => m.name);
-  }
+  // Resolve modules manually with merged list (supports patterns like "issue-*")
+  const moduleNames = expandModuleNames(config.modules || ['*'], allModules);
   const resolvedModules = resolveDependencies(moduleNames, allModules);
   
   // Load module resources
@@ -1899,7 +1903,19 @@ async function main(): Promise<void> {
   try {
     const { runPreInstallChecks, validatePreInstallChecks } = await import('./install/pre-install-check.js');
     const checkResults = await runPreInstallChecks(WORKSPACE_ROOT);
-    validatePreInstallChecks(checkResults, { print, log, symbols });
+    const validation = validatePreInstallChecks(checkResults, { print, log, symbols });
+    if (validation === 'needs_input') {
+      // Not a failure, but we must not continue with installation checks until tokens are provided.
+      if (logStream) {
+        await new Promise((resolve) => {
+          logStream.end(resolve);
+        });
+      }
+      process.exit(0);
+    }
+    if (validation === 'failed') {
+      process.exit(1);
+    }
   } catch (error) {
     const err = error as Error;
     print(`\n${symbols.error} Pre-install check error: ${err.message}`, 'red');

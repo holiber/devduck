@@ -8,9 +8,9 @@ import { describe, test, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert';
 import fs from 'fs';
 import path from 'path';
-import os from 'os';
 import { fileURLToPath } from 'url';
 import { runPreInstallChecks, validatePreInstallChecks } from '../../scripts/install/pre-install-check.js';
+import { createWorkspaceFromFixture, cleanupTempWorkspace } from './helpers.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -19,25 +19,22 @@ describe('pre-install-check', () => {
   let tempWorkspace: string;
   let originalEnv: NodeJS.ProcessEnv;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     // Save original environment
     originalEnv = { ...process.env };
-    
-    // Create temporary workspace
-    tempWorkspace = fs.mkdtempSync(path.join(os.tmpdir(), 'devduck-pre-install-test-'));
-    
-    // Create .cache directory
-    const cacheDir = path.join(tempWorkspace, '.cache');
-    fs.mkdirSync(cacheDir, { recursive: true });
+
+    // Create temporary workspace seeded with a fixture that already has `.cache/`.
+    tempWorkspace = await createWorkspaceFromFixture('with-cache', {
+      prefix: 'devduck-pre-install-test-'
+    });
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     // Restore original environment
     process.env = originalEnv;
-    
-    // Clean up temporary workspace
-    if (tempWorkspace && fs.existsSync(tempWorkspace)) {
-      fs.rmSync(tempWorkspace, { recursive: true, force: true });
+
+    if (tempWorkspace) {
+      await cleanupTempWorkspace(tempWorkspace);
     }
   });
 
@@ -313,29 +310,18 @@ checks:
       error: '✗',
       info: 'ℹ'
     };
+
+    const status = validatePreInstallChecks(checkResults, {
+      print: mockPrint,
+      log: mockLog,
+      symbols
+    });
     
-    // Mock process.exit to prevent actual exit
-    const originalExit = process.exit;
-    let exitCode: number | undefined;
-    process.exit = ((code?: number) => {
-      exitCode = code;
-    }) as typeof process.exit;
-    
-    try {
-      validatePreInstallChecks(checkResults, {
-        print: mockPrint,
-        log: mockLog,
-        symbols
-      });
-      
-      assert.strictEqual(exitCode, 1);
-      assert.ok(printMessages.some(msg => msg.includes('Pre-install checks failed')));
-      assert.ok(printMessages.some(msg => msg.includes('MISSING_TOKEN')));
-      assert.ok(printMessages.some(msg => msg.includes('Missing token description')));
-      assert.ok(logMessages.some(msg => msg.includes('Pre-install checks failed')));
-    } finally {
-      process.exit = originalExit;
-    }
+    assert.strictEqual(status, 'needs_input');
+    assert.ok(printMessages.some(msg => msg.includes('Pre-install checks require your input')));
+    assert.ok(printMessages.some(msg => msg.includes('MISSING_TOKEN')));
+    assert.ok(printMessages.some(msg => msg.includes('Missing token description')));
+    assert.ok(logMessages.some(msg => msg.includes('Pre-install checks require user input')));
   });
 
   test('validatePreInstallChecks reports failed test checks', () => {
@@ -375,28 +361,66 @@ checks:
       error: '✗',
       info: 'ℹ'
     };
+
+    const status = validatePreInstallChecks(checkResults, {
+      print: mockPrint,
+      log: mockLog,
+      symbols
+    });
     
-    // Mock process.exit
-    const originalExit = process.exit;
-    let exitCode: number | undefined;
-    process.exit = ((code?: number) => {
-      exitCode = code;
-    }) as typeof process.exit;
+    assert.strictEqual(status, 'failed');
+    assert.ok(printMessages.some(msg => msg.includes('Pre-install checks failed')));
+    assert.ok(printMessages.some(msg => msg.includes('Failed test checks')));
+    assert.ok(logMessages.some(msg => msg.includes('Auth test check failed')));
+  });
+
+  test('validatePreInstallChecks treats token-dependent test failures as non-fatal', () => {
+    const checkResults = {
+      projects: [],
+      modules: [
+        {
+          name: 'ya-core',
+          checks: [
+            {
+              type: 'test',
+              name: 'mcp-proxy-compiled',
+              var: 'ARCADIA_ROOT',
+              passed: false,
+              error: 'Required token ARCADIA_ROOT is not present'
+            }
+          ]
+        }
+      ]
+    };
     
-    try {
-      validatePreInstallChecks(checkResults, {
-        print: mockPrint,
-        log: mockLog,
-        symbols
-      });
-      
-      assert.strictEqual(exitCode, 1);
-      assert.ok(printMessages.some(msg => msg.includes('Pre-install checks failed')));
-      assert.ok(printMessages.some(msg => msg.includes('Failed test checks')));
-      assert.ok(logMessages.some(msg => msg.includes('Auth test check failed')));
-    } finally {
-      process.exit = originalExit;
-    }
+    const logMessages: string[] = [];
+    const printMessages: string[] = [];
+    
+    const mockPrint = (msg: string) => {
+      printMessages.push(msg);
+    };
+    
+    const mockLog = (msg: string) => {
+      logMessages.push(msg);
+    };
+    
+    const symbols = {
+      success: '✓',
+      error: '✗',
+      info: 'ℹ'
+    };
+
+    const status = validatePreInstallChecks(checkResults, {
+      print: mockPrint,
+      log: mockLog,
+      symbols
+    });
+    
+    assert.strictEqual(status, 'needs_input');
+    assert.ok(printMessages.some(msg => msg.includes('Pre-install checks require your input')));
+    assert.ok(printMessages.some(msg => msg.includes('Token-dependent checks blocked')));
+    assert.ok(printMessages.some(msg => msg.includes('ARCADIA_ROOT')));
+    assert.ok(logMessages.some(msg => msg.includes('Pre-install checks require user input')));
   });
 
   test('validatePreInstallChecks passes when all checks succeed', () => {
@@ -446,26 +470,15 @@ checks:
       error: '✗',
       info: 'ℹ'
     };
+
+    const status = validatePreInstallChecks(checkResults, {
+      print: mockPrint,
+      log: mockLog,
+      symbols
+    });
     
-    // Mock process.exit
-    const originalExit = process.exit;
-    let exitCalled = false;
-    process.exit = (() => {
-      exitCalled = true;
-    }) as typeof process.exit;
-    
-    try {
-      validatePreInstallChecks(checkResults, {
-        print: mockPrint,
-        log: mockLog,
-        symbols
-      });
-      
-      assert.strictEqual(exitCalled, false);
-      assert.ok(printMessages.some(msg => msg.includes('All pre-install checks passed')));
-    } finally {
-      process.exit = originalExit;
-    }
+    assert.strictEqual(status, 'ok');
+    assert.ok(printMessages.some(msg => msg.includes('All pre-install checks passed')));
   });
 
   test('handles empty workspace.config.json gracefully', async () => {

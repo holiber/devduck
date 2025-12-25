@@ -15,7 +15,14 @@ import { URL } from 'url';
 import { execSync } from 'child_process';
 import { readJSON, writeJSON } from '../lib/config.js';
 import { readEnvFile } from '../lib/env.js';
-import { getAllModules, getAllModulesFromDirectory, loadModuleFromPath, type Module, type ModuleCheck } from './module-resolver.js';
+import {
+  expandModuleNames,
+  getAllModules,
+  getAllModulesFromDirectory,
+  loadModuleFromPath,
+  type Module,
+  type ModuleCheck
+} from './module-resolver.js';
 
 interface AuthCheckResult {
   type: string;
@@ -406,10 +413,7 @@ async function collectModuleChecks(
   const allModules = [...localModules, ...externalModules, ...workspaceModules, ...projectsModules];
   
   // Resolve which modules to check based on config
-  let moduleNames: string[] = Array.isArray(config.modules) ? config.modules : ['*'];
-  if (moduleNames.includes('*')) {
-    moduleNames = allModules.map(m => m.name);
-  }
+  const moduleNames: string[] = expandModuleNames(Array.isArray(config.modules) ? config.modules : ['*'], allModules);
   
   // Get unique modules by name (first occurrence wins)
   const moduleMap = new Map<string, Module>();
@@ -543,8 +547,12 @@ export async function runPreInstallChecks(workspaceRoot: string): Promise<PreIns
 }
 
 /**
- * Check pre-install check results and exit if there are failures
+ * Check pre-install check results and return the validation status.
+ *
+ * Important: this function must NOT terminate the process. Callers decide whether to exit.
  */
+export type PreInstallValidationStatus = 'ok' | 'needs_input' | 'failed';
+
 export function validatePreInstallChecks(
   checkResults: PreInstallCheckResult,
   options: {
@@ -556,8 +564,13 @@ export function validatePreInstallChecks(
       info: string;
     };
   }
-): void {
+): PreInstallValidationStatus {
   const { print, log, symbols } = options;
+
+  const isRequiredTokenMissingError = (err: string | undefined): boolean => {
+    if (!err) return false;
+    return /^Required token [A-Za-z_][A-Za-z0-9_]* is not present$/.test(err.trim());
+  };
   
   // Show successful auth token checks
   for (const project of checkResults.projects) {
@@ -585,7 +598,7 @@ export function validatePreInstallChecks(
   
   // Check for missing auth tokens
   let hasMissingAuth = false;
-  const missingAuth: string[] = [];
+  const missingAuth: Array<{ name: string; docs?: string }> = [];
   
   for (const project of checkResults.projects) {
     for (const check of project.checks) {
@@ -593,7 +606,10 @@ export function validatePreInstallChecks(
         hasMissingAuth = true;
         if (check.var) {
           const desc = check.description ? ` - ${check.description}` : '';
-          missingAuth.push(`${check.var} (project: ${project.name})${desc}`);
+          missingAuth.push({
+            name: `${check.var} (project: ${project.name})${desc}`,
+            docs: check.docs
+          });
         }
       }
     }
@@ -605,7 +621,10 @@ export function validatePreInstallChecks(
         hasMissingAuth = true;
         if (check.var) {
           const desc = check.description ? ` - ${check.description}` : '';
-          missingAuth.push(`${check.var} (module: ${module.name})${desc}`);
+          missingAuth.push({
+            name: `${check.var} (module: ${module.name})${desc}`,
+            docs: check.docs
+          });
         }
       }
     }
@@ -613,7 +632,8 @@ export function validatePreInstallChecks(
   
   // Check for failed test checks (both standalone test checks and test within auth checks)
   let hasFailedTests = false;
-  const failedTests: Array<{ name: string; error?: string }> = [];
+  const tokenBlockedTests: Array<{ name: string; error?: string }> = [];
+  const realFailedTests: Array<{ name: string; error?: string }> = [];
   
   for (const module of checkResults.modules) {
     for (const check of module.checks) {
@@ -621,10 +641,12 @@ export function validatePreInstallChecks(
       if (check.type === 'test' && check.passed === false && check.optional !== true) {
         hasFailedTests = true;
         const checkName = check.name || check.test || 'unknown';
-        failedTests.push({ 
-          name: `${checkName} (module: ${module.name})`,
-          error: check.error
-        });
+        const entry = { name: `${checkName} (module: ${module.name})`, error: check.error };
+        if (isRequiredTokenMissingError(check.error)) {
+          tokenBlockedTests.push(entry);
+        } else {
+          realFailedTests.push(entry);
+        }
         if (check.error) {
           log(`Test check failed: ${checkName} - ${check.error}`);
         }
@@ -633,42 +655,80 @@ export function validatePreInstallChecks(
       if (check.type === 'auth' && check.test && check.passed !== undefined && check.passed === false && check.optional !== true) {
         hasFailedTests = true;
         const checkName = check.name || check.test || `${check.var} test`;
-        failedTests.push({ 
-          name: `${checkName} (module: ${module.name})`,
-          error: check.error
-        });
+        realFailedTests.push({ name: `${checkName} (module: ${module.name})`, error: check.error });
         if (check.error) {
           log(`Auth test check failed: ${checkName} - ${check.error}`);
         }
       }
     }
   }
-  
+
   if (hasMissingAuth || hasFailedTests) {
-    print(`\n${symbols.error} Pre-install checks failed!`, 'red');
-    if (hasMissingAuth) {
-      print(`  Missing required tokens:`, 'red');
-      for (const token of missingAuth) {
-        print(`    - ${token}`, 'red');
+    // If there are real failures (not just missing tokens), keep the old "hard fail" behavior.
+    if (realFailedTests.length > 0) {
+      print(`\n${symbols.error} Pre-install checks failed!`, 'red');
+      if (hasMissingAuth) {
+        print(`  Missing required tokens:`, 'red');
+        for (const token of missingAuth) {
+          print(`    - ${token.name}`, 'red');
+          if (token.docs) {
+            print(`      ${token.docs}`, 'cyan');
+          }
+        }
       }
-    }
-    if (hasFailedTests) {
       print(`  Failed test checks:`, 'red');
-      for (const test of failedTests) {
+      for (const test of realFailedTests) {
         if (test.error) {
           print(`    - ${test.name} - ${test.error}`, 'red');
         } else {
           print(`    - ${test.name}`, 'red');
         }
       }
+      if (tokenBlockedTests.length > 0) {
+        print(`  Token-dependent checks blocked:`, 'yellow');
+        for (const test of tokenBlockedTests) {
+          if (test.error) {
+            print(`    - ${test.name} - ${test.error}`, 'yellow');
+          } else {
+            print(`    - ${test.name}`, 'yellow');
+          }
+        }
+      }
+      print(`\n${symbols.info} Please set missing tokens in .env file or environment variables`, 'cyan');
+      print(`${symbols.info} Results saved to .cache/pre-install-check.json`, 'cyan');
+      log(`Pre-install checks failed: real test failures detected`);
+      return 'failed';
     }
-    print(`\n${symbols.info} Please set missing tokens in .env file or environment variables`, 'cyan');
+
+    // Missing-token-only case: not a crash. Ask the user to provide tokens and rerun install.
+    print(`\n${symbols.info} Pre-install checks require your input`, 'yellow');
+    if (hasMissingAuth) {
+      print(`  Missing required tokens:`, 'yellow');
+      for (const token of missingAuth) {
+        print(`    - ${token.name}`, 'yellow');
+        if (token.docs) {
+          print(`      ${token.docs}`, 'cyan');
+        }
+      }
+    }
+    if (tokenBlockedTests.length > 0) {
+      print(`  Token-dependent checks blocked:`, 'yellow');
+      for (const test of tokenBlockedTests) {
+        if (test.error) {
+          print(`    - ${test.name} - ${test.error}`, 'yellow');
+        } else {
+          print(`    - ${test.name}`, 'yellow');
+        }
+      }
+    }
+    print(`\n${symbols.info} Set these tokens in .env (or env vars) and re-run: npm run install`, 'cyan');
     print(`${symbols.info} Results saved to .cache/pre-install-check.json`, 'cyan');
-    log(`Pre-install checks failed: missing tokens or failed tests`);
-    process.exit(1);
+    log(`Pre-install checks require user input: missing tokens`);
+    return 'needs_input';
   }
   
   print(`  ${symbols.success} All pre-install checks passed`, 'green');
   log(`Pre-install checks passed`);
+  return 'ok';
 }
 

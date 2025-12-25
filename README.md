@@ -14,7 +14,7 @@ Explain the problem, and the duck will write code, close tickets, and ship chang
 ### Create a new workspace (npx)
 
 ```bash
-npx devduck new ./my-devduck-workspace
+npx --yes github:holiber/devduck new ./my-devduck-workspace
 ```
 
 Or if DevDuck is not published to npm yet, use the GitHub repo directly:
@@ -26,16 +26,15 @@ This will:
 - create `./my-devduck-workspace/workspace.config.json`
 - clone DevDuck into `./my-devduck-workspace/devduck/src` (unless DevDuck is already listed in `projects[]`)
 
-### Create a new workspace (npx) using a provided workspace config
+### Create a new workspace from an existing `workspace.config.json`
+
+If you already have a `workspace.config.json` (for example, checked into another repo or shared in your team), you can use it as a template:
 
 ```bash
-npx devduck new ./my-devduck-workspace --workspace-config ./workspace.config.json
+npx --yes github:holiber/devduck new ./my-devduck-workspace --workspace-config /path/to/workspace.config.json
 ```
 
-Or if DevDuck is not published to npm yet:
-```bash
-npx --yes github:holiber/devduck new ./my-devduck-workspace --workspace-config ./workspace.config.json
-```
+DevDuck will merge your template on top of the defaults and write the result to `./my-devduck-workspace/workspace.config.json`.
 Your workspace can reference local projects too, for example:
 
 ```json
