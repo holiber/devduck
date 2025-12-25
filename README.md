@@ -14,7 +14,6 @@ Explain the problem, and the duck will write code, close tickets, and ship chang
 ### Create a new workspace (npx)
 
 ```bash
-# DevDuck is not published to npm yet, so use the GitHub repo as the npx source.
 npx --yes github:holiber/devduck new ./my-devduck-workspace
 ```
 
