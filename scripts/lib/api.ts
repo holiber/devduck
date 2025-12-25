@@ -58,6 +58,11 @@ async function importRouterFromModule(modulePath: string, moduleName: string): P
   try {
     const apiPath = path.join(modulePath, 'api.ts');
     
+    // Check if api.ts file exists
+    if (!fs.existsSync(apiPath)) {
+      return null;
+    }
+    
     // Try to import the module
     // We expect exports like: ciRouter, emailRouter, etc.
     const moduleUrl = pathToFileURL(apiPath).href;
@@ -88,9 +93,10 @@ async function importRouterFromModule(modulePath: string, moduleName: string): P
     
     return null;
   } catch (error) {
-    // Silently skip modules that fail to import
+    // Log error with more details for debugging
     const err = error as Error;
-    console.warn(`Warning: Failed to import router from ${moduleName}: ${err.message}`);
+    const errorDetails = err.stack || err.message;
+    console.warn(`Warning: Failed to import router from ${moduleName} (${modulePath}): ${errorDetails}`);
     return null;
   }
 }

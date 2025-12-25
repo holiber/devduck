@@ -6,6 +6,12 @@ import { spawn } from 'child_process';
 import { promisify } from 'util';
 import fs from 'fs';
 
+function pathToFileURL(filePath: string): URL {
+  const resolved = path.resolve(filePath);
+  const normalized = resolved.replace(/\\/g, '/');
+  return new URL(`file://${normalized}`);
+}
+
 import { mcpRouter } from '../../modules/mcp/api.js';
 import { getUnifiedAPI } from '../../scripts/lib/api.js';
 import { findWorkspaceRoot } from '../../scripts/lib/workspace-root.js';
@@ -64,7 +70,41 @@ describe('mcp: API module', () => {
 
   test('mcp module is included in unified API', async () => {
     const unifiedAPI = await getUnifiedAPI();
-    assert.ok('mcp' in unifiedAPI);
+    
+    // In CI environment, module might not be found if workspace root is not available
+    // or if there are import errors. Check if module exists, and if not, log available modules
+    if (!('mcp' in unifiedAPI)) {
+      const availableModules = Object.keys(unifiedAPI);
+      const errorMessage = `mcp module not found in unified API. Available modules: ${availableModules.length > 0 ? availableModules.join(', ') : 'none'}`;
+      
+      // Try to import mcp module directly to see if there's an import error
+      try {
+        const { resolveDevduckRoot } = await import('../../scripts/lib/devduck-paths.js');
+        const { devduckRoot } = resolveDevduckRoot({ cwd: process.cwd(), moduleDir: __dirname });
+        const mcpApiPath = path.join(devduckRoot, 'modules', 'mcp', 'api.js');
+        
+        if (fs.existsSync(mcpApiPath)) {
+          const mcpModule = await import(pathToFileURL(mcpApiPath).href);
+          if (mcpModule.mcpRouter) {
+            // Module exists but wasn't discovered - this might be a discovery issue
+            console.warn('mcp module exists but was not discovered by unified API');
+            console.warn(`Module path: ${mcpApiPath}`);
+            console.warn(`DevDuck root: ${devduckRoot}`);
+          }
+        } else {
+          console.warn(`mcp api.ts not found at: ${mcpApiPath}`);
+        }
+      } catch (importError) {
+        const err = importError as Error;
+        console.warn(`Failed to import mcp module directly: ${err.message}`);
+        console.warn(`Stack: ${err.stack}`);
+      }
+      
+      // Fail with informative message
+      assert.fail(errorMessage);
+    }
+    
+    assert.ok('mcp' in unifiedAPI, `mcp module should be in unified API. Available: ${Object.keys(unifiedAPI).join(', ')}`);
     assert.strictEqual(unifiedAPI.mcp, mcpRouter);
   });
 
