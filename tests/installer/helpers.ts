@@ -15,6 +15,7 @@ const __dirname = path.dirname(__filename);
 
 const PROJECT_ROOT = path.resolve(__dirname, '../..');
 const INSTALLER_SCRIPT = path.join(PROJECT_ROOT, 'scripts', 'install.ts');
+const WORKSPACE_FIXTURES_ROOT = path.resolve(__dirname, '..', 'workspaces');
 
 interface RunInstallerOptions {
   unattended?: boolean;
@@ -62,8 +63,8 @@ interface ModuleVerificationResult {
  * Create a temporary directory for testing
  * @returns {Promise<string>} Path to temporary directory
  */
-export async function createTempWorkspace(): Promise<string> {
-  const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'devduck-test-'));
+export async function createTempWorkspace(prefix = 'devduck-test-'): Promise<string> {
+  const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), prefix));
   return tmpDir;
 }
 
@@ -72,8 +73,11 @@ export async function createTempWorkspace(): Promise<string> {
  * @param {string} workspacePath - Path to workspace to clean up
  */
 export async function cleanupTempWorkspace(workspacePath: string): Promise<void> {
-  if (!workspacePath || !workspacePath.includes('devduck-test-')) {
-    throw new Error('Safety check: Only cleaning up test directories');
+  // Keep this strict: only allow cleanup of our temp test dirs under OS tmpdir.
+  // (Do not delete developer paths by accident.)
+  const base = path.basename(workspacePath);
+  if (!workspacePath || !workspacePath.startsWith(os.tmpdir()) || !base.startsWith('devduck-')) {
+    throw new Error('Safety check: Only cleaning up devduck-* temp test directories');
   }
   try {
     await fs.rm(workspacePath, { recursive: true, force: true });
@@ -82,6 +86,38 @@ export async function cleanupTempWorkspace(workspacePath: string): Promise<void>
     const err = error as { message?: string };
     console.warn(`Warning: Failed to cleanup ${workspacePath}: ${err.message || String(error)}`);
   }
+}
+
+export function getWorkspaceFixturePath(...segments: string[]): string {
+  return path.join(WORKSPACE_FIXTURES_ROOT, ...segments);
+}
+
+async function copyDirContents(srcDir: string, destDir: string): Promise<void> {
+  const entries = await fs.readdir(srcDir, { withFileTypes: true });
+  for (const ent of entries) {
+    const src = path.join(srcDir, ent.name);
+    const dest = path.join(destDir, ent.name);
+    await fs.cp(src, dest, { recursive: true, force: true });
+  }
+}
+
+/**
+ * Create a temp workspace and seed it with a fixture from tests/workspaces/<fixtureName>.
+ *
+ * Note: the fixture is copied into a temp dir so tests can freely mutate it.
+ */
+export async function createWorkspaceFromFixture(
+  fixtureName: string,
+  options: { prefix?: string } = {}
+): Promise<string> {
+  const workspaceRoot = await createTempWorkspace(options.prefix);
+  const fixtureRoot = getWorkspaceFixturePath(fixtureName);
+
+  // Fail fast if fixture is missing.
+  await fs.access(fixtureRoot);
+  await copyDirContents(fixtureRoot, workspaceRoot);
+
+  return workspaceRoot;
 }
 
 /**
