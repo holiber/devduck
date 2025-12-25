@@ -11,12 +11,17 @@ const __dirname = path.dirname(__filename);
 const pkgRoot = path.resolve(__dirname, '..');
 const cliScript = path.join(pkgRoot, 'scripts', 'devduck-cli.ts');
 
+// When invoked via npm/npx, INIT_CWD points to the directory where the user ran the command.
+// We should run the CLI as if it was launched from that directory so relative paths like
+// `devduck new ./my-workspace` are resolved correctly.
+const userCwd = process.env.INIT_CWD || process.cwd();
+
 const result = spawnSync(
   process.platform === 'win32' ? 'npx.cmd' : 'npx',
   ['tsx', cliScript, ...process.argv.slice(2)],
   {
     stdio: 'inherit',
-    cwd: pkgRoot,
+    cwd: userCwd,
     env: process.env
   }
 );
