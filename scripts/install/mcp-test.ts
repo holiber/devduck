@@ -232,72 +232,84 @@ export async function testMcpServer(
       
       // Wait for resources/list response
       const resourcesResponse = await waitForResponse(mcpProcess.stdout, timeout);
-    
+      
       clearTimeout(timeoutId);
       timeoutId = null;
       
       // Parse responses
-    const methods: string[] = [];
-    const resources: string[] = [];
-    
-    if (toolsResponse) {
-      try {
-        const toolsData = JSON.parse(toolsResponse);
-        if (toolsData.result && Array.isArray(toolsData.result.tools)) {
-          for (const tool of toolsData.result.tools) {
-            if (tool.name) {
-              methods.push(tool.name);
+      const methods: string[] = [];
+      const resources: string[] = [];
+      
+      if (toolsResponse) {
+        try {
+          const toolsData = JSON.parse(toolsResponse);
+          if (toolsData.result && Array.isArray(toolsData.result.tools)) {
+            for (const tool of toolsData.result.tools) {
+              if (tool.name) {
+                methods.push(tool.name);
+              }
             }
           }
+        } catch (e) {
+          log(`  Warning: Failed to parse tools/list response`);
         }
-      } catch (e) {
-        log(`  Warning: Failed to parse tools/list response`);
       }
-    }
-    
-    if (resourcesResponse) {
-      try {
-        const resourcesData = JSON.parse(resourcesResponse);
-        if (resourcesData.result && Array.isArray(resourcesData.result.resources)) {
-          for (const resource of resourcesData.result.resources) {
-            if (resource.uri) {
-              resources.push(resource.uri);
+      
+      if (resourcesResponse) {
+        try {
+          const resourcesData = JSON.parse(resourcesResponse);
+          if (resourcesData.result && Array.isArray(resourcesData.result.resources)) {
+            for (const resource of resourcesData.result.resources) {
+              if (resource.uri) {
+                resources.push(resource.uri);
+              }
             }
           }
+        } catch (e) {
+          log(`  Warning: Failed to parse resources/list response`);
         }
-      } catch (e) {
-        log(`  Warning: Failed to parse resources/list response`);
       }
-    }
     
-    // Clean up
-    if (mcpProcess) {
-      mcpProcess.kill();
-      mcpProcess = null;
-    }
-    
-    // Success if we got at least initialize response
-    if (stdoutBuffer.trim()) {
-      log(`  Success: Server responded (methods: ${methods.length}, resources: ${resources.length})`);
+      // Clean up
+      cleanup();
+      
+      // Success if we got at least initialize response
+      if (stdoutBuffer.trim()) {
+        log(`  Success: Server responded (methods: ${methods.length}, resources: ${resources.length})`);
+        return {
+          success: true,
+          methods: methods.length > 0 ? methods : undefined,
+          resources: resources.length > 0 ? resources : undefined
+        };
+      }
+      
       return {
-        success: true,
-        methods: methods.length > 0 ? methods : undefined,
-        resources: resources.length > 0 ? resources : undefined
+        success: false,
+        error: 'No response from server',
+        timeout: true
+      };
+    } catch (error) {
+      const err = error as Error;
+      log(`  Error: ${err.message}`);
+      if (stderrBuffer) {
+        log(`  Stderr: ${stderrBuffer}`);
+      }
+      
+      cleanup();
+      
+      return {
+        success: false,
+        error: err.message,
+        timeout: err.message.includes('timeout') || err.message.includes('Process no longer available')
       };
     }
-    
-    return {
-      success: false,
-      error: 'No response from server',
-      timeout: true
-    };
-    
   } catch (error) {
     const err = error as Error;
     log(`  Error: ${err.message}`);
     
     if (mcpProcess) {
       mcpProcess.kill();
+      mcpProcess = null;
     }
     
     return {

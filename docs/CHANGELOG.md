@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - 2025-12-25
+
+- 📝 **Default .gitignore file for github-ci module** - Added `gitignore.default` file to github-ci module that is automatically used to create `.gitignore` files in workspaces
+  - If `gitignore` setting is not provided in module settings, the default file is used
+  - Ensures every workspace with github-ci module gets a proper `.gitignore` file automatically
+  - Similar to how ya-arc module handles `.arcignore` files
+
 ### Changed - 2025-12-25
 
 - 🧹 **Removed external repository references** - Removed all traces of external repositories (ya-* modules) from documentation and code
