@@ -51,7 +51,6 @@ async function initializeProviders(workspaceRoot: string | null): Promise<{
 
   // Discover providers from devduck modules
   await discoverProvidersFromModules({ modulesDir: path.join(devduckRoot, 'modules') });
-
   // Discover providers from external repositories
   if (workspaceRoot) {
     const configPath = path.join(workspaceRoot, 'workspace.config.json');
