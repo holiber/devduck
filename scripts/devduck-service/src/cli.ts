@@ -92,17 +92,118 @@ async function waitHttpReady(url: string, timeoutMs: number): Promise<void> {
   throw new Error(`Readiness timeout: ${url}`);
 }
 
+type LaunchReady = { type?: string; url?: string };
+type LaunchProcess = {
+  name: string;
+  cwd?: string;
+  command: string;
+  args?: string[];
+  env?: Record<string, string>;
+  ready?: LaunchReady;
+};
+type LaunchSmokecheck =
+  | { testFile: string; configFile?: string }
+  | { cwd?: string; command: string; args?: string[]; env?: Record<string, string> };
+type LaunchDev = { baseURL?: string; processes?: LaunchProcess[]; smokecheck?: LaunchSmokecheck };
+
+function tryReadLaunchDevFromWorkspaceConfig(cwd: string): LaunchDev | null {
+  try {
+    const configPath = path.join(cwd, 'workspace.config.json');
+    if (!fs.existsSync(configPath)) return null;
+    const raw = fs.readFileSync(configPath, 'utf8');
+    const parsed = JSON.parse(raw) as { launch?: { dev?: LaunchDev } };
+    const dev = parsed?.launch?.dev;
+    if (!dev || typeof dev !== 'object') return null;
+    return dev;
+  } catch {
+    return null;
+  }
+}
+
 async function cmdDev(client: ReturnType<typeof createDevduckServiceClient>) {
+  const launchDev = tryReadLaunchDevFromWorkspaceConfig(process.cwd());
   const session = await client.process.readSession.query();
   const status = await client.process.status.query();
   const serverRunning = status.processes.find(p => p.name === 'server')?.running ?? false;
   const clientRunning = status.processes.find(p => p.name === 'client')?.running ?? false;
 
   let baseURL = session.baseURL;
-  if (!baseURL || !serverRunning) {
+  if (launchDev?.baseURL) {
+    baseURL = launchDev.baseURL;
+    await client.process.setBaseURL.mutate({ baseURL });
+  } else if (!baseURL || !serverRunning) {
     const port = await getFreePort();
     baseURL = `http://127.0.0.1:${port}`;
     await client.process.setBaseURL.mutate({ baseURL });
+  }
+
+  if (launchDev?.processes?.length) {
+    for (const p of launchDev.processes) {
+      const running = status.processes.find(s => s.name === p.name)?.running ?? false;
+      if (running) continue;
+      await client.process.start.mutate({
+        name: p.name,
+        command: p.command,
+        args: p.args ?? [],
+        cwd: p.cwd ? path.resolve(process.cwd(), p.cwd) : undefined,
+        env: p.env ?? {}
+      });
+    }
+
+    for (const p of launchDev.processes) {
+      const ready = p.ready;
+      if (ready?.type === 'http' && ready.url) {
+        await waitHttpReady(ready.url, 120_000);
+      }
+    }
+
+    const smoke = launchDev.smokecheck;
+    if (smoke && 'testFile' in smoke) {
+      const configFile = smoke.configFile ? path.resolve(process.cwd(), smoke.configFile) : undefined;
+      const result = await client.playwright.runSmokecheck.mutate({
+        testFile: path.resolve(process.cwd(), smoke.testFile),
+        baseURL: baseURL || '',
+        configFile
+      });
+
+      if (!result.ok) {
+        // eslint-disable-next-line no-console
+        console.error(
+          JSON.stringify(
+            {
+              ok: false,
+              exitCode: result.exitCode,
+              logs: {
+                playwrightStdout: result.stdoutLogPath,
+                playwrightStderr: result.stderrLogPath,
+                browserConsole: (await client.playwright.ensureBrowserConsoleLogging.mutate()).logPath
+              }
+            },
+            null,
+            2
+          )
+        );
+        process.exitCode = result.exitCode || 1;
+        return;
+      }
+    }
+
+    const logPath = (await client.playwright.ensureBrowserConsoleLogging.mutate()).logPath;
+    // eslint-disable-next-line no-console
+    console.log(
+      JSON.stringify(
+        {
+          ok: true,
+          baseURL,
+          logs: {
+            browserConsole: logPath
+          }
+        },
+        null,
+        2
+      )
+    );
+    return;
   }
 
   const fixturesDir = path.join(process.cwd(), 'tests', 'devduck-service', 'fixtures');
@@ -194,6 +295,25 @@ async function cmdSmokecheck(client: ReturnType<typeof createDevduckServiceClien
   process.exitCode = result.exitCode;
 }
 
+async function cmdSmokecheckFromConfig(client: ReturnType<typeof createDevduckServiceClient>) {
+  const session = await client.process.readSession.query();
+  const baseURL = session.baseURL;
+  if (!baseURL) throw new Error('No baseURL in session (run `dev` first)');
+
+  const launchDev = tryReadLaunchDevFromWorkspaceConfig(process.cwd());
+  const smoke = launchDev?.smokecheck;
+  if (!smoke || !('testFile' in smoke)) {
+    throw new Error('No launch.dev.smokecheck.testFile in workspace.config.json');
+  }
+
+  const result = await client.playwright.runSmokecheck.mutate({
+    testFile: path.resolve(process.cwd(), smoke.testFile),
+    baseURL,
+    configFile: smoke.configFile ? path.resolve(process.cwd(), smoke.configFile) : undefined
+  });
+  process.exitCode = result.exitCode;
+}
+
 async function cmdStatus(client: ReturnType<typeof createDevduckServiceClient>) {
   const status = await client.process.status.query();
   const session = await client.process.readSession.query();
@@ -223,7 +343,10 @@ async function main(argv = process.argv): Promise<void> {
   }
   if (command === 'smokecheck') {
     const file = args[1];
-    if (!file) throw new Error('Usage: smokecheck <path-to-test>');
+    if (!file) {
+      await cmdSmokecheckFromConfig(client);
+      return;
+    }
     await cmdSmokecheck(client, path.resolve(process.cwd(), file));
     return;
   }
@@ -236,7 +359,9 @@ async function main(argv = process.argv): Promise<void> {
     return;
   }
 
-  throw new Error(`Unknown command: ${command || '(empty)'} (expected: dev | smokecheck <file> | status | stop [name])`);
+  throw new Error(
+    `Unknown command: ${command || '(empty)'} (expected: dev | smokecheck [file] | status | stop [name])`
+  );
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

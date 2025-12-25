@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Tabs Workspace</title>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+        margin: 0;
+        padding: 24px;
+      }
+      .tabs {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 16px;
+      }
+      button {
+        appearance: none;
+        border: 1px solid #ddd;
+        background: #fff;
+        padding: 8px 12px;
+        border-radius: 8px;
+        cursor: pointer;
+      }
+      button[aria-selected='true'] {
+        border-color: #0b5fff;
+        background: #eef4ff;
+      }
+      .panel {
+        border: 1px solid #eee;
+        border-radius: 12px;
+        padding: 16px;
+        min-height: 64px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
+

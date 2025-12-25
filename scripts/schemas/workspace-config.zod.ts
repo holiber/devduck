@@ -69,6 +69,64 @@ const WorkspaceProjectSchema = z
   })
   .passthrough();
 
+/**
+ * Workspace "launch" configuration (dev/smokecheck workflows).
+ *
+ * This is intentionally permissive: launch runners may support additional fields.
+ */
+const LaunchReadySchema = z
+  .object({
+    type: z.string().optional(),
+    url: z.string().optional(),
+  })
+  .passthrough();
+
+const LaunchProcessSchema = z
+  .object({
+    name: z.string(),
+    cwd: z.string().optional(),
+    command: z.string(),
+    args: z.array(z.string()).optional(),
+    env: z.record(z.string(), z.string()).optional(),
+    ready: LaunchReadySchema.optional(),
+  })
+  .passthrough();
+
+const LaunchCommandSchema = z
+  .object({
+    cwd: z.string().optional(),
+    command: z.string(),
+    args: z.array(z.string()).optional(),
+    env: z.record(z.string(), z.string()).optional(),
+  })
+  .passthrough();
+
+const LaunchSmokecheckSchema = z
+  .union([
+    z
+      .object({
+        testFile: z.string(),
+        configFile: z.string().optional(),
+      })
+      .passthrough(),
+    LaunchCommandSchema
+  ])
+  .optional();
+
+const LaunchDevSchema = z
+  .object({
+    baseURL: z.string().optional(),
+    processes: z.array(LaunchProcessSchema).optional(),
+    smokecheck: LaunchSmokecheckSchema,
+  })
+  .passthrough();
+
+const WorkspaceLaunchSchema = z
+  .object({
+    dev: LaunchDevSchema.optional(),
+  })
+  .passthrough();
+
 const WorkspaceConfigSchema = z
   .object({
     workspaceVersion: z.string(),
@@ -97,6 +155,9 @@ const WorkspaceConfigSchema = z
 
     // Variables written into `.env`.
     env: z.array(WorkspaceEnvVarSchema).optional(),
+
+    // Declarative dev/smokecheck launch workflows.
+    launch: WorkspaceLaunchSchema.optional(),
   })
   .passthrough();
 
