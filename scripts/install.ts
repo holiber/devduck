@@ -5,10 +5,10 @@ import path from 'path';
 import https from 'https';
 import http from 'http';
 import { URL } from 'url';
-import { spawnSync } from 'child_process';
 import yargs from 'yargs/yargs';
 import { hideBin } from 'yargs/helpers';
 import { print, symbols, executeCommand, executeInteractiveCommand, requiresSudo, createReadlineInterface, promptUser } from './utils.js';
+import { execCmdSync } from './lib/process.js';
 import { resolveWorkspaceRoot } from './lib/workspace-path.js';
 import { readJSON, writeJSON, replaceVariables, replaceVariablesInObject } from './lib/config.js';
 import { readEnvFile } from './lib/env.js';
@@ -1096,12 +1096,9 @@ function initProjectResult(project: Project, env: Record<string, string>): Proje
       // Update existing clone
       print(`  ${symbols.info} Updating existing git repository...`, 'cyan');
       log(`Updating existing git repository: ${projectPath}`);
-      const pullResult = spawnSync('git', ['pull'], {
-        cwd: projectPath,
-        encoding: 'utf8'
-      });
+      const pullResult = execCmdSync('git', ['pull'], { cwd: projectPath });
       
-      if (pullResult.status === 0) {
+      if (pullResult.ok) {
         print(`  ${symbols.success} Repository updated: projects/${projectName}`, 'green');
         log(`Repository updated successfully: ${projectPath}`);
       } else {
@@ -1113,7 +1110,7 @@ function initProjectResult(project: Project, env: Record<string, string>): Proje
         path: `projects/${projectName}`,
         target: projectPath,
         exists: true,
-        updated: pullResult.status === 0
+        updated: pullResult.ok
       };
     } else {
       // Clone repository
@@ -1132,12 +1129,9 @@ function initProjectResult(project: Project, env: Record<string, string>): Proje
         fs.mkdirSync(PROJECTS_DIR, { recursive: true });
       }
       
-      const cloneResult = spawnSync('git', ['clone', gitUrl, projectPath], {
-        encoding: 'utf8',
-        stdio: 'inherit'
-      });
+      const cloneResult = execCmdSync('git', ['clone', gitUrl, projectPath], { stdio: 'inherit' });
       
-      if (cloneResult.status === 0) {
+      if (cloneResult.ok) {
         print(`  ${symbols.success} Repository cloned: projects/${projectName}`, 'green');
         log(`Repository cloned successfully: ${projectPath}`);
         result.symlink = {

@@ -2,8 +2,6 @@ import { describe, test, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert';
 import path from 'node:path';
 import { fileURLToPath } from 'url';
-import { spawn } from 'child_process';
-import { promisify } from 'util';
 import fs from 'fs';
 
 function pathToFileURL(filePath: string): URL {
@@ -15,6 +13,7 @@ function pathToFileURL(filePath: string): URL {
 import { mcpRouter } from '../../scripts/lib/api/mcp.js';
 import { getUnifiedAPI } from '../../scripts/lib/api.js';
 import { findWorkspaceRoot } from '../../scripts/lib/workspace-root.js';
+import { execCmd } from '../../scripts/lib/process.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -154,32 +153,9 @@ describe('mcp: API module', () => {
       return;
     }
 
-    // Run npm run api and capture output
-    const result = await new Promise<{ stdout: string; stderr: string; code: number | null }>((resolve, reject) => {
-      const proc = spawn('npm', ['run', 'api'], {
-        cwd: testWorkspaceRoot!,
-        stdio: 'pipe',
-        shell: true
-      });
-
-      let stdout = '';
-      let stderr = '';
-
-      proc.stdout?.on('data', (data) => {
-        stdout += data.toString();
-      });
-
-      proc.stderr?.on('data', (data) => {
-        stderr += data.toString();
-      });
-
-      proc.on('close', (code) => {
-        resolve({ stdout, stderr, code });
-      });
-
-      proc.on('error', (error) => {
-        reject(error);
-      });
+    const result = await execCmd('npm', ['run', 'api'], {
+      cwd: testWorkspaceRoot!,
+      shell: true
     });
 
     // Check that output contains mcp module
@@ -203,32 +179,9 @@ describe('mcp: API module', () => {
       return;
     }
 
-    // Run npm run api mcp.list and capture output
-    const result = await new Promise<{ stdout: string; stderr: string; code: number | null }>((resolve, reject) => {
-      const proc = spawn('npm', ['run', 'api', 'mcp.list'], {
-        cwd: testWorkspaceRoot!,
-        stdio: 'pipe',
-        shell: true
-      });
-
-      let stdout = '';
-      let stderr = '';
-
-      proc.stdout?.on('data', (data) => {
-        stdout += data.toString();
-      });
-
-      proc.stderr?.on('data', (data) => {
-        stderr += data.toString();
-      });
-
-      proc.on('close', (code) => {
-        resolve({ stdout, stderr, code });
-      });
-
-      proc.on('error', (error) => {
-        reject(error);
-      });
+    const result = await execCmd('npm', ['run', 'api', 'mcp.list'], {
+      cwd: testWorkspaceRoot!,
+      shell: true
     });
 
     // Check that command executed (exit code 0 or output contains result)
@@ -239,7 +192,7 @@ describe('mcp: API module', () => {
       output.includes('result') || 
       output.includes('mcp.list') || 
       output.includes('Usage') ||
-      result.code === 0,
+      result.exitCode === 0,
       `Command should execute. Output: ${output.substring(0, 500)}`
     );
   });
@@ -256,32 +209,9 @@ describe('mcp: API module', () => {
       return;
     }
 
-    // Run npx tsx api-cli.ts mcp.call --help to verify command is available
-    const result = await new Promise<{ stdout: string; stderr: string; code: number | null }>((resolve, reject) => {
-      const proc = spawn('npx', ['tsx', apiCliPath, 'mcp.call', '--help'], {
-        cwd: testWorkspaceRoot!,
-        stdio: 'pipe',
-        shell: true
-      });
-
-      let stdout = '';
-      let stderr = '';
-
-      proc.stdout?.on('data', (data) => {
-        stdout += data.toString();
-      });
-
-      proc.stderr?.on('data', (data) => {
-        stderr += data.toString();
-      });
-
-      proc.on('close', (code) => {
-        resolve({ stdout, stderr, code });
-      });
-
-      proc.on('error', (error) => {
-        reject(error);
-      });
+    const result = await execCmd('npx', ['tsx', apiCliPath, 'mcp.call', '--help'], {
+      cwd: testWorkspaceRoot!,
+      shell: true
     });
 
     // Check that help is shown (command exists)

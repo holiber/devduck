@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { spawnSync } from 'node:child_process';
+import { execaSync } from 'execa';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -16,15 +16,16 @@ const cliScript = path.join(pkgRoot, 'scripts', 'devduck-cli.ts');
 // `devduck new ./my-workspace` are resolved correctly.
 const userCwd = process.env.INIT_CWD || process.cwd();
 
-const result = spawnSync(
+const result = execaSync(
   process.platform === 'win32' ? 'npx.cmd' : 'npx',
   ['tsx', cliScript, ...process.argv.slice(2)],
   {
     stdio: 'inherit',
     cwd: userCwd,
-    env: process.env
+    env: process.env,
+    reject: false
   }
 );
 
-process.exit(result.status ?? 1);
+process.exit(result.exitCode ?? 1);
 

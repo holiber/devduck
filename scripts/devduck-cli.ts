@@ -2,9 +2,9 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { spawnSync } from 'node:child_process';
 import yargs from 'yargs/yargs';
 import { hideBin } from 'yargs/helpers';
+import { execCmdSync } from './lib/process.js';
 
 type WorkspaceConfigLike = {
   workspaceVersion?: string;
@@ -52,6 +52,7 @@ function ensureWorkspacePackageJson(workspaceRoot: string): void {
       '@modelcontextprotocol/sdk': '^1.25.1',
       'compare-versions': '^6.1.1',
       dotenv: '^16.4.7',
+      execa: '^9.6.1',
       tsx: '^4.19.0',
       yaml: '^2.8.1',
       yargs: '^18.0.0',
@@ -67,15 +68,14 @@ function runNpmInstall(workspaceRoot: string): void {
   const stdio =
     process.env.NODE_ENV === 'test' ? ('pipe' as const) : ('inherit' as const);
 
-  const res = spawnSync(npmCmd, ['install', '--no-audit', '--no-fund'], {
+  const res = execCmdSync(npmCmd, ['install', '--no-audit', '--no-fund'], {
     cwd: workspaceRoot,
-    encoding: 'utf8',
     stdio
   });
 
-  if (res.status !== 0) {
+  if (!res.ok) {
     const details = (res.stderr || res.stdout || '').toString().trim();
-    throw new Error(`npm install failed (exit ${res.status ?? 'unknown'}). ${details}`);
+    throw new Error(`npm install failed (exit ${res.exitCode}). ${details}`);
   }
 }
 
@@ -115,15 +115,15 @@ function cloneGitRepoSync(repoUrl: string, destDir: string, ref?: string): void 
   fs.mkdirSync(path.dirname(destDir), { recursive: true });
 
   const args = ['clone', repoUrl, destDir];
-  const clone = spawnSync('git', args, { stdio: 'inherit' });
-  if (clone.status !== 0) {
-    throw new Error(`git clone failed with exit code ${clone.status ?? 'unknown'}`);
+  const clone = execCmdSync('git', args, { stdio: 'inherit' });
+  if (!clone.ok) {
+    throw new Error(`git clone failed with exit code ${clone.exitCode}`);
   }
 
   if (ref) {
-    const checkout = spawnSync('git', ['checkout', ref], { stdio: 'inherit', cwd: destDir });
-    if (checkout.status !== 0) {
-      throw new Error(`git checkout ${ref} failed with exit code ${checkout.status ?? 'unknown'}`);
+    const checkout = execCmdSync('git', ['checkout', ref], { stdio: 'inherit', cwd: destDir });
+    if (!checkout.ok) {
+      throw new Error(`git checkout ${ref} failed with exit code ${checkout.exitCode}`);
     }
   }
 }

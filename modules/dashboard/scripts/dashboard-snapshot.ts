@@ -14,11 +14,11 @@
 
 import fs from 'fs';
 import path from 'path';
-import { spawnSync } from 'child_process';
 import { fileURLToPath } from 'url';
 // @ts-expect-error - prompt-store may not have types
 import promptStore from '../../core/scripts/prompt-store.js';
 import { createYargs, installEpipeHandler } from '../../../scripts/lib/cli.js';
+import { execCmdSync } from '../../../scripts/lib/process.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -153,11 +153,8 @@ interface DockerResult {
 }
 
 function runDocker(args: string[]): DockerResult {
-  const res = spawnSync('docker', args, { encoding: 'utf8', stdio: 'pipe' });
-  if (res.status !== 0) {
-    return { ok: false, stdout: res.stdout || '', stderr: res.stderr || '' };
-  }
-  return { ok: true, stdout: res.stdout || '', stderr: res.stderr || '' };
+  const res = execCmdSync('docker', args, { stdio: 'pipe' });
+  return { ok: res.ok, stdout: res.stdout, stderr: res.stderr };
 }
 
 interface ContainerInfo {

@@ -6,8 +6,8 @@
 
 import fs from 'fs';
 import path from 'path';
-import { execSync } from 'child_process';
 import type { HookContext, HookResult } from '../../scripts/install/module-hooks.js';
+import { execCmdSync } from '../../scripts/lib/process.js';
 
 interface PackageJson {
   name?: string;
@@ -95,23 +95,22 @@ export default {
    * Test hook: Test VHS availability
    */
   async 'test'(context: HookContext): Promise<HookResult> {
-    try {
-      // Check if vhs command is available
-      execSync('vhs --version', { stdio: 'ignore' });
+    // Check if vhs command is available
+    const res = execCmdSync('vhs', ['--version'], { stdio: 'ignore' });
+    if (res.ok) {
       return {
         success: true,
         message: 'VHS is installed and available'
       };
-    } catch (error) {
-      return {
-        success: false,
-        errors: [
-          'VHS is not installed or not available in PATH',
-          'Install with: brew install vhs (macOS)',
-          'Or download from: https://github.com/charmbracelet/vhs/releases'
-        ]
-      };
     }
+    return {
+      success: false,
+      errors: [
+        'VHS is not installed or not available in PATH',
+        'Install with: brew install vhs (macOS)',
+        'Or download from: https://github.com/charmbracelet/vhs/releases'
+      ]
+    };
   }
 };
 

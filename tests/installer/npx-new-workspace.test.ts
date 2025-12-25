@@ -11,9 +11,9 @@ import { test, describe } from 'node:test';
 import assert from 'node:assert';
 import path from 'node:path';
 import { promises as fs } from 'node:fs';
-import { spawnSync } from 'node:child_process';
 
 import { createTempWorkspace, cleanupTempWorkspace } from './helpers.js';
+import { execCmdSync } from '../../scripts/lib/process.js';
 
 async function readJson(p: string): Promise<any> {
   const raw = await fs.readFile(p, 'utf8');
@@ -25,23 +25,18 @@ describe('devduck new (npx-friendly bootstrap)', () => {
     const workspaceRoot = await createTempWorkspace();
 
     try {
-      const result = spawnSync(
-        'node',
-        [
-          path.join(process.cwd(), 'bin', 'devduck.js'),
-          'new',
-          workspaceRoot,
-          '--devduck-source',
-          process.cwd()
-        ],
-        {
-          cwd: process.cwd(),
-          env: { ...process.env, NODE_ENV: 'test' },
-          encoding: 'utf8'
-        }
-      );
+      const result = execCmdSync('node', [
+        path.join(process.cwd(), 'bin', 'devduck.js'),
+        'new',
+        workspaceRoot,
+        '--devduck-source',
+        process.cwd()
+      ], {
+        cwd: process.cwd(),
+        env: { ...process.env, NODE_ENV: 'test' }
+      });
 
-      assert.strictEqual(result.status, 0, `command should succeed. stderr: ${result.stderr || ''}`);
+      assert.strictEqual(result.exitCode, 0, `command should succeed. stderr: ${result.stderr || result.stdout || ''}`);
 
       const cfgPath = path.join(workspaceRoot, 'workspace.config.json');
       const cfg = await readJson(cfgPath);
@@ -63,18 +58,17 @@ describe('devduck new (npx-friendly bootstrap)', () => {
     const workspaceRoot = path.join(initCwd, workspaceName);
 
     try {
-      const result = spawnSync(
+      const result = execCmdSync(
         'node',
         [path.join(process.cwd(), 'bin', 'devduck.js'), 'new', workspaceName, '--devduck-source', process.cwd()],
         {
           // Simulate npx running inside a temporary package directory
           cwd: fakePkgCwd,
-          env: { ...process.env, NODE_ENV: 'test', INIT_CWD: initCwd },
-          encoding: 'utf8'
+          env: { ...process.env, NODE_ENV: 'test', INIT_CWD: initCwd }
         }
       );
 
-      assert.strictEqual(result.status, 0, `command should succeed. stderr: ${result.stderr || ''}`);
+      assert.strictEqual(result.exitCode, 0, `command should succeed. stderr: ${result.stderr || result.stdout || ''}`);
 
       const cfgPath = path.join(workspaceRoot, 'workspace.config.json');
       const cfg = await readJson(cfgPath);

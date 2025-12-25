@@ -6,9 +6,9 @@
 
 import { promises as fs } from 'fs';
 import path from 'path';
-import { spawn } from 'child_process';
 import os from 'os';
 import { fileURLToPath } from 'url';
+import { startProcess } from '../../scripts/lib/process.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -159,25 +159,25 @@ export function runInstaller(workspacePath: string, options: RunInstallerOptions
     let stderr = '';
     let inputIndex = 0;
     
-    const proc = spawn('tsx', [INSTALLER_SCRIPT, ...args], {
+    const proc = startProcess('tsx', [INSTALLER_SCRIPT, ...args], {
       cwd: PROJECT_ROOT,
       env: { ...process.env, NODE_ENV: 'test' }
     });
 
     // Handle inputs for interactive mode
     if (options.inputs && options.inputs.length > 0) {
-      proc.stdin.setEncoding('utf8');
+      proc.stdin?.setDefaultEncoding?.('utf8');
       
       // Send inputs with delays to simulate user interaction
       const sendInput = () => {
         if (inputIndex < options.inputs!.length) {
           setTimeout(() => {
-            proc.stdin.write(options.inputs![inputIndex] + '\n');
+            proc.stdin?.write(options.inputs![inputIndex] + '\n');
             inputIndex++;
             if (inputIndex < options.inputs!.length) {
               sendInput();
             } else {
-              proc.stdin.end();
+              proc.stdin?.end();
             }
           }, 100);
         }
@@ -186,7 +186,7 @@ export function runInstaller(workspacePath: string, options: RunInstallerOptions
       // Wait a bit before sending first input
       setTimeout(sendInput, 200);
     } else if (options.unattended) {
-      proc.stdin.end();
+      proc.stdin?.end();
     }
 
     proc.stdout.on('data', (data) => {
