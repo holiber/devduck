@@ -1716,7 +1716,7 @@ async function installWorkspace(): Promise<void> {
   }
   
   // Merge external modules with local modules
-  const { getAllModules, getAllModulesFromDirectory, resolveModules, resolveDependencies, mergeModuleSettings } = await import('./install/module-resolver.js');
+  const { getAllModules, getAllModulesFromDirectory, expandModuleNames, resolveDependencies, mergeModuleSettings } = await import('./install/module-resolver.js');
   const localModules = getAllModules();
   
   // Also load workspace-local modules (if workspace has its own modules/ folder)
@@ -1741,11 +1741,8 @@ async function installWorkspace(): Promise<void> {
   
   const allModules = [...localModules, ...externalModules, ...workspaceModules, ...projectsModules];
   
-  // Resolve modules manually with merged list
-  let moduleNames = config.modules || ['*'];
-  if (moduleNames.includes('*')) {
-    moduleNames = allModules.map(m => m.name);
-  }
+  // Resolve modules manually with merged list (supports patterns like "issue-*")
+  const moduleNames = expandModuleNames(config.modules || ['*'], allModules);
   const resolvedModules = resolveDependencies(moduleNames, allModules);
   
   // Load module resources
