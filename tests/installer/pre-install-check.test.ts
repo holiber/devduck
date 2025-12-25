@@ -563,7 +563,7 @@ checks:
     description: "Test env var with install command"
     var: "TEST_INSTALL_VAR"
     install: "echo /test/path"
-    test: "sh -c 'test -n \"$TEST_INSTALL_VAR\" && test \"$TEST_INSTALL_VAR\" = \"/test/path\"'"
+    test: "sh -c 'test -n \\"$TEST_INSTALL_VAR\\" && test \\"$TEST_INSTALL_VAR\\" = \\"/test/path\\"'"
 ---
 # Test Module
 `;
