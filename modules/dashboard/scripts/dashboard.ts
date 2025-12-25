@@ -8,11 +8,11 @@
 import React from 'react';
 import fs from 'fs';
 import path from 'path';
-import { spawnSync } from 'child_process';
 import { fileURLToPath } from 'url';
 import type { ComponentType } from 'react';
 import type { RenderOptions } from 'ink';
 import type { TextInputProps } from 'ink-text-input';
+import { execCmdSync } from '../../../scripts/lib/process.js';
 
 // Ink is ESM (may use top-level await), so load via dynamic import.
 let render: (tree: React.ReactElement, options?: RenderOptions) => void;
@@ -117,8 +117,8 @@ interface RunTaskResult {
 function runTaskCmd(args: string[]): RunTaskResult {
   const __filename = fileURLToPath(import.meta.url);
   const __dirname = path.dirname(__filename);
-  const res = spawnSync(process.execPath, [path.join(__dirname, 'task.ts'), ...args], { encoding: 'utf8', stdio: 'pipe' });
-  return { ok: res.status === 0, stdout: res.stdout || '', stderr: res.stderr || '', code: res.status || 0 };
+  const res = execCmdSync(process.execPath, [path.join(__dirname, 'task.ts'), ...args], { stdio: 'pipe' });
+  return { ok: res.ok, stdout: res.stdout, stderr: res.stderr, code: res.exitCode };
 }
 
 function enqueuePrompt(promptText: string): RunTaskResult & { error?: string } {
@@ -133,8 +133,8 @@ function ensureBgRunners(): void {
 }
 
 function openPathOnHost(p: string): boolean {
-  const r = spawnSync('open', [p], { encoding: 'utf8', stdio: 'pipe' });
-  return r.status === 0;
+  const r = execCmdSync('open', [p], { stdio: 'pipe' });
+  return r.ok;
 }
 
 interface HeaderProps {

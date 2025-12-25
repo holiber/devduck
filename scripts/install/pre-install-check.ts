@@ -12,11 +12,11 @@ import path from 'path';
 import https from 'https';
 import http from 'http';
 import { URL } from 'url';
-import { execSync } from 'child_process';
 import { readJSON, writeJSON } from '../lib/config.js';
 import { readEnvFile } from '../lib/env.js';
 import { writeEnvFile } from './env.js';
 import { findWorkspaceRoot } from '../lib/workspace-root.js';
+import { execShellSync } from '../lib/process.js';
 import {
   expandModuleNames,
   getAllModules,
@@ -265,127 +265,68 @@ async function checkCommandWrapper(item: CheckItem, _context: string | null = nu
   
   // Handle API calls (commands starting with "api ")
   if (test.trim().startsWith('api ')) {
-    try {
-      const apiCommand = test.trim().substring(4); // Remove "api " prefix
-      const command = `npm run call -- ${apiCommand}`;
-      
-      const output = execSync(command, {
-        encoding: 'utf8',
-        stdio: ['pipe', 'pipe', 'pipe'],
-        shell: '/bin/bash',
-        timeout: 30000,
-        cwd: findWorkspaceRoot(process.cwd()) || process.cwd()
-      });
-      
-      const resultValue = output.trim().split('\n').pop()?.trim() || '';
-      
-      if (resultValue === 'true') {
-        return {
-          name: name,
-          passed: true
-        };
-      } else {
-        return {
-          name: name,
-          passed: false,
-          error: `api ${apiCommand} returned ${resultValue}`
-        };
-      }
-    } catch (error) {
-      const err = error as { stdout?: Buffer | string; stderr?: Buffer | string; message?: string };
-      const stderrStr = err.stderr ? err.stderr.toString().trim() : '';
-      const stdoutStr = err.stdout ? err.stdout.toString().trim() : '';
-      const apiCommand = test.trim().substring(4);
-      return {
-        name: name,
-        passed: false,
-        error: stderrStr || stdoutStr || err.message || `api ${apiCommand} failed`
-      };
+    const apiCommand = test.trim().substring(4); // Remove "api " prefix
+    const command = `npm run call -- ${apiCommand}`;
+    const res = execShellSync(command, {
+      encoding: 'utf8',
+      stdio: ['pipe', 'pipe', 'pipe'],
+      shell: '/bin/bash',
+      timeout: 30000,
+      cwd: findWorkspaceRoot(process.cwd()) || process.cwd()
+    });
+
+    const output = String(res.stdout || '').trim();
+    const resultValue = output.split('\n').pop()?.trim() || '';
+    if (res.exitCode === 0 && resultValue === 'true') {
+      return { name, passed: true };
     }
+    const errMsg = String(res.stderr || '').trim();
+    return {
+      name,
+      passed: false,
+      error: errMsg || `api ${apiCommand} returned ${resultValue || 'unknown'}`
+    };
   }
   
   // Handle curl commands
   if (isCurlCommand(test)) {
-    try {
-      const env = readEnvFile(path.join(findWorkspaceRoot(process.cwd()) || process.cwd(), '.env'));
-      const command = replaceEnvVarsInCommand(test, env);
-      
-      const output = execSync(command, { 
-        encoding: 'utf8',
-        stdio: ['pipe', 'pipe', 'pipe'],
-        timeout: 10000
-      });
-      
-      // Check if curl returned HTTP status code (if using -w '%{http_code}')
-      const statusCode = output.trim();
-      if (/^\d{3}$/.test(statusCode)) {
-        // Status code returned, check if it's 2xx
-        const code = parseInt(statusCode, 10);
-        // Treat 429 as "valid but rate-limited" for cheap auth probes.
-        const passed = (code >= 200 && code < 300) || code === 429;
-        return {
-          name: name,
-          passed: passed,
-          error: passed ? undefined : `HTTP ${code}`
-        };
-      } else {
-        // No status code in output, assume success if curl exited with 0
-        return {
-          name: name,
-          passed: true
-        };
-      }
-    } catch (error) {
-      const err = error as { stdout?: Buffer | string; stderr?: Buffer | string; message?: string; status?: number };
-      
-      // Try to extract HTTP status code from stdout (curl might return it even on error)
-      let statusCode: number | null = null;
-      if (err.stdout) {
-        const stdoutStr = err.stdout.toString().trim();
-        if (/^\d{3}$/.test(stdoutStr)) {
-          statusCode = parseInt(stdoutStr, 10);
-        }
-      }
-      
-      // Build error message with status code if available
-      const errorMsg = statusCode !== null 
-        ? `HTTP ${statusCode}`
-        : (err.stderr ? err.stderr.toString().trim() : err.message || 'Command failed');
-      
-      return {
-        name: name,
-        passed: false,
-        error: errorMsg
-      };
+    const env = readEnvFile(path.join(findWorkspaceRoot(process.cwd()) || process.cwd(), '.env'));
+    const command = replaceEnvVarsInCommand(test, env);
+    const res = execShellSync(command, {
+      encoding: 'utf8',
+      stdio: ['pipe', 'pipe', 'pipe'],
+      timeout: 10000
+    });
+
+    const statusCode = String(res.stdout || '').trim();
+    if (/^\d{3}$/.test(statusCode)) {
+      const code = parseInt(statusCode, 10);
+      const passed = (code >= 200 && code < 300) || code === 429;
+      return { name, passed, error: passed ? undefined : `HTTP ${code}` };
     }
+
+    if (res.exitCode === 0) {
+      return { name, passed: true };
+    }
+    const errMsg = String(res.stderr || '').trim();
+    return { name, passed: false, error: errMsg || statusCode || 'Command failed' };
   }
   
   // For other commands, use a simple shell execution
-  try {
-    const env = readEnvFile(path.join(findWorkspaceRoot(process.cwd()) || process.cwd(), '.env'));
-    const command = replaceEnvVarsInCommand(test, env);
-    
-    execSync(command, {
-      encoding: 'utf8',
-      stdio: ['pipe', 'pipe', 'pipe'],
-      shell: '/bin/bash',
-      timeout: 20000
-    });
-    
-    return {
-      name: name,
-      passed: true
-    };
-  } catch (error) {
-    const err = error as { stdout?: Buffer | string; stderr?: Buffer | string; message?: string; status?: number };
-    const stderrStr = err.stderr ? err.stderr.toString().trim() : '';
-    const stdoutStr = err.stdout ? err.stdout.toString().trim() : '';
-    return {
-      name: name,
-      passed: false,
-      error: stderrStr || stdoutStr || err.message || 'Command failed'
-    };
+  const env = readEnvFile(path.join(findWorkspaceRoot(process.cwd()) || process.cwd(), '.env'));
+  const command = replaceEnvVarsInCommand(test, env);
+  const res = execShellSync(command, {
+    encoding: 'utf8',
+    stdio: ['pipe', 'pipe', 'pipe'],
+    shell: '/bin/bash',
+    timeout: 20000
+  });
+  if (res.exitCode === 0) {
+    return { name, passed: true };
   }
+  const errMsg = String(res.stderr || '').trim();
+  const out = String(res.stdout || '').trim();
+  return { name, passed: false, error: errMsg || out || 'Command failed' };
 }
 
 /**
@@ -701,14 +642,15 @@ export async function runPreInstallChecks(workspaceRoot: string): Promise<PreIns
             let installCommand = replaceEnvVarsInCommand(check.install, env);
             // Resolve tsx commands with module-relative paths
             installCommand = resolveTsxCommand(installCommand, moduleResult.modulePath);
-            const installOutput = execSync(installCommand, {
+            const installRes = execShellSync(installCommand, {
               encoding: 'utf8',
               stdio: ['pipe', 'pipe', 'pipe'],
               shell: '/bin/bash',
               timeout: 60000 // Allow more time for compilation
-            }).trim();
+            });
+            const installOutput = String(installRes.stdout || '').trim();
             
-            if (installOutput && !installOutput.includes('not set') && !installOutput.includes('not found')) {
+            if (installRes.exitCode === 0 && installOutput && !installOutput.includes('not set') && !installOutput.includes('not found')) {
               // Set the variable in env for this check
               env[check.var] = installOutput;
               // Also set in process.env for the test execution
@@ -773,14 +715,15 @@ export async function runPreInstallChecks(workspaceRoot: string): Promise<PreIns
               console.log(`  ℹ Installing ${thingToInstall}...`);
               try {
                 const installCommand = replaceEnvVarsInCommand(testCheckObj.install, env);
-                const installOutput = execSync(installCommand, {
+                const installRes = execShellSync(installCommand, {
                   encoding: 'utf8',
                   stdio: ['pipe', 'pipe', 'pipe'],
                   shell: '/bin/bash',
                   timeout: 20000
-                }).trim();
+                });
+                const installOutput = String(installRes.stdout || '').trim();
                 
-                if (installOutput) {
+                if (installRes.exitCode === 0 && installOutput) {
                   // Set the variable in env for this check
                   env[testCheckObj.var] = installOutput;
                   // Also set in process.env for the test execution
@@ -888,8 +831,9 @@ export async function runPreInstallChecks(workspaceRoot: string): Promise<PreIns
       arcadiaRoot = envRoot;
     } else {
       // Execute `arc root` command
-      const output = execSync('arc root', { encoding: 'utf8', stdio: 'pipe' });
-      const lines = output.trim().split('\n');
+      const res = execShellSync('arc root', { encoding: 'utf8', stdio: 'pipe' });
+      const output = String(res.stdout || '').trim();
+      const lines = output.split('\n');
       const rootPath = lines[lines.length - 1].trim();
       
       if (rootPath && fs.existsSync(path.join(rootPath, '.arcadia.root'))) {

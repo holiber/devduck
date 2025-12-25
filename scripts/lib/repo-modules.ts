@@ -11,10 +11,10 @@
 
 import fs from 'fs';
 import path from 'path';
-import { spawnSync, execSync } from 'child_process';
 import { fileURLToPath } from 'url';
 import { compareVersions } from 'compare-versions';
 import { findWorkspaceRoot } from './workspace-root.js';
+import { execCmdSync, execShellSync } from './process.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -80,8 +80,9 @@ function findArcadiaRoot(): string | null {
 
   // Execute `arc root` command
   try {
-    const output = execSync('arc root', { encoding: 'utf8', stdio: 'pipe' });
-    const lines = output.trim().split('\n');
+    const res = execShellSync('arc root', { encoding: 'utf8', stdio: 'pipe' });
+    const output = String(res.stdout || '').trim();
+    const lines = output.split('\n');
     const arcadiaRoot = lines[lines.length - 1].trim();
     
     if (arcadiaRoot && fs.existsSync(path.join(arcadiaRoot, '.arcadia.root'))) {
@@ -325,12 +326,8 @@ function cloneGitRepository(repoUrl: string, repoPath: string): void {
 
   print(`  ${symbols.info} Cloning repository: ${repoUrl}`, 'cyan');
   
-  const cloneResult = spawnSync('git', ['clone', repoUrl, repoPath], {
-    encoding: 'utf8',
-    stdio: 'inherit'
-  });
-
-  if (cloneResult.status !== 0) {
+  const cloneResult = execCmdSync('git', ['clone', repoUrl, repoPath], { stdio: 'inherit' });
+  if (cloneResult.exitCode !== 0) {
     throw new Error(`Failed to clone repository: ${repoUrl}`);
   }
 }
@@ -342,12 +339,8 @@ function updateGitRepository(repoPath: string): void {
   const repoName = path.basename(repoPath);
   print(`  ${symbols.info} Updating existing git repository: ${repoName}`, 'cyan');
   
-  const pullResult = spawnSync('git', ['pull'], {
-    cwd: repoPath,
-    encoding: 'utf8'
-  });
-
-  if (pullResult.status !== 0) {
+  const pullResult = execCmdSync('git', ['pull'], { cwd: repoPath });
+  if (pullResult.exitCode !== 0) {
     print(`  ${symbols.warning} Failed to update repository, using existing version`, 'yellow');
   }
 }

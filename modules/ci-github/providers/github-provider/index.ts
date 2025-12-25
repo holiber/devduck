@@ -1,4 +1,4 @@
-import { execSync } from 'child_process';
+import { execCmdSync } from '../../../../scripts/lib/process.js';
 import type {
   CIProvider,
   PRInfo,
@@ -17,20 +17,23 @@ interface RepoInfo {
 }
 
 function getRepoInfo(repoPath: string = process.cwd()): RepoInfo | null {
-  try {
-    const remoteUrl = execSync('git remote get-url origin', { cwd: repoPath, encoding: 'utf8', stdio: 'pipe' }).trim();
-    const remoteMatch = remoteUrl.match(/github\.com[\/:]([^\/]+)\/([^\/\.]+)/);
-    if (!remoteMatch) {
-      return null;
-    }
-
-    return {
-      owner: remoteMatch[1],
-      repo: remoteMatch[2].replace(/\.git$/, '')
-    };
-  } catch {
+  const res = execCmdSync('git', ['remote', 'get-url', 'origin'], {
+    cwd: repoPath,
+    stdio: ['ignore', 'pipe', 'pipe']
+  });
+  if (!res.ok) {
     return null;
   }
+  const remoteUrl = res.stdout;
+  const remoteMatch = remoteUrl.match(/github\.com[\/:]([^\/]+)\/([^\/\.]+)/);
+  if (!remoteMatch) {
+    return null;
+  }
+
+  return {
+    owner: remoteMatch[1],
+    repo: remoteMatch[2].replace(/\.git$/, '')
+  };
 }
 
 function ensureOwnerRepo(input: { owner?: string; repo?: string }): { owner: string; repo: string } {

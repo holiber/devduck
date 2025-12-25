@@ -4,11 +4,11 @@
  * Monitor status of parallel plan generation containers
  */
 
-import { spawnSync } from 'child_process';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { createYargs, installEpipeHandler } from '../../../scripts/lib/cli.js';
+import { execCmdSync } from '../../../scripts/lib/process.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -36,13 +36,13 @@ interface ContainerInfo {
 }
 
 function getRunningContainers(): ContainerInfo[] {
-  const result = spawnSync('docker', [
+  const result = execCmdSync('docker', [
     'ps',
     '--filter', 'name=plan-',
     '--format', '{{.Names}}\t{{.Status}}\t{{.Image}}'
-  ], { encoding: 'utf8' });
+  ], { stdio: 'pipe' });
   
-  if (result.status !== 0) {
+  if (!result.ok) {
     return [];
   }
   
