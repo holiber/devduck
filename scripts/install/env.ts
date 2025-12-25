@@ -69,13 +69,6 @@ export async function setupEnvFile(
   
   const envFile = path.join(workspaceRoot, '.env');
   
-  // Check if .env already exists
-  if (fs.existsSync(envFile)) {
-    print(`\n${symbols.info} .env file already exists, skipping setup`, 'cyan');
-    log(`.env file already exists: ${envFile}`);
-    return;
-  }
-
   // Check if config has env variables defined
   if (!config.env || !Array.isArray(config.env) || config.env.length === 0) {
     print(`\n${symbols.info} No environment variables defined in config, skipping .env setup`, 'cyan');
@@ -83,26 +76,35 @@ export async function setupEnvFile(
     return;
   }
 
-  print(`\n${symbols.info} Setting up .env file...`, 'cyan');
-  log(`Setting up .env file: ${envFile}`);
+  const envExists = fs.existsSync(envFile);
+  if (envExists) {
+    print(`\n${symbols.info} .env file exists, updating with missing variables...`, 'cyan');
+    log(`.env file exists: ${envFile}, updating with missing variables`);
+  } else {
+    print(`\n${symbols.info} Setting up .env file...`, 'cyan');
+    log(`Setting up .env file: ${envFile}`);
+  }
 
   const env: Record<string, string> = {};
+  const existingEnv: Record<string, string> = {};
 
-  // Read existing .env if it exists (shouldn't, but just in case)
-  if (fs.existsSync(envFile)) {
+  // Read existing .env if it exists
+  if (envExists) {
     const existing = readEnvFile(envFile);
     Object.assign(env, existing);
+    Object.assign(existingEnv, existing);
   }
 
   // Process each env variable from config
+  const addedVars: string[] = [];
   for (const envVar of config.env) {
     const varName = envVar.name;
     const defaultValue = envVar.default || '';
     const description = envVar.description || '';
 
-    // Skip if already set
-    if (env[varName]) {
-      log(`Environment variable ${varName} already set, skipping`);
+    // Skip if already set in existing .env (don't overwrite user values)
+    if (existingEnv[varName]) {
+      log(`Environment variable ${varName} already set in .env, skipping`);
       continue;
     }
 
@@ -122,12 +124,23 @@ export async function setupEnvFile(
     }
 
     env[varName] = value;
+    addedVars.push(varName);
     log(`Set environment variable ${varName}${description ? ` (${description})` : ''}`);
   }
 
   // Write .env file
   writeEnvFile(envFile, env);
-  print(`  ${symbols.success} Created .env file`, 'green');
-  log(`Created .env file: ${envFile}`);
+  if (envExists) {
+    if (addedVars.length > 0) {
+      print(`  ${symbols.success} Updated .env file (added ${addedVars.length} variable(s): ${addedVars.join(', ')})`, 'green');
+      log(`Updated .env file: ${envFile} (added ${addedVars.join(', ')})`);
+    } else {
+      print(`  ${symbols.info} .env file is up to date`, 'cyan');
+      log(`.env file is up to date: ${envFile}`);
+    }
+  } else {
+    print(`  ${symbols.success} Created .env file`, 'green');
+    log(`Created .env file: ${envFile}`);
+  }
 }
 

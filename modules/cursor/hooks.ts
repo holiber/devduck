@@ -125,19 +125,32 @@ export default {
     // 3.5. Test MCP servers functionality
     if (Object.keys(mcpServers).length > 0) {
       const { testMcpServer } = await import('../../scripts/install/mcp-test.js');
-      const testResults: Array<{ name: string; success: boolean; error?: string }> = [];
+      const testResults: Array<{ name: string; success: boolean; error?: string; optional?: boolean }> = [];
+      const failedNonOptionalServers: Array<{ name: string; error: string }> = [];
+      
+      console.log(`\nTesting ${Object.keys(mcpServers).length} MCP server(s)...`);
       
       for (const [serverName, serverConfig] of Object.entries(mcpServers)) {
         const config = serverConfig as Record<string, unknown>;
+        const isOptional = config.optional === true;
+        
+        // Check for command in both direct config and nested mcpSettings
+        const mcpSettings = config.mcpSettings as Record<string, unknown> | undefined;
+        const command = (config.command || mcpSettings?.command) as string | undefined;
+        const args = (Array.isArray(config.args) ? config.args : Array.isArray(mcpSettings?.args) ? mcpSettings.args : []) as string[];
+        const hasUrl = config.url || mcpSettings?.url;
         
         // Only test command-based servers (not URL-based)
-        if (config.command && typeof config.command === 'string') {
+        if (command && typeof command === 'string') {
+          console.log(`  Testing MCP server: ${serverName}${isOptional ? ' (optional)' : ''}...`);
+          
           try {
             const result = await testMcpServer(serverName, {
-              command: config.command as string,
-              args: Array.isArray(config.args) ? config.args as string[] : []
+              command: command,
+              args: args
             }, {
               timeout: 10000,
+              workspaceRoot: context.workspaceRoot,
               log: (msg) => {
                 // Silent logging during installation
               }
@@ -146,27 +159,64 @@ export default {
             testResults.push({
               name: serverName,
               success: result.success,
-              error: result.error
+              error: result.error,
+              optional: isOptional
             });
             
             if (result.success && result.methods && result.methods.length > 0) {
               // Server is working and has methods
-              console.log(`✓ MCP server ${serverName} tested successfully (${result.methods.length} method(s))`);
+              console.log(`  ✓ MCP server ${serverName} tested successfully (${result.methods.length} method(s))`);
             } else if (!result.success) {
-              // Log warning but don't fail installation
-              console.warn(`Warning: MCP server ${serverName} test failed: ${result.error || 'Unknown error'}`);
+              const isMissingVar = result.error?.includes('not found in environment');
+              
+              if (isOptional || isMissingVar) {
+                // Skip optional servers or servers with missing variables
+                if (isMissingVar) {
+                  console.log(`  ⚠ MCP server ${serverName} skipped: ${result.error}`);
+                }
+                // (they'll still be in mcp.json for manual configuration)
+              } else {
+                // Non-optional server failed - this is an error
+                console.error(`  ✗ MCP server ${serverName} test failed: ${result.error || 'Unknown error'}`);
+                failedNonOptionalServers.push({
+                  name: serverName,
+                  error: result.error || 'Unknown error'
+                });
+              }
             } else if (result.success) {
-              console.log(`✓ MCP server ${serverName} tested successfully (no methods listed)`);
+              console.log(`  ✓ MCP server ${serverName} tested successfully (no methods listed)`);
             }
           } catch (error) {
             const err = error as Error;
-            console.warn(`Warning: Failed to test MCP server ${serverName}: ${err.message}`);
+            const isMissingVar = err.message.includes('not found in environment');
+            
             testResults.push({
               name: serverName,
               success: false,
-              error: err.message
+              error: err.message,
+              optional: isOptional
             });
+            
+            if (isOptional || isMissingVar) {
+              // Skip optional servers or servers with missing variables
+              if (isMissingVar) {
+                console.log(`  ⚠ MCP server ${serverName} skipped: ${err.message}`);
+              }
+            } else {
+              // Non-optional server failed - this is an error
+              console.error(`  ✗ MCP server ${serverName} test failed: ${err.message}`);
+              failedNonOptionalServers.push({
+                name: serverName,
+                error: err.message
+              });
+            }
           }
+        } else if (hasUrl) {
+          // URL-based servers don't need testing
+          console.log(`  ℹ MCP server ${serverName} (URL-based, skipping test)`);
+        } else {
+          // Server has no command or URL - might be misconfigured
+          console.log(`  ℹ MCP server ${serverName} (no command/URL, skipping test)`);
         }
       }
       
@@ -175,6 +225,15 @@ export default {
       const totalTests = testResults.length;
       if (totalTests > 0) {
         console.log(`\nMCP servers tested: ${successfulTests}/${totalTests} successful`);
+      }
+      
+      // Fail installation if non-optional servers failed
+      if (failedNonOptionalServers.length > 0) {
+        console.error(`\nError: ${failedNonOptionalServers.length} non-optional MCP server(s) failed:`);
+        for (const server of failedNonOptionalServers) {
+          console.error(`  - ${server.name}: ${server.error}`);
+        }
+        throw new Error(`Installation failed: ${failedNonOptionalServers.length} non-optional MCP server(s) failed`);
       }
     }
     

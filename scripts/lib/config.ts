@@ -29,7 +29,7 @@ export function writeJSON(filePath: string, data: unknown): void {
 }
 
 /**
- * Replace variables in string using $$VARNAME$$ syntax
+ * Replace variables in string using $$VARNAME$$ and $VARNAME syntax
  * Variables are resolved from process.env first, then from env parameter
  * @param str - String with variables to replace
  * @param env - Environment variables from .env file
@@ -50,6 +50,21 @@ export function replaceVariables(
   
   // Replace $$VAR$$ format
   let result = str.replace(/\$\$([A-Za-z_][A-Za-z0-9_]*)\$\$/g, (match, varName) => {
+    // First check environment variables, then .env file
+    const value = process.env[varName] || env[varName];
+    if (value !== undefined) {
+      return value;
+    }
+    // If not found, return original match with warning
+    if (print && symbols && log) {
+      print(`  ${symbols.warning} Variable ${match} not found, keeping as is`, 'yellow');
+      log(`Warning: Variable ${match} not found in environment or .env file`);
+    }
+    return match;
+  });
+  
+  // Replace $VAR format (after $$VAR$$ to avoid conflicts)
+  result = result.replace(/\$([A-Za-z_][A-Za-z0-9_]*)/g, (match, varName) => {
     // First check environment variables, then .env file
     const value = process.env[varName] || env[varName];
     if (value !== undefined) {

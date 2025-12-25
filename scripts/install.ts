@@ -1617,7 +1617,16 @@ async function installWorkspace(): Promise<void> {
     }
   }
   
+  // Setup .env file from workspace config (before pre-install checks so modules can add vars)
+  await setupEnvFile(WORKSPACE_ROOT, config as WorkspaceConfig, {
+    autoYes: AUTO_YES,
+    log,
+    print,
+    symbols
+  });
+  
   // Run pre-install checks (verify tokens before installing modules)
+  // Note: Pre-install checks can also set environment variables via install commands
   print(`\n${symbols.info} Running pre-install checks...`, 'cyan');
   log(`Running pre-install checks`);
   try {
@@ -1657,52 +1666,38 @@ async function installWorkspace(): Promise<void> {
         // Load modules from the repository
         if (fs.existsSync(repoModulesPath)) {
           const repoModuleEntries = fs.readdirSync(repoModulesPath, { withFileTypes: true });
+          const { loadModuleFromPath } = await import('./install/module-resolver.js');
+          
           for (const entry of repoModuleEntries) {
             if (entry.isDirectory()) {
               const modulePath = path.join(repoModulesPath, entry.name);
-              // Use loadModule but with custom path - need to parse manually
-              const moduleMdPath = path.join(modulePath, 'MODULE.md');
-              if (fs.existsSync(moduleMdPath)) {
-                const content = fs.readFileSync(moduleMdPath, 'utf8');
-                const frontmatterMatch = content.match(/^---\n([\s\S]*?)\n---/);
-                if (frontmatterMatch) {
-                  const yamlContent = frontmatterMatch[1];
-                  const metadata = {};
-                  const lines = yamlContent.split('\n');
-                  
-                  for (const line of lines) {
-                    const trimmed = line.trim();
-                    if (!trimmed) continue;
-                    
-                    const colonIndex = trimmed.indexOf(':');
-                    if (colonIndex > 0) {
-                      const key = trimmed.substring(0, colonIndex).trim();
-                      let value = trimmed.substring(colonIndex + 1).trim();
-                      
-                      // Handle array values [item1, item2]
-                      if (value.startsWith('[') && value.endsWith(']')) {
-                        const arrayContent = value.slice(1, -1);
-                        metadata[key] = arrayContent.split(',').map(v => v.trim().replace(/^["']|["']$/g, ''));
-                      } else {
-                        metadata[key] = value.replace(/^["']|["']$/g, '');
-                      }
-                    }
-                  }
-                  
-                  if (metadata.name) {
-                    externalModules.push({
-                      name: metadata.name || entry.name,
-                      version: metadata.version || '0.1.0',
-                      description: metadata.description || '',
-                      tags: metadata.tags || [],
-                      dependencies: metadata.dependencies || [],
-                      defaultSettings: metadata.defaultSettings || {},
-                      path: modulePath
-                    });
-                    print(`  ${symbols.success} Loaded external module: ${metadata.name || entry.name}`, 'green');
-                    log(`Loaded external module: ${metadata.name || entry.name} from ${repoUrl}`);
-                  }
-                }
+              const module = loadModuleFromPath(modulePath, entry.name);
+              
+              if (module && module.name) {
+                externalModules.push({
+                  name: module.name,
+                  version: module.version || '0.1.0',
+                  description: module.description || '',
+                  tags: module.tags || [],
+                  dependencies: module.dependencies || [],
+                  defaultSettings: module.defaultSettings || {},
+                  path: module.path
+                });
+                print(`  ${symbols.success} Loaded external module: ${module.name}`, 'green');
+                log(`Loaded external module: ${module.name} from ${repoUrl}`);
+              } else if (module) {
+                // Module loaded but no name - use directory name
+                externalModules.push({
+                  name: entry.name,
+                  version: module.version || '0.1.0',
+                  description: module.description || '',
+                  tags: module.tags || [],
+                  dependencies: module.dependencies || [],
+                  defaultSettings: module.defaultSettings || {},
+                  path: module.path
+                });
+                print(`  ${symbols.success} Loaded external module: ${entry.name}`, 'green');
+                log(`Loaded external module: ${entry.name} from ${repoUrl}`);
               }
             }
           }
@@ -1812,17 +1807,32 @@ async function installWorkspace(): Promise<void> {
   );
   const postInstallResults = await executeHooksForStage(loadedModules, 'post-install', postInstallContexts);
   
-  // Log results
+  // Log results and check for failures
+  let postInstallFailed = false;
   for (const result of postInstallResults) {
     if (result.success && result.message) {
       log(`Module ${result.module}: ${result.message}`);
-    } else if (result.errors && result.errors.length > 0) {
-      log(`Module ${result.module} errors: ${result.errors.join(', ')}`);
+    } else if (!result.success) {
+      postInstallFailed = true;
+      if (result.errors && result.errors.length > 0) {
+        log(`Module ${result.module} errors: ${result.errors.join(', ')}`);
+        print(`  ${symbols.error} Module ${result.module} post-install hook failed: ${result.errors.join(', ')}`, 'red');
+      } else {
+        log(`Module ${result.module} post-install hook failed`);
+        print(`  ${symbols.error} Module ${result.module} post-install hook failed`, 'red');
+      }
     }
     // Debug logging for test mode
     if (process.env.NODE_ENV === 'test' && result.skipped) {
       log(`[DEBUG] Module ${result.module} hook skipped: ${result.message || 'unknown reason'}`);
     }
+  }
+  
+  // Fail installation if post-install hooks failed
+  if (postInstallFailed) {
+    print(`\n${symbols.error} Installation failed: One or more post-install hooks failed`, 'red');
+    log(`Installation failed: One or more post-install hooks failed`);
+    process.exit(1);
   }
   
   // Create .cache/devduck directory

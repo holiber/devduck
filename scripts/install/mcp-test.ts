@@ -9,6 +9,8 @@
 
 import { spawn, ChildProcess } from 'child_process';
 import { Readable } from 'stream';
+import { readEnvFile } from '../lib/env.js';
+import path from 'path';
 
 export interface McpTestResult {
   success: boolean;
@@ -21,6 +23,7 @@ export interface McpTestResult {
 export interface McpTestOptions {
   timeout?: number;
   log?: (msg: string) => void;
+  workspaceRoot?: string;
 }
 
 /**
@@ -35,10 +38,18 @@ export async function testMcpServer(
   },
   options: McpTestOptions = {}
 ): Promise<McpTestResult> {
-  const { timeout = 10000, log = () => {} } = options;
+  const { timeout = 10000, log = () => {}, workspaceRoot } = options;
   
   log(`Testing MCP server: ${name}`);
   log(`  Command: ${serverConfig.command} ${(serverConfig.args || []).join(' ')}`);
+  
+  // Load .env file if workspaceRoot is provided
+  const envFile = workspaceRoot ? readEnvFile(path.join(workspaceRoot, '.env')) : {};
+  
+  // Helper to expand variables (checks process.env first, then .env file)
+  const expandVar = (varName: string): string | undefined => {
+    return process.env[varName] || envFile[varName];
+  };
   
   let mcpProcess: ChildProcess | null = null;
   let stdoutBuffer = '';
@@ -57,11 +68,22 @@ export async function testMcpServer(
     
     // Expand $VAR and $$VAR$$ in command
     command = command.replace(/\$\$([A-Za-z_][A-Za-z0-9_]*)\$\$/g, (match, varName) => {
-      return process.env[varName] || match;
+      return expandVar(varName) || match;
     });
     command = command.replace(/\$([A-Za-z_][A-Za-z0-9_]*)/g, (match, varName) => {
-      return process.env[varName] || match;
+      return expandVar(varName) || match;
     });
+    
+    // Check if command still contains unexpanded variables
+    if (command.includes('$')) {
+      const unexpandedMatch = command.match(/\$([A-Za-z_][A-Za-z0-9_]*)/);
+      if (unexpandedMatch) {
+        return {
+          success: false,
+          error: `Variable ${unexpandedMatch[0]} not found in environment or .env file`
+        };
+      }
+    }
     
     // Expand variables in args
     const commandArgs = [...commandParts.slice(1), ...(serverConfig.args || [])].map(arg => {
@@ -72,11 +94,11 @@ export async function testMcpServer(
       }
       // Expand $$VAR$$
       expanded = expanded.replace(/\$\$([A-Za-z_][A-Za-z0-9_]*)\$\$/g, (match, varName) => {
-        return process.env[varName] || match;
+        return expandVar(varName) || match;
       });
       // Expand $VAR
       expanded = expanded.replace(/\$([A-Za-z_][A-Za-z0-9_]*)/g, (match, varName) => {
-        return process.env[varName] || match;
+        return expandVar(varName) || match;
       });
       return expanded;
     });
@@ -86,7 +108,31 @@ export async function testMcpServer(
       env: { ...process.env }
     });
     
-    if (!mcpProcess.stdout || !mcpProcess.stdin) {
+    // Wait for process to start and check for spawn errors
+    await new Promise<void>((resolve, reject) => {
+      if (!mcpProcess) {
+        reject(new Error('Failed to spawn process'));
+        return;
+      }
+      
+      // Handle spawn errors
+      mcpProcess!.on('error', (error: NodeJS.ErrnoException) => {
+        if (error.code === 'ENOENT') {
+          reject(new Error(`Command not found: ${command}`));
+        } else {
+          reject(error);
+        }
+      });
+      
+      // Wait a bit for process to start (or error)
+      setTimeout(() => {
+        if (mcpProcess && mcpProcess.killed === false) {
+          resolve();
+        }
+      }, 500);
+    });
+    
+    if (!mcpProcess || !mcpProcess.stdout || !mcpProcess.stdin) {
       return {
         success: false,
         error: 'Failed to create process stdio streams'
@@ -110,9 +156,6 @@ export async function testMcpServer(
     mcpProcess.stderr?.on('data', (data: Buffer) => {
       stderrBuffer += data.toString();
     });
-    
-    // Wait a bit for process to start
-    await new Promise(resolve => setTimeout(resolve, 500));
     
     if (!mcpProcess || !mcpProcess.stdin || !mcpProcess.stdout) {
       return {
