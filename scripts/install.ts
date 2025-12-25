@@ -1623,7 +1623,14 @@ async function installWorkspace(): Promise<void> {
   try {
     const { runPreInstallChecks, validatePreInstallChecks } = await import('./install/pre-install-check.js');
     const checkResults = await runPreInstallChecks(WORKSPACE_ROOT);
-    validatePreInstallChecks(checkResults, { print, log, symbols });
+    const validation = validatePreInstallChecks(checkResults, { print, log, symbols });
+    if (validation === 'needs_input') {
+      // Not a failure, but we must not continue workspace installation until tokens are provided.
+      return;
+    }
+    if (validation === 'failed') {
+      process.exit(1);
+    }
   } catch (error) {
     const err = error as Error;
     print(`\n${symbols.error} Pre-install check error: ${err.message}`, 'red');
@@ -1899,7 +1906,19 @@ async function main(): Promise<void> {
   try {
     const { runPreInstallChecks, validatePreInstallChecks } = await import('./install/pre-install-check.js');
     const checkResults = await runPreInstallChecks(WORKSPACE_ROOT);
-    validatePreInstallChecks(checkResults, { print, log, symbols });
+    const validation = validatePreInstallChecks(checkResults, { print, log, symbols });
+    if (validation === 'needs_input') {
+      // Not a failure, but we must not continue with installation checks until tokens are provided.
+      if (logStream) {
+        await new Promise((resolve) => {
+          logStream.end(resolve);
+        });
+      }
+      process.exit(0);
+    }
+    if (validation === 'failed') {
+      process.exit(1);
+    }
   } catch (error) {
     const err = error as Error;
     print(`\n${symbols.error} Pre-install check error: ${err.message}`, 'red');
