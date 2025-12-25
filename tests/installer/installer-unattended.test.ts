@@ -565,6 +565,17 @@ describe('Workspace Installer - Unattended Mode', () => {
         await fs.access(path.join(repoRoot, 'modules'));
         await fs.access(path.join(repoRoot, 'modules', 'smogcheck', 'MODULE.md'));
 
+        // Verify installer recorded installed module paths in .cache/install-check.json
+        const installCheckPath = path.join(tempWorkspace, '.cache', 'install-check.json');
+        const installCheckRaw = await fs.readFile(installCheckPath, 'utf8');
+        const installCheck = JSON.parse(installCheckRaw) as { installedModules?: Record<string, string> };
+        assert.ok(installCheck.installedModules, 'install-check.json should include installedModules');
+        assert.ok(
+          typeof installCheck.installedModules.smogcheck === 'string' &&
+            installCheck.installedModules.smogcheck.endsWith(path.join('modules', 'smogcheck')),
+          'install-check.json should include smogcheck module path'
+        );
+
         // Verify smogchecked.txt file exists (created by smogcheck module hook)
         const smogcheckedPath = path.join(tempWorkspace, 'smogchecked.txt');
         try {

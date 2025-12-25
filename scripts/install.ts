@@ -1715,7 +1715,11 @@ async function installWorkspace(): Promise<void> {
     }
   }
   
-  // Merge external modules with local modules
+  // Merge modules with explicit priority:
+  // 1) workspace modules (<workspace>/modules)
+  // 2) project modules (<workspace>/projects/*/modules)
+  // 3) external repos (cloned into <workspace>/devduck/*)
+  // 4) built-in devduck modules (this repo)
   const { getAllModules, getAllModulesFromDirectory, resolveModules, resolveDependencies, mergeModuleSettings } = await import('./install/module-resolver.js');
   const localModules = getAllModules();
   
@@ -1739,7 +1743,7 @@ async function installWorkspace(): Promise<void> {
     }
   }
   
-  const allModules = [...localModules, ...externalModules, ...workspaceModules, ...projectsModules];
+  const allModules = [...workspaceModules, ...projectsModules, ...externalModules, ...localModules];
   
   // Resolve modules manually with merged list
   let moduleNames = config.modules || ['*'];
@@ -1759,10 +1763,29 @@ async function installWorkspace(): Promise<void> {
       settings: mergedSettings
     };
   });
+
+  // Persist installed module paths for downstream tooling.
+  // This file is also used by `--status`.
+  try {
+    const installedModules: Record<string, string> = {};
+    for (const m of loadedModules) {
+      if (m && typeof m.name === 'string' && typeof m.path === 'string') {
+        installedModules[m.name] = m.path;
+      }
+    }
+    writeJSON(CACHE_FILE, {
+      installedAt: new Date().toISOString(),
+      installedModules
+    });
+    log(`Saved installed module paths to: ${CACHE_FILE}`);
+  } catch (e) {
+    const err = e as Error;
+    log(`Failed to write ${CACHE_FILE}: ${err.message}`);
+  }
   
   print(
     `\n${symbols.info} Loaded ${loadedModules.length} module(s) ` +
-    `(${localModules.length} local, ${externalModules.length} external, ${workspaceModules.length} workspace)`,
+    `(${workspaceModules.length} workspace, ${projectsModules.length} projects, ${externalModules.length} external, ${localModules.length} devduck)`,
     'cyan'
   );
   log(`Loaded modules: ${loadedModules.map(m => m.name).join(', ')}`);
