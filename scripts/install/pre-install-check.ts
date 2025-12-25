@@ -520,7 +520,7 @@ export async function runPreInstallChecks(workspaceRoot: string): Promise<PreIns
           const tokenPresent = checkEnvVar(testCheckObj.var, env);
           if (!tokenPresent) {
             // If install command is available, try to run it to get the value
-            if (testCheckObj.install) {
+            if (testCheckObj.install && typeof testCheckObj.install === 'string') {
               try {
                 const installCommand = replaceEnvVarsInCommand(testCheckObj.install, env);
                 const installOutput = execSync(installCommand, {
@@ -703,8 +703,23 @@ export function validatePreInstallChecks(
       print(`\n${symbols.error} Pre-install checks failed!`, 'red');
       if (hasMissingAuth) {
         print(`  Missing required tokens:`, 'red');
-        for (const token of missingAuth) {
-          print(`    - ${token}`, 'red');
+        for (const module of checkResults.modules) {
+          for (const check of module.checks) {
+            if (check.type === 'auth' && !check.present && check.optional !== true && check.var) {
+              const desc = check.description ? ` - ${check.description}` : '';
+              const docs = check.docs ? `\n      ${check.docs}` : '';
+              print(`    - ${check.var} (module: ${module.name})${desc}${docs}`, 'red');
+            }
+          }
+        }
+        for (const project of checkResults.projects) {
+          for (const check of project.checks) {
+            if (check.type === 'auth' && !check.present && check.var) {
+              const desc = check.description ? ` - ${check.description}` : '';
+              const docs = check.docs ? `\n      ${check.docs}` : '';
+              print(`    - ${check.var} (project: ${project.name})${desc}${docs}`, 'red');
+            }
+          }
         }
       }
       print(`  Failed test checks:`, 'red');
@@ -735,8 +750,23 @@ export function validatePreInstallChecks(
     print(`\n${symbols.info} Pre-install checks require your input`, 'yellow');
     if (hasMissingAuth) {
       print(`  Missing required tokens:`, 'yellow');
-      for (const token of missingAuth) {
-        print(`    - ${token}`, 'yellow');
+      for (const module of checkResults.modules) {
+        for (const check of module.checks) {
+          if (check.type === 'auth' && !check.present && check.optional !== true && check.var) {
+            const desc = check.description ? ` - ${check.description}` : '';
+            const docs = check.docs ? `\n      ${check.docs}` : '';
+            print(`    - ${check.var} (module: ${module.name})${desc}${docs}`, 'yellow');
+          }
+        }
+      }
+      for (const project of checkResults.projects) {
+        for (const check of project.checks) {
+          if (check.type === 'auth' && !check.present && check.var) {
+            const desc = check.description ? ` - ${check.description}` : '';
+            const docs = check.docs ? `\n      ${check.docs}` : '';
+            print(`    - ${check.var} (project: ${project.name})${desc}${docs}`, 'yellow');
+          }
+        }
       }
     }
     if (tokenBlockedTests.length > 0) {

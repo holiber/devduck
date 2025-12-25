@@ -324,6 +324,53 @@ checks:
     assert.ok(logMessages.some(msg => msg.includes('Pre-install checks require user input')));
   });
 
+  test('validatePreInstallChecks shows docs field when token check fails', () => {
+    const checkResults = {
+      projects: [],
+      modules: [
+        {
+          name: 'test-module',
+          checks: [
+            {
+              type: 'auth',
+              var: 'MISSING_TOKEN',
+              description: 'Missing token description',
+              docs: 'You can generate this token here: https://example.com/token',
+              present: false
+            }
+          ]
+        }
+      ]
+    };
+    
+    const logMessages: string[] = [];
+    const printMessages: string[] = [];
+    
+    const mockPrint = (msg: string) => {
+      printMessages.push(msg);
+    };
+    
+    const mockLog = (msg: string) => {
+      logMessages.push(msg);
+    };
+    
+    const symbols = {
+      success: '✓',
+      error: '✗',
+      info: 'ℹ'
+    };
+
+    const status = validatePreInstallChecks(checkResults, {
+      print: mockPrint,
+      log: mockLog,
+      symbols
+    });
+    
+    assert.strictEqual(status, 'needs_input');
+    assert.ok(printMessages.some(msg => msg.includes('MISSING_TOKEN')));
+    assert.ok(printMessages.some(msg => msg.includes('https://example.com/token')), 'Should show docs field');
+  });
+
   test('validatePreInstallChecks reports failed test checks', () => {
     const checkResults = {
       projects: [],
