@@ -311,7 +311,7 @@ export async function resolveRepoPath(repoUrl: string, workspaceRoot: string): P
       // Update existing clone
       print(`  ${symbols.info} Updating existing git repository: ${repoName}`, 'cyan');
       const pullResult = execCmdSync('git', ['pull'], { cwd: repoPath });
-      if (!pullResult.ok) {
+      if (pullResult.exitCode !== 0) {
         print(`  ${symbols.warning} Failed to update repository, using existing version`, 'yellow');
       }
 
@@ -323,7 +323,7 @@ export async function resolveRepoPath(repoUrl: string, workspaceRoot: string): P
     fs.mkdirSync(devduckDir, { recursive: true });
 
     const cloneResult = execCmdSync('git', ['clone', parsed.normalized, repoPath], { stdio: 'inherit' });
-    if (!cloneResult.ok) {
+    if (cloneResult.exitCode !== 0) {
       throw new Error(`Failed to clone repository: ${parsed.normalized}`);
     }
 

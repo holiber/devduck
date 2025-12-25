@@ -42,7 +42,7 @@ function getRunningContainers(): ContainerInfo[] {
     '--format', '{{.Names}}\t{{.Status}}\t{{.Image}}'
   ], { stdio: 'pipe' });
   
-  if (!result.ok) {
+  if (result.exitCode !== 0) {
     return [];
   }
   

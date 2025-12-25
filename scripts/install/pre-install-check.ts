@@ -187,9 +187,9 @@ async function executeTestCheck(check: ModuleCheck, env: Record<string, string>)
       shell: '/bin/bash',
       timeout: 20000
     });
-    result.passed = res.ok;
-    if (!res.ok) {
-      result.error = res.stderr || res.stdout || 'Command failed';
+    result.passed = res.exitCode === 0;
+    if (res.exitCode !== 0) {
+      result.error = (res.stderr || '').trim() || (res.stdout || '').trim() || 'Command failed';
     }
     return result;
   };
@@ -206,7 +206,7 @@ async function executeTestCheck(check: ModuleCheck, env: Record<string, string>)
     });
 
     // Check if curl returned HTTP status code (if using -w '%{http_code}')
-    const statusCode = curlRes.stdout;
+    const statusCode = (curlRes.stdout || '').trim();
     if (/^\d{3}$/.test(statusCode)) {
       // Status code returned, check if it's 2xx
       const code = parseInt(statusCode, 10);
@@ -218,13 +218,13 @@ async function executeTestCheck(check: ModuleCheck, env: Record<string, string>)
     }
 
     // No status code in output, consider it success if curl exited with 0.
-    result.passed = curlRes.ok;
-    if (!curlRes.ok) {
+    result.passed = curlRes.exitCode === 0;
+    if (curlRes.exitCode !== 0) {
       // Try to extract HTTP status code from stdout (curl might return it even on error)
-      if (/^\d{3}$/.test(curlRes.stdout)) {
-        result.error = `HTTP ${parseInt(curlRes.stdout, 10)}`;
+      if (/^\d{3}$/.test((curlRes.stdout || '').trim())) {
+        result.error = `HTTP ${parseInt((curlRes.stdout || '').trim(), 10)}`;
       } else {
-        result.error = curlRes.stderr || curlRes.stdout || 'Command failed';
+        result.error = (curlRes.stderr || '').trim() || (curlRes.stdout || '').trim() || 'Command failed';
       }
     }
     return result;
@@ -515,10 +515,10 @@ export async function runPreInstallChecks(workspaceRoot: string): Promise<PreIns
                   shell: '/bin/bash',
                   timeout: 20000
                 });
-                if (!installRes.ok) {
-                  throw new Error(installRes.stderr || installRes.stdout || 'Install command failed');
+                if (installRes.exitCode !== 0) {
+                  throw new Error((installRes.stderr || '').trim() || (installRes.stdout || '').trim() || 'Install command failed');
                 }
-                const installOutput = installRes.stdout;
+                const installOutput = (installRes.stdout || '').trim();
                 
                 if (installOutput) {
                   // Set the variable in env for this check

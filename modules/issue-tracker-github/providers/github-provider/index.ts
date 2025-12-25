@@ -79,10 +79,10 @@ function getRepoInfo(repoPath: string = process.cwd()): RepoInfo | null {
     cwd: repoPath,
     stdio: ['ignore', 'pipe', 'pipe']
   });
-  if (!res.ok) {
+  if (res.exitCode !== 0) {
     return null;
   }
-  const remoteUrl = res.stdout;
+  const remoteUrl = (res.stdout || '').trim();
   const remoteMatch = remoteUrl.match(/github\.com[\/:]([^\/]+)\/([^\/\.]+)/);
   if (!remoteMatch) {
     return null;

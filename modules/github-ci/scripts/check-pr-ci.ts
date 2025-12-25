@@ -66,8 +66,8 @@ export async function main(): Promise<void> {
       { cwd: repoPath }
     );
 
-    if (!ghResult.ok) {
-      console.error(`Error: Failed to get PR info: ${ghResult.stderr || ghResult.stdout}`);
+    if (ghResult.exitCode !== 0) {
+      console.error(`Error: Failed to get PR info: ${(ghResult.stderr || ghResult.stdout || '').toString().trim()}`);
       process.exit(1);
     }
 
