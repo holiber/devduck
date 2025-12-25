@@ -479,15 +479,26 @@ export function generateMcpJson(
     if (!item || typeof item !== 'object') continue;
     if (!item.mcpSettings) continue;
 
-    const serverName = item.name;
+    // Use serverName from mcpSettings if specified, otherwise use check name
+    const checkName = item.name;
+    const serverName = (item.mcpSettings as { serverName?: string }).serverName || checkName;
+    
     if (!serverName || typeof serverName !== 'string') {
       print(`  ${symbols.warning} MCP check is missing string 'name', skipping`, 'yellow');
       log(`MCP check missing name: ${JSON.stringify(item)}`);
       continue;
     }
 
+    // Remove serverName from mcpSettings before adding to mcp.json (it's metadata, not config)
+    const mcpSettingsWithoutServerName = { ...item.mcpSettings } as Record<string, unknown>;
+    delete mcpSettingsWithoutServerName.serverName;
+
     // Replace $VARS in mcpSettings
-    mcpServers[serverName] = replaceVariablesInObject(item.mcpSettings, env, log, print, symbols) as Record<string, unknown>;
+    mcpServers[serverName] = replaceVariablesInObject(mcpSettingsWithoutServerName, env, log, print, symbols) as Record<string, unknown>;
+    
+    if (serverName !== checkName) {
+      log(`MCP server "${serverName}" created from check "${checkName}"`);
+    }
   }
 
   if (Object.keys(mcpServers).length === 0) {
