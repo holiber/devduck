@@ -35,12 +35,28 @@ export type Participant = z.infer<typeof ParticipantSchema>;
 export const FileRefSchema = z
   .object({
     id: IdSchema,
+    /**
+     * Provider-specific file identifier (opaque).
+     * Example for TDLib: "tdlib:123456".
+     */
+    providerFileId: z.string().min(1).optional(),
     filename: z.string().min(1).optional(),
     mimeType: z.string().min(1).optional(),
     sizeBytes: z.number().int().nonnegative().optional()
   })
   .passthrough();
 export type FileRef = z.infer<typeof FileRefSchema>;
+
+export const ChatSchema = z
+  .object({
+    id: IdSchema,
+    title: z.string().min(1).optional(),
+    type: z.string().min(1).optional(), // provider-specific (private/group/channel/...)
+    participantsCount: z.number().int().nonnegative().optional(),
+    raw: z.unknown().optional()
+  })
+  .passthrough();
+export type Chat = z.infer<typeof ChatSchema>;
 
 export const ChatMessageSchema = z
   .object({
@@ -56,8 +72,15 @@ export const ChatMessageSchema = z
 export type ChatMessage = z.infer<typeof ChatMessageSchema>;
 
 // Tool names
-export const MessengerToolNameSchema = z.enum(['getChatHistory', 'downloadFile']);
+export const MessengerToolNameSchema = z.enum(['listChats', 'getChatHistory', 'downloadFile']);
 export type MessengerToolName = z.infer<typeof MessengerToolNameSchema>;
+
+export const ListChatsInputSchema = z.object({
+  limit: z.number().int().positive().max(500).default(50),
+  offset: z.number().int().nonnegative().default(0),
+  query: z.string().min(1).optional()
+});
+export type ListChatsInput = z.infer<typeof ListChatsInputSchema>;
 
 // Tool input schemas
 export const GetChatHistoryInputSchema = z.object({
@@ -78,11 +101,28 @@ export const DownloadFileInputSchema = z.object({
 });
 export type DownloadFileInput = z.infer<typeof DownloadFileInputSchema>;
 
+export const DownloadFileResultSchema = z
+  .object({
+    fileId: IdSchema,
+    cached: z.boolean(),
+    /**
+     * File path on disk. Providers are expected to store files under `.cache/devduck/messenger/`.
+     * May be in a temporary location if caching is explicitly disabled.
+     */
+    path: z.string().min(1),
+    sizeBytes: z.number().int().nonnegative().optional(),
+    mimeType: z.string().min(1).optional(),
+    sha256: z.string().min(1).optional()
+  })
+  .passthrough();
+export type DownloadFileResult = z.infer<typeof DownloadFileResultSchema>;
+
 /**
  * Mapping of tool names to their input schemas
  * This is automatically used to generate CLI commands.
  */
 export const MessengerToolInputSchemas: Record<MessengerToolName, z.ZodObject<any>> = {
+  listChats: ListChatsInputSchema,
   getChatHistory: GetChatHistoryInputSchema,
   downloadFile: DownloadFileInputSchema
 };
@@ -91,6 +131,7 @@ export const MessengerToolInputSchemas: Record<MessengerToolName, z.ZodObject<an
  * Descriptions for tools (used in CLI help)
  */
 export const MessengerToolDescriptions: Record<MessengerToolName, string> = {
+  listChats: 'List chats',
   getChatHistory: 'Get chat history by chat ID',
   downloadFile: 'Download a file by file ID'
 };
@@ -133,12 +174,14 @@ export const MessengerProviderSchema = z.object({
   version: z.string().min(1),
   manifest: MessengerProviderManifestSchema,
 
+  listChats: z.function(),
   getChatHistory: z.function(),
   downloadFile: z.function()
 });
 
 export type MessengerProvider = z.infer<typeof MessengerProviderSchema> & {
+  listChats(input: ListChatsInput): Promise<Chat[]>;
   getChatHistory(input: GetChatHistoryInput): Promise<ChatMessage[]>;
-  downloadFile(input: DownloadFileInput): Promise<Buffer>;
+  downloadFile(input: DownloadFileInput): Promise<DownloadFileResult>;
 };
 

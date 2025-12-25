@@ -13,8 +13,9 @@ Messenger module implementing a provider system for chat history and file downlo
 
 ## API
 
+- `listChats` — list available chats
 - `getChatHistory` — fetch recent messages for a chat
-- `downloadFile` — download a file by ID
+- `downloadFile` — download a file by ID (returns cached file descriptor)
 
 ## Caching
 
