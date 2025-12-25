@@ -30,6 +30,7 @@ export interface HookContext {
   cursorDir: string;
   commandsDir: string;
   rulesDir: string;
+  devduckRoot?: string;
 }
 
 export interface HookResult {
@@ -218,6 +219,32 @@ export function createHookContext(
   module: { path: string; name: string; settings?: Record<string, unknown> },
   allModules: Array<{ name: string; path: string; settings?: Record<string, unknown> }> = []
 ): HookContext {
+  // Resolve devduck root for external modules to use
+  // Try to find devduck relative to this file first (for built-in modules)
+  let devduckRoot: string | undefined = path.resolve(__dirname, '../..');
+  
+  // If we're in a workspace, try to find devduck in projects/devduck
+  const workspaceDevduck = path.join(workspaceRoot, 'projects', 'devduck');
+  if (fs.existsSync(workspaceDevduck)) {
+    devduckRoot = workspaceDevduck;
+  } else {
+    // Try to find devduck relative to workspace config
+    const configPath = path.join(workspaceRoot, 'workspace.config.json');
+    if (fs.existsSync(configPath)) {
+      try {
+        const config = JSON.parse(fs.readFileSync(configPath, 'utf8')) as { devduckPath?: string };
+        if (config.devduckPath) {
+          const resolvedDevduck = path.resolve(workspaceRoot, config.devduckPath);
+          if (fs.existsSync(resolvedDevduck)) {
+            devduckRoot = resolvedDevduck;
+          }
+        }
+      } catch {
+        // Ignore config parsing errors
+      }
+    }
+  }
+  
   return {
     workspaceRoot,
     modulePath: module.path,
@@ -231,7 +258,8 @@ export function createHookContext(
     cacheDir: path.join(workspaceRoot, '.cache', 'devduck'),
     cursorDir: path.join(workspaceRoot, '.cursor'),
     commandsDir: path.join(workspaceRoot, '.cursor', 'commands'),
-    rulesDir: path.join(workspaceRoot, '.cursor', 'rules')
+    rulesDir: path.join(workspaceRoot, '.cursor', 'rules'),
+    devduckRoot
   };
 }
 

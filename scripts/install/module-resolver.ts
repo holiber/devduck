@@ -210,25 +210,7 @@ export function resolveDependencies(moduleNames: string[], allModules: Module[])
   const resolved = new Set<string>();
   const toResolve = [...moduleNames];
   
-  // Always include core module
-  if (!toResolve.includes(CORE_MODULE_NAME)) {
-    toResolve.push(CORE_MODULE_NAME);
-  }
-  
-  // Always include cursor module (for Cursor IDE integration)
-  // Note: cursor depends on core, but we include it explicitly because
-  // it's a required module for devduck to work in Cursor IDE
-  if (!toResolve.includes(CURSOR_MODULE_NAME)) {
-    toResolve.push(CURSOR_MODULE_NAME);
-  }
-  
-  // Always include git module (essential for Git integration)
-  // Note: git depends on core, but we include it explicitly because
-  // it's an essential module for generating .gitignore
-  if (!toResolve.includes(GIT_MODULE_NAME)) {
-    toResolve.push(GIT_MODULE_NAME);
-  }
-
+  // Build module map first to check what exists
   const moduleMap = new Map<string, Module>();
   for (const module of allModules) {
     // Resolution priority: the *first* occurrence wins.
@@ -237,6 +219,25 @@ export function resolveDependencies(moduleNames: string[], allModules: Module[])
     if (!moduleMap.has(module.name)) {
       moduleMap.set(module.name, module);
     }
+  }
+  
+  // Always include core module (if it exists)
+  if (!toResolve.includes(CORE_MODULE_NAME) && moduleMap.has(CORE_MODULE_NAME)) {
+    toResolve.push(CORE_MODULE_NAME);
+  }
+  
+  // Always include cursor module (for Cursor IDE integration)
+  // Note: cursor depends on core, but we include it explicitly because
+  // it's a required module for devduck to work in Cursor IDE
+  if (!toResolve.includes(CURSOR_MODULE_NAME) && moduleMap.has(CURSOR_MODULE_NAME)) {
+    toResolve.push(CURSOR_MODULE_NAME);
+  }
+  
+  // Always include git module (essential for Git integration)
+  // Note: git depends on core, but we include it explicitly because
+  // it's an essential module for generating .gitignore
+  if (!toResolve.includes(GIT_MODULE_NAME) && moduleMap.has(GIT_MODULE_NAME)) {
+    toResolve.push(GIT_MODULE_NAME);
   }
 
   while (toResolve.length > 0) {
@@ -249,7 +250,10 @@ export function resolveDependencies(moduleNames: string[], allModules: Module[])
 
     const module = moduleMap.get(moduleName);
     if (!module) {
-      console.warn(`Warning: Module '${moduleName}' not found`);
+      // Suppress warning for 'core' module as it's optional and may not have MODULE.md
+      if (moduleName !== CORE_MODULE_NAME) {
+        console.warn(`Warning: Module '${moduleName}' not found`);
+      }
       continue;
     }
 
