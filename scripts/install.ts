@@ -1759,6 +1759,23 @@ async function installWorkspace(): Promise<void> {
     symbols
   });
   
+  // Load module checks early (before generating mcp.json) to include their mcpSettings
+  let moduleChecks: Array<{ name?: string; mcpSettings?: Record<string, unknown> }> = [];
+  try {
+    const { getAllModules, resolveModules } = await import('./install/module-resolver.js');
+    const allModules = getAllModules();
+    const resolvedModules = resolveModules(config as WorkspaceConfig, allModules);
+    moduleChecks = resolvedModules.flatMap(module => module.checks || []);
+    log(`Loaded ${moduleChecks.length} checks from ${resolvedModules.length} modules for MCP generation`);
+  } catch (error) {
+    const err = error as Error;
+    log(`Warning: Failed to load module checks for MCP generation: ${err.message}`);
+    // Continue without module checks - workspace config checks will still be used
+  }
+  
+  // Generate mcp.json before pre-install checks (some checks may need MCP configuration)
+  generateMcpJson(WORKSPACE_ROOT, { log, print, symbols, moduleChecks });
+  
   // Run pre-install checks (verify tokens before installing modules)
   // Note: Pre-install checks can also set environment variables via install commands
   print(`\n${symbols.info} Running pre-install checks...`, 'cyan');

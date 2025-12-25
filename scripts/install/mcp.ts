@@ -434,13 +434,13 @@ export async function checkMcpServers(
 }
 
 /**
- * Generate mcp.json from workspace.config.json
+ * Generate mcp.json from workspace.config.json and module checks
  */
 export function generateMcpJson(
   workspaceRoot: string,
-  options: McpOptions = {}
+  options: McpOptions & { moduleChecks?: Array<{ name?: string; mcpSettings?: Record<string, unknown> }> } = {}
 ): Record<string, Record<string, unknown>> | null {
-  const { log = () => {}, print = () => {}, symbols = { info: 'ℹ', success: '✓', warning: '⚠', error: '✗' } } = options;
+  const { log = () => {}, print = () => {}, symbols = { info: 'ℹ', success: '✓', warning: '⚠', error: '✗' }, moduleChecks = [] } = options;
   
   const configFile = path.join(workspaceRoot, 'workspace.config.json');
   const envFile = path.join(workspaceRoot, '.env');
@@ -448,7 +448,7 @@ export function generateMcpJson(
   const mcpFile = path.join(cursorDir, 'mcp.json');
   
   print(`\n${symbols.info} Generating .cursor/mcp.json...`, 'cyan');
-  log(`Generating mcp.json from workspace.config.json`);
+  log(`Generating mcp.json from workspace.config.json and module checks`);
   
   // Read workspace.config.json
   const config = readJSON(configFile);
@@ -462,15 +462,20 @@ export function generateMcpJson(
   const env = readEnvFile(envFile);
   log(`Loaded environment variables from .env file: ${Object.keys(env).join(', ')}`);
   
-  // Collect MCP servers from checks[].mcpSettings
-  if (!config.checks || !Array.isArray(config.checks)) {
-    print(`  ${symbols.info} No checks found in workspace.config.json, skipping MCP generation`, 'cyan');
-    log(`No checks found in workspace.config.json (cannot generate mcp.json)`);
+  // Collect all checks: from workspace config and from modules
+  const allChecks = [
+    ...(config.checks && Array.isArray(config.checks) ? config.checks : []),
+    ...moduleChecks
+  ];
+  
+  if (allChecks.length === 0) {
+    print(`  ${symbols.info} No checks found, skipping MCP generation`, 'cyan');
+    log(`No checks found (cannot generate mcp.json)`);
     return null;
   }
 
   const mcpServers: Record<string, Record<string, unknown>> = {};
-  for (const item of config.checks) {
+  for (const item of allChecks) {
     if (!item || typeof item !== 'object') continue;
     if (!item.mcpSettings) continue;
 
