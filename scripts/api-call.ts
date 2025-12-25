@@ -13,11 +13,8 @@
  * Outputs only the result value (not the full JSON object)
  */
 
-import { spawn } from 'child_process';
 import { fileURLToPath } from 'url';
-import path from 'path';
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+import { execCmd } from './lib/process.js';
 
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
@@ -30,28 +27,14 @@ async function main(): Promise<void> {
   }
 
   // Call api-cli with the provided arguments
-  const apiCliPath = path.join(__dirname, 'api-cli.ts');
-  const apiProcess = spawn('npx', ['tsx', apiCliPath, ...args], {
+  const apiCliPath = fileURLToPath(new URL('./api-cli.ts', import.meta.url));
+  const res = await execCmd('npx', ['tsx', apiCliPath, ...args], {
     stdio: ['inherit', 'pipe', 'pipe'],
     shell: false
   });
-
-  let stdout = '';
-  let stderr = '';
-
-  apiProcess.stdout?.on('data', (data: Buffer) => {
-    stdout += data.toString();
-  });
-
-  apiProcess.stderr?.on('data', (data: Buffer) => {
-    stderr += data.toString();
-  });
-
-  const exitCode = await new Promise<number>((resolve) => {
-    apiProcess.on('close', (code) => {
-      resolve(code || 0);
-    });
-  });
+  const stdout = String(res.stdout || '');
+  const stderr = String(res.stderr || '');
+  const exitCode = res.exitCode ?? 0;
 
   // If there was an error, output stderr and exit
   if (exitCode !== 0) {
@@ -78,17 +61,8 @@ async function main(): Promise<void> {
       // If result is not present, output the whole JSON
       process.stdout.write(output);
     } else {
-      // Output the result value directly
-      if (typeof result === 'string') {
-        process.stdout.write(result);
-      } else if (typeof result === 'boolean') {
-        process.stdout.write(result.toString());
-      } else if (typeof result === 'number') {
-        process.stdout.write(result.toString());
-      } else {
-        // For objects/arrays, output as JSON
-        process.stdout.write(JSON.stringify(result));
-      }
+      const outValue = typeof result === 'object' ? JSON.stringify(result) : String(result);
+      process.stdout.write(outValue);
     }
     
     // Always add newline for clean output
