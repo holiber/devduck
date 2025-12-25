@@ -29,25 +29,36 @@ async function ensureServiceRunning(socketPath: string): Promise<void> {
   // Start service in the background.
   const paths = getDevduckServicePaths(process.cwd());
   fs.mkdirSync(paths.logsDir, { recursive: true });
-  const outFd = fs.openSync(path.join(paths.logsDir, 'service.out.log'), 'a');
-  const errFd = fs.openSync(path.join(paths.logsDir, 'service.err.log'), 'a');
+  const outLogPath = path.join(paths.logsDir, 'service.out.log');
+  const errLogPath = path.join(paths.logsDir, 'service.err.log');
 
-  const serviceEntry = path.join(path.dirname(fileURLToPath(import.meta.url)), 'service.ts');
-  const child = spawn('npx', ['tsx', serviceEntry], {
-    detached: true,
-    stdio: ['ignore', outFd, errFd],
-    env: { ...process.env }
-  });
-  child.unref();
-  fs.closeSync(outFd);
-  fs.closeSync(errFd);
+  let outFd: number | undefined;
+  let errFd: number | undefined;
+  try {
+    outFd = fs.openSync(outLogPath, 'a');
+    errFd = fs.openSync(errLogPath, 'a');
+
+    const serviceEntry = path.join(path.dirname(fileURLToPath(import.meta.url)), 'service.ts');
+    const child = spawn('npx', ['tsx', serviceEntry], {
+      detached: true,
+      stdio: ['ignore', outFd, errFd],
+      env: { ...process.env }
+    });
+    child.unref();
+  } finally {
+    if (typeof outFd === 'number') fs.closeSync(outFd);
+    if (typeof errFd === 'number') fs.closeSync(errFd);
+  }
 
   const started = Date.now();
   while (Date.now() - started < 5_000) {
     if (await canConnect(socketPath)) return;
     await sleep(50);
   }
-  throw new Error(`Failed to start DevduckService (socket: ${socketPath})`);
+  throw new Error(
+    `Failed to start DevduckService (socket: ${socketPath}). ` +
+      `See logs: ${outLogPath} ${errLogPath}`
+  );
 }
 
 async function getFreePort(): Promise<number> {

@@ -3,7 +3,7 @@ import { spawnSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
 import { ensureDirSync } from '../fs-utils.js';
-import { isPidAlive, waitForPidExit } from '../pids.js';
+import { isPidAlive } from '../pids.js';
 import { loadSession, saveSession, type ProcessRecord, type ProcessSpec } from '../session.js';
 
 function safeName(name: string): string {

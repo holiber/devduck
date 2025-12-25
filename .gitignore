@@ -25,6 +25,8 @@ node_modules/
 # Test output files
 tests/installer/output/
 test-results/
+playwright-report/
+blob-report/
 
 # Projects (workspace-specific, not part of devduck repo)
 projects/

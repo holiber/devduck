@@ -46,7 +46,9 @@ export function startDevduckIpcServer(params: {
           msg = JSON.parse(line) as TRPCRequestMessage;
         } catch (err) {
           socket.write(JSON.stringify(toTRPCErrorResponse(null, err)) + '\n');
-          continue;
+          // Ensure client doesn't hang waiting for an id-matched response.
+          socket.end();
+          return;
         }
 
         const id = msg.id ?? null;
