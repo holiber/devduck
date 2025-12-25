@@ -37,20 +37,30 @@ function parseMockMessageNum(id: string): number | null {
   return Number.isFinite(n) && n > 0 ? n : null;
 }
 
-function mockPage(chatId: string, startNum: number, count: number): ChatMessage[] {
+function mockLatestNum(chatId: string): number {
+  const base = 400;
+  let acc = 0;
+  for (const ch of String(chatId)) acc = (acc * 33 + ch.charCodeAt(0)) % 600;
+  return base + (acc % 400); // [400..799]
+}
+
+function mockPageDescending(chatId: string, beforeNumExclusive: number, count: number): ChatMessage[] {
   const now = Date.now();
   const out: ChatMessage[] = [];
+  const latest = mockLatestNum(chatId);
+  const upperExclusive = Math.min(beforeNumExclusive, latest + 1);
   for (let i = 0; i < count; i++) {
-    const num = startNum + i;
+    const num = upperExclusive - 1 - i;
+    if (num <= 0) break;
     const id = `ya-${chatId}-${num}`;
     out.push({
       id,
       chatId,
-      date: new Date(now - (num - 1) * 45_000).toISOString(),
+      date: new Date(now - (latest - num) * 45_000).toISOString(),
       from: { id: 'ya-user-1', username: 'yandex_user', displayName: 'Yandex User' },
       text: `Mock Yandex Messenger message #${num} in chat ${chatId}`,
       files:
-        num === 2
+        num === latest - 1
           ? [
               {
                 id: `ya-file-${chatId}-1`,
@@ -120,7 +130,7 @@ const provider: MessengerProvider = {
 
   async getChatHistory(input: GetChatHistoryInput): Promise<ChatMessage[]> {
     const mode = String(process.env.YANDEX_MESSENGER_PROVIDER_MODE || 'mock').trim().toLowerCase();
-    const sinceMs = input.since ? Date.parse(input.since) : Number.NEGATIVE_INFINITY;
+    const sinceMs = input.since ? Date.parse(input.since) : Number.NaN;
 
     const out: ChatMessage[] = [];
     let cursor: string | undefined = input.beforeMessageId;
@@ -132,21 +142,25 @@ const provider: MessengerProvider = {
         ttlMs: historyTtlMs,
         compute: async () => {
           if (mode !== 'mock') return await httpNotImplemented();
+          const latest = mockLatestNum(input.chatId);
           const beforeNum = cursor ? parseMockMessageNum(cursor) : null;
-          const startNum = beforeNum ? beforeNum + 1 : 1;
-          return mockPage(input.chatId, startNum, pageSize);
+          const beforeExclusive = beforeNum ? beforeNum : latest + 1;
+          return mockPageDescending(input.chatId, beforeExclusive, pageSize);
         }
       });
 
-      const filtered =
-        Number.isFinite(sinceMs) && sinceMs > 0 ? page.filter((m) => Date.parse(m.date) >= sinceMs) : page;
+      const useSince = Number.isFinite(sinceMs);
+      const filtered = useSince ? page.filter((m) => Date.parse(m.date) >= sinceMs) : page;
 
       out.push(...filtered.slice(0, input.limit - out.length));
       if (page.length < pageSize) break;
       const last = page[page.length - 1];
       if (!last?.id) break;
       cursor = last.id;
-      if (filtered.length === 0 && input.since) break;
+      if (useSince) {
+        const oldestDateMs = Date.parse(last.date);
+        if (Number.isFinite(oldestDateMs) && oldestDateMs < sinceMs) break;
+      }
     }
 
     return out;
@@ -169,6 +183,7 @@ const provider: MessengerProvider = {
       const tmp = writeTempBufferFile({ providerName, key: cacheKey, buffer: computed.buffer });
       return {
         fileId: input.fileId,
+        originalFileId: computed.originalFileId || input.fileId,
         cached: false,
         path: tmp.path,
         sizeBytes: tmp.sizeBytes,
@@ -181,9 +196,10 @@ const provider: MessengerProvider = {
       dir: cacheDir,
       key: cacheKey,
       ttlMs: fileTtlMs,
-      compute
+      compute,
+      providerName
     });
-    return { fileId: input.fileId, ...cached };
+    return { fileId: input.fileId, originalFileId: input.fileId, ...cached };
   }
 };
 

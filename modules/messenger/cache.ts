@@ -37,6 +37,35 @@ export function getMessengerCacheDir(opts: { providerName: string; cwd?: string 
   return dir;
 }
 
+let lastEphemeralGcAtMs = 0;
+function maybeGcEphemeralDir(baseDir: string): void {
+  // Best-effort and throttled (avoid doing FS walks too often).
+  const now = Date.now();
+  if (now - lastEphemeralGcAtMs < 60_000) return;
+  lastEphemeralGcAtMs = now;
+
+  const ttlMsRaw = String(process.env.MESSENGER_EPHEMERAL_TTL_MS || '').trim();
+  const ttlMs = Math.max(0, Number.isFinite(Number(ttlMsRaw)) ? Math.floor(Number(ttlMsRaw)) : 6 * 60 * 60 * 1000);
+  if (ttlMs <= 0) return;
+
+  try {
+    const entries = fs.readdirSync(baseDir, { withFileTypes: true });
+    for (const e of entries) {
+      if (!e.isFile()) continue;
+      const p = path.join(baseDir, e.name);
+      try {
+        const st = fs.statSync(p);
+        if (!st.isFile()) continue;
+        if (now - st.mtimeMs > ttlMs) fs.unlinkSync(p);
+      } catch {
+        // ignore per-file errors
+      }
+    }
+  } catch {
+    // ignore GC errors
+  }
+}
+
 export function writeTempBufferFile(opts: { providerName: string; key: string; buffer: Buffer }): {
   path: string;
   sizeBytes: number;
@@ -44,6 +73,7 @@ export function writeTempBufferFile(opts: { providerName: string; key: string; b
 } {
   const base = path.join(os.tmpdir(), 'devduck-messenger-ephemeral', String(opts.providerName || 'unknown-provider'));
   safeMkdir(base);
+  maybeGcEphemeralDir(base);
   const name = `${sha256Hex(`${opts.key}:${Date.now()}:${process.pid}`)}.bin`;
   const filePath = path.join(base, name);
   fs.writeFileSync(filePath, opts.buffer);
@@ -131,7 +161,21 @@ export async function getOrSetFileCache(opts: {
   key: string;
   ttlMs: number;
   compute: () => Promise<{ buffer: Buffer; mimeType?: string; originalFileId?: string }>;
+  /**
+   * Provider name, used only when cache is disabled to write an ephemeral file instead of caching.
+   */
+  providerName?: string;
 }): Promise<{ path: string; cached: boolean; sizeBytes?: number; sha256?: string; mimeType?: string }> {
+  if (isMessengerCacheDisabled()) {
+    const computed = await opts.compute();
+    const tmp = writeTempBufferFile({
+      providerName: opts.providerName || 'unknown-provider',
+      key: `messenger:file:${opts.key}`,
+      buffer: computed.buffer
+    });
+    return { path: tmp.path, cached: false, sizeBytes: tmp.sizeBytes, sha256: tmp.sha256, mimeType: computed.mimeType };
+  }
+
   const inflightKey = `${opts.dir}::file::${opts.key}`;
   const existing = inflightFile.get(inflightKey) as
     | Promise<{ path: string; cached: boolean; sizeBytes?: number; sha256?: string; mimeType?: string }>

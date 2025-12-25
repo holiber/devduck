@@ -51,7 +51,14 @@ export const ChatSchema = z
   .object({
     id: IdSchema,
     title: z.string().min(1).optional(),
-    type: z.string().min(1).optional(), // provider-specific (private/group/channel/...)
+    /**
+     * Chat type. Providers should prefer these canonical values when possible.
+     * - private | group | supergroup | channel
+     * Providers may return provider-specific strings.
+     */
+    type: z
+      .union([z.enum(['private', 'group', 'supergroup', 'channel']), z.string().min(1)])
+      .optional(),
     participantsCount: z.number().int().nonnegative().optional(),
     raw: z.unknown().optional()
   })
@@ -104,6 +111,11 @@ export type DownloadFileInput = z.infer<typeof DownloadFileInputSchema>;
 export const DownloadFileResultSchema = z
   .object({
     fileId: IdSchema,
+    /**
+     * Original file identifier as provided to the tool.
+     * Useful for debugging and migrations when `fileId` is an alias/opaque id.
+     */
+    originalFileId: z.string().min(1).optional(),
     cached: z.boolean(),
     /**
      * File path on disk. Providers are expected to store files under `.cache/devduck/messenger/`.

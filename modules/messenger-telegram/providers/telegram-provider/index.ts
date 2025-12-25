@@ -37,20 +37,32 @@ function parseMockMessageNum(id: string): number | null {
   return Number.isFinite(n) && n > 0 ? n : null;
 }
 
-function mockPage(chatId: string, startNum: number, count: number): ChatMessage[] {
+function mockLatestNum(chatId: string): number {
+  // Deterministic-ish per chat, keeps "latest" stable across calls.
+  const base = 500;
+  let acc = 0;
+  for (const ch of String(chatId)) acc = (acc + ch.charCodeAt(0)) % 500;
+  return base + acc; // [500..999]
+}
+
+function mockPageDescending(chatId: string, beforeNumExclusive: number, count: number): ChatMessage[] {
   const now = Date.now();
   const out: ChatMessage[] = [];
+  const latest = mockLatestNum(chatId);
+  const upperExclusive = Math.min(beforeNumExclusive, latest + 1);
   for (let i = 0; i < count; i++) {
-    const num = startNum + i;
+    const num = upperExclusive - 1 - i;
+    if (num <= 0) break;
     const id = `tg-${chatId}-${num}`;
     out.push({
       id,
       chatId,
-      date: new Date(now - (num - 1) * 60_000).toISOString(),
+      // Higher num => newer. Distance from latest => age.
+      date: new Date(now - (latest - num) * 60_000).toISOString(),
       from: { id: 'tg-user-1', username: 'telegram_user', displayName: 'Telegram User' },
       text: `Mock Telegram message #${num} in chat ${chatId}`,
       files:
-        num === 1
+        num === latest
           ? [
               {
                 id: `tg-file-${chatId}-1`,
@@ -117,7 +129,7 @@ const provider: MessengerProvider = {
 
   async getChatHistory(input: GetChatHistoryInput): Promise<ChatMessage[]> {
     const mode = String(process.env.TELEGRAM_PROVIDER_MODE || 'mock').trim().toLowerCase();
-    const sinceMs = input.since ? Date.parse(input.since) : Number.NEGATIVE_INFINITY;
+    const sinceMs = input.since ? Date.parse(input.since) : Number.NaN;
 
     const out: ChatMessage[] = [];
     let cursor: string | undefined = input.beforeMessageId;
@@ -129,21 +141,26 @@ const provider: MessengerProvider = {
         ttlMs: historyTtlMs,
         compute: async () => {
           if (mode !== 'mock') return await tdlibNotImplemented();
+          const latest = mockLatestNum(input.chatId);
           const beforeNum = cursor ? parseMockMessageNum(cursor) : null;
-          const startNum = beforeNum ? beforeNum + 1 : 1;
-          return mockPage(input.chatId, startNum, pageSize);
+          const beforeExclusive = beforeNum ? beforeNum : latest + 1; // "before" means strictly older than this id
+          return mockPageDescending(input.chatId, beforeExclusive, pageSize);
         }
       });
 
-      const filtered =
-        Number.isFinite(sinceMs) && sinceMs > 0 ? page.filter((m) => Date.parse(m.date) >= sinceMs) : page;
+      // TDLib-like: results are newest -> oldest. Stop paging when the oldest item in the page is older than `since`.
+      const useSince = Number.isFinite(sinceMs);
+      const filtered = useSince ? page.filter((m) => Date.parse(m.date) >= sinceMs) : page;
 
       out.push(...filtered.slice(0, input.limit - out.length));
       if (page.length < pageSize) break;
       const last = page[page.length - 1];
       if (!last?.id) break;
       cursor = last.id;
-      if (filtered.length === 0 && input.since) break;
+      if (useSince) {
+        const oldestDateMs = Date.parse(last.date);
+        if (Number.isFinite(oldestDateMs) && oldestDateMs < sinceMs) break;
+      }
     }
 
     return out;
@@ -166,6 +183,7 @@ const provider: MessengerProvider = {
       const tmp = writeTempBufferFile({ providerName, key: cacheKey, buffer: computed.buffer });
       return {
         fileId: input.fileId,
+        originalFileId: computed.originalFileId || input.fileId,
         cached: false,
         path: tmp.path,
         sizeBytes: tmp.sizeBytes,
@@ -178,9 +196,10 @@ const provider: MessengerProvider = {
       dir: cacheDir,
       key: cacheKey,
       ttlMs: fileTtlMs,
-      compute
+      compute,
+      providerName
     });
-    return { fileId: input.fileId, ...cached };
+    return { fileId: input.fileId, originalFileId: input.fileId, ...cached };
   }
 };
 
