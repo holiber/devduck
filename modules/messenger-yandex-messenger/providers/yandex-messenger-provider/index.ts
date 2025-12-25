@@ -134,7 +134,12 @@ const provider: MessengerProvider = {
 
     const out: ChatMessage[] = [];
     let cursor: string | undefined = input.beforeMessageId;
+    const seenCursors = new Set<string>();
     while (out.length < input.limit) {
+      const cursorKey = cursor || 'latest';
+      if (seenCursors.has(cursorKey)) break;
+      seenCursors.add(cursorKey);
+
       const pageKey = `yandex:getChatHistoryPage:${input.chatId}:${pageSize}:${cursor || 'latest'}`;
       const page = await getOrSetJsonCache({
         dir: cacheDir,
@@ -150,6 +155,12 @@ const provider: MessengerProvider = {
       });
 
       const useSince = Number.isFinite(sinceMs);
+      if (page.length === 0) break;
+      if (useSince) {
+        const oldest = page[page.length - 1];
+        const oldestDateMs = oldest?.date ? Date.parse(oldest.date) : Number.NaN;
+        if (Number.isFinite(oldestDateMs) && oldestDateMs < sinceMs) break;
+      }
       const filtered = useSince ? page.filter((m) => Date.parse(m.date) >= sinceMs) : page;
 
       out.push(...filtered.slice(0, input.limit - out.length));
@@ -157,10 +168,6 @@ const provider: MessengerProvider = {
       const last = page[page.length - 1];
       if (!last?.id) break;
       cursor = last.id;
-      if (useSince) {
-        const oldestDateMs = Date.parse(last.date);
-        if (Number.isFinite(oldestDateMs) && oldestDateMs < sinceMs) break;
-      }
     }
 
     return out;

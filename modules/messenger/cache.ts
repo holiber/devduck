@@ -90,6 +90,36 @@ type JsonCacheEnvelope<T> = {
 const inflightJson: Map<string, Promise<unknown>> = new Map();
 const inflightFile: Map<string, Promise<unknown>> = new Map();
 
+const lastTmpGcByDirMs: Map<string, number> = new Map();
+function maybeGcTmpFiles(dir: string): void {
+  const now = Date.now();
+  const last = lastTmpGcByDirMs.get(dir) || 0;
+  if (now - last < 60_000) return;
+  lastTmpGcByDirMs.set(dir, now);
+
+  const ttlMsRaw = String(process.env.MESSENGER_CACHE_TMP_TTL_MS || '').trim();
+  const ttlMs = Math.max(0, Number.isFinite(Number(ttlMsRaw)) ? Math.floor(Number(ttlMsRaw)) : 30 * 60 * 1000);
+  if (ttlMs <= 0) return;
+
+  try {
+    const entries = fs.readdirSync(dir, { withFileTypes: true });
+    for (const e of entries) {
+      if (!e.isFile()) continue;
+      if (!e.name.includes('.tmp-')) continue;
+      const p = path.join(dir, e.name);
+      try {
+        const st = fs.statSync(p);
+        if (!st.isFile()) continue;
+        if (now - st.mtimeMs > ttlMs) fs.unlinkSync(p);
+      } catch {
+        // ignore per-file errors
+      }
+    }
+  } catch {
+    // ignore GC errors
+  }
+}
+
 export async function getOrSetJsonCache<T>(opts: {
   dir: string;
   key: string;
@@ -99,6 +129,8 @@ export async function getOrSetJsonCache<T>(opts: {
   if (isMessengerCacheDisabled()) {
     return await opts.compute();
   }
+
+  maybeGcTmpFiles(opts.dir);
 
   const inflightKey = `${opts.dir}::json::${opts.key}`;
   const existing = inflightJson.get(inflightKey) as Promise<T> | undefined;
@@ -175,6 +207,8 @@ export async function getOrSetFileCache(opts: {
     });
     return { path: tmp.path, cached: false, sizeBytes: tmp.sizeBytes, sha256: tmp.sha256, mimeType: computed.mimeType };
   }
+
+  maybeGcTmpFiles(opts.dir);
 
   const inflightKey = `${opts.dir}::file::${opts.key}`;
   const existing = inflightFile.get(inflightKey) as
