@@ -73,6 +73,22 @@ Modules can define pre-install checks that are executed before module installati
        - If `test` is provided, it will be executed only if the token is present
        - Should return HTTP status code 200 for success, other codes indicate failure
        - Use `$VAR_NAME` syntax to reference environment variables in the command
+     - `docs`: Documentation URL or message displayed when the check fails
+       - Shown in cyan below the error message to help users find token generation instructions
+       - Example: `docs: "Obtain your token here: https://docs.example.com/tokens"`
+
+2. **Test Check** (`type: "test"`):
+   - Verifies functionality or configuration by running a test command
+   - Required fields:
+     - `name`: Unique name for the check
+     - `test`: Command to execute (shell command, HTTP request, or file path check)
+   - Optional fields:
+     - `var`: Environment variable name that must be present before running the test
+     - `install`: Command to run if the variable is missing or test fails
+       - If `var` is specified and missing, the install command runs automatically
+       - The install command output is captured and used to set the variable
+       - The variable is automatically written to `.env` file for persistence
+       - Example: `install: "arc root"` to automatically set `ARCADIA_ROOT`
 
 **Example:**
 
@@ -81,16 +97,28 @@ checks:
   - type: "auth"
     var: "GITHUB_TOKEN"
     description: "GitHub API token"
+    docs: "Obtain your token here: https://github.com/settings/tokens"
     test: "curl -H 'Authorization: token $GITHUB_TOKEN' -H 'Accept: application/vnd.github.v3+json' -s -o /dev/null -w '%{http_code}' https://api.github.com/user"
+  - type: "test"
+    name: "arcadia-root-set"
+    description: "Checks that ARCADIA_ROOT is set and matches arc root output"
+    var: "ARCADIA_ROOT"
+    install: "arc root"
+    test: "sh -c 'test -n \"$ARCADIA_ROOT\" && test \"$ARCADIA_ROOT\" = \"$(arc root)\"'"
 ```
 
 **Check Execution:**
 - Checks are collected from all modules and projects before installation
-- Missing tokens are reported with their descriptions
-- Test commands are executed only if the associated token is present
-- Failed tests show HTTP status codes for debugging
+- Missing tokens are reported with their descriptions and documentation links (if `docs` field is provided)
+- For test checks with `var` and `install` fields:
+  - If the variable is missing, the install command is executed automatically
+  - The install command output is captured and used to set the variable
+  - The variable is written to `.env` file to persist it for future runs
+  - The test is then executed with the variable set
+- Test commands are executed only if the associated token is present (or was set via install command)
+- Failed tests show error messages for debugging
 - Successful checks are displayed in green
-- Installation fails if required tokens are missing or tests fail
+- Installation fails if required tokens are missing or tests fail (after attempting automatic installation)
 
 ### Module Types
 

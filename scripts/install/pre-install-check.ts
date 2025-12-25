@@ -15,6 +15,7 @@ import { URL } from 'url';
 import { execSync } from 'child_process';
 import { readJSON, writeJSON } from '../lib/config.js';
 import { readEnvFile } from '../lib/env.js';
+import { writeEnvFile } from './env.js';
 import {
   expandModuleNames,
   getAllModules,
@@ -518,8 +519,46 @@ export async function runPreInstallChecks(workspaceRoot: string): Promise<PreIns
         if (testCheckObj.var) {
           const tokenPresent = checkEnvVar(testCheckObj.var, env);
           if (!tokenPresent) {
-            check.passed = false;
-            check.error = `Required token ${testCheckObj.var} is not present`;
+            // If install command is available, try to run it to get the value
+            if (testCheckObj.install) {
+              try {
+                const installCommand = replaceEnvVarsInCommand(testCheckObj.install, env);
+                const installOutput = execSync(installCommand, {
+                  encoding: 'utf8',
+                  stdio: ['pipe', 'pipe', 'pipe'],
+                  shell: '/bin/bash',
+                  timeout: 20000
+                }).trim();
+                
+                if (installOutput) {
+                  // Set the variable in env for this check
+                  env[testCheckObj.var] = installOutput;
+                  // Also set in process.env for the test execution
+                  process.env[testCheckObj.var] = installOutput;
+                  
+                  // Write to .env file to persist the variable
+                  const envPath = path.join(workspaceRoot, '.env');
+                  const existingEnv = readEnvFile(envPath);
+                  existingEnv[testCheckObj.var] = installOutput;
+                  writeEnvFile(envPath, existingEnv);
+                  
+                  // Now execute the test check with the variable set
+                  const testCheck = await executeTestCheck(testCheckObj, env);
+                  check.passed = testCheck.passed;
+                  check.error = testCheck.error;
+                } else {
+                  check.passed = false;
+                  check.error = `Required token ${testCheckObj.var} is not present and install command returned empty output`;
+                }
+              } catch (error) {
+                const err = error as { message?: string; stderr?: Buffer | string };
+                check.passed = false;
+                check.error = `Required token ${testCheckObj.var} is not present and install command failed: ${err.message || 'Command failed'}`;
+              }
+            } else {
+              check.passed = false;
+              check.error = `Required token ${testCheckObj.var} is not present`;
+            }
           } else {
             // Execute test check
             const testCheck = await executeTestCheck(testCheckObj, env);
