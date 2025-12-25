@@ -4,6 +4,12 @@ version: 0.1.0
 description: Cursor IDE integration (commands, rules, MCP configuration)
 tags: [cursor, ide, integration]
 dependencies: [core]
+checks:
+  - type: "auth"
+    var: "CURSOR_API_KEY"
+    description: "Checks that CURSOR_API_KEY is set and cursor-agent can run in unattended mode. Get a key at https://cursor.com/dashboard?tab=integrations"
+    optional: true
+    test: "sh -c 'export CURSOR_API_KEY=\"$CURSOR_API_KEY\"; ~/.local/bin/cursor-agent -p --force \"test connection\" --model \"composer-1\" >/dev/null'"
 ---
 # Cursor Module
 
