@@ -1759,6 +1759,10 @@ async function installWorkspace(): Promise<void> {
     symbols
   });
   
+  // Re-read config from file to ensure we have the latest version (including repos)
+  // This is important because the config might have been updated by devduck-cli
+  const latestConfig = readJSON(CONFIG_FILE) || config;
+  
   // Load module checks early (before generating mcp.json) to include their mcpSettings
   // This includes both local modules and modules from external repositories
   let moduleChecks: Array<{ name?: string; mcpSettings?: Record<string, unknown> }> = [];
@@ -1768,15 +1772,19 @@ async function installWorkspace(): Promise<void> {
     
     // Load local modules
     const allModules = getAllModules();
-    const resolvedModules = resolveModules(config as WorkspaceConfig, allModules);
+    const resolvedModules = resolveModules(latestConfig as WorkspaceConfig, allModules);
     moduleChecks = resolvedModules.flatMap(module => module.checks || []);
+    print(`  ${symbols.info} Loaded ${moduleChecks.length} checks from ${resolvedModules.length} local modules for MCP generation`, 'cyan');
     log(`Loaded ${moduleChecks.length} checks from ${resolvedModules.length} local modules for MCP generation`);
     
     // Also load modules from external repositories
-    if (config.repos && config.repos.length > 0) {
+    const repos = (latestConfig as WorkspaceConfig).repos;
+    if (repos && Array.isArray(repos) && repos.length > 0) {
+      print(`  ${symbols.info} Loading ${repos.length} external repository/repositories...`, 'cyan');
       const devduckVersion = getDevduckVersion();
-      for (const repoUrl of config.repos) {
+      for (const repoUrl of repos) {
         try {
+          print(`  Loading modules from ${repoUrl} for MCP generation...`, 'cyan');
           log(`Loading modules from ${repoUrl} for MCP generation...`);
           const repoModulesPath = await loadModulesFromRepo(repoUrl, WORKSPACE_ROOT, devduckVersion);
           
@@ -1790,6 +1798,8 @@ async function installWorkspace(): Promise<void> {
                 
                 if (module && module.checks) {
                   moduleChecks.push(...module.checks);
+                  const checksWithMcp = module.checks.filter((c: any) => c.mcpSettings).length;
+                  print(`  ${symbols.success} Loaded ${module.checks.length} checks from external module ${module.name}${checksWithMcp > 0 ? ` (${checksWithMcp} with mcpSettings)` : ''}`, 'green');
                   log(`Loaded ${module.checks.length} checks from external module ${module.name}`);
                 }
               }
@@ -1797,12 +1807,14 @@ async function installWorkspace(): Promise<void> {
           }
         } catch (error) {
           const err = error as Error;
+          print(`  ${symbols.warning} Failed to load modules from ${repoUrl} for MCP generation: ${err.message}`, 'yellow');
           log(`Warning: Failed to load modules from ${repoUrl} for MCP generation: ${err.message}`);
           // Continue with other repos
         }
       }
     }
     
+    print(`  ${symbols.info} Total: Loaded ${moduleChecks.length} checks from all modules for MCP generation`, 'cyan');
     log(`Total: Loaded ${moduleChecks.length} checks from all modules for MCP generation`);
   } catch (error) {
     const err = error as Error;
