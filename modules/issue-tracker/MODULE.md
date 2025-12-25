@@ -31,7 +31,7 @@ The module defines a Zod contract that issue tracker providers must implement:
 
 - `smogcheck-provider` - Test provider (included in this module)
 - `github-provider` - GitHub Issues provider (in `issue-tracker-github` module)
-- `tracker-provider` - Yandex Tracker provider (in `ya-tracker` module)
+- Additional providers can be provided by external modules
 
 ## Provider selection
 

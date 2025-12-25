@@ -426,7 +426,7 @@ checks:
       projects: [],
       modules: [
         {
-          name: 'ya-core',
+          name: 'test-module',
           checks: [
             {
               type: 'test',

@@ -214,8 +214,8 @@ export async function resolveRepoPath(repoUrl: string, workspaceRoot: string): P
   if (parsed.type === 'arc') {
     // Arcadia: use direct filesystem path
     // Normalized path can be:
-    // - Relative to arcadia root: "junk/alex-nazarov/devduck-ya-modules"
-    // - Absolute path: "/Users/alex-nazarov/arcadia/junk/alex-nazarov/devduck-ya-modules"
+    // - Relative to arcadia root: "junk/user/repo-name"
+    // - Absolute path: "/path/to/arcadia/junk/user/repo-name"
 
     let actualRepoPath: string;
 

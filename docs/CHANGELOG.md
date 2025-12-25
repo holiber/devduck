@@ -7,16 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added - 2025-12-25
+### Changed - 2025-12-25
 
-- 📝 **Default .arcignore file for ya-arc module** - Added `arcignore.default` file to ya-arc module that is automatically used to create `.arcignore` files in workspaces
-  - If `arcignore` setting is not provided in module settings, the default file is used
-  - Ensures every workspace with ya-arc module gets a proper `.arcignore` file automatically
-
-- ✅ **MCP_STORE_PROXY_PATH check in ya-core module** - Added environment variable check for `MCP_STORE_PROXY_PATH`
-  - Verifies that `MCP_STORE_PROXY_PATH` is set and points to an executable file
-  - Provides install command suggestion if proxy_client exists but path is not set
-  - Works in conjunction with existing `mcp-proxy-compiled` check
+- 🧹 **Removed external repository references** - Removed all traces of external repositories (ya-* modules) from documentation and code
+  - Removed specific ya-* module references from ARCHITECTURE.md
+  - Updated MODULE.md files to use generic "external modules" instead of specific ya-* module names
+  - Refactored plan module to use dynamic provider discovery instead of hardcoded imports
+  - Generalize example paths and registry references
+  - Ensures the public DevDuck repository remains focused on core framework features
 
 ### Changed - 2025-12-25
 

@@ -12,7 +12,53 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { executeCommand } from '../../core/scripts/utils.js';
-import tracker from '../../ya-tracker/scripts/tracker.js';
+// TODO: Refactor to use issue-tracker API instead of hardcoded external module import
+// This should use the issue-tracker module's provider system for better modularity
+// Currently uses dynamic discovery - external modules should provide issue-tracker providers
+let tracker = null;
+async function getTracker() {
+  if (tracker) return tracker;
+  try {
+    const { discoverProvidersFromModules, getProvider } = await import('../../../scripts/lib/provider-registry.js');
+    const { resolveDevduckRoot } = await import('../../../scripts/lib/devduck-paths.js');
+    const { findWorkspaceRoot } = await import('../../../scripts/lib/workspace-root.js');
+    const workspaceRoot = findWorkspaceRoot(process.cwd());
+    const { devduckRoot } = resolveDevduckRoot({ cwd: process.cwd(), moduleDir: __dirname });
+    await discoverProvidersFromModules({ modulesDir: path.join(devduckRoot, 'modules') });
+    
+    // Discover from external repos if workspace config exists
+    if (workspaceRoot) {
+      const configPath = path.join(workspaceRoot, 'workspace.config.json');
+      if (fs.existsSync(configPath)) {
+        const { readJSON } = await import('../../../scripts/lib/config.js');
+        const config = readJSON(configPath);
+        if (config?.repos) {
+          const { loadModulesFromRepo, getDevduckVersion } = await import('../../../scripts/lib/repo-modules.js');
+          const devduckVersion = getDevduckVersion();
+          for (const repoUrl of config.repos) {
+            try {
+              const repoModulesPath = await loadModulesFromRepo(repoUrl, workspaceRoot, devduckVersion);
+              if (fs.existsSync(repoModulesPath)) {
+                await discoverProvidersFromModules({ modulesDir: repoModulesPath });
+              }
+            } catch {
+              // Skip failed repos
+            }
+          }
+        }
+      }
+    }
+    
+    const provider = getProvider('issue-tracker');
+    if (provider) {
+      tracker = provider;
+      return tracker;
+    }
+  } catch (error) {
+    // Issue tracker provider not available
+  }
+  throw new Error('Issue tracker provider not available. Please install an issue tracker provider module.');
+}
 import { getEnv } from '../../core/scripts/lib/env.js';
 import { createYargs, installEpipeHandler } from '../../../scripts/lib/cli.js';
 
@@ -197,9 +243,10 @@ function loadPlanMetadata(planDir) {
   };
 }
 
-function listMyTasks() {
+async function listMyTasks() {
   try {
-    const issues = tracker.fetchMy({ openOnly: true });
+    const trackerInstance = await getTracker();
+    const issues = trackerInstance.fetchMy({ openOnly: true });
     
     if (issues.length === 0) {
       return {
@@ -232,9 +279,10 @@ function listMyTasks() {
   }
 }
 
-function loadTaskData(issueKey) {
+async function loadTaskData(issueKey) {
   try {
-    const issue = tracker.getIssue(issueKey, { withComments: true });
+    const trackerInstance = await getTracker();
+    const issue = trackerInstance.getIssue(issueKey, { withComments: true });
     return {
       success: true,
       issue
@@ -455,9 +503,10 @@ function classifyResource(url) {
   };
 }
 
-function getIssueLinks(issueKey) {
+async function getIssueLinks(issueKey) {
   try {
-    const response = tracker.request('GET', `/v3/issues/${issueKey}/links`);
+    const trackerInstance = await getTracker();
+    const response = trackerInstance.request('GET', `/v3/issues/${issueKey}/links`);
     return JSON.parse(response);
   } catch (error) {
     // Links endpoint might not be available or issue might not have links
@@ -595,7 +644,8 @@ async function loadResourceWithRetry(planDir, resource, maxRetries = 3) {
     try {
       if (resource.type === 'ticket' && resource.ticketKey) {
         // Load ticket
-        const issue = tracker.getIssue(resource.ticketKey, { withComments: true });
+        const trackerInstance = await getTracker();
+        const issue = trackerInstance.getIssue(resource.ticketKey, { withComments: true });
         const filePath = path.join(planDir, resource.path);
         fs.writeFileSync(filePath, JSON.stringify(issue, null, 2), 'utf8');
         
