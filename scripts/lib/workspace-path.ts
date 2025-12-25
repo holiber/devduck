@@ -32,15 +32,15 @@ export function getGitRoot(cwd: string): string | null {
     cwd,
     stdio: ['ignore', 'pipe', 'pipe']
   });
-  if (!res.ok) return null;
-  const out = res.stdout;
+  if (res.exitCode !== 0) return null;
+  const out = (res.stdout || '').trim();
   return out ? out : null;
 }
 
 export function getArcadiaRoot(): string | null {
   const res = execCmdSync('arc', ['root'], { stdio: ['ignore', 'pipe', 'pipe'] });
-  if (!res.ok) return null;
-  const out = res.stdout;
+  if (res.exitCode !== 0) return null;
+  const out = (res.stdout || '').trim();
   return out ? out : null;
 }
 

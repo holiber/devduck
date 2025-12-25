@@ -38,5 +38,5 @@ const result = execCmdSync('npx', ['tsx', '--test', ...testFiles], {
   cwd: process.cwd()
 });
 
-process.exit(result.exitCode);
+process.exit(result.exitCode ?? 1);
 

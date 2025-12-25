@@ -154,7 +154,7 @@ interface DockerResult {
 
 function runDocker(args: string[]): DockerResult {
   const res = execCmdSync('docker', args, { stdio: 'pipe' });
-  return { ok: res.ok, stdout: res.stdout, stderr: res.stderr };
+  return { ok: res.exitCode === 0, stdout: String(res.stdout || ''), stderr: String(res.stderr || '') };
 }
 
 interface ContainerInfo {
