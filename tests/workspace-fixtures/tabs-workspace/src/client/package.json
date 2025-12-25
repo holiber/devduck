@@ -1,0 +1,27 @@
+{
+  "name": "tabs-workspace-client",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "rspack serve --config rspack.config.cjs --host 127.0.0.1",
+    "build": "rspack build --config rspack.config.cjs",
+    "test:e2e": "playwright test --config playwright.config.ts"
+  },
+  "dependencies": {
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.57.0",
+    "@rspack/cli": "^1.1.6",
+    "@rspack/core": "^1.1.6",
+    "@rspack/dev-server": "^1.0.10",
+    "@rspack/plugin-html": "^0.7.12",
+    "@rspack/plugin-react-refresh": "^1.0.0",
+    "@types/node": "^22.10.2",
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
+    "typescript": "^5.7.3"
+  }
+}
+

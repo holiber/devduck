@@ -1,0 +1,34 @@
+{
+  "workspaceVersion": "0.1.0",
+  "devduckPath": "./devduck",
+  "modules": ["core", "cursor"],
+  "moduleSettings": {},
+  "launch": {
+    "dev": {
+      "baseURL": "http://127.0.0.1:4020",
+      "processes": [
+        {
+          "name": "server",
+          "cwd": "src/server",
+          "command": "npm",
+          "args": ["run", "dev"],
+          "env": { "PORT": "4010" },
+          "ready": { "type": "http", "url": "http://127.0.0.1:4010/healthz" }
+        },
+        {
+          "name": "client",
+          "cwd": "src/client",
+          "command": "npm",
+          "args": ["run", "dev"],
+          "env": { "PORT": "4020", "API_BASE_URL": "http://127.0.0.1:4010" },
+          "ready": { "type": "http", "url": "http://127.0.0.1:4020/" }
+        }
+      ],
+      "smokecheck": {
+        "testFile": "src/client/e2e/tabs.spec.ts",
+        "configFile": "src/client/playwright.config.ts"
+      }
+    }
+  }
+}
+

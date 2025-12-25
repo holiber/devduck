@@ -92,24 +92,213 @@ async function waitHttpReady(url: string, timeoutMs: number): Promise<void> {
   throw new Error(`Readiness timeout: ${url}`);
 }
 
-async function cmdDev(client: ReturnType<typeof createDevduckServiceClient>) {
+function resolveReadyUrl(baseURL: string | undefined, url: string): string {
+  if (/^https?:\/\//.test(url)) return url;
+  if (!baseURL) throw new Error(`Relative ready.url "${url}" requires baseURL`);
+  return new URL(url, baseURL).toString();
+}
+
+async function runCommandToLogs(params: {
+  cwd: string;
+  command: string;
+  args: string[];
+  env: Record<string, string | undefined>;
+  logBaseName: string;
+}): Promise<{ exitCode: number; stdoutLogPath: string; stderrLogPath: string }> {
+  const paths = getDevduckServicePaths(process.cwd());
+  fs.mkdirSync(paths.logsDir, { recursive: true });
+  const stdoutLogPath = path.join(paths.logsDir, `${params.logBaseName}.out.log`);
+  const stderrLogPath = path.join(paths.logsDir, `${params.logBaseName}.err.log`);
+
+  const out = fs.createWriteStream(stdoutLogPath, { flags: 'a' });
+  const err = fs.createWriteStream(stderrLogPath, { flags: 'a' });
+
+  const child = spawn(params.command, params.args, {
+    cwd: params.cwd,
+    env: { ...process.env, ...params.env },
+    stdio: ['ignore', 'pipe', 'pipe']
+  });
+  child.stdout?.pipe(out);
+  child.stderr?.pipe(err);
+
+  const exitCode: number = await new Promise(resolve => {
+    let done = false;
+    const finish = (code: number) => {
+      if (done) return;
+      done = true;
+      out.end();
+      err.end();
+      resolve(code);
+    };
+
+    child.once('close', code => finish(code ?? 1));
+    child.once('error', () => finish(1));
+  });
+  return { exitCode, stdoutLogPath, stderrLogPath };
+}
+
+type LaunchReady = { type?: string; url?: string };
+type LaunchProcess = {
+  name: string;
+  cwd?: string;
+  command: string;
+  args?: string[];
+  env?: Record<string, string>;
+  ready?: LaunchReady;
+};
+type LaunchSmokecheck =
+  | { testFile: string; configFile?: string }
+  | { cwd?: string; command: string; args?: string[]; env?: Record<string, string> };
+type LaunchDev = { baseURL?: string; processes?: LaunchProcess[]; smokecheck?: LaunchSmokecheck };
+
+function tryReadLaunchDevFromWorkspaceConfig(cwd: string): LaunchDev | null {
+  try {
+    const configPath = path.join(cwd, 'workspace.config.json');
+    if (!fs.existsSync(configPath)) return null;
+    const raw = fs.readFileSync(configPath, 'utf8');
+    const parsed = JSON.parse(raw) as { launch?: { dev?: LaunchDev } };
+    const dev = parsed?.launch?.dev;
+    if (!dev || typeof dev !== 'object') return null;
+    return dev;
+  } catch {
+    return null;
+  }
+}
+
+async function cmdDev(
+  client: ReturnType<typeof createDevduckServiceClient>,
+  opts?: { skipSmokecheck?: boolean }
+) {
+  const launchDev = tryReadLaunchDevFromWorkspaceConfig(process.cwd());
   const session = await client.process.readSession.query();
   const status = await client.process.status.query();
   const serverRunning = status.processes.find(p => p.name === 'server')?.running ?? false;
-  const clientRunning = status.processes.find(p => p.name === 'client')?.running ?? false;
 
   let baseURL = session.baseURL;
-  if (!baseURL || !serverRunning) {
+  if (launchDev?.baseURL) {
+    baseURL = launchDev.baseURL;
+    await client.process.setBaseURL.mutate({ baseURL });
+  } else if (!baseURL || !serverRunning) {
     const port = await getFreePort();
     baseURL = `http://127.0.0.1:${port}`;
     await client.process.setBaseURL.mutate({ baseURL });
+  }
+
+  if (launchDev?.processes?.length) {
+    for (const p of launchDev.processes) {
+      const running = status.processes.find(s => s.name === p.name)?.running ?? false;
+      if (running) continue;
+      await client.process.start.mutate({
+        name: p.name,
+        command: p.command,
+        args: p.args ?? [],
+        cwd: p.cwd ? path.resolve(process.cwd(), p.cwd) : undefined,
+        env: p.env ?? {}
+      });
+    }
+
+    for (const p of launchDev.processes) {
+      const ready = p.ready;
+      if (ready?.type === 'http' && ready.url) {
+        await waitHttpReady(resolveReadyUrl(baseURL, ready.url), 120_000);
+      }
+    }
+
+    const smoke = launchDev.smokecheck;
+    if (smoke && !opts?.skipSmokecheck) {
+      if ('testFile' in smoke) {
+        const configFile = smoke.configFile ? path.resolve(process.cwd(), smoke.configFile) : undefined;
+        const result = await client.playwright.runSmokecheck.mutate({
+          testFile: path.resolve(process.cwd(), smoke.testFile),
+          baseURL: baseURL || '',
+          configFile
+        });
+
+        if (!result.ok) {
+          // eslint-disable-next-line no-console
+          console.error(
+            JSON.stringify(
+              {
+                ok: false,
+                exitCode: result.exitCode,
+                logs: {
+                  playwrightStdout: result.stdoutLogPath,
+                  playwrightStderr: result.stderrLogPath,
+                  browserConsole: (await client.playwright.ensureBrowserConsoleLogging.mutate()).logPath
+                }
+              },
+              null,
+              2
+            )
+          );
+          process.exitCode = result.exitCode || 1;
+          return;
+        }
+      } else {
+        const browserConsole = (await client.playwright.ensureBrowserConsoleLogging.mutate()).logPath;
+        const cwd = smoke.cwd ? path.resolve(process.cwd(), smoke.cwd) : process.cwd();
+        const res = await runCommandToLogs({
+          cwd,
+          command: smoke.command,
+          args: smoke.args ?? [],
+          env: {
+            CI: '1',
+            BASE_URL: baseURL,
+            BROWSER_CONSOLE_LOG_PATH: browserConsole,
+            PW_TEST_HTML_REPORT_OPEN: 'never',
+            ...(smoke.env ?? {})
+          },
+          logBaseName: 'launch-smokecheck'
+        });
+        if (res.exitCode !== 0) {
+          // eslint-disable-next-line no-console
+          console.error(
+            JSON.stringify(
+              {
+                ok: false,
+                exitCode: res.exitCode,
+                logs: {
+                  smokecheckStdout: res.stdoutLogPath,
+                  smokecheckStderr: res.stderrLogPath,
+                  browserConsole
+                }
+              },
+              null,
+              2
+            )
+          );
+          process.exitCode = res.exitCode || 1;
+          return;
+        }
+      }
+    }
+
+    const logPath = (await client.playwright.ensureBrowserConsoleLogging.mutate()).logPath;
+    // eslint-disable-next-line no-console
+    console.log(
+      JSON.stringify(
+        {
+          ok: true,
+          baseURL,
+          logs: {
+            browserConsole: logPath
+          }
+        },
+        null,
+        2
+      )
+    );
+    return;
   }
 
   const fixturesDir = path.join(process.cwd(), 'tests', 'devduck-service', 'fixtures');
   const serverScript = path.join(fixturesDir, 'http-server.mjs');
   const loggyScript = path.join(fixturesDir, 'loggy-process.mjs');
 
-  if (!serverRunning) {
+  const legacyServerRunning = status.processes.find(p => p.name === 'server')?.running ?? false;
+  const legacyClientRunning = status.processes.find(p => p.name === 'client')?.running ?? false;
+
+  if (!legacyServerRunning) {
     const url = new URL(baseURL);
     await client.process.start.mutate({
       name: 'server',
@@ -119,7 +308,7 @@ async function cmdDev(client: ReturnType<typeof createDevduckServiceClient>) {
     });
   }
 
-  if (!clientRunning) {
+  if (!legacyClientRunning) {
     await client.process.start.mutate({
       name: 'client',
       command: process.execPath,
@@ -194,6 +383,47 @@ async function cmdSmokecheck(client: ReturnType<typeof createDevduckServiceClien
   process.exitCode = result.exitCode;
 }
 
+async function cmdSmokecheckFromConfig(client: ReturnType<typeof createDevduckServiceClient>) {
+  const session = await client.process.readSession.query();
+  if (!session.baseURL) {
+    await cmdDev(client, { skipSmokecheck: true });
+  }
+  const session2 = await client.process.readSession.query();
+  const baseURL = session2.baseURL;
+  if (!baseURL) throw new Error('No baseURL in session (run `dev` first)');
+
+  const launchDev = tryReadLaunchDevFromWorkspaceConfig(process.cwd());
+  const smoke = launchDev?.smokecheck;
+  if (!smoke) throw new Error('No launch.dev.smokecheck in workspace.config.json');
+
+  if ('testFile' in smoke) {
+    const result = await client.playwright.runSmokecheck.mutate({
+      testFile: path.resolve(process.cwd(), smoke.testFile),
+      baseURL,
+      configFile: smoke.configFile ? path.resolve(process.cwd(), smoke.configFile) : undefined
+    });
+    process.exitCode = result.exitCode;
+    return;
+  }
+
+  const browserConsole = (await client.playwright.ensureBrowserConsoleLogging.mutate()).logPath;
+  const cwd = smoke.cwd ? path.resolve(process.cwd(), smoke.cwd) : process.cwd();
+  const res = await runCommandToLogs({
+    cwd,
+    command: smoke.command,
+    args: smoke.args ?? [],
+    env: {
+      CI: '1',
+      BASE_URL: baseURL,
+      BROWSER_CONSOLE_LOG_PATH: browserConsole,
+      PW_TEST_HTML_REPORT_OPEN: 'never',
+      ...(smoke.env ?? {})
+    },
+    logBaseName: 'launch-smokecheck'
+  });
+  process.exitCode = res.exitCode;
+}
+
 async function cmdStatus(client: ReturnType<typeof createDevduckServiceClient>) {
   const status = await client.process.status.query();
   const session = await client.process.readSession.query();
@@ -223,7 +453,10 @@ async function main(argv = process.argv): Promise<void> {
   }
   if (command === 'smokecheck') {
     const file = args[1];
-    if (!file) throw new Error('Usage: smokecheck <path-to-test>');
+    if (!file) {
+      await cmdSmokecheckFromConfig(client);
+      return;
+    }
     await cmdSmokecheck(client, path.resolve(process.cwd(), file));
     return;
   }
@@ -236,7 +469,9 @@ async function main(argv = process.argv): Promise<void> {
     return;
   }
 
-  throw new Error(`Unknown command: ${command || '(empty)'} (expected: dev | smokecheck <file> | status | stop [name])`);
+  throw new Error(
+    `Unknown command: ${command || '(empty)'} (expected: dev | smokecheck [file] | status | stop [name])`
+  );
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
