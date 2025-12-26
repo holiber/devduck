@@ -1,5 +1,5 @@
-# Bots
+# DevDuck
 
-- Lead
-- Ops
-- CursorCoder
+- Lead (team coordinator)
+- Ops (tokens/store/heartbeat ops)
+- CursorCoder (implements most code)
