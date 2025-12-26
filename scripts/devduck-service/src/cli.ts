@@ -439,6 +439,97 @@ async function cmdStop(client: ReturnType<typeof createDevduckServiceClient>, na
   }
 }
 
+function splitByDoubleDash(args: string[]): { before: string[]; after: string[] } {
+  const idx = args.indexOf('--');
+  if (idx < 0) return { before: args, after: [] };
+  return { before: args.slice(0, idx), after: args.slice(idx + 1) };
+}
+
+function parseProcFlags(args: string[]): { name?: string; cwd?: string; timeoutMs?: number; env: Record<string, string> } {
+  const env: Record<string, string> = {};
+  let name: string | undefined;
+  let cwd: string | undefined;
+  let timeoutMs: number | undefined;
+
+  for (let i = 0; i < args.length; i += 1) {
+    const a = args[i] || '';
+    if (a === '--name') {
+      name = args[i + 1];
+      i += 1;
+      continue;
+    }
+    if (a === '--cwd') {
+      cwd = args[i + 1];
+      i += 1;
+      continue;
+    }
+    if (a === '--timeout-ms') {
+      const raw = args[i + 1];
+      const n = Number(raw);
+      if (!Number.isFinite(n) || n <= 0) throw new Error(`Invalid --timeout-ms "${raw}" (expected positive number)`);
+      timeoutMs = Math.floor(n);
+      i += 1;
+      continue;
+    }
+    if (a === '--env') {
+      const kv = args[i + 1] || '';
+      const eq = kv.indexOf('=');
+      if (eq <= 0) throw new Error(`Invalid --env "${kv}" (expected KEY=VALUE)`);
+      const k = kv.slice(0, eq).trim();
+      const v = kv.slice(eq + 1);
+      if (!k) throw new Error(`Invalid --env "${kv}" (empty key)`);
+      env[k] = v;
+      i += 1;
+      continue;
+    }
+  }
+  return { name, cwd, timeoutMs, env };
+}
+
+async function cmdProcStart(client: ReturnType<typeof createDevduckServiceClient>, argvTail: string[]) {
+  // Usage:
+  //   devduck:launch proc-start --name <name> [--cwd <dir>] [--env KEY=VALUE ...] -- <command> [args...]
+  const { before, after } = splitByDoubleDash(argvTail);
+  const flags = parseProcFlags(before);
+  const name = (flags.name || '').trim();
+  if (!name) throw new Error('proc-start requires --name <name>');
+  const command = after[0];
+  if (!command) throw new Error('proc-start requires command after "--"');
+  if (command.startsWith('-')) throw new Error(`proc-start invalid command "${command}" (did you forget to pass "-- <command> ...")?`);
+  const args = after.slice(1);
+
+  const record = await client.process.start.mutate({
+    name,
+    command,
+    args,
+    cwd: flags.cwd ? path.resolve(process.cwd(), flags.cwd) : undefined,
+    env: flags.env
+  });
+
+  // eslint-disable-next-line no-console
+  console.log(JSON.stringify({ ok: true, record }, null, 2));
+}
+
+async function cmdProcStop(client: ReturnType<typeof createDevduckServiceClient>, argvTail: string[]) {
+  // Usage:
+  //   devduck:launch proc-stop --name <name> [--timeout-ms 2000]
+  //   devduck:launch proc-stop <name>
+  const namePos = argvTail.find(a => a && !a.startsWith('--'));
+  const flags = parseProcFlags(argvTail);
+  const name = (flags.name || namePos || '').trim();
+  if (!name) throw new Error('proc-stop requires --name <name> or positional <name>');
+  const res = await client.process.stop.mutate({ name, timeoutMs: flags.timeoutMs ?? 2_000 });
+  // eslint-disable-next-line no-console
+  console.log(JSON.stringify({ ok: true, ...res }, null, 2));
+}
+
+async function cmdProcStatus(client: ReturnType<typeof createDevduckServiceClient>) {
+  const status = await client.process.status.query();
+  const session = await client.process.readSession.query();
+  // eslint-disable-next-line no-console
+  console.log(JSON.stringify({ ok: true, status, session }, null, 2));
+}
+
 async function main(argv = process.argv): Promise<void> {
   const paths = getDevduckServicePaths(process.cwd());
   const args = argv.slice(2);
@@ -468,9 +559,22 @@ async function main(argv = process.argv): Promise<void> {
     await cmdStop(client, args[1]);
     return;
   }
+  if (command === 'proc-start') {
+    await cmdProcStart(client, args.slice(1));
+    return;
+  }
+  if (command === 'proc-stop') {
+    await cmdProcStop(client, args.slice(1));
+    return;
+  }
+  if (command === 'proc-status') {
+    await cmdProcStatus(client);
+    return;
+  }
 
   throw new Error(
-    `Unknown command: ${command || '(empty)'} (expected: dev | smokecheck [file] | status | stop [name])`
+    `Unknown command: ${command || '(empty)'} ` +
+      `(expected: dev | smokecheck [file] | status | stop [name] | proc-start | proc-stop | proc-status)`
   );
 }
 

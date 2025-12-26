@@ -11,8 +11,10 @@
   "scripts": {
     "install:check": "tsx scripts/install.ts",
     "postinstall": "npx playwright install chromium",
+    "api": "tsx scripts/api-cli.ts",
     "devduck:service": "tsx scripts/devduck-service/src/service.ts",
     "devduck:launch": "tsx scripts/devduck-service/src/cli.ts",
+    "tasks": "node tools/tasks.js",
     "test": "tsx scripts/run-tests.ts"
   },
   "dependencies": {
