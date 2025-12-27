@@ -78,7 +78,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `<workspace>/modules/`
   - `<workspace>/projects/*/modules/`
   - DevDuck built-in `modules/`
-- 🗂️ **Persist resolved module paths** - Installer now records installed module name → path mapping in `.cache/install-check.json` (`installedModules`) for downstream tooling.
+- 🗂️ **Persist resolved module paths** - Installer now records installed module name → path mapping in `.cache/install-state.json` (`installedModules`) for downstream tooling.
 
 ### Added - 2025-12-24
 

@@ -129,7 +129,7 @@ if (WORKSPACE_PATH) {
 
 const CONFIG_FILE = path.join(WORKSPACE_ROOT, 'workspace.config.json');
 const CACHE_DIR = path.join(WORKSPACE_ROOT, '.cache');
-const CACHE_FILE = path.join(CACHE_DIR, 'install-check.json');
+// NOTE: `.cache/install-check.json` is deprecated; use `.cache/install-state.json` instead.
 const LOG_FILE = path.join(CACHE_DIR, 'install.log');
 const ENV_FILE = path.join(WORKSPACE_ROOT, '.env');
 const CURSOR_DIR = path.join(WORKSPACE_ROOT, '.cursor');
@@ -1851,8 +1851,7 @@ async function installWorkspace(): Promise<void> {
   // Step 7: Verify installation
   const step7Result = await runStep7VerifyInstallation(WORKSPACE_ROOT, PROJECT_ROOT, log, AUTO_YES);
 
-  // Persist minimal, test-friendly installation results.
-  // Installer tests expect `.cache/install-check.json` to exist and contain `installedModules`.
+  // Persist installation results into unified `.cache/install-state.json`.
   try {
     const installedModules: Record<string, string> = {};
     if (step5Result?.modules) {
@@ -1868,22 +1867,7 @@ async function installWorkspace(): Promise<void> {
       fs.mkdirSync(CACHE_DIR, { recursive: true });
     }
 
-    // Write `.cache/install-check.json` (used by tests and by other tooling).
-    writeJSON(CACHE_FILE, {
-      installedAt: new Date().toISOString(),
-      installedModules,
-      steps: {
-        'check-env': step1Result,
-        'download-repos': step2Result,
-        'download-projects': step3Result,
-        'check-env-again': step4Result,
-        'setup-modules': step5Result,
-        'setup-projects': step6Result,
-        'verify-installation': step7Result
-      }
-    });
-
-    // Also update unified install-state.json for `--status` compatibility (best effort).
+    // Update unified install-state.json (best effort).
     const { loadInstallState, saveInstallState } = await import('./install/install-state.js');
     const state = loadInstallState(WORKSPACE_ROOT);
     state.installedModules = installedModules;
@@ -1891,7 +1875,7 @@ async function installWorkspace(): Promise<void> {
     saveInstallState(WORKSPACE_ROOT, state);
   } catch (error) {
     const err = error as Error;
-    log(`WARNING: Failed to persist install-check.json/install-state.json: ${err.message}`);
+    log(`WARNING: Failed to persist install-state.json: ${err.message}`);
   }
   
   // Install project scripts to workspace package.json
