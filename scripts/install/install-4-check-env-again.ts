@@ -12,6 +12,7 @@ import { print, symbols } from '../utils.js';
 import { collectAllEnvRequirements, checkEnvVariables, loadModulesForChecks, loadProjectsForChecks } from './install-common.js';
 import { markStepCompleted, type CheckEnvResult, getExecutedChecks } from './install-state.js';
 import type { WorkspaceConfig } from '../schemas/workspace-config.zod.js';
+import type { InstallContext, StepOutcome } from './runner.js';
 
 export interface CheckEnvAgainStepResult {
   validationStatus: 'ok' | 'needs_input' | 'failed';
@@ -206,5 +207,16 @@ export async function runStep4CheckEnvAgain(
   }
   
   return result;
+}
+
+export async function installStep4CheckEnvAgain(ctx: InstallContext): Promise<StepOutcome> {
+  const res = await runStep4CheckEnvAgain(ctx.workspaceRoot, ctx.projectRoot, (m) => ctx.logger.info(m));
+  if (res.validationStatus === 'needs_input') {
+    return { status: 'needs_input', message: 'Missing required environment variables' };
+  }
+  if (res.validationStatus === 'failed') {
+    return { status: 'failed', error: 'Environment check failed' };
+  }
+  return { status: 'ok' };
 }
 

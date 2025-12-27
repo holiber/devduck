@@ -17,6 +17,9 @@ import { generateMcpJson, checkMcpServers } from './install/mcp.js';
 import { processCheck } from './install/process-check.js';
 import type { WorkspaceConfig } from './schemas/workspace-config.zod.js';
 import { fileURLToPath } from 'url';
+import { createInstallLogger } from './install/logger.js';
+import { runInstall, type InstallContext, type InstallStep } from './install/runner.js';
+import type { InstallLogger } from './install/logger.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -140,8 +143,7 @@ const PROJECTS_DIR = path.join(WORKSPACE_ROOT, 'projects');
 const TIER_ORDER = ['pre-install', 'install', 'live', 'pre-test', 'tests'];
 const DEFAULT_TIER = 'pre-install';
 
-// Log file stream
-let logStream: fs.WriteStream | null = null;
+let installLogger: InstallLogger | null = null;
 
 // CLI flags
 const AUTO_YES = argv.y || argv.yes || argv['non-interactive'] || argv.unattended;
@@ -158,21 +160,21 @@ function initLogging() {
   if (!fs.existsSync(CACHE_DIR)) {
     fs.mkdirSync(CACHE_DIR, { recursive: true });
   }
-  
-  // Open log file (overwrite on each run)
-  logStream = fs.createWriteStream(LOG_FILE, { flags: 'w' });
-  
-  log(`\n=== Installation check started at ${new Date().toISOString()} ===\n`);
+
+  // Universal pino-compatible logger (levels-only), file sink only.
+  // Keep the same log file location.
+  installLogger = createInstallLogger(WORKSPACE_ROOT, { filePath: LOG_FILE });
+  log(`install.start`);
 }
 
 /**
  * Write to log file
  */
 function log(message: string): void {
-  const timestamp = new Date().toISOString();
-  if (logStream) {
-    logStream.write(`[${timestamp}] ${message}\n`);
-  }
+  // Backward-compatible helper for existing code paths.
+  // Prefer ctx.logger in new runner/steps.
+  if (!installLogger) return;
+  installLogger.info(message);
 }
 
 
@@ -1412,12 +1414,7 @@ async function runSelectedChecks(checkNames: string[], testOnly = false): Promis
   
   log(`\n=== Check execution completed at ${new Date().toISOString()} ===\n`);
   
-  // Close log stream
-  if (logStream) {
-    await new Promise((resolve) => {
-      logStream.end(resolve);
-    });
-  }
+  // File logger uses append-only writes; no stream to close.
   
   process.exit(failed > 0 ? 1 : 0);
 }
@@ -1804,78 +1801,81 @@ async function installWorkspace(): Promise<void> {
   
   // Generate mcp.json before step 1 (some checks may need MCP configuration)
   generateMcpJson(WORKSPACE_ROOT, { log, print, symbols, moduleChecks });
-  
-  // Import step functions
-  const { runStep1CheckEnv } = await import('./install/install-1-check-env.js');
-  const { runStep2DownloadRepos } = await import('./install/install-2-download-repos.js');
-  const { runStep3DownloadProjects } = await import('./install/install-3-download-projects.js');
-  const { runStep4CheckEnvAgain } = await import('./install/install-4-check-env-again.js');
-  const { runStep5SetupModules } = await import('./install/install-5-setup-modules.js');
-  const { runStep6SetupProjects } = await import('./install/install-6-setup-projects.js');
-  const { runStep7VerifyInstallation } = await import('./install/install-7-verify-installation.js');
-  
-  // Step 1: Check environment variables
-  const step1Result = await runStep1CheckEnv(WORKSPACE_ROOT, PROJECT_ROOT, log);
-  if (step1Result.validationStatus === 'needs_input') {
+
+  // Use the unified runner for the step-based installer.
+  const {
+    installStep1CheckEnv,
+    installStep2DownloadRepos,
+    installStep3DownloadProjects,
+    installStep4CheckEnvAgain,
+    installStep5SetupModules,
+    installStep6SetupProjects,
+    installStep7VerifyInstallation
+  } = await import('./install/index.js');
+
+  const logger = installLogger ?? createInstallLogger(WORKSPACE_ROOT, { filePath: LOG_FILE });
+
+  const ctx: InstallContext = {
+    workspaceRoot: WORKSPACE_ROOT,
+    projectRoot: PROJECT_ROOT,
+    config: latestConfig,
+    autoYes: AUTO_YES,
+    logger
+  };
+
+  const steps: InstallStep[] = [
+    {
+      id: 'check-env',
+      title: 'Check Environment Variables',
+      description: 'Verify required env variables exist in config/modules/projects.',
+      run: installStep1CheckEnv
+    },
+    {
+      id: 'download-repos',
+      title: 'Download Repositories',
+      description: 'Clone or update external repositories under devduck/.',
+      run: installStep2DownloadRepos
+    },
+    {
+      id: 'download-projects',
+      title: 'Download Projects',
+      description: 'Clone or link projects into projects/.',
+      run: installStep3DownloadProjects
+    },
+    {
+      id: 'check-env-again',
+      title: 'Check Environment Again',
+      description: 'Re-check env after repos/projects are available.',
+      run: installStep4CheckEnvAgain
+    },
+    {
+      id: 'setup-modules',
+      title: 'Setup Modules',
+      description: 'Run module hooks and checks.',
+      run: installStep5SetupModules
+    },
+    {
+      id: 'setup-projects',
+      title: 'Setup Projects',
+      description: 'Run project checks and finalize setup.',
+      run: installStep6SetupProjects
+    },
+    {
+      id: 'verify-installation',
+      title: 'Verify Installation',
+      description: 'Run verification checks.',
+      run: installStep7VerifyInstallation
+    }
+  ];
+
+  const result = await runInstall(steps, ctx);
+  if (result.status === 'paused') {
     print(`\n${symbols.warning} Installation paused: Please set missing environment variables and re-run`, 'yellow');
     return;
   }
-  if (step1Result.validationStatus === 'failed') {
-    print(`\n${symbols.error} Installation failed: Environment check failed`, 'red');
+  if (result.status === 'failed') {
+    print(`\n${symbols.error} Installation failed: ${result.error}`, 'red');
     process.exit(1);
-  }
-  
-  // Step 2: Download repositories
-  const step2Result = await runStep2DownloadRepos(WORKSPACE_ROOT, log);
-  
-  // Step 3: Download projects
-  const step3Result = await runStep3DownloadProjects(WORKSPACE_ROOT, log);
-  
-  // Step 4: Check environment again (after modules/projects loaded)
-  const step4Result = await runStep4CheckEnvAgain(WORKSPACE_ROOT, PROJECT_ROOT, log);
-  if (step4Result.validationStatus === 'needs_input') {
-    print(`\n${symbols.warning} Installation paused: Please set missing environment variables and re-run`, 'yellow');
-    return;
-  }
-  if (step4Result.validationStatus === 'failed') {
-    print(`\n${symbols.error} Installation failed: Environment check failed`, 'red');
-    process.exit(1);
-  }
-  
-  // Step 5: Setup modules
-  const step5Result = await runStep5SetupModules(WORKSPACE_ROOT, PROJECT_ROOT, log, AUTO_YES);
-  
-  // Step 6: Setup projects
-  const step6Result = await runStep6SetupProjects(WORKSPACE_ROOT, PROJECT_ROOT, log, AUTO_YES);
-  
-  // Step 7: Verify installation
-  const step7Result = await runStep7VerifyInstallation(WORKSPACE_ROOT, PROJECT_ROOT, log, AUTO_YES);
-
-  // Persist installation results into unified `.cache/install-state.json`.
-  try {
-    const installedModules: Record<string, string> = {};
-    if (step5Result?.modules) {
-      for (const mod of step5Result.modules) {
-        if (mod?.name && mod?.path) {
-          installedModules[mod.name] = mod.path;
-        }
-      }
-    }
-
-    // Ensure .cache exists (it should, but keep it defensive).
-    if (!fs.existsSync(CACHE_DIR)) {
-      fs.mkdirSync(CACHE_DIR, { recursive: true });
-    }
-
-    // Update unified install-state.json (best effort).
-    const { loadInstallState, saveInstallState } = await import('./install/install-state.js');
-    const state = loadInstallState(WORKSPACE_ROOT);
-    state.installedModules = installedModules;
-    state.installedAt = new Date().toISOString();
-    saveInstallState(WORKSPACE_ROOT, state);
-  } catch (error) {
-    const err = error as Error;
-    log(`WARNING: Failed to persist install-state.json: ${err.message}`);
   }
   
   // Install project scripts to workspace package.json
@@ -1947,14 +1947,6 @@ async function main(): Promise<void> {
     initLogging();
     print(`\n${symbols.search} Installing workspace...\n`, 'blue');
     await installWorkspace();
-    
-    // Close log stream
-    if (logStream) {
-      await new Promise((resolve) => {
-        logStream.end(resolve);
-      });
-    }
-    
     process.exit(0);
   }
   
@@ -2046,19 +2038,9 @@ async function main(): Promise<void> {
   const step1Result = await runStep1CheckEnv(WORKSPACE_ROOT, PROJECT_ROOT, log);
   if (step1Result.validationStatus === 'needs_input') {
     // Not a failure, but we must not continue with installation checks until tokens are provided.
-    if (logStream) {
-      await new Promise((resolve) => {
-        logStream.end(resolve);
-      });
-    }
     process.exit(0);
   }
   if (step1Result.validationStatus === 'failed') {
-    if (logStream) {
-      await new Promise((resolve) => {
-        logStream.end(resolve);
-      });
-    }
     process.exit(1);
   }
   
@@ -2071,19 +2053,9 @@ async function main(): Promise<void> {
   // Step 4: Check environment again
   const step4Result = await runStep4CheckEnvAgain(WORKSPACE_ROOT, PROJECT_ROOT, log);
   if (step4Result.validationStatus === 'needs_input') {
-    if (logStream) {
-      await new Promise((resolve) => {
-        logStream.end(resolve);
-      });
-    }
     process.exit(0);
   }
   if (step4Result.validationStatus === 'failed') {
-    if (logStream) {
-      await new Promise((resolve) => {
-        logStream.end(resolve);
-      });
-    }
     process.exit(1);
   }
   
@@ -2225,12 +2197,7 @@ async function main(): Promise<void> {
   const checksFailed = allChecks.filter(c => c.passed === false).length;
   const hasFailures = checksFailed > 0 || mcpRequiredFailed > 0;
   
-  // Close log stream and wait for it to finish before exiting
-  if (logStream) {
-    await new Promise((resolve) => {
-      logStream.end(resolve);
-    });
-  }
+  // Logger uses append-only writes; no stream to close.
   
   if (hasFailures) {
     process.exit(1);
@@ -2241,15 +2208,6 @@ async function main(): Promise<void> {
 main().catch(async (error) => {
   const err = error as Error;
   print(`\n${symbols.error} Fatal error: ${err.message}`, 'red');
-  if (logStream) {
-    log(`FATAL ERROR: ${err.message}\n${err.stack}`);
-    await new Promise<void>((resolve) => {
-      if (logStream) {
-        logStream.end(() => resolve());
-      } else {
-        resolve();
-      }
-    });
-  }
+  log(`FATAL ERROR: ${err.message}\n${err.stack}`);
   process.exit(1);
 });

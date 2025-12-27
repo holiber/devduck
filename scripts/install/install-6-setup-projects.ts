@@ -15,6 +15,7 @@ import { markStepCompleted, type ProjectResult, getExecutedChecks, trackCheckExe
 import { processCheck } from './process-check.js';
 import type { WorkspaceConfig } from '../schemas/workspace-config.zod.js';
 import type { CheckItem, CheckResult } from './types.js';
+import type { InstallContext, StepOutcome } from './runner.js';
 
 export interface SetupProjectsStepResult {
   projects: ProjectResult[];
@@ -213,5 +214,10 @@ export async function runStep6SetupProjects(
   print(`  ${symbols.success} Step 6 completed`, 'green');
   
   return result;
+}
+
+export async function installStep6SetupProjects(ctx: InstallContext): Promise<StepOutcome> {
+  await runStep6SetupProjects(ctx.workspaceRoot, ctx.projectRoot, (m) => ctx.logger.info(m), ctx.autoYes);
+  return { status: 'ok' };
 }
 

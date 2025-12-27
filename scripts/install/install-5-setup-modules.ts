@@ -21,6 +21,7 @@ import { getAllModules, getAllModulesFromDirectory, expandModuleNames, resolveDe
 import { loadModulesFromRepo, getDevduckVersion } from '../lib/repo-modules.js';
 import type { WorkspaceConfig } from '../schemas/workspace-config.zod.js';
 import type { CheckItem, CheckResult } from './types.js';
+import type { InstallContext, StepOutcome } from './runner.js';
 
 export interface SetupModulesStepResult {
   modules: ModuleResult[];
@@ -277,5 +278,23 @@ export async function runStep5SetupModules(
   print(`  ${symbols.success} Step 5 completed`, 'green');
   
   return result;
+}
+
+export async function installStep5SetupModules(ctx: InstallContext): Promise<StepOutcome<{ installedModules: Record<string, string> }>> {
+  const res = await runStep5SetupModules(
+    ctx.workspaceRoot,
+    ctx.projectRoot,
+    (m) => ctx.logger.info(m),
+    ctx.autoYes
+  );
+
+  const installedModules: Record<string, string> = {};
+  if (res?.modules) {
+    for (const mod of res.modules) {
+      if (mod?.name && mod?.path) installedModules[mod.name] = mod.path;
+    }
+  }
+
+  return { status: 'ok', result: { installedModules } };
 }
 

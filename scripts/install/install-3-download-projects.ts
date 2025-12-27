@@ -14,6 +14,7 @@ import { readEnvFile } from '../lib/env.js';
 import { print, symbols } from '../utils.js';
 import { markStepCompleted, type ProjectResult } from './install-state.js';
 import type { WorkspaceConfig } from '../schemas/workspace-config.zod.js';
+import type { InstallContext, StepOutcome } from './runner.js';
 
 /**
  * Get project name from src
@@ -400,5 +401,10 @@ export async function runStep3DownloadProjects(
   print(`  ${symbols.success} Step 3 completed`, 'green');
   
   return result;
+}
+
+export async function installStep3DownloadProjects(ctx: InstallContext): Promise<StepOutcome> {
+  await runStep3DownloadProjects(ctx.workspaceRoot, (m) => ctx.logger.info(m));
+  return { status: 'ok' };
 }
 

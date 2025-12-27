@@ -14,6 +14,7 @@ import { markStepCompleted, type VerificationResult, getExecutedChecks, trackChe
 import { processCheck } from './process-check.js';
 import type { WorkspaceConfig } from '../schemas/workspace-config.zod.js';
 import type { CheckItem, CheckResult } from './types.js';
+import type { InstallContext, StepOutcome } from './runner.js';
 
 export interface VerifyInstallationStepResult {
   results: VerificationResult[];
@@ -181,5 +182,10 @@ export async function runStep7VerifyInstallation(
   print(`  ${symbols.success} Step 7 completed`, 'green');
   
   return result;
+}
+
+export async function installStep7VerifyInstallation(ctx: InstallContext): Promise<StepOutcome> {
+  await runStep7VerifyInstallation(ctx.workspaceRoot, ctx.projectRoot, (m) => ctx.logger.info(m), ctx.autoYes);
+  return { status: 'ok' };
 }
 

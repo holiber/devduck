@@ -13,6 +13,7 @@ import { print, symbols } from '../utils.js';
 import { loadModulesFromRepo, getDevduckVersion } from '../lib/repo-modules.js';
 import { markStepCompleted, type RepoResult } from './install-state.js';
 import type { WorkspaceConfig } from '../schemas/workspace-config.zod.js';
+import type { InstallContext, StepOutcome } from './runner.js';
 
 export interface DownloadReposStepResult {
   repos: RepoResult[];
@@ -127,5 +128,10 @@ export async function runStep2DownloadRepos(
   print(`  ${symbols.success} Step 2 completed`, 'green');
   
   return result;
+}
+
+export async function installStep2DownloadRepos(ctx: InstallContext): Promise<StepOutcome> {
+  await runStep2DownloadRepos(ctx.workspaceRoot, (m) => ctx.logger.info(m));
+  return { status: 'ok' };
 }
 
