@@ -20,6 +20,19 @@ import { fileURLToPath } from 'url';
 import { createInstallLogger } from './install/logger.js';
 import { runInstall, type InstallContext, type InstallStep } from './install/runner.js';
 import type { InstallLogger } from './install/logger.js';
+import {
+  checkFileExists,
+  copySeedFilesFromProvidedWorkspaceConfig,
+  createProjectSymlink,
+  createProjectSymlinkToTarget,
+  formatBytes,
+  getDirectorySize,
+  getProjectName,
+  isExistingDirectory,
+  isFilePath,
+  isHttpRequest,
+  resolveProjectSrcToWorkspacePath,
+} from './install/installer-utils.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -139,8 +152,6 @@ const CURSOR_DIR = path.join(WORKSPACE_ROOT, '.cursor');
 const MCP_FILE = path.join(CURSOR_DIR, 'mcp.json');
 const PROJECTS_DIR = path.join(WORKSPACE_ROOT, 'projects');
 
-// Tier execution order
-const TIER_ORDER = ['pre-install', 'install', 'live', 'pre-test', 'tests'];
 const DEFAULT_TIER = 'pre-install';
 
 let installLogger: InstallLogger | null = null;
@@ -160,7 +171,7 @@ function initLogging() {
   if (!fs.existsSync(CACHE_DIR)) {
     fs.mkdirSync(CACHE_DIR, { recursive: true });
   }
-
+  
   // Universal pino-compatible logger (levels-only), file sink only.
   // Keep the same log file location.
   installLogger = createInstallLogger(WORKSPACE_ROOT, { filePath: LOG_FILE });
@@ -247,245 +258,8 @@ async function installSoftware(item: CheckItem): Promise<boolean> {
   }
 }
 
-/**
- * Check if check string is a file path (not a command)
- */
-function isFilePath(check: string | undefined): boolean {
-  if (!check) return false;
-  
-  // Remove leading/trailing whitespace
-  const trimmed = check.trim();
-  
-  // If contains spaces, it's likely a command
-  if (trimmed.includes(' ')) return false;
-  
-  // If contains command operators, it's a command
-  if (trimmed.includes('&&') || trimmed.includes('||') || trimmed.includes(';') || trimmed.includes('|')) {
-    return false;
-  }
-  
-  // If starts with / or ~, it's likely a file path
-  if (trimmed.startsWith('/') || trimmed.startsWith('~')) {
-    return true;
-  }
-  
-  // If contains / and no spaces, it might be a relative path
-  if (trimmed.includes('/') && !trimmed.includes(' ')) {
-    return true;
-  }
-  
-  return false;
-}
-
-interface FileCheckResult {
-  exists: boolean;
-  isFile: boolean;
-  isDirectory: boolean;
-  path: string;
-  error?: string;
-}
-
-/**
- * Check if file or directory exists
- */
-function checkFileExists(filePath: string): FileCheckResult {
-  try {
-    // Expand ~ to home directory
-    const expandedPath = filePath.replace(/^~/, process.env.HOME || '');
-    
-    // Resolve relative paths
-    const resolvedPath = path.isAbsolute(expandedPath) 
-      ? expandedPath 
-      : path.resolve(PROJECT_ROOT, expandedPath);
-    
-    if (fs.existsSync(resolvedPath)) {
-      const stats = fs.statSync(resolvedPath);
-      return {
-        exists: true,
-        isFile: stats.isFile(),
-        isDirectory: stats.isDirectory(),
-        path: resolvedPath
-      };
-    }
-    
-    return {
-      exists: false,
-      isFile: false,
-      isDirectory: false,
-      path: resolvedPath
-    };
-  } catch (error) {
-    const err = error as Error;
-    return {
-      exists: false,
-      isFile: false,
-      isDirectory: false,
-      path: filePath,
-      error: err.message
-    };
-  }
-}
-
-/**
- * Get project name from `src`
- * e.g., "crm/frontend/services/shell" -> "shell"
- * e.g., "github.com/holiber/devduck" -> "devduck"
- * e.g., "arc://junk/user/project" -> "project"
- */
-function getProjectName(src: string | undefined): string {
-  if (!src) return 'unknown';
-  
-  // Handle arc:// URLs
-  if (src.startsWith('arc://')) {
-    const pathPart = src.replace('arc://', '');
-    return path.basename(pathPart);
-  }
-  
-  // Handle GitHub URLs
-  if (src.includes('github.com/')) {
-    const match = src.match(/github\.com\/[^\/]+\/([^\/]+)/);
-    if (match) {
-      return match[1].replace('.git', '');
-    }
-  }
-  
-  // Handle regular paths
-  return path.basename(src);
-}
-
-interface SymlinkResult {
-  success: boolean;
-  path: string;
-  target: string;
-  existed?: boolean;
-  created?: boolean;
-  error?: string;
-}
-
-/**
- * Create symlink in projects/ pointing directly to a target folder.
- * Used for local-folder projects (project.src is a directory path).
- */
-function createProjectSymlinkToTarget(projectName: string, targetPath: string): SymlinkResult {
-  const symlinkPath = path.join(PROJECTS_DIR, projectName);
-  const resolvedTarget = path.resolve(targetPath);
-  
-  try {
-    // Check if symlink already exists
-    if (fs.existsSync(symlinkPath)) {
-      if (fs.lstatSync(symlinkPath).isSymbolicLink()) {
-        const existingTarget = fs.readlinkSync(symlinkPath);
-        // readlink may return relative paths; normalize before comparing
-        const existingResolved = path.resolve(path.dirname(symlinkPath), existingTarget);
-        if (existingResolved === resolvedTarget) {
-          log(`Symlink already exists and points to correct target: ${symlinkPath} -> ${resolvedTarget}`);
-          return { success: true, path: symlinkPath, target: resolvedTarget, existed: true };
-        }
-        fs.unlinkSync(symlinkPath);
-        log(`Removed old symlink: ${symlinkPath} (was pointing to ${existingTarget})`);
-      } else {
-        // It's a directory or file, remove it
-        fs.rmSync(symlinkPath, { recursive: true, force: true });
-        log(`Removed existing path: ${symlinkPath}`);
-      }
-    }
-    
-    if (!fs.existsSync(resolvedTarget)) {
-      log(`Target path does not exist: ${resolvedTarget}`);
-      return { success: false, path: symlinkPath, target: resolvedTarget, error: 'Target path does not exist' };
-    }
-    
-    const stats = fs.statSync(resolvedTarget);
-    if (!stats.isDirectory()) {
-      log(`Target path is not a directory: ${resolvedTarget}`);
-      return { success: false, path: symlinkPath, target: resolvedTarget, error: 'Target path is not a directory' };
-    }
-    
-    fs.symlinkSync(resolvedTarget, symlinkPath);
-    log(`Created symlink: ${symlinkPath} -> ${resolvedTarget}`);
-    return { success: true, path: symlinkPath, target: resolvedTarget, created: true };
-  } catch (error) {
-    const err = error as Error;
-    log(`Error creating symlink: ${err.message}`);
-    return { success: false, path: symlinkPath, target: resolvedTarget, error: err.message };
-  }
-}
-
-function resolveProjectSrcToWorkspacePath(projectSrc: string | undefined): string | null {
-  if (!projectSrc || typeof projectSrc !== 'string') return null;
-  // Treat relative paths as relative to the workspace root (not PROJECT_ROOT)
-  return path.isAbsolute(projectSrc) ? projectSrc : path.resolve(WORKSPACE_ROOT, projectSrc);
-}
-
-function isExistingDirectory(dirPath: string | undefined): boolean {
-  try {
-    if (!dirPath) return false;
-    if (!fs.existsSync(dirPath)) return false;
-    return fs.statSync(dirPath).isDirectory();
-  } catch {
-    return false;
-  }
-}
-
-/**
- * Create symlink for a project
- */
-function createProjectSymlink(projectName: string, pathInArcadia: string, env: Record<string, string>): SymlinkResult {
-  const symlinkPath = path.join(PROJECTS_DIR, projectName);
-  
-  // Get ARCADIA path from env
-  let arcadiaPath = env.ARCADIA || process.env.ARCADIA || '~/arcadia';
-  arcadiaPath = arcadiaPath.replace(/^~/, process.env.HOME || '');
-  
-  const targetPath = path.join(arcadiaPath, pathInArcadia);
-  
-  try {
-    // Check if symlink already exists
-    if (fs.existsSync(symlinkPath)) {
-      // Check if it's a symlink
-      if (fs.lstatSync(symlinkPath).isSymbolicLink()) {
-        const existingTarget = fs.readlinkSync(symlinkPath);
-        if (existingTarget === targetPath) {
-          log(`Symlink already exists and points to correct target: ${symlinkPath} -> ${targetPath}`);
-          return { success: true, path: symlinkPath, target: targetPath, existed: true };
-        } else {
-          // Remove old symlink
-          fs.unlinkSync(symlinkPath);
-          log(`Removed old symlink: ${symlinkPath} (was pointing to ${existingTarget})`);
-        }
-      } else {
-        // It's a directory, remove it
-        fs.rmSync(symlinkPath, { recursive: true, force: true });
-        log(`Removed existing directory: ${symlinkPath}`);
-      }
-    }
-    
-    // Check if target exists
-    if (!fs.existsSync(targetPath)) {
-      log(`Target path does not exist: ${targetPath}`);
-      return { success: false, path: symlinkPath, target: targetPath, error: 'Target path does not exist' };
-    }
-    
-    // Create symlink
-    fs.symlinkSync(targetPath, symlinkPath);
-    log(`Created symlink: ${symlinkPath} -> ${targetPath}`);
-    
-    return { success: true, path: symlinkPath, target: targetPath, created: true };
-  } catch (error) {
-    const err = error as Error;
-    log(`Error creating symlink: ${err.message}`);
-    return { success: false, path: symlinkPath, target: targetPath, error: err.message };
-  }
-}
-
-/**
- * Check if test string is an HTTP request (format: "GET https://..." or "POST https://...")
- */
-function isHttpRequest(test: string | undefined): boolean {
-  if (!test) return false;
-  const trimmed = test.trim();
-  return /^(GET|POST|PUT|DELETE|HEAD|OPTIONS|PATCH)\s+https?:\/\//i.test(trimmed);
-}
+// NOTE: a number of installer helper functions were extracted to ./install/installer-utils.ts
+// to keep this entrypoint focused on orchestration and check execution.
 
 interface CheckResult {
   name: string;
@@ -547,7 +321,7 @@ async function checkCommand(item: CheckItem, context: string | null = null, skip
       // It's a file/directory path - check if it exists
       log(`File/directory path: ${testWithVars}`);
       
-      const fileCheck = checkFileExists(testWithVars);
+      const fileCheck = checkFileExists(testWithVars, { baseDir: PROJECT_ROOT });
       
       if (fileCheck.exists && (fileCheck.isFile || fileCheck.isDirectory)) {
         const typeLabel = fileCheck.isDirectory ? 'Directory' : 'File';
@@ -583,7 +357,7 @@ async function checkCommand(item: CheckItem, context: string | null = null, skip
             print(`Re-checking ${name}${contextSuffix}...`, 'cyan');
             log(`Re-checking ${name} after installation`);
             
-            const recheckFile = checkFileExists(testWithVars);
+            const recheckFile = checkFileExists(testWithVars, { baseDir: PROJECT_ROOT });
             
             if (recheckFile.exists && (recheckFile.isFile || recheckFile.isDirectory)) {
               const typeLabel = recheckFile.isDirectory ? 'Directory' : 'File';
@@ -872,65 +646,6 @@ function replaceVariablesInObjectWithLog(obj: unknown, env: Record<string, strin
   return replaceVariablesInObject(obj, env, log, print, symbols);
 }
 
-
-// checkCommandExists is still used by checks, will be moved when extracting checks
-interface CommandCheckResult {
-  exists: boolean;
-  executable: boolean;
-  path?: string;
-  error?: string;
-}
-
-/**
- * Check if file/command exists and is executable
- */
-function checkCommandExists(commandPath: string): CommandCheckResult {
-  try {
-    // Get just the command name (first part before space)
-    const commandName = commandPath.split(/\s+/)[0];
-    
-    // Expand ~ to home directory
-    const expandedPath = commandName.replace(/^~/, process.env.HOME || '');
-    
-    // Check if it's an absolute path
-    if (path.isAbsolute(expandedPath)) {
-      if (fs.existsSync(expandedPath)) {
-        // Check if it's executable
-        try {
-          fs.accessSync(expandedPath, fs.constants.F_OK | fs.constants.X_OK);
-          return { exists: true, executable: true };
-        } catch {
-          return { exists: true, executable: false };
-        }
-      }
-      return { exists: false, executable: false };
-    }
-    
-    // For commands in PATH, use 'which' or 'command -v'
-    try {
-      // Try 'command -v' first (POSIX compliant)
-      const whichResult = executeCommand(`command -v ${expandedPath}`);
-      if (whichResult.success && whichResult.output) {
-        return { exists: true, executable: true, path: whichResult.output };
-      }
-      
-      // Fallback to 'which' if available
-      const whichResult2 = executeCommand(`which ${expandedPath}`);
-      if (whichResult2.success && whichResult2.output) {
-        return { exists: true, executable: true, path: whichResult2.output };
-      }
-      
-      return { exists: false, executable: false };
-    } catch (error) {
-      const err = error as Error;
-      return { exists: false, executable: false, error: err.message };
-    }
-  } catch (error) {
-    const err = error as Error;
-    return { exists: false, executable: false, error: err.message };
-  }
-}
-
 /**
  * Check HTTP access to service
  */
@@ -1000,299 +715,7 @@ async function checkHttpAccess(item: CheckItem, context: string | null = null): 
   }
 }
 
-interface Project {
-  src?: string;
-  path_in_arcadia?: string;
-  checks?: CheckItem[];
-  [key: string]: unknown;
-}
-
-interface ProjectResult {
-  name: string;
-  src: string | undefined;
-  symlink: SymlinkResult | null;
-  checks: CheckResult[];
-}
-
-/**
- * Create symlink for a project and return initial result object
- */
-function initProjectResult(project: Project, env: Record<string, string>): ProjectResult {
-  const projectName = getProjectName(project.src);
-  
-  print(`\n${symbols.info} Processing project: ${projectName}`, 'cyan');
-  log(`Processing project: ${projectName} (${project.src})`);
-  
-  const result = {
-    name: projectName,
-    src: project.src,
-    symlink: null,
-    checks: []
-  };
-
-  if (!project.src || typeof project.src !== 'string') {
-    print(`  ${symbols.warning} Project is missing required field: src`, 'yellow');
-    log(`Project skipped: missing src field (${JSON.stringify(project)})`);
-    result.symlink = {
-      path: null,
-      target: null,
-      error: 'Missing required field: src'
-    };
-    return result;
-  }
-  
-  // Arcadia projects: create symlink into Arcadia checkout.
-  // GitHub projects don't need symlinks in workspace.
-  if (project.src.startsWith('arc://')) {
-    print(`  Creating symlink...`, 'cyan');
-    // Remove arc:// prefix if present
-    const pathForSymlink = project.src.replace(/^arc:\/\//, '');
-    const symlinkResult = createProjectSymlink(projectName, pathForSymlink, env);
-    
-    if (symlinkResult.success) {
-      const action = symlinkResult.existed ? 'exists' : 'created';
-      print(`  ${symbols.success} Symlink ${action}: projects/${projectName} -> ${symlinkResult.target}`, 'green');
-      result.symlink = {
-        path: `projects/${projectName}`,
-        target: symlinkResult.target,
-        created: symlinkResult.created || false
-      };
-    } else {
-      print(`  ${symbols.error} Symlink failed: ${symlinkResult.error}`, 'red');
-      result.symlink = {
-        path: `projects/${projectName}`,
-        target: symlinkResult.target,
-        error: symlinkResult.error
-      };
-    }
-  } else if (project.src && isExistingDirectory(resolveProjectSrcToWorkspacePath(project.src))) {
-    // Local-folder projects - create symlink in projects/ directly to the folder path
-    const resolvedLocalPath = resolveProjectSrcToWorkspacePath(project.src);
-    print(`  Creating symlink...`, 'cyan');
-    const symlinkResult = createProjectSymlinkToTarget(projectName, resolvedLocalPath);
-    
-    if (symlinkResult.success) {
-      const action = symlinkResult.existed ? 'exists' : 'created';
-      print(`  ${symbols.success} Symlink ${action}: projects/${projectName} -> ${symlinkResult.target}`, 'green');
-      result.symlink = {
-        path: `projects/${projectName}`,
-        target: symlinkResult.target,
-        created: symlinkResult.created || false
-      };
-    } else {
-      print(`  ${symbols.error} Symlink failed: ${symlinkResult.error}`, 'red');
-      result.symlink = {
-        path: `projects/${projectName}`,
-        target: symlinkResult.target,
-        error: symlinkResult.error
-      };
-    }
-    
-    return result;
-  } else if (project.src && (project.src.includes('github.com') || project.src.startsWith('git@'))) {
-    // GitHub projects - clone to projects/ directory
-    const projectPath = path.join(PROJECTS_DIR, projectName);
-    
-    // Check if already cloned
-    if (fs.existsSync(projectPath) && fs.existsSync(path.join(projectPath, '.git'))) {
-      // Update existing clone
-      print(`  ${symbols.info} Updating existing git repository...`, 'cyan');
-      log(`Updating existing git repository: ${projectPath}`);
-      const pullResult = spawnSync('git', ['pull'], {
-        cwd: projectPath,
-        encoding: 'utf8'
-      });
-      
-      if (pullResult.status === 0) {
-        print(`  ${symbols.success} Repository updated: projects/${projectName}`, 'green');
-        log(`Repository updated successfully: ${projectPath}`);
-      } else {
-        print(`  ${symbols.warning} Failed to update repository, using existing version`, 'yellow');
-        log(`Failed to update repository: ${pullResult.stderr || pullResult.stdout}`);
-      }
-      
-      result.symlink = {
-        path: `projects/${projectName}`,
-        target: projectPath,
-        exists: true,
-        updated: pullResult.status === 0
-      };
-    } else {
-      // Clone repository
-      print(`  ${symbols.info} Cloning repository...`, 'cyan');
-      log(`Cloning repository: ${project.src} to ${projectPath}`);
-      
-      // Convert github.com/user/repo to https://github.com/user/repo.git
-      // Use HTTPS for CI compatibility (no SSH keys required)
-      let gitUrl = project.src;
-      if (gitUrl.includes('github.com') && !gitUrl.startsWith('git@') && !gitUrl.startsWith('http')) {
-        gitUrl = `https://github.com/${gitUrl.replace(/^github\.com\//, '').replace(/\.git$/, '')}.git`;
-      }
-      
-      // Ensure projects directory exists
-      if (!fs.existsSync(PROJECTS_DIR)) {
-        fs.mkdirSync(PROJECTS_DIR, { recursive: true });
-      }
-      
-      const cloneResult = spawnSync('git', ['clone', gitUrl, projectPath], {
-        encoding: 'utf8',
-        stdio: 'inherit'
-      });
-      
-      if (cloneResult.status === 0) {
-        print(`  ${symbols.success} Repository cloned: projects/${projectName}`, 'green');
-        log(`Repository cloned successfully: ${projectPath}`);
-        result.symlink = {
-          path: `projects/${projectName}`,
-          target: projectPath,
-          created: true
-        };
-      } else {
-        print(`  ${symbols.error} Failed to clone repository: ${cloneResult.stderr || cloneResult.stdout}`, 'red');
-        log(`Failed to clone repository: ${cloneResult.stderr || cloneResult.stdout}`);
-        result.symlink = {
-          path: `projects/${projectName}`,
-          target: projectPath,
-          error: `Failed to clone: ${cloneResult.stderr || cloneResult.stdout}`
-        };
-      }
-    }
-  } else {
-    // Other project types - no action needed
-    print(`  ${symbols.info} Project type not supported for automatic setup`, 'cyan');
-    result.symlink = {
-      path: null,
-      target: null,
-      note: 'Project type not supported for automatic setup'
-    };
-  }
-  
-  return result;
-}
-
-/**
- * Get checks for a project grouped by tier
- */
-function getProjectChecksByTier(project: Project, env: Record<string, string>): Record<string, CheckItem[]> {
-  if (!project.checks || project.checks.length === 0) {
-    return {};
-  }
-  
-  const projectName = getProjectName(project.src);
-  const checksWithVars = replaceVariablesInObjectWithLog(project.checks, env);
-  
-  const checksByTier = {};
-  for (const check of checksWithVars) {
-    const tier = check.tier || DEFAULT_TIER;
-    if (!checksByTier[tier]) {
-      checksByTier[tier] = [];
-    }
-    checksByTier[tier].push({
-      ...check,
-      _projectName: projectName
-    });
-  }
-  
-  return checksByTier;
-}
-
-/**
- * Run a single check and return result
- */
-async function runCheck(check: CheckItem, projectName: string | undefined): Promise<CheckResult> {
-  // Skip check if skip=true in config
-  if (check.skip === true) {
-    const prefix = projectName ? `[${projectName}] ` : '';
-    print(`  ${symbols.warning} ${prefix}${check.name}: skipped`, 'yellow');
-    log(`${prefix}CHECK SKIPPED: ${check.name}`);
-    return {
-      name: check.name,
-      description: check.description || '',
-      passed: null,
-      skipped: true
-    };
-  }
-  
-  // Use unified processCheck function
-  const checkResult = await processCheck(
-    'project',
-    projectName,
-    check,
-    {
-      workspaceRoot: WORKSPACE_ROOT,
-      checkCommand,
-      checkHttpAccess,
-      isHttpRequest,
-      replaceVariablesInObjectWithLog
-    }
-  );
-  return checkResult;
-}
-
-/**
- * Process all projects - create symlinks first, then run checks by tier across all projects
- */
-async function processProjects(projects: Project[], env: Record<string, string>): Promise<ProjectResult[]> {
-  if (!projects || projects.length === 0) {
-    return [];
-  }
-  
-  print(`\n${symbols.info} Processing projects...`, 'cyan');
-  log(`Processing ${projects.length} projects`);
-  
-  // Ensure projects directory exists
-  if (!fs.existsSync(PROJECTS_DIR)) {
-    fs.mkdirSync(PROJECTS_DIR, { recursive: true });
-    log(`Created projects directory: ${PROJECTS_DIR}`);
-  }
-  
-  // Step 1: Create symlinks for all projects and initialize result objects
-  const results = [];
-  const projectChecksByTier = [];
-  
-  for (const project of projects) {
-    const result = initProjectResult(project, env);
-    results.push(result);
-    projectChecksByTier.push({
-      projectName: result.name,
-      checksByTier: getProjectChecksByTier(project, env),
-      resultRef: result
-    });
-  }
-  
-  // Step 2: Run checks tier by tier across all projects
-  for (const tier of TIER_ORDER) {
-    // Collect all checks for this tier across all projects
-    const tierHasChecks = projectChecksByTier.some(p => 
-      p.checksByTier[tier] && p.checksByTier[tier].length > 0
-    );
-    
-    if (!tierHasChecks) {
-      continue;
-    }
-    
-    print(`\n${symbols.info} [${tier}] Running checks...`, 'cyan');
-    log(`Tier: ${tier} - running checks for all projects`);
-    
-    for (const projectData of projectChecksByTier) {
-      const tierChecks = projectData.checksByTier[tier];
-      if (!tierChecks || tierChecks.length === 0) {
-        continue;
-      }
-      
-      log(`[${projectData.projectName}] Tier: ${tier} - ${tierChecks.length} check(s)`);
-      
-      for (const check of tierChecks) {
-        const checkResult = await runCheck(check, projectData.projectName);
-        checkResult.tier = tier;
-        projectData.resultRef.checks.push(checkResult);
-      }
-    }
-  }
-  
-  return results;
-}
-
+// NOTE: Legacy project processing helpers were removed because they were unused.
 /**
  * Run selected checks (from config.checks or config.projects)
  */
@@ -1419,54 +842,7 @@ async function runSelectedChecks(checkNames: string[], testOnly = false): Promis
   process.exit(failed > 0 ? 1 : 0);
 }
 
-/**
- * Calculate directory size recursively
- */
-function getDirectorySize(dirPath: string): number {
-  try {
-    if (!fs.existsSync(dirPath)) {
-      return 0;
-    }
-    
-    const stats = fs.statSync(dirPath);
-    if (!stats.isDirectory()) {
-      return stats.size;
-    }
-    
-    let size = 0;
-    const entries = fs.readdirSync(dirPath, { withFileTypes: true });
-    
-    for (const entry of entries) {
-      const entryPath = path.join(dirPath, entry.name);
-      if (entry.isDirectory()) {
-        size += getDirectorySize(entryPath);
-      } else {
-        try {
-          const fileStats = fs.statSync(entryPath);
-          size += fileStats.size;
-      } catch {
-        // Skip files that can't be accessed
-        continue;
-      }
-      }
-    }
-    
-    return size;
-  } catch {
-    return 0;
-  }
-}
-
-/**
- * Format bytes to human-readable size
- */
-function formatBytes(bytes: number): string {
-  if (bytes === 0) return '0 B';
-  const k = 1024;
-  const sizes = ['B', 'KB', 'MB', 'GB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
-}
+// NOTE: getDirectorySize/formatBytes were moved to ./install/installer-utils.ts
 
 /**
  * Show installation status
@@ -1574,91 +950,7 @@ function checkTokensOnly() {
   process.exit(allPresent ? 0 : 1);
 }
 
-function isSafeRelativePath(p: string): boolean {
-  const normalized = path.normalize(p);
-  if (!normalized || normalized.trim() === '') return false;
-  if (path.isAbsolute(normalized)) return false;
-  // Block path traversal outside the base directory/workspace root
-  if (normalized === '..' || normalized.startsWith(`..${path.sep}`)) return false;
-  return true;
-}
-
-function copyPathRecursiveSync(srcPath: string, destPath: string): void {
-  const st = fs.lstatSync(srcPath);
-  // Skip special files (sockets/FIFOs) which cannot be copied.
-  if (st.isSocket?.() || st.isFIFO?.()) return;
-  if (st.isSymbolicLink()) {
-    const link = fs.readlinkSync(srcPath);
-    fs.mkdirSync(path.dirname(destPath), { recursive: true });
-    try {
-      fs.unlinkSync(destPath);
-    } catch {
-      // ignore
-    }
-    fs.symlinkSync(link, destPath);
-    return;
-  }
-  if (st.isDirectory()) {
-    fs.mkdirSync(destPath, { recursive: true });
-    const entries = fs.readdirSync(srcPath, { withFileTypes: true });
-    for (const entry of entries) {
-      copyPathRecursiveSync(path.join(srcPath, entry.name), path.join(destPath, entry.name));
-    }
-    return;
-  }
-  fs.mkdirSync(path.dirname(destPath), { recursive: true });
-  fs.copyFileSync(srcPath, destPath);
-}
-
-function copySeedFilesFromProvidedWorkspaceConfig(params: {
-  workspaceRoot: string;
-  providedWorkspaceConfigPath: string;
-  seedFiles: unknown;
-}): void {
-  const { workspaceRoot, providedWorkspaceConfigPath, seedFiles } = params;
-
-  if (!Array.isArray(seedFiles) || seedFiles.length === 0) return;
-
-  const sourceRoot = path.dirname(providedWorkspaceConfigPath);
-
-  print(`\n${symbols.info} Copying seed files into workspace...`, 'cyan');
-  log(`Copying ${seedFiles.length} seed file(s) from ${sourceRoot} into ${workspaceRoot}`);
-
-  for (const entry of seedFiles) {
-    if (typeof entry !== 'string') {
-      print(`  ${symbols.warning} Skipping non-string entry in seedFiles[]`, 'yellow');
-      log(`Skipping non-string entry in seedFiles[]: ${JSON.stringify(entry)}`);
-      continue;
-    }
-
-    const relPath = entry.trim();
-    if (!isSafeRelativePath(relPath)) {
-      print(`  ${symbols.warning} Skipping unsafe path in seedFiles[]: ${entry}`, 'yellow');
-      log(`Skipping unsafe path in seedFiles[]: ${entry}`);
-      continue;
-    }
-
-    const srcPath = path.join(sourceRoot, relPath);
-    const destPath = path.join(workspaceRoot, relPath);
-
-    try {
-      if (!fs.existsSync(srcPath)) {
-        print(`  ${symbols.warning} Missing seed path: ${relPath}`, 'yellow');
-        log(`Seed path does not exist: ${srcPath}`);
-        continue;
-      }
-
-      fs.mkdirSync(path.dirname(destPath), { recursive: true });
-      copyPathRecursiveSync(srcPath, destPath);
-      print(`  ${symbols.success} Copied: ${relPath}`, 'green');
-      log(`Copied seed path: ${srcPath} -> ${destPath}`);
-    } catch (error) {
-      const err = error as Error;
-      print(`  ${symbols.warning} Failed to copy ${relPath}: ${err.message}`, 'yellow');
-      log(`Failed to copy seed path ${srcPath} -> ${destPath}: ${err.message}`);
-    }
-  }
-}
+// NOTE: seed-files copy helpers were moved to ./install/installer-utils.ts
 
 /**
  * Install workspace from scratch using 7-step process
@@ -1713,7 +1005,10 @@ async function installWorkspace(): Promise<void> {
         copySeedFilesFromProvidedWorkspaceConfig({
           workspaceRoot: WORKSPACE_ROOT,
           providedWorkspaceConfigPath: WORKSPACE_CONFIG_PATH,
-          seedFiles
+          seedFiles,
+          print,
+          symbols,
+          log
         });
       }
     }
@@ -1801,7 +1096,7 @@ async function installWorkspace(): Promise<void> {
   
   // Generate mcp.json before step 1 (some checks may need MCP configuration)
   generateMcpJson(WORKSPACE_ROOT, { log, print, symbols, moduleChecks });
-
+  
   // Use the unified runner for the step-based installer.
   const {
     installStep1CheckEnv,
@@ -2208,6 +1503,6 @@ async function main(): Promise<void> {
 main().catch(async (error) => {
   const err = error as Error;
   print(`\n${symbols.error} Fatal error: ${err.message}`, 'red');
-  log(`FATAL ERROR: ${err.message}\n${err.stack}`);
+    log(`FATAL ERROR: ${err.message}\n${err.stack}`);
   process.exit(1);
 });

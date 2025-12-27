@@ -5,8 +5,12 @@ import net from 'net';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
+import { createRequire } from 'module';
 import { getDevduckServicePaths } from './paths.js';
 import { createDevduckServiceClient } from './ipc/ipc-client.js';
+
+const require = createRequire(import.meta.url);
+const tsxImportPath: string = require.resolve('tsx');
 
 function sleep(ms: number) {
   return new Promise<void>(r => setTimeout(r, ms));
@@ -39,10 +43,13 @@ async function ensureServiceRunning(socketPath: string): Promise<void> {
     errFd = fs.openSync(errLogPath, 'a');
 
     const serviceEntry = path.join(path.dirname(fileURLToPath(import.meta.url)), 'service.ts');
-    const child = spawn('npx', ['tsx', serviceEntry], {
+    // Prefer running via the current Node runtime to avoid `npx`/PATH differences in tests.
+    // Use an absolute tsx import path so this works even when cwd has no node_modules.
+    const child = spawn(process.execPath, ['--import', tsxImportPath, serviceEntry], {
       detached: true,
       stdio: ['ignore', outFd, errFd],
-      env: { ...process.env }
+      env: { ...process.env },
+      cwd: process.cwd()
     });
     child.unref();
   } finally {
