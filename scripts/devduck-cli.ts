@@ -70,7 +70,13 @@ function runNpmInstall(workspaceRoot: string): void {
   const res = spawnSync(npmCmd, ['install', '--no-audit', '--no-fund'], {
     cwd: workspaceRoot,
     encoding: 'utf8',
-    stdio
+    stdio,
+    env: {
+      ...process.env,
+      // Installer tests run without real secrets. Provide deterministic dummy values so
+      // required env checks (step 1/4) don't block the unattended bootstrap.
+      CURSOR_API_KEY: process.env.CURSOR_API_KEY || 'test-cursor-api-key'
+    }
   });
 
   if (res.status !== 0) {

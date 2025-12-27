@@ -317,7 +317,7 @@ checks:
     assert.strictEqual(results.projects[0].checks[0].present, true);
   });
 
-  test('saves results to .cache/pre-install-check.json', async () => {
+  test('saves results to .cache/install-state.json', async () => {
     const config = {
       workspaceVersion: '0.1.0',
       devduckPath: './devduck',
@@ -332,12 +332,13 @@ checks:
     
     await runPreInstallChecks(tempWorkspace);
     
-    const resultPath = path.join(tempWorkspace, '.cache', 'pre-install-check.json');
+    const resultPath = path.join(tempWorkspace, '.cache', 'install-state.json');
     assert.ok(fs.existsSync(resultPath));
     
-    const savedResults = JSON.parse(fs.readFileSync(resultPath, 'utf8'));
-    assert.ok(savedResults.projects);
-    assert.ok(savedResults.modules);
+    const savedState = JSON.parse(fs.readFileSync(resultPath, 'utf8')) as { preInstallCheck?: { projects?: unknown[]; modules?: unknown[] } };
+    assert.ok(savedState.preInstallCheck);
+    assert.ok(savedState.preInstallCheck.projects);
+    assert.ok(savedState.preInstallCheck.modules);
   });
 
   test('validatePreInstallChecks reports missing tokens', () => {

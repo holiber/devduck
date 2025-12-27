@@ -65,7 +65,7 @@ function findArcadiaRoot(): string | null {
   // Check cache file
   const workspaceRoot = findWorkspaceRoot();
   if (workspaceRoot) {
-    const cachePath = path.join(workspaceRoot, '.cache', 'pre-install-check.json');
+    const cachePath = path.join(workspaceRoot, '.cache', 'install-state.json');
     if (fs.existsSync(cachePath)) {
       try {
         const cache = JSON.parse(fs.readFileSync(cachePath, 'utf8'));
