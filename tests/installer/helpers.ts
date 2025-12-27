@@ -163,15 +163,25 @@ export async function runInstaller(workspacePath: string, options: RunInstallerO
     
     // Installer tests run in CI without user secrets; however some modules (e.g. cursor) require tokens.
     // Provide deterministic dummy values so pre-install checks don't block unattended installs.
-    const mockCursorApiBaseUrl = await getOrStartMockCursorApiBaseUrl();
+    const needsCursor = await workspaceNeedsCursorModule({
+      workspacePath,
+      modulesArg: options.modules,
+      configPath: options.config,
+      workspaceConfigPath: options.workspaceConfig
+    });
+    const mockCursorApiBaseUrl = needsCursor ? await getOrStartMockCursorApiBaseUrl() : null;
     const proc = spawn('tsx', [INSTALLER_SCRIPT, ...args], {
       cwd: PROJECT_ROOT,
       env: {
         ...process.env,
         NODE_ENV: 'test',
-        CURSOR_API_KEY: process.env.CURSOR_API_KEY || 'test-cursor-api-key',
-        // Avoid hitting the real Cursor API in tests; make cursor-api-key-valid deterministic.
-        CURSOR_API_BASE_URL: process.env.CURSOR_API_BASE_URL || mockCursorApiBaseUrl
+        ...(needsCursor
+          ? {
+              CURSOR_API_KEY: process.env.CURSOR_API_KEY || 'test-cursor-api-key',
+              // Avoid hitting the real Cursor API in tests; make cursor-api-key-valid deterministic.
+              CURSOR_API_BASE_URL: process.env.CURSOR_API_BASE_URL || (mockCursorApiBaseUrl ?? undefined)
+            }
+          : {})
       }
     });
 
@@ -253,6 +263,58 @@ async function getOrStartMockCursorApiBaseUrl(): Promise<string> {
   }
   mockCursorApiBaseUrl = `http://127.0.0.1:${addr.port}`;
   return mockCursorApiBaseUrl;
+}
+
+function normalizeModulesList(modules: string | string[] | undefined): string[] | null {
+  if (!modules) return null;
+  if (Array.isArray(modules)) return modules;
+  return modules
+    .split(',')
+    .map((m) => m.trim())
+    .filter((m) => m.length > 0);
+}
+
+async function workspaceNeedsCursorModule(params: {
+  workspacePath: string;
+  modulesArg: string | string[] | undefined;
+  configPath: string | undefined;
+  workspaceConfigPath: string | undefined;
+}): Promise<boolean> {
+  const fromArg = normalizeModulesList(params.modulesArg);
+  if (fromArg) return fromArg.includes('cursor');
+
+  const readModulesFromJsonFile = async (filePath: string): Promise<string[] | null> => {
+    try {
+      const raw = await fs.readFile(filePath, 'utf8');
+      const parsed = JSON.parse(raw) as { modules?: unknown };
+      return Array.isArray(parsed.modules) ? (parsed.modules as string[]) : null;
+    } catch {
+      return null;
+    }
+  };
+
+  // If a config file is passed, infer modules from it (common in tests).
+  if (params.configPath) {
+    const mods = await readModulesFromJsonFile(params.configPath);
+    if (mods && mods.includes('cursor')) return true;
+  }
+
+  // If a workspace-config template is passed, infer modules from it.
+  if (params.workspaceConfigPath) {
+    const mods = await readModulesFromJsonFile(params.workspaceConfigPath);
+    if (mods && mods.includes('cursor')) return true;
+  }
+
+  // If modules are not passed via args, attempt to infer from an existing workspace.config.json (fixtures).
+  const configPath = path.join(params.workspacePath, 'workspace.config.json');
+  try {
+    const raw = await fs.readFile(configPath, 'utf8');
+    const parsed = JSON.parse(raw) as { modules?: unknown };
+    const mods = Array.isArray(parsed.modules) ? (parsed.modules as string[]) : [];
+    return mods.includes('cursor');
+  } catch {
+    return false;
+  }
 }
 
 /**

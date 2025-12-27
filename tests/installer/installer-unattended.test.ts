@@ -65,7 +65,7 @@ describe('Workspace Installer - Unattended Mode', () => {
           unattended: true,
           aiAgent: 'cursor',
           repoType: 'none',
-          modules: ['core', 'cursor'],
+          modules: ['core'],
           skipRepoInit: true
         });
 
@@ -79,10 +79,10 @@ describe('Workspace Installer - Unattended Mode', () => {
 
         const structure = await verifyWorkspaceStructure(tempWorkspace);
         assert.ok(structure.workspaceConfigExists, 'workspace.config.json should exist');
-        assert.ok(structure.cursorDirExists, '.cursor directory should exist');
+        // Fresh/core-only install should not require Cursor integration artifacts.
 
         const configVerification = await verifyWorkspaceConfig(tempWorkspace, {
-          modules: ['core', 'cursor']
+          modules: ['core']
         });
         assert.ok(configVerification.valid, 'Config should be valid');
 
@@ -100,7 +100,7 @@ describe('Workspace Installer - Unattended Mode', () => {
         const config = {
           aiAgent: 'cursor',
           repoType: 'none',
-          modules: ['core', 'cursor', 'vcs'],
+          modules: ['core', 'vcs'],
           skipRepoInit: true
         };
         await fs.writeFile(configPath, JSON.stringify(config, null, 2), 'utf8');
@@ -116,7 +116,7 @@ describe('Workspace Installer - Unattended Mode', () => {
         assert.ok(installed, 'Installation should complete');
 
         const configVerification = await verifyWorkspaceConfig(tempWorkspace, {
-          modules: ['core', 'cursor', 'vcs']
+          modules: ['core', 'vcs']
         });
         assert.ok(configVerification.valid, 'Config should be valid');
         assert.ok(configVerification.config.modules.includes('vcs'), 'vcs module should be installed');

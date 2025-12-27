@@ -23,5 +23,5 @@ Module for integrating devduck with Cursor IDE. Handles:
 - Merging rules from modules to `.cursor/rules/devduck-rules.md`
 - Generating `mcp.json` from module MCP configurations
 
-This module is always included in workspace installations (like `core` module).
+This module is recommended for Cursor IDE integration, but is not required for all workspaces.
 

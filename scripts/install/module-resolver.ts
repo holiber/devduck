@@ -226,13 +226,6 @@ export function resolveDependencies(moduleNames: string[], allModules: Module[])
     toResolve.push(CORE_MODULE_NAME);
   }
   
-  // Always include cursor module (for Cursor IDE integration)
-  // Note: cursor depends on core, but we include it explicitly because
-  // it's a required module for devduck to work in Cursor IDE
-  if (!toResolve.includes(CURSOR_MODULE_NAME) && moduleMap.has(CURSOR_MODULE_NAME)) {
-    toResolve.push(CURSOR_MODULE_NAME);
-  }
-  
   // Always include git module (essential for Git integration)
   // Note: git depends on core, but we include it explicitly because
   // it's an essential module for generating .gitignore
