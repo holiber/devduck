@@ -133,26 +133,33 @@ export async function processCheck(
       
       // Check if token is missing or empty
       if (!tokenValue) {
-        // Token not present - skip test execution and show appropriate message
-        const contextSuffix = contextName ? ` [${contextName}]` : '';
-        print(`Checking ${check.name}${contextSuffix}...`, 'cyan');
-        print(`${symbols.error} ${check.name} - ${checkVar} is not set`, 'red');
-        if (check.description) {
-          print(check.description, 'red');
+        // If an install command exists and we are allowed to install, proceed to the normal
+        // check flow so the check can run its install command and potentially populate `.env`.
+        const installCmd = typeof check.install === 'string' ? check.install.trim() : '';
+        if (installCmd && !skipInstall) {
+          log(`Token ${checkVar} not set for ${check.name} - install command present, proceeding with checkCommand/install`);
+        } else {
+          // Token not present - skip test execution and show appropriate message
+          const contextSuffix = contextName ? ` [${contextName}]` : '';
+          print(`Checking ${check.name}${contextSuffix}...`, 'cyan');
+          print(`${symbols.error} ${check.name} - ${checkVar} is not set`, 'red');
+          if (check.description) {
+            print(check.description, 'red');
+          }
+          const docs = (check as { docs?: string }).docs;
+          if (docs) {
+            print(docs, 'red');
+          }
+          log(`Token ${checkVar} not set for ${check.name} - skipping test`);
+          return {
+            name: check.name,
+            description: check.description || '',
+            passed: false,
+            version: null,
+            tier: tier,
+            note: `${checkVar} is not set`
+          };
         }
-        const docs = (check as { docs?: string }).docs;
-        if (docs) {
-          print(docs, 'red');
-        }
-        log(`Token ${checkVar} not set for ${check.name} - skipping test`);
-        return {
-          name: check.name,
-          description: check.description || '',
-          passed: false,
-          version: null,
-          tier: tier,
-          note: `${checkVar} is not set`
-        };
       }
     }
   }

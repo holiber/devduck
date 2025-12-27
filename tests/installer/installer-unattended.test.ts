@@ -44,12 +44,12 @@ describe('Workspace Installer - Unattended Mode', () => {
         assert.ok(structure.mcpJsonExists, '.cursor/mcp.json should exist');
 
         // Verify installed module paths were recorded and include cursor (+ always-included git).
-        const installCheckPath = path.join(tempWorkspace, '.cache', 'install-check.json');
-        const installCheckRaw = await fs.readFile(installCheckPath, 'utf8');
-        const installCheck = JSON.parse(installCheckRaw) as { installedModules?: Record<string, string> };
-        assert.ok(installCheck.installedModules, 'install-check.json should include installedModules');
-        assert.ok(installCheck.installedModules.cursor, 'cursor should be installed');
-        assert.ok(installCheck.installedModules.git, 'git should be installed (always included)');
+        const installStatePath = path.join(tempWorkspace, '.cache', 'install-state.json');
+        const installStateRaw = await fs.readFile(installStatePath, 'utf8');
+        const installState = JSON.parse(installStateRaw) as { installedModules?: Record<string, string> };
+        assert.ok(installState.installedModules, 'install-state.json should include installedModules');
+        assert.ok(installState.installedModules.cursor, 'cursor should be installed');
+        assert.ok(installState.installedModules.git, 'git should be installed (always included)');
 
         assert.strictEqual(result.exitCode, 0, 'Installer should exit with code 0');
       } finally {
@@ -595,15 +595,15 @@ describe('Workspace Installer - Unattended Mode', () => {
         await fs.access(path.join(repoRoot, 'modules'));
         await fs.access(path.join(repoRoot, 'modules', 'smogcheck', 'MODULE.md'));
 
-        // Verify installer recorded installed module paths in .cache/install-check.json
-        const installCheckPath = path.join(tempWorkspace, '.cache', 'install-check.json');
-        const installCheckRaw = await fs.readFile(installCheckPath, 'utf8');
-        const installCheck = JSON.parse(installCheckRaw) as { installedModules?: Record<string, string> };
-        assert.ok(installCheck.installedModules, 'install-check.json should include installedModules');
+        // Verify installer recorded installed module paths in .cache/install-state.json
+        const installStatePath = path.join(tempWorkspace, '.cache', 'install-state.json');
+        const installStateRaw = await fs.readFile(installStatePath, 'utf8');
+        const installState = JSON.parse(installStateRaw) as { installedModules?: Record<string, string> };
+        assert.ok(installState.installedModules, 'install-state.json should include installedModules');
         assert.ok(
-          typeof installCheck.installedModules.smogcheck === 'string' &&
-            installCheck.installedModules.smogcheck.endsWith(path.join('modules', 'smogcheck')),
-          'install-check.json should include smogcheck module path'
+          typeof installState.installedModules.smogcheck === 'string' &&
+            installState.installedModules.smogcheck.endsWith(path.join('modules', 'smogcheck')),
+          'install-state.json should include smogcheck module path'
         );
 
         // Verify smogchecked.txt file exists (created by smogcheck module hook)

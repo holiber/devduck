@@ -17,6 +17,7 @@ import { readJSON, writeJSON } from '../lib/config.js';
 import { readEnvFile } from '../lib/env.js';
 import { writeEnvFile } from './env.js';
 import { findWorkspaceRoot } from '../lib/workspace-root.js';
+import { readInstallState, writeInstallState } from './install-state.js';
 import {
   expandModuleNames,
   getAllModules,
@@ -727,7 +728,7 @@ export async function runPreInstallChecks(workspaceRoot: string): Promise<PreIns
   const configPath = path.join(workspaceRoot, 'workspace.config.json');
   const envPath = path.join(workspaceRoot, '.env');
   const cacheDir = path.join(workspaceRoot, '.cache');
-  const resultPath = path.join(cacheDir, 'pre-install-check.json');
+  const _statePath = path.join(cacheDir, 'install-state.json');
   
   // Ensure cache directory exists
   if (!fs.existsSync(cacheDir)) {
@@ -981,8 +982,13 @@ export async function runPreInstallChecks(workspaceRoot: string): Promise<PreIns
     modules: moduleResults
   };
   
-  // Save results
-  writeJSON(resultPath, result);
+  // Save results into unified state file
+  const state = readInstallState(workspaceRoot);
+  if (arcadiaRoot) {
+    state.arcadiaRoot = arcadiaRoot;
+  }
+  state.preInstallCheck = result;
+  writeInstallState(workspaceRoot, state);
   
   return result;
 }
@@ -1153,7 +1159,7 @@ export function validatePreInstallChecks(
         }
       }
       print(`\n${symbols.info} Please set missing tokens in .env file or environment variables`, 'cyan');
-      print(`${symbols.info} Results saved to .cache/pre-install-check.json`, 'cyan');
+      print(`${symbols.info} Results saved to .cache/install-state.json`, 'cyan');
       log(`Pre-install checks failed: real test failures detected`);
       return 'failed';
     }
@@ -1192,7 +1198,7 @@ export function validatePreInstallChecks(
       }
     }
     print(`\n${symbols.info} Set these tokens in .env (or env vars) and re-run: npm run install`, 'cyan');
-    print(`${symbols.info} Results saved to .cache/pre-install-check.json`, 'cyan');
+    print(`${symbols.info} Results saved to .cache/install-state.json`, 'cyan');
     log(`Pre-install checks require user input: missing tokens`);
     return 'needs_input';
   }
