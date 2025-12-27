@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed - 2025-12-28
+
+- 🧰 **Installer CLI refactor** - Moved CLI argument parsing + workspace path resolution into `scripts/install/cli-runtime.ts`, keeping installer steps visible near the top of `scripts/install.ts`.
+- 🔌 **DevduckService socket fallback** - On macOS, when the default Unix socket path is too long, DevduckService now falls back to a short `/tmp/devduck-<hash>.sock` path to avoid `EINVAL` on `listen()`.
+
 ### Changed - 2025-12-27
 
 - 🧾 **Installer state file** - Deprecated/removed `.cache/install-check.json`; installer now uses `.cache/install-state.json` as the single source of truth (including `installedModules`).
