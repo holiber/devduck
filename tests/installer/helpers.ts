@@ -454,3 +454,107 @@ export function checkInstallerResult(result: InstallerResult): void {
   }
 }
 
+/**
+ * Create a shared temporary workspace in .cache/temp directory
+ * @param prefix - Prefix for the workspace directory name
+ * @returns Path to the created workspace
+ */
+export async function createSharedTempWorkspace(prefix = 'install-steps-test-'): Promise<string> {
+  const cacheTempDir = path.join(PROJECT_ROOT, '.cache', 'temp');
+  await fs.mkdir(cacheTempDir, { recursive: true });
+  
+  const workspaceName = prefix + Date.now();
+  const workspacePath = path.join(cacheTempDir, workspaceName);
+  await fs.mkdir(workspacePath, { recursive: true });
+  
+  return workspacePath;
+}
+
+/**
+ * Clean up shared temporary workspace
+ * @param workspacePath - Path to workspace to clean up
+ */
+export async function cleanupSharedTempWorkspace(workspacePath: string): Promise<void> {
+  // Safety check: only clean .cache/temp/ directories
+  const cacheTempDir = path.join(PROJECT_ROOT, '.cache', 'temp');
+  const normalizedPath = path.resolve(workspacePath);
+  const normalizedCacheTemp = path.resolve(cacheTempDir);
+  
+  if (!normalizedPath.startsWith(normalizedCacheTemp)) {
+    throw new Error('Safety check: Only cleaning up .cache/temp/ directories');
+  }
+  
+  try {
+    await fs.rm(workspacePath, { recursive: true, force: true });
+  } catch (error: unknown) {
+    // Ignore errors during cleanup
+    const err = error as { message?: string };
+    console.warn(`Warning: Failed to cleanup ${workspacePath}: ${err.message || String(error)}`);
+  }
+}
+
+/**
+ * Check if a step is completed in install-state.json
+ * @param workspaceRoot - Workspace root directory
+ * @param stepName - Name of the step to check
+ * @returns True if step is completed successfully
+ */
+export async function isStepCompleted(workspaceRoot: string, stepName: string): Promise<boolean> {
+  const { loadInstallState } = await import('../../scripts/install/install-state.js');
+  const state = loadInstallState(workspaceRoot);
+  
+  const stepKey = stepName as keyof typeof state.steps;
+  return state.steps[stepKey]?.completed === true;
+}
+
+/**
+ * Get step result from install-state.json
+ * @param workspaceRoot - Workspace root directory
+ * @param stepName - Name of the step
+ * @returns Step result or null if step not completed
+ */
+export async function getStepResult(workspaceRoot: string, stepName: string): Promise<unknown> {
+  const { loadInstallState } = await import('../../scripts/install/install-state.js');
+  const state = loadInstallState(workspaceRoot);
+  
+  const stepKey = stepName as keyof typeof state.steps;
+  return state.steps[stepKey]?.result || null;
+}
+
+/**
+ * Get list of executed checks from install-state.json
+ * @param workspaceRoot - Workspace root directory
+ * @returns Array of executed checks
+ */
+export async function getExecutedChecks(workspaceRoot: string): Promise<Array<{checkId: string; step: string; passed: boolean | null; executedAt: string; checkName?: string}>> {
+  const { loadInstallState } = await import('../../scripts/install/install-state.js');
+  const state = loadInstallState(workspaceRoot);
+  
+  return state.executedChecks || [];
+}
+
+/**
+ * Verify step state matches expected status
+ * @param workspaceRoot - Workspace root directory
+ * @param stepName - Name of the step
+ * @param expectedStatus - Expected status ('completed' or 'failed')
+ * @returns True if state matches expected status
+ */
+export async function verifyStepState(
+  workspaceRoot: string,
+  stepName: string,
+  expectedStatus: 'completed' | 'failed'
+): Promise<boolean> {
+  const { loadInstallState } = await import('../../scripts/install/install-state.js');
+  const state = loadInstallState(workspaceRoot);
+  
+  const stepKey = stepName as keyof typeof state.steps;
+  const step = state.steps[stepKey];
+  
+  if (expectedStatus === 'completed') {
+    return step?.completed === true && !step.error;
+  } else {
+    return step?.completed === true && !!step.error;
+  }
+}
+

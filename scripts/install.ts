@@ -1474,20 +1474,23 @@ function formatBytes(bytes: number): string {
 /**
  * Show installation status
  */
-function showStatus() {
-  // Check if install-check.json exists
-  if (!fs.existsSync(CACHE_FILE)) {
+async function showStatus() {
+  const { loadInstallState, getInstallStatePath } = await import('./install/install-state.js');
+  
+  // Check if install-state.json exists
+  const statePath = getInstallStatePath(WORKSPACE_ROOT);
+  if (!fs.existsSync(statePath)) {
     // If file doesn't exist, output empty string
     process.stdout.write('');
     process.exit(0);
   }
   
   try {
-    // Read install-check.json
-    const statusData = readJSON(CACHE_FILE);
+    // Read install-state.json
+    const state = loadInstallState(WORKSPACE_ROOT);
     
-    // If file is empty or couldn't be parsed, output empty string
-    if (!statusData) {
+    // If state is empty or couldn't be parsed, output empty string
+    if (!state || Object.keys(state).length === 0) {
       process.stdout.write('');
       process.exit(0);
     }
@@ -1498,7 +1501,7 @@ function showStatus() {
     
     // Output JSON with status and cache size
     const output = {
-      status: statusData,
+      status: state,
       cacheSize: cacheSize,
       cacheSizeFormatted: cacheSizeFormatted
     };
@@ -1661,12 +1664,9 @@ function copySeedFilesFromProvidedWorkspaceConfig(params: {
 }
 
 /**
- * Install workspace from scratch
+ * Install workspace from scratch using 7-step process
  */
 async function installWorkspace(): Promise<void> {
-  const { loadModulesForWorkspace } = await import('./install/module-loader.js');
-  const { executeHooksForStage, createHookContext } = await import('./install/module-hooks.js');
-  
   // Ensure workspace directory exists
   if (!fs.existsSync(WORKSPACE_ROOT)) {
     fs.mkdirSync(WORKSPACE_ROOT, { recursive: true });
@@ -1751,7 +1751,7 @@ async function installWorkspace(): Promise<void> {
     }
   }
   
-  // Setup .env file from workspace config (before pre-install checks so modules can add vars)
+  // Setup .env file from workspace config (before step 1)
   await setupEnvFile(WORKSPACE_ROOT, config as WorkspaceConfig, {
     autoYes: AUTO_YES,
     log,
@@ -1760,11 +1760,10 @@ async function installWorkspace(): Promise<void> {
   });
   
   // Re-read config from file to ensure we have the latest version (including repos)
-  // This is important because the config might have been updated by devduck-cli
   const latestConfig = readJSON(CONFIG_FILE) || config;
   
   // Load module checks early (before generating mcp.json) to include their mcpSettings
-  // This includes both local modules and modules from external repositories
+  // This is needed for MCP generation before step 1
   let moduleChecks: Array<{ name?: string; mcpSettings?: Record<string, unknown> }> = [];
   try {
     const { getAllModules, resolveModules, loadModuleFromPath } = await import('./install/module-resolver.js');
@@ -1774,278 +1773,157 @@ async function installWorkspace(): Promise<void> {
     const allModules = getAllModules();
     const resolvedModules = resolveModules(latestConfig as WorkspaceConfig, allModules);
     moduleChecks = resolvedModules.flatMap(module => module.checks || []);
-    print(`  ${symbols.info} Loaded ${moduleChecks.length} checks from ${resolvedModules.length} local modules for MCP generation`, 'cyan');
-    log(`Loaded ${moduleChecks.length} checks from ${resolvedModules.length} local modules for MCP generation`);
     
-    // Also load modules from external repositories
+    // Also load modules from external repositories (for MCP generation only)
     const repos = (latestConfig as WorkspaceConfig).repos;
     if (repos && Array.isArray(repos) && repos.length > 0) {
-      print(`  ${symbols.info} Loading ${repos.length} external repository/repositories...`, 'cyan');
       const devduckVersion = getDevduckVersion();
       for (const repoUrl of repos) {
         try {
-          print(`  Loading modules from ${repoUrl} for MCP generation...`, 'cyan');
-          log(`Loading modules from ${repoUrl} for MCP generation...`);
           const repoModulesPath = await loadModulesFromRepo(repoUrl, WORKSPACE_ROOT, devduckVersion);
-          
           if (fs.existsSync(repoModulesPath)) {
             const repoModuleEntries = fs.readdirSync(repoModulesPath, { withFileTypes: true });
-            
             for (const entry of repoModuleEntries) {
               if (entry.isDirectory()) {
                 const modulePath = path.join(repoModulesPath, entry.name);
                 const module = loadModuleFromPath(modulePath, entry.name);
-                
                 if (module && module.checks) {
                   moduleChecks.push(...module.checks);
-                  const checksWithMcp = module.checks.filter((c: any) => c.mcpSettings).length;
-                  print(`  ${symbols.success} Loaded ${module.checks.length} checks from external module ${module.name}${checksWithMcp > 0 ? ` (${checksWithMcp} with mcpSettings)` : ''}`, 'green');
-                  log(`Loaded ${module.checks.length} checks from external module ${module.name}`);
                 }
               }
             }
           }
         } catch (error) {
-          const err = error as Error;
-          print(`  ${symbols.warning} Failed to load modules from ${repoUrl} for MCP generation: ${err.message}`, 'yellow');
-          log(`Warning: Failed to load modules from ${repoUrl} for MCP generation: ${err.message}`);
           // Continue with other repos
         }
       }
     }
-    
-    print(`  ${symbols.info} Total: Loaded ${moduleChecks.length} checks from all modules for MCP generation`, 'cyan');
-    log(`Total: Loaded ${moduleChecks.length} checks from all modules for MCP generation`);
   } catch (error) {
-    const err = error as Error;
-    log(`Warning: Failed to load module checks for MCP generation: ${err.message}`);
     // Continue without module checks - workspace config checks will still be used
   }
   
-  // Generate mcp.json before pre-install checks (some checks may need MCP configuration)
+  // Generate mcp.json before step 1 (some checks may need MCP configuration)
   generateMcpJson(WORKSPACE_ROOT, { log, print, symbols, moduleChecks });
   
-  // Run pre-install checks (verify tokens before installing modules)
-  // Note: Pre-install checks can also set environment variables via install commands
-  print(`\n${symbols.info} Running pre-install checks...`, 'cyan');
-  log(`Running pre-install checks`);
-  try {
-    const { runPreInstallChecks, validatePreInstallChecks } = await import('./install/pre-install-check.js');
-    const checkResults = await runPreInstallChecks(WORKSPACE_ROOT);
-    const validation = validatePreInstallChecks(checkResults, { print, log, symbols });
-    if (validation === 'needs_input') {
-      // Not a failure, but we must not continue workspace installation until tokens are provided.
-      return;
-    }
-    if (validation === 'failed') {
-      process.exit(1);
-    }
-  } catch (error) {
-    const err = error as Error;
-    print(`\n${symbols.error} Pre-install check error: ${err.message}`, 'red');
-    log(`Pre-install check error: ${err.message}\n${err.stack}`);
+  // Import step functions
+  const { runStep1CheckEnv } = await import('./install/install-1-check-env.js');
+  const { runStep2DownloadRepos } = await import('./install/install-2-download-repos.js');
+  const { runStep3DownloadProjects } = await import('./install/install-3-download-projects.js');
+  const { runStep4CheckEnvAgain } = await import('./install/install-4-check-env-again.js');
+  const { runStep5SetupModules } = await import('./install/install-5-setup-modules.js');
+  const { runStep6SetupProjects } = await import('./install/install-6-setup-projects.js');
+  const { runStep7VerifyInstallation } = await import('./install/install-7-verify-installation.js');
+  
+  // Step 1: Check environment variables
+  const step1Result = await runStep1CheckEnv(WORKSPACE_ROOT, PROJECT_ROOT, log);
+  if (step1Result.validationStatus === 'needs_input') {
+    print(`\n${symbols.warning} Installation paused: Please set missing environment variables and re-run`, 'yellow');
+    return;
+  }
+  if (step1Result.validationStatus === 'failed') {
+    print(`\n${symbols.error} Installation failed: Environment check failed`, 'red');
     process.exit(1);
   }
   
-  // Load modules from external repositories if specified
-  const externalModules = [];
-  if (config.repos && config.repos.length > 0) {
-    print(`\n${symbols.info} Loading modules from external repositories...`, 'cyan');
-    log(`Loading modules from ${config.repos.length} repository/repositories`);
-    
-    const { loadModulesFromRepo, getDevduckVersion } = await import('./lib/repo-modules.js');
-    const { loadModule } = await import('./install/module-resolver.js');
-    const devduckVersion = getDevduckVersion();
-    
-      for (const repoUrl of config.repos) {
-        try {
-          print(`  Loading modules [${repoUrl}]...`, 'cyan');
-          log(`Loading modules from repository: ${repoUrl}`);
-          const repoModulesPath = await loadModulesFromRepo(repoUrl, WORKSPACE_ROOT, devduckVersion);
-        
-        // repoModulesPath is the path to modules directory
-        // Load modules from the repository
-        if (fs.existsSync(repoModulesPath)) {
-          const repoModuleEntries = fs.readdirSync(repoModulesPath, { withFileTypes: true });
-          const { loadModuleFromPath } = await import('./install/module-resolver.js');
-          
-          for (const entry of repoModuleEntries) {
-            if (entry.isDirectory()) {
-              const modulePath = path.join(repoModulesPath, entry.name);
-              const module = loadModuleFromPath(modulePath, entry.name);
-              
-              if (module && module.name) {
-                externalModules.push({
-                  name: module.name,
-                  version: module.version || '0.1.0',
-                  description: module.description || '',
-                  tags: module.tags || [],
-                  dependencies: module.dependencies || [],
-                  defaultSettings: module.defaultSettings || {},
-                  path: module.path
-                });
-                print(`  ${symbols.success} Loaded external module: ${module.name}`, 'green');
-                log(`Loaded external module: ${module.name} from ${repoUrl}`);
-              } else if (module) {
-                // Module loaded but no name - use directory name
-                externalModules.push({
-                  name: entry.name,
-                  version: module.version || '0.1.0',
-                  description: module.description || '',
-                  tags: module.tags || [],
-                  dependencies: module.dependencies || [],
-                  defaultSettings: module.defaultSettings || {},
-                  path: module.path
-                });
-                print(`  ${symbols.success} Loaded external module: ${entry.name}`, 'green');
-                log(`Loaded external module: ${entry.name} from ${repoUrl}`);
-              }
-            }
-          }
-        }
-      } catch (error) {
-        const err = error as Error;
-        print(`  ${symbols.warning} Failed to load modules from ${repoUrl}: ${err.message}`, 'yellow');
-        log(`Failed to load modules from ${repoUrl}: ${err.message}`);
-      }
-    }
+  // Step 2: Download repositories
+  const step2Result = await runStep2DownloadRepos(WORKSPACE_ROOT, log);
+  
+  // Step 3: Download projects
+  const step3Result = await runStep3DownloadProjects(WORKSPACE_ROOT, log);
+  
+  // Step 4: Check environment again (after modules/projects loaded)
+  const step4Result = await runStep4CheckEnvAgain(WORKSPACE_ROOT, PROJECT_ROOT, log);
+  if (step4Result.validationStatus === 'needs_input') {
+    print(`\n${symbols.warning} Installation paused: Please set missing environment variables and re-run`, 'yellow');
+    return;
+  }
+  if (step4Result.validationStatus === 'failed') {
+    print(`\n${symbols.error} Installation failed: Environment check failed`, 'red');
+    process.exit(1);
   }
   
-  // Merge modules with explicit priority:
-  // 1) workspace modules (<workspace>/modules)
-  // 2) project modules (<workspace>/projects/*/modules)
-  // 3) external repos (cloned into <workspace>/devduck/*)
-  // 4) built-in devduck modules (this repo)
-  const { getAllModules, getAllModulesFromDirectory, expandModuleNames, resolveDependencies, mergeModuleSettings } = await import('./install/module-resolver.js');
-  const localModules = getAllModules();
+  // Step 5: Setup modules
+  const step5Result = await runStep5SetupModules(WORKSPACE_ROOT, PROJECT_ROOT, log, AUTO_YES);
   
-  // Also load workspace-local modules (if workspace has its own modules/ folder)
-  // Workspace modules should take precedence over built-in and external modules when names collide.
-  const workspaceModulesDir = path.join(WORKSPACE_ROOT, 'modules');
-  const workspaceModules = getAllModulesFromDirectory(workspaceModulesDir);
+  // Step 6: Setup projects
+  const step6Result = await runStep6SetupProjects(WORKSPACE_ROOT, PROJECT_ROOT, log, AUTO_YES);
   
-  // Also load modules from projects (if projects have modules/ folders)
-  const projectsModules: Module[] = [];
-  if (config.projects && Array.isArray(config.projects)) {
-    for (const project of config.projects) {
-      const projectName = project.src.split('/').pop()?.replace(/\.git$/, '') || '';
-      const projectPath = path.join(WORKSPACE_ROOT, 'projects', projectName);
-      const projectModulesDir = path.join(projectPath, 'modules');
-      if (fs.existsSync(projectModulesDir)) {
-        const projectModules = getAllModulesFromDirectory(projectModulesDir);
-        projectsModules.push(...projectModules);
-        log(`Loaded ${projectModules.length} module(s) from project ${projectName}`);
-      }
-    }
-  }
-  
-  const allModules = [...workspaceModules, ...projectsModules, ...externalModules, ...localModules];
-  
-  // Resolve modules manually with merged list (supports patterns like "issue-*")
-  const moduleNames = expandModuleNames(config.modules || ['*'], allModules);
-  const resolvedModules = resolveDependencies(moduleNames, allModules);
-  
-  // Load module resources
-  const { loadModuleResources } = await import('./install/module-loader.js');
-  const loadedModules = resolvedModules.map(module => {
-    const resources = loadModuleResources(module);
-    const mergedSettings = mergeModuleSettings(module, config.moduleSettings);
-    
-    return {
-      ...resources,
-      settings: mergedSettings
-    };
-  });
+  // Step 7: Verify installation
+  const step7Result = await runStep7VerifyInstallation(WORKSPACE_ROOT, PROJECT_ROOT, log, AUTO_YES);
 
-  // Persist installed module paths for downstream tooling.
-  // This file is also used by `--status`.
+  // Persist minimal, test-friendly installation results.
+  // Installer tests expect `.cache/install-check.json` to exist and contain `installedModules`.
   try {
     const installedModules: Record<string, string> = {};
-    for (const m of loadedModules) {
-      if (m && typeof m.name === 'string' && typeof m.path === 'string') {
-        installedModules[m.name] = m.path;
+    if (step5Result?.modules) {
+      for (const mod of step5Result.modules) {
+        if (mod?.name && mod?.path) {
+          installedModules[mod.name] = mod.path;
+        }
       }
     }
+
+    // Ensure .cache exists (it should, but keep it defensive).
+    if (!fs.existsSync(CACHE_DIR)) {
+      fs.mkdirSync(CACHE_DIR, { recursive: true });
+    }
+
+    // Write `.cache/install-check.json` (used by tests and by other tooling).
     writeJSON(CACHE_FILE, {
       installedAt: new Date().toISOString(),
-      installedModules
-    });
-    log(`Saved installed module paths to: ${CACHE_FILE}`);
-  } catch (e) {
-    const err = e as Error;
-    log(`Failed to write ${CACHE_FILE}: ${err.message}`);
-  }
-  
-  print(
-    `\n${symbols.info} Loaded ${loadedModules.length} module(s) ` +
-    `(${workspaceModules.length} workspace, ${projectsModules.length} projects, ${externalModules.length} external, ${localModules.length} devduck)`,
-    'cyan'
-  );
-  log(`Loaded modules: ${loadedModules.map(m => m.name).join(', ')}`);
-  // Debug logging for test mode
-  if (process.env.NODE_ENV === 'test') {
-    log(`[DEBUG] Module paths: ${loadedModules.map(m => `${m.name} -> ${m.path}`).join(', ')}`);
-  }
-  
-  // Execute module hooks
-  print(`\n${symbols.info} Executing module hooks...`, 'cyan');
-  
-  // Pre-install hooks
-  const preInstallContexts = loadedModules.map(module => 
-    createHookContext(WORKSPACE_ROOT, module, loadedModules)
-  );
-  await executeHooksForStage(loadedModules, 'pre-install', preInstallContexts);
-  
-  // Install hooks
-  const installContexts = loadedModules.map(module => 
-    createHookContext(WORKSPACE_ROOT, module, loadedModules)
-  );
-  await executeHooksForStage(loadedModules, 'install', installContexts);
-  
-  // Post-install hooks (this is where cursor module copies commands and rules)
-  const postInstallContexts = loadedModules.map(module => 
-    createHookContext(WORKSPACE_ROOT, module, loadedModules)
-  );
-  const postInstallResults = await executeHooksForStage(loadedModules, 'post-install', postInstallContexts);
-  
-  // Log results and check for failures
-  let postInstallFailed = false;
-  for (const result of postInstallResults) {
-    if (result.success && result.message) {
-      log(`Module ${result.module}: ${result.message}`);
-    } else if (!result.success) {
-      postInstallFailed = true;
-      if (result.errors && result.errors.length > 0) {
-        log(`Module ${result.module} errors: ${result.errors.join(', ')}`);
-        print(`  ${symbols.error} Module ${result.module} post-install hook failed: ${result.errors.join(', ')}`, 'red');
-      } else {
-        log(`Module ${result.module} post-install hook failed`);
-        print(`  ${symbols.error} Module ${result.module} post-install hook failed`, 'red');
+      installedModules,
+      steps: {
+        'check-env': step1Result,
+        'download-repos': step2Result,
+        'download-projects': step3Result,
+        'check-env-again': step4Result,
+        'setup-modules': step5Result,
+        'setup-projects': step6Result,
+        'verify-installation': step7Result
       }
-    }
-    // Debug logging for test mode
-    if (process.env.NODE_ENV === 'test' && result.skipped) {
-      log(`[DEBUG] Module ${result.module} hook skipped: ${result.message || 'unknown reason'}`);
-    }
+    });
+
+    // Also update unified install-state.json for `--status` compatibility (best effort).
+    const { loadInstallState, saveInstallState } = await import('./install/install-state.js');
+    const state = loadInstallState(WORKSPACE_ROOT);
+    state.installedModules = installedModules;
+    state.installedAt = new Date().toISOString();
+    saveInstallState(WORKSPACE_ROOT, state);
+  } catch (error) {
+    const err = error as Error;
+    log(`WARNING: Failed to persist install-check.json/install-state.json: ${err.message}`);
   }
   
-  // Fail installation if post-install hooks failed
-  if (postInstallFailed) {
-    print(`\n${symbols.error} Installation failed: One or more post-install hooks failed`, 'red');
-    log(`Installation failed: One or more post-install hooks failed`);
-    process.exit(1);
+  // Install project scripts to workspace package.json
+  try {
+    const { installProjectScripts } = await import('./install/install-project-scripts.js');
+    print(`\n${symbols.info} Installing project scripts to workspace package.json...`, 'cyan');
+    log(`Installing project scripts to workspace package.json`);
+    installProjectScripts(WORKSPACE_ROOT, config.projects || [], config, log);
+    print(`  ${symbols.success} Project scripts installed`, 'green');
+  } catch (error) {
+    const err = error as Error;
+    print(`  ${symbols.warning} Failed to install project scripts: ${err.message}`, 'yellow');
+    log(`ERROR: Failed to install project scripts: ${err.message}\n${err.stack}`);
+  }
+
+  // Install API script to workspace package.json
+  try {
+    const { installApiScript } = await import('./install/install-project-scripts.js');
+    print(`\n${symbols.info} Installing API script to workspace package.json...`, 'cyan');
+    log(`Installing API script to workspace package.json`);
+    installApiScript(WORKSPACE_ROOT, log);
+    print(`  ${symbols.success} API script installed`, 'green');
+  } catch (error) {
+    const err = error as Error;
+    print(`  ${symbols.warning} Failed to install API script: ${err.message}`, 'yellow');
+    log(`ERROR: Failed to install API script: ${err.message}\n${err.stack}`);
   }
   
   // Create .cache/devduck directory
   const cacheDevduckDir = path.join(WORKSPACE_ROOT, '.cache', 'devduck');
   if (!fs.existsSync(cacheDevduckDir)) {
     fs.mkdirSync(cacheDevduckDir, { recursive: true });
-  }
-
-  // If projects are defined in workspace.config.json, create symlinks/clones now.
-  if (config.projects && Array.isArray(config.projects) && config.projects.length > 0) {
-    const env = readEnvFile(ENV_FILE);
-    await processProjects(config.projects, env);
   }
   
   print(`\n${symbols.success} Workspace installation completed!`, 'green');
@@ -2058,7 +1936,7 @@ async function installWorkspace(): Promise<void> {
 async function main(): Promise<void> {
   // If --status flag is set, show status and exit
   if (STATUS_ONLY) {
-    showStatus();
+    await showStatus();
     return;
   }
   
@@ -2112,15 +1990,6 @@ async function main(): Promise<void> {
     });
   }
   
-  // Generate mcp.json
-  const mcpServers = generateMcpJson(WORKSPACE_ROOT, { log, print, symbols });
-  
-  // Check MCP servers if they were generated
-  let mcpResults = [];
-  if (mcpServers) {
-    mcpResults = await checkMcpServers(mcpServers, WORKSPACE_ROOT, { log, print, symbols });
-  }
-  
   // Read configuration
   const config = readJSON(CONFIG_FILE);
   if (!config) {
@@ -2131,314 +2000,192 @@ async function main(): Promise<void> {
   
   log(`Configuration loaded from: ${CONFIG_FILE}`);
   
-  // Run pre-install checks (verify tokens before installing modules)
-  print(`\n${symbols.info} Running pre-install checks...`, 'cyan');
-  log(`Running pre-install checks`);
+  // Load module checks early (before generating mcp.json) to include their mcpSettings
+  let moduleChecks: Array<{ name?: string; mcpSettings?: Record<string, unknown> }> = [];
   try {
-    const { runPreInstallChecks, validatePreInstallChecks } = await import('./install/pre-install-check.js');
-    const checkResults = await runPreInstallChecks(WORKSPACE_ROOT);
-    const validation = validatePreInstallChecks(checkResults, { print, log, symbols });
-    if (validation === 'needs_input') {
-      // Not a failure, but we must not continue with installation checks until tokens are provided.
-      if (logStream) {
-        await new Promise((resolve) => {
-          logStream.end(resolve);
-        });
-      }
-      process.exit(0);
-    }
-    if (validation === 'failed') {
-      process.exit(1);
-    }
-  } catch (error) {
-    const err = error as Error;
-    print(`\n${symbols.error} Pre-install check error: ${err.message}`, 'red');
-    log(`Pre-install check error: ${err.message}\n${err.stack}`);
-    process.exit(1);
-  }
-  
-  // Read existing cache if present
-  let existingCache = readJSON(CACHE_FILE);
-  if (existingCache) {
-    log(`Existing cache file found: ${CACHE_FILE}`);
-  } else {
-    log(`No existing cache file found, creating new one`);
-  }
-  
-  // Read .env file for variable substitution
-  const env = readEnvFile(ENV_FILE);
-  
-  // Load modules to collect checks from them (same logic as installWorkspace)
-  const moduleResolver = await import('./install/module-resolver.js');
-  const { getAllModules, getAllModulesFromDirectory, expandModuleNames, resolveDependencies, mergeModuleSettings, loadModuleFromPath } = moduleResolver;
-  type Module = Awaited<ReturnType<typeof getAllModules>>[number];
-  const { loadModulesFromRepo, getDevduckVersion } = await import('./lib/repo-modules.js');
-  const { loadModuleResources } = await import('./install/module-loader.js');
-  
-  // Load external modules from repos
-  const externalModules: Module[] = [];
-  if (config.repos && config.repos.length > 0) {
-    log(`Loading modules from ${config.repos.length} repository/repositories for checks`);
-    const devduckVersion = getDevduckVersion();
+    const { getAllModules, resolveModules, loadModuleFromPath } = await import('./install/module-resolver.js');
+    const { loadModulesFromRepo, getDevduckVersion } = await import('./lib/repo-modules.js');
     
-    for (const repoUrl of config.repos) {
-      try {
-        print(`  Loading modules [${repoUrl}]...`, 'cyan');
-        const repoModulesPath = await loadModulesFromRepo(repoUrl, WORKSPACE_ROOT, devduckVersion);
-        if (fs.existsSync(repoModulesPath)) {
-          const repoModuleEntries = fs.readdirSync(repoModulesPath, { withFileTypes: true });
-          for (const entry of repoModuleEntries) {
-            if (entry.isDirectory()) {
-              const modulePath = path.join(repoModulesPath, entry.name);
-              const module = loadModuleFromPath(modulePath, entry.name);
-              if (module) {
-                externalModules.push(module);
+    // Load local modules
+    const allModules = getAllModules();
+    const resolvedModules = resolveModules(config as WorkspaceConfig, allModules);
+    moduleChecks = resolvedModules.flatMap(module => module.checks || []);
+    
+    // Also load modules from external repositories (for MCP generation only)
+    const repos = (config as WorkspaceConfig).repos;
+    if (repos && Array.isArray(repos) && repos.length > 0) {
+      const devduckVersion = getDevduckVersion();
+      for (const repoUrl of repos) {
+        try {
+          const repoModulesPath = await loadModulesFromRepo(repoUrl, WORKSPACE_ROOT, devduckVersion);
+          if (fs.existsSync(repoModulesPath)) {
+            const repoModuleEntries = fs.readdirSync(repoModulesPath, { withFileTypes: true });
+            for (const entry of repoModuleEntries) {
+              if (entry.isDirectory()) {
+                const modulePath = path.join(repoModulesPath, entry.name);
+                const module = loadModuleFromPath(modulePath, entry.name);
+                if (module && module.checks) {
+                  moduleChecks.push(...module.checks);
+                }
               }
             }
           }
+        } catch (error) {
+          // Continue with other repos
         }
-      } catch (error) {
-        const err = error as Error;
-        log(`Failed to load modules from ${repoUrl} for checks: ${err.message}`);
       }
     }
+  } catch (error) {
+    // Continue without module checks
   }
   
-  // Load all modules with priority: workspace > projects > external > built-in
-  const localModules = getAllModules();
-  const workspaceModulesDir = path.join(WORKSPACE_ROOT, 'modules');
-  const workspaceModules = getAllModulesFromDirectory(workspaceModulesDir);
+  // Generate mcp.json
+  const mcpServers = generateMcpJson(WORKSPACE_ROOT, { log, print, symbols, moduleChecks });
   
-  const projectsModules: Module[] = [];
-  if (config.projects && Array.isArray(config.projects)) {
-    for (const project of config.projects) {
-      const projectName = project.src.split('/').pop()?.replace(/\.git$/, '') || '';
-      const projectPath = path.join(WORKSPACE_ROOT, 'projects', projectName);
-      const projectModulesDir = path.join(projectPath, 'modules');
-      if (fs.existsSync(projectModulesDir)) {
-        const projectModules = getAllModulesFromDirectory(projectModulesDir);
-        projectsModules.push(...projectModules);
-      }
-    }
+  // Check MCP servers if they were generated
+  let mcpResults = [];
+  if (mcpServers) {
+    mcpResults = await checkMcpServers(mcpServers, WORKSPACE_ROOT, { log, print, symbols });
   }
   
-  const allModules = [...workspaceModules, ...projectsModules, ...externalModules, ...localModules];
-  const moduleNames = expandModuleNames(config.modules || ['*'], allModules);
-  const resolvedModules = resolveDependencies(moduleNames, allModules);
+  // Import step functions
+  const { runStep1CheckEnv } = await import('./install/install-1-check-env.js');
+  const { runStep2DownloadRepos } = await import('./install/install-2-download-repos.js');
+  const { runStep3DownloadProjects } = await import('./install/install-3-download-projects.js');
+  const { runStep4CheckEnvAgain } = await import('./install/install-4-check-env-again.js');
+  const { runStep5SetupModules } = await import('./install/install-5-setup-modules.js');
+  const { runStep6SetupProjects } = await import('./install/install-6-setup-projects.js');
+  const { runStep7VerifyInstallation } = await import('./install/install-7-verify-installation.js');
+  const { loadInstallState, saveInstallState } = await import('./install/install-state.js');
   
-  const loadedModules = resolvedModules.map(module => {
-    const resources = loadModuleResources(module);
-    const mergedSettings = mergeModuleSettings(module, config.moduleSettings);
-    return {
-      ...resources,
-      settings: mergedSettings
-    };
-  });
-  
-  log(`Loaded ${loadedModules.length} module(s) for checks collection (${workspaceModules.length} workspace, ${projectsModules.length} projects, ${externalModules.length} external, ${localModules.length} devduck)`);
-  
-  // Collect checks from all modules
-  const moduleChecks: Array<{ name?: string; description?: string; tier?: string; [key: string]: unknown }> = [];
-  for (const module of loadedModules) {
-    if (module.checks && Array.isArray(module.checks) && module.checks.length > 0) {
-      log(`Module ${module.name} has ${module.checks.length} check(s)`);
-      for (const check of module.checks) {
-        // Add module name to check for identification
-        const moduleCheck = {
-          ...check,
-          module: module.name,
-          name: check.name || `${module.name}-${check.type || 'check'}`
-        };
-        moduleChecks.push(moduleCheck);
-      }
+  // Step 1: Check environment variables
+  const step1Result = await runStep1CheckEnv(WORKSPACE_ROOT, PROJECT_ROOT, log);
+  if (step1Result.validationStatus === 'needs_input') {
+    // Not a failure, but we must not continue with installation checks until tokens are provided.
+    if (logStream) {
+      await new Promise((resolve) => {
+        logStream.end(resolve);
+      });
     }
+    process.exit(0);
+  }
+  if (step1Result.validationStatus === 'failed') {
+    if (logStream) {
+      await new Promise((resolve) => {
+        logStream.end(resolve);
+      });
+    }
+    process.exit(1);
   }
   
-  // Merge workspace config checks with module checks
-  const allChecks = [
-    ...(config.checks || []),
-    ...moduleChecks
-  ];
+  // Step 2: Download repositories
+  await runStep2DownloadRepos(WORKSPACE_ROOT, log);
   
-  // Build installedModules map for cache
-  const installedModules: Record<string, string> = {};
-  for (const m of loadedModules) {
-    if (m && typeof m.name === 'string' && typeof m.path === 'string') {
-      installedModules[m.name] = m.path;
+  // Step 3: Download projects
+  await runStep3DownloadProjects(WORKSPACE_ROOT, log);
+  
+  // Step 4: Check environment again
+  const step4Result = await runStep4CheckEnvAgain(WORKSPACE_ROOT, PROJECT_ROOT, log);
+  if (step4Result.validationStatus === 'needs_input') {
+    if (logStream) {
+      await new Promise((resolve) => {
+        logStream.end(resolve);
+      });
     }
+    process.exit(0);
+  }
+  if (step4Result.validationStatus === 'failed') {
+    if (logStream) {
+      await new Promise((resolve) => {
+        logStream.end(resolve);
+      });
+    }
+    process.exit(1);
   }
   
-  const results = {
-    checks: [],
-    mcpServers: mcpResults,
-    projects: [],
-    installedModules
-  };
+  // Step 5: Setup modules
+  const step5Result = await runStep5SetupModules(WORKSPACE_ROOT, PROJECT_ROOT, log, AUTO_YES);
   
-  // Check all items in checks array (from config and modules), grouped by tier
-  if (allChecks.length > 0) {
-    print(`\n${symbols.info} Running checks...`, 'cyan');
-    
-    // Group checks by tier
-    const checksByTier = {};
-    for (const item of allChecks) {
-      const tier = item.tier || DEFAULT_TIER;
-      if (!checksByTier[tier]) {
-        checksByTier[tier] = [];
-      }
-      checksByTier[tier].push(item);
-    }
-    
-    // Execute checks in tier order
-    for (const tier of TIER_ORDER) {
-      const tierChecks = checksByTier[tier];
-      if (!tierChecks || tierChecks.length === 0) {
-        continue;
-      }
-      
-      print(`\n[${tier}] Running ${tierChecks.length} check(s)...`, 'cyan');
-      log(`Tier: ${tier} - ${tierChecks.length} check(s)`);
-      
-      // Read .env file for variable substitution
-      const env = readEnvFile(ENV_FILE);
-      
-      for (const item of tierChecks) {
-        // Skip check if skip=true in config
-        if (item.skip === true) {
-          print(`  ${symbols.warning} ${item.name}: skipped`, 'yellow');
-          log(`CHECK SKIPPED: ${item.name}`);
-          results.checks.push({
-            name: item.name,
-            description: item.description || '',
-            passed: null,
-            skipped: true,
-            tier: tier
-          });
-          continue;
-        }
-        
-        // Mark auth checks without test commands as failed
-        if (item.type === 'auth' && (!item.test || typeof item.test !== 'string' || !item.test.trim())) {
-          const moduleName = (item as { module?: string }).module;
-          const contextType = moduleName ? 'module' : 'workspace';
-          const contextName = moduleName || null;
-          print(`Checking ${item.name}${contextName ? ` [${contextName}]` : ''}...`, 'cyan');
-          log(`CHECK FAILED: ${item.name} (${contextType}: ${contextName || 'workspace'}) - auth check without test command`);
-          print(`${symbols.error} ${item.name} - No test command specified for auth check`, 'red');
-          if (item.description) {
-            print(item.description, 'red');
-          }
-          const docs = (item as { docs?: string }).docs;
-          if (docs) {
-            print(docs, 'red');
-          }
-          results.checks.push({
-            name: item.name,
-            description: item.description || '',
-            passed: false,
-            skipped: false,
-            tier: tier,
-            note: 'No test command specified for auth check'
-          });
-          continue;
-        }
-        
-        // Determine context type: 'workspace' for config.checks, 'module' for module checks
-        const moduleName = (item as { module?: string }).module;
-        const contextType = moduleName ? 'module' : 'workspace';
-        const contextName = moduleName || null;
-        
-        // Use unified processCheck function
-        const checkResult = await processCheck(
-          contextType,
-          contextName,
-          item,
-          {
-            tier: tier,
-            workspaceRoot: WORKSPACE_ROOT,
-            checkCommand,
-            checkHttpAccess,
-            isHttpRequest,
-            replaceVariablesInObjectWithLog
-          }
-        );
-        results.checks.push(checkResult);
-      }
-    }
+  // Step 6: Setup projects
+  const step6Result = await runStep6SetupProjects(WORKSPACE_ROOT, PROJECT_ROOT, log, AUTO_YES);
+  
+  // Step 7: Verify installation
+  const step7Result = await runStep7VerifyInstallation(WORKSPACE_ROOT, PROJECT_ROOT, log, AUTO_YES);
+  
+  // Install project scripts to workspace package.json
+  try {
+    const { installProjectScripts } = await import('./install/install-project-scripts.js');
+    print(`\n${symbols.info} Installing project scripts to workspace package.json...`, 'cyan');
+    log(`Installing project scripts to workspace package.json`);
+    installProjectScripts(WORKSPACE_ROOT, config.projects || [], config, log);
+    print(`  ${symbols.success} Project scripts installed`, 'green');
+  } catch (error) {
+    const err = error as Error;
+    print(`  ${symbols.warning} Failed to install project scripts: ${err.message}`, 'yellow');
+    log(`ERROR: Failed to install project scripts: ${err.message}\n${err.stack}`);
   }
-  
-  // Check if any checks failed (not passed)
-  const failedChecks = results.checks.filter(c => c.passed === false);
-  
-  // Process projects (create symlinks and run project-specific checks)
-  // Only if all checks passed
-  if (config.projects && config.projects.length > 0) {
-    if (failedChecks.length > 0) {
-      print(`\n${symbols.warning} Skipping projects processing: ${failedChecks.length} check(s) failed`, 'yellow');
-      log(`Skipping projects processing due to ${failedChecks.length} failed check(s): ${failedChecks.map(c => c.name).join(', ')}`);
-    } else {
-      results.projects = await processProjects(config.projects, env);
-      
-      // Install project scripts to workspace package.json
-      try {
-        const { installProjectScripts } = await import('./install/install-project-scripts.js');
-        print(`\n${symbols.info} Installing project scripts to workspace package.json...`, 'cyan');
-        log(`Installing project scripts to workspace package.json`);
-        installProjectScripts(WORKSPACE_ROOT, config.projects, config, log);
-        print(`  ${symbols.success} Project scripts installed`, 'green');
-      } catch (error) {
-        const err = error as Error;
-        print(`  ${symbols.warning} Failed to install project scripts: ${err.message}`, 'yellow');
-        log(`ERROR: Failed to install project scripts: ${err.message}\n${err.stack}`);
-      }
 
-      // Install API script to workspace package.json
-      try {
-        const { installApiScript } = await import('./install/install-project-scripts.js');
-        print(`\n${symbols.info} Installing API script to workspace package.json...`, 'cyan');
-        log(`Installing API script to workspace package.json`);
-        installApiScript(WORKSPACE_ROOT, log);
-        print(`  ${symbols.success} API script installed`, 'green');
-      } catch (error) {
-        const err = error as Error;
-        print(`  ${symbols.warning} Failed to install API script: ${err.message}`, 'yellow');
-        log(`ERROR: Failed to install API script: ${err.message}\n${err.stack}`);
+  // Install API script to workspace package.json
+  try {
+    const { installApiScript } = await import('./install/install-project-scripts.js');
+    print(`\n${symbols.info} Installing API script to workspace package.json...`, 'cyan');
+    log(`Installing API script to workspace package.json`);
+    installApiScript(WORKSPACE_ROOT, log);
+    print(`  ${symbols.success} API script installed`, 'green');
+  } catch (error) {
+    const err = error as Error;
+    print(`  ${symbols.warning} Failed to install API script: ${err.message}`, 'yellow');
+    log(`ERROR: Failed to install API script: ${err.message}\n${err.stack}`);
+  }
+  
+  // Collect results from all steps for summary
+  const state = loadInstallState(WORKSPACE_ROOT);
+  
+  // Build installedModules map from step 5 results
+  const installedModules: Record<string, string> = {};
+  if (step5Result.modules) {
+    for (const module of step5Result.modules) {
+      if (module.name && module.path) {
+        installedModules[module.name] = module.path;
       }
     }
   }
   
-  // Write results to cache
-  writeJSON(CACHE_FILE, results);
-  log(`\nResults written to: ${CACHE_FILE}`);
+  // Update state with installed modules
+  state.installedModules = installedModules;
+  state.installedAt = new Date().toISOString();
+  state.mcpServers = mcpResults;
+  state.checks = step7Result.results;
+  state.projects = step6Result.projects;
+  saveInstallState(WORKSPACE_ROOT, state);
   
   // Summary
-  const checksPassed = results.checks.filter(c => c.passed === true).length;
-  const checksSkipped = results.checks.filter(c => c.skipped === true).length;
-  const checksTotal = results.checks.length;
+  const allChecks = step7Result.results;
+  const checksPassed = allChecks.filter(c => c.passed === true).length;
+  const checksSkipped = allChecks.filter(c => c.skipped === true).length;
+  const checksTotal = allChecks.length;
   
-  // Calculate MCP statistics - exclude optional servers from failure count
+  // Calculate MCP statistics
   let mcpWorking = 0;
   let mcpTotal = 0;
   let mcpOptionalFailed = 0;
-  if (results.mcpServers) {
-    mcpTotal = results.mcpServers.length;
-    mcpWorking = results.mcpServers.filter(m => m.working).length;
-    // Count optional servers that failed (for informational purposes)
-    mcpOptionalFailed = results.mcpServers.filter(m => !m.working && m.optional).length;
+  if (mcpResults && Array.isArray(mcpResults)) {
+    mcpTotal = mcpResults.length;
+    mcpWorking = mcpResults.filter((m: { working?: boolean }) => m.working).length;
+    mcpOptionalFailed = mcpResults.filter((m: { working?: boolean; optional?: boolean }) => !m.working && m.optional).length;
   }
   
-  // Count non-optional servers that are working vs total non-optional
-  const mcpRequiredTotal = results.mcpServers ? results.mcpServers.filter(m => !m.optional).length : 0;
-  const mcpRequiredWorking = results.mcpServers ? results.mcpServers.filter(m => !m.optional && m.working).length : 0;
+  const mcpRequiredTotal = mcpResults ? mcpResults.filter((m: { optional?: boolean }) => !m.optional).length : 0;
+  const mcpRequiredWorking = mcpResults ? mcpResults.filter((m: { working?: boolean; optional?: boolean }) => !m.optional && m.working).length : 0;
   
   // Calculate project statistics
-  const projectsTotal = results.projects ? results.projects.length : 0;
-  const projectsWithSymlink = results.projects ? results.projects.filter(p => p.symlink && !p.symlink.error).length : 0;
+  const projectsTotal = step6Result.projects ? step6Result.projects.length : 0;
+  const projectsWithSymlink = step6Result.projects ? step6Result.projects.filter(p => p.symlink && !p.symlink.error).length : 0;
   let projectChecksPassed = 0;
   let projectChecksTotal = 0;
   let projectChecksSkipped = 0;
-  if (results.projects) {
-    for (const project of results.projects) {
+  if (step6Result.projects) {
+    for (const project of step6Result.projects) {
       if (project.checks) {
         projectChecksTotal += project.checks.length;
         projectChecksPassed += project.checks.filter(c => c.passed === true).length;
@@ -2459,7 +2206,6 @@ async function main(): Promise<void> {
     print(`  ${symbols.error} Some checks failed. Please review the output above.`, 'red');
   }
   if (mcpTotal > 0) {
-    // Show required servers status, and optional if any failed
     if (mcpRequiredTotal > 0) {
       const mcpStatus = mcpRequiredWorking === mcpRequiredTotal ? 'green' : 'yellow';
       let mcpMsg = `  MCP Servers: ${mcpRequiredWorking}/${mcpRequiredTotal} required working`;
@@ -2468,10 +2214,8 @@ async function main(): Promise<void> {
       }
       print(mcpMsg, mcpStatus);
     } else if (mcpOptionalFailed > 0) {
-      // Only optional servers, show warning if any failed
       print(`  MCP Servers: ${mcpWorking}/${mcpTotal} working (${mcpOptionalFailed} optional failed)`, 'yellow');
     } else {
-      // All working
       print(`  MCP Servers: ${mcpWorking}/${mcpTotal} working`, 'green');
     }
   }
@@ -2487,17 +2231,14 @@ async function main(): Promise<void> {
       print(projectChecksMsg, projectChecksPassed === projectChecksRan ? 'green' : 'yellow');
     }
   }
-  print(`\n${symbols.file} Results saved to .cache/install-check.json`, 'cyan');
+  print(`\n${symbols.file} Results saved to .cache/install-state.json`, 'cyan');
   print(`${symbols.log} Logs written to .cache/install.log\n`, 'cyan');
   
   log(`\n=== Installation check completed at ${new Date().toISOString()} ===\n`);
   
-  // Exit with error code if something failed (excluding optional MCP servers)
-  // Check if any required MCP servers failed
-  const mcpRequiredFailed = results.mcpServers ? results.mcpServers.filter(m => !m.optional && !m.working).length : 0;
-  // Skipped checks are not failures, and should not affect exit code.
-  // Treat the run as failed only if there are actual failed checks or required MCP failures.
-  const checksFailed = results.checks.filter(c => c.passed === false).length;
+  // Exit with error code if something failed
+  const mcpRequiredFailed = mcpResults ? mcpResults.filter((m: { working?: boolean; optional?: boolean }) => !m.optional && !m.working).length : 0;
+  const checksFailed = allChecks.filter(c => c.passed === false).length;
   const hasFailures = checksFailed > 0 || mcpRequiredFailed > 0;
   
   // Close log stream and wait for it to finish before exiting
