@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed - 2025-12-27
 
 - 🧾 **Installer state file** - Deprecated/removed `.cache/install-check.json`; installer now uses `.cache/install-state.json` as the single source of truth (including `installedModules`).
+- 🪵 **Installer logging** - Installation now uses a pino-compatible (levels-only) logger writing NDJSON into `.cache/install.log`.
+- 🧩 **Installer runner** - Workspace installation orchestration is driven by a small `runInstall(steps, ctx)` runner and step wrappers for readability.
 
 ### Fixed - 2025-12-25
 
