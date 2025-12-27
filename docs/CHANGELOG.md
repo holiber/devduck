@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed - 2025-12-27
+
+- 🧾 **Installer state file** - Deprecated/removed `.cache/install-check.json`; installer now uses `.cache/install-state.json` as the single source of truth (including `installedModules`).
+
 ### Fixed - 2025-12-25
 
 - 🔧 **API command handling in install checks** - Fixed issue where `api` commands (e.g., `api mcp.hasTool deepagent generate_answer`) were not properly handled during installation checks
