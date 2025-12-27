@@ -7,6 +7,8 @@
 import { promises as fs } from 'fs';
 import path from 'path';
 import { spawn } from 'child_process';
+import http from 'node:http';
+import { once } from 'node:events';
 import os from 'os';
 import { fileURLToPath } from 'url';
 
@@ -47,7 +49,7 @@ interface VerificationResult {
 
 interface ConfigVerificationResult {
   valid: boolean;
-  config: unknown;
+  config: Record<string, unknown> | null;
   errors: string[];
 }
 
@@ -123,8 +125,8 @@ export async function createWorkspaceFromFixture(
 /**
  * Execute installer with given options
  */
-export function runInstaller(workspacePath: string, options: RunInstallerOptions = {}): Promise<InstallerResult> {
-  return new Promise((resolve, reject) => {
+export async function runInstaller(workspacePath: string, options: RunInstallerOptions = {}): Promise<InstallerResult> {
+  return await new Promise(async (resolve, reject) => {
     const args = ['--workspace-path', workspacePath];
     
     if (options.unattended) {
@@ -161,18 +163,22 @@ export function runInstaller(workspacePath: string, options: RunInstallerOptions
     
     // Installer tests run in CI without user secrets; however some modules (e.g. cursor) require tokens.
     // Provide deterministic dummy values so pre-install checks don't block unattended installs.
+    const mockCursorApiBaseUrl = await getOrStartMockCursorApiBaseUrl();
     const proc = spawn('tsx', [INSTALLER_SCRIPT, ...args], {
       cwd: PROJECT_ROOT,
       env: {
         ...process.env,
         NODE_ENV: 'test',
-        CURSOR_API_KEY: process.env.CURSOR_API_KEY || 'test-cursor-api-key'
+        CURSOR_API_KEY: process.env.CURSOR_API_KEY || 'test-cursor-api-key',
+        // Avoid hitting the real Cursor API in tests; make cursor-api-key-valid deterministic.
+        CURSOR_API_BASE_URL: process.env.CURSOR_API_BASE_URL || mockCursorApiBaseUrl
       }
     });
 
     // Handle inputs for interactive mode
     if (options.inputs && options.inputs.length > 0) {
-      proc.stdin.setEncoding('utf8');
+      // Writable doesn't have setEncoding; use setDefaultEncoding instead.
+      proc.stdin.setDefaultEncoding('utf8');
       
       // Send inputs with delays to simulate user interaction
       const sendInput = () => {
@@ -215,6 +221,38 @@ export function runInstaller(workspacePath: string, options: RunInstallerOptions
       reject(error);
     });
   });
+}
+
+let mockCursorApiServer: http.Server | null = null;
+let mockCursorApiBaseUrl: string | null = null;
+
+async function getOrStartMockCursorApiBaseUrl(): Promise<string> {
+  if (mockCursorApiBaseUrl) return mockCursorApiBaseUrl;
+
+  mockCursorApiServer = http.createServer((req, res) => {
+    // Mimic the endpoint used in modules/cursor/MODULE.md
+    if (req.url?.startsWith('/v1/models')) {
+      res.statusCode = 200;
+      res.setHeader('Content-Type', 'application/json');
+      res.end(JSON.stringify({ data: [] }));
+      return;
+    }
+    res.statusCode = 404;
+    res.end();
+  });
+
+  // Important: do not keep the test runner alive because of this server.
+  // We'll allow Node to exit even if the mock server is still listening.
+  mockCursorApiServer.unref();
+
+  mockCursorApiServer.listen(0, '127.0.0.1');
+  await once(mockCursorApiServer, 'listening');
+  const addr = mockCursorApiServer.address();
+  if (!addr || typeof addr === 'string') {
+    throw new Error('Failed to start mock Cursor API server');
+  }
+  mockCursorApiBaseUrl = `http://127.0.0.1:${addr.port}`;
+  return mockCursorApiBaseUrl;
 }
 
 /**
@@ -319,18 +357,19 @@ export async function verifyWorkspaceConfig(workspacePath: string, expectedConfi
     const configPath = path.join(workspacePath, 'workspace.config.json');
     const content = await fs.readFile(configPath, 'utf8');
     results.config = JSON.parse(content) as Record<string, unknown>;
+    const config = results.config;
 
     // Verify required fields
-    if (!results.config.workspaceVersion) {
+    if (!config.workspaceVersion) {
       results.errors.push('workspaceVersion missing');
     }
-    if (!results.config.modules || !Array.isArray(results.config.modules)) {
+    if (!config.modules || !Array.isArray(config.modules)) {
       results.errors.push('modules missing or invalid');
     }
 
     // Verify expected values
     if (expectedConfig.modules) {
-      const actualModules = (results.config.modules || []) as string[];
+      const actualModules = (config.modules || []) as string[];
       const expectedModules = expectedConfig.modules as string[];
       const missing = expectedModules.filter(m => !actualModules.includes(m));
       if (missing.length > 0) {
@@ -338,8 +377,8 @@ export async function verifyWorkspaceConfig(workspacePath: string, expectedConfi
       }
     }
 
-    if (expectedConfig.devduckPath && results.config.devduckPath !== expectedConfig.devduckPath) {
-      results.errors.push(`devduckPath mismatch: expected ${expectedConfig.devduckPath}, got ${results.config.devduckPath}`);
+    if (expectedConfig.devduckPath && config.devduckPath !== expectedConfig.devduckPath) {
+      results.errors.push(`devduckPath mismatch: expected ${expectedConfig.devduckPath}, got ${config.devduckPath}`);
     }
 
     results.valid = results.errors.length === 0;
