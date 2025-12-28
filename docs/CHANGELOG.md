@@ -7,16 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [0.3.0] - 2025-12-28
+
+### Added - 2025-12-28
+
+- 📊 **PR metrics dashboard + reports** ([PR #73](https://github.com/holiber/devduck/pull/73))
+- 🧪 **Playwright runner test coverage** ([PR #72](https://github.com/holiber/devduck/pull/72))
+- 📚 **Workspace modules documentation** ([PR #71](https://github.com/holiber/devduck/pull/71))
+
 ### Changed - 2025-12-28
 
 - 🧰 **Installer CLI refactor** - Moved CLI argument parsing + workspace path resolution into `scripts/install/cli-runtime.ts`, keeping installer steps visible near the top of `scripts/install.ts`.
 - 🔌 **DevduckService socket fallback** - On macOS, when the default Unix socket path is too long, DevduckService now falls back to a short `/tmp/devduck-<hash>.sock` path to avoid `EINVAL` on `listen()`.
+- 🧾 **Taskfile install improvements** - Quieter output and more robust checks during Taskfile-driven installation ([PR #68](https://github.com/holiber/devduck/pull/68))
+- 🧪 **Installer tests migrated to Playwright** ([PR #59](https://github.com/holiber/devduck/pull/59))
+- 📦 **CI metrics and artifacts recording** ([PR #69](https://github.com/holiber/devduck/pull/69))
+
+### Fixed - 2025-12-28
+
+- 🛠️ **MCP tools listing for nested `mcpSettings`** ([PR #65](https://github.com/holiber/devduck/pull/65))
 
 ### Changed - 2025-12-27
 
 - 🧾 **Installer state file** - Deprecated/removed `.cache/install-check.json`; installer now uses `.cache/install-state.json` as the single source of truth (including `installedModules`).
 - 🪵 **Installer logging** - Installation now uses a pino-compatible (levels-only) logger writing NDJSON into `.cache/install.log`.
 - 🧩 **Installer runner** - Workspace installation orchestration is driven by a small `runInstall(steps, ctx)` runner and step wrappers for readability.
+
+### Changed - 2025-12-26
+
+- ⏪ **Reverted Trinicode project setup** ([PR #55](https://github.com/holiber/devduck/pull/55))
 
 ### Fixed - 2025-12-25
 
@@ -195,7 +216,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-[Unreleased]: https://github.com/holiber/devduck/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/holiber/devduck/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/holiber/devduck/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/holiber/devduck/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/holiber/devduck/releases/tag/v0.1.0
 
