@@ -1,0 +1,105 @@
+▶ Install Project Scripts
+  ✔ Install default scripts from project (3.181241ms)
+  ✔ Install additional scripts via importScripts (2.389417ms)
+  ✔ Remove scripts when project is removed from config (1.477297ms)
+  ✔ Handle missing project package.json gracefully (1.419179ms)
+  ✔ Verify scripts do not change current directory (3.905549ms)
+✔ Install Project Scripts (19.80643ms)
+Created shared workspace: /workspace/.cache/temp/install-steps-test-1766884407924
+[36m
+[Step 1] Checking environment variables...[0m
+[33m
+  ⚠ Missing required environment variables:[0m
+[33m    - TEST_VAR_1 (config) - Test variable 1[0m
+[36m
+  ℹ Please:[0m
+[36m    1. Switch to workspace folder: cd /workspace/.cache/temp/install-steps-test-1766884407924[0m
+[36m    2. Set missing variables in .env file or environment variables[0m
+[36m    3. Re-run installation[0m
+[33m  ⚠ Step 1 requires user input[0m
+[36m
+[Step 1] Checking environment variables...[0m
+[32m  ✓ All required environment variables are present[0m
+[32m  ✓ Step 1 completed[0m
+▶ Installation Steps
+  ✔ Step 1: Check Environment Variables (30.161905ms)
+[36m
+[Step 2] Downloading repositories...[0m
+[36m  ℹ No repositories to download[0m
+  ✔ Step 2: Download Repos (5.159838ms)
+[36m
+[Step 3] Downloading projects...[0m
+[36m  ℹ No projects to download[0m
+[36m
+[Step 4] Checking environment variables again...[0m
+[32m  ✓ All required environment variables are present[0m
+[32m  ✓ Step 4 completed[0m
+[36m
+[Step 5] Setting up modules...[0m
+[36m  ℹ Executing module hooks...[0m
+[32m  ✓ Step 5 completed[0m
+[36m
+[Step 6] Setting up projects...[0m
+[36m  ℹ No projects to setup[0m
+[36m
+[Step 7] Verifying installation...[0m
+[36m  ℹ Verifying 0 check(s)...[0m
+[32m  ✓ All verifications passed (0/0 passed, 0 skipped)[0m
+[32m  ✓ Step 7 completed[0m
+  ✔ Step 3: Download Projects (1.852041ms)
+  ✔ Step 4: Check Environment Again (6.492024ms)
+  ✔ Step 5: Setup Modules (11.527968ms)
+  ✔ Step 6: Setup Projects (1.256322ms)
+  ✔ Step 7: Verify Installation (6.605155ms)
+Cleaned up shared workspace: /workspace/.cache/temp/install-steps-test-1766884407924
+✔ Installation Steps (68.924261ms)
+▶ Workspace Installer - GUI/Interactive Mode
+  ▶ Fresh Workspace Installation
+    ✔ GUI Installation - Fresh Workspace (390.283568ms)
+  ✔ Fresh Workspace Installation (390.777564ms)
+  ▶ Existing Workspace Operations
+    ✔ Detect Existing Workspace (408.251597ms)
+  ✔ Existing Workspace Operations (412.926457ms)
+✔ Workspace Installer - GUI/Interactive Mode (804.071187ms)
+✔ installer: hook load failure is fatal (465.00869ms)
+✔ installer: .env values are available to shell checks (fill-missing) (367.156966ms)
+✔ installer: checks without name do not print "Checking undefined" (383.784522ms)
+✔ installer summary: prints INSTALLATION FINISHED WITH ERRORS on failures (368.363198ms)
+▶ Workspace Installer - Unattended Mode
+  ▶ Fresh Workspace Installation
+    ✔ Unattended Installation from fixture - cursor-only (409.048783ms)
+    ✔ Unattended Installation - Fresh Workspace (367.768309ms)
+    ✔ Unattended Installation with Config File (377.898214ms)
+    ✔ Unattended Installation with workspace config template (local folder project src) (480.728222ms)
+    ✔ Unattended Installation with workspace config template seedFiles[] copies seed files/folders (408.767169ms)
+    ✔ Unattended Installation - Full Structure Verification (404.680334ms)
+  ✔ Fresh Workspace Installation (2449.824464ms)
+  ▶ Existing Workspace Operations
+    ✔ Reinstall Existing Workspace - Unattended (794.755715ms)
+    ✔ Add Modules to Existing Workspace (792.099712ms)
+    ✔ Remove Modules from Existing Workspace (778.748394ms)
+    ✔ Reinstallation Verification - Preserve Configuration (785.06446ms)
+    ✔ Reinstallation - Module Hooks Re-executed (796.391517ms)
+  ✔ Existing Workspace Operations (3947.469138ms)
+  ▶ External Repository Installation
+    ✔ Installation with External Repository (898.374065ms)
+  ✔ External Repository Installation (898.478905ms)
+✔ Workspace Installer - Unattended Mode (7296.191093ms)
+▶ workspace modules patterns
+  ✔ modules: ["issue-*"] expands to issue-tracker and issue-tracker-github (16.890876ms)
+✔ workspace modules patterns (17.54102ms)
+▶ devduck new (npx-friendly bootstrap)
+  ✔ clones DevDuck into devduck/src when not listed in projects (2423.19314ms)
+  ✔ resolves relative workspace path from INIT_CWD (npx cache cwd simulation) (2507.712226ms)
+✔ devduck new (npx-friendly bootstrap) (4931.702801ms)
+▶ Workspace Installer - Workspace-local modules/
+  ✔ Installs module from workspace/modules when listed in config (433.455129ms)
+✔ Workspace Installer - Workspace-local modules/ (434.043269ms)
+ℹ tests 34
+ℹ suites 12
+ℹ pass 34
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 16476.225277

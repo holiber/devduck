@@ -1,10 +1,4 @@
-#!/usr/bin/env node
-
-/**
- * Tests for workspace config module patterns (e.g. "issue-*").
- */
-
-import { test, describe } from 'node:test';
+import { test } from '@playwright/test';
 import assert from 'node:assert';
 import path from 'node:path';
 import { promises as fs } from 'node:fs';
@@ -17,7 +11,7 @@ async function readYaml(p: string): Promise<any> {
   return YAML.parse(raw);
 }
 
-describe('workspace modules patterns', () => {
+test.describe('workspace modules patterns', () => {
   test('modules: ["issue-*"] expands to issue-tracker and issue-tracker-github', async () => {
     const fixtureConfigPath = path.join(
       process.cwd(),

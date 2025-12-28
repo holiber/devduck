@@ -1,13 +1,4 @@
-#!/usr/bin/env node
-
-/**
- * Tests for `npx github:holiber/devduck new` workspace bootstrap.
- *
- * This test runs offline by using --devduck-source to copy the current repo
- * into <workspace>/devduck/src.
- */
-
-import { test, describe } from 'node:test';
+import { test } from '@playwright/test';
 import assert from 'node:assert';
 import path from 'node:path';
 import { promises as fs } from 'node:fs';
@@ -21,20 +12,14 @@ async function readYaml(p: string): Promise<any> {
   return YAML.parse(raw);
 }
 
-describe('devduck new (npx-friendly bootstrap)', () => {
+test.describe('devduck new (npx-friendly bootstrap)', () => {
   test('clones DevDuck into devduck/src when not listed in projects', async () => {
     const workspaceRoot = await createTempWorkspace();
 
     try {
       const result = spawnSync(
         'node',
-        [
-          path.join(process.cwd(), 'bin', 'devduck.js'),
-          'new',
-          workspaceRoot,
-          '--devduck-source',
-          process.cwd()
-        ],
+        [path.join(process.cwd(), 'bin', 'devduck.js'), 'new', workspaceRoot, '--devduck-source', process.cwd()],
         {
           cwd: process.cwd(),
           env: { ...process.env, NODE_ENV: 'test' },

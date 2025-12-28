@@ -1,14 +1,10 @@
-import test from 'node:test';
+import { test } from '@playwright/test';
 import assert from 'node:assert/strict';
 import path from 'node:path';
 import { promises as fs } from 'node:fs';
-import { fileURLToPath } from 'node:url';
 import YAML from 'yaml';
 
 import { createTempWorkspace, cleanupTempWorkspace, runInstaller } from './helpers.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 test('installer: hook load failure is fatal', async () => {
   const tempWorkspace = await createTempWorkspace('devduck-hook-fail-');
@@ -35,14 +31,9 @@ test('installer: hook load failure is fatal', async () => {
 
     await fs.writeFile(
       path.join(moduleDir, 'hooks.ts'),
-      [
-        "import 'this-module-does-not-exist';",
-        '',
-        'export default {',
-        "  'pre-install': async () => ({ success: true })",
-        '};',
-        ''
-      ].join('\n'),
+      ["import 'this-module-does-not-exist';", '', 'export default {', "  'pre-install': async () => ({ success: true })", '};', ''].join(
+        '\n'
+      ),
       'utf8'
     );
 
@@ -53,10 +44,7 @@ test('installer: hook load failure is fatal', async () => {
     });
 
     assert.notEqual(result.exitCode, 0, 'installer should fail when hooks.ts cannot be loaded');
-    assert.match(
-      result.stdout + result.stderr,
-      /Failed to load hooks from .*hooks\.ts/i
-    );
+    assert.match(result.stdout + result.stderr, /Failed to load hooks from .*hooks\.ts/i);
   } finally {
     await cleanupTempWorkspace(tempWorkspace);
   }
@@ -102,7 +90,7 @@ test('installer: .env values are available to shell checks (fill-missing)', asyn
   }
 });
 
-test('installer: checks without name do not print \"Checking undefined\"', async () => {
+test('installer: checks without name do not print "Checking undefined"', async () => {
   const tempWorkspace = await createTempWorkspace('devduck-check-name-');
   try {
     await fs.writeFile(path.join(tempWorkspace, '.env'), 'SOME_TOKEN=ok\n', 'utf8');
@@ -120,9 +108,9 @@ test('installer: checks without name do not print \"Checking undefined\"', async
         'description: Module with a check missing name',
         'dependencies: [core]',
         'checks:',
-        '  - type: \"auth\"',
-        '    var: \"SOME_TOKEN\"',
-        '    description: \"Auth check without name\"',
+        '  - type: "auth"',
+        '    var: "SOME_TOKEN"',
+        '    description: "Auth check without name"',
         "    test: 'sh -c \"test -n \\\"$SOME_TOKEN\\\"\"'",
         '---',
         '',
@@ -185,5 +173,4 @@ test('installer summary: prints INSTALLATION FINISHED WITH ERRORS on failures', 
     await cleanupTempWorkspace(tempWorkspace);
   }
 });
-
 

@@ -1,0 +1,43 @@
+
+> devduck@0.2.0 test:smoke
+> playwright test -c tests/installer/playwright.config.ts --grep @smoke
+
+
+Running 7 tests using 1 worker
+
+(node:15787) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:15787) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 tests/installer/install-project-scripts.pw.spec.ts:27:3 › Install Project Scripts › Install default scripts from project @smoke (6ms)
+  ✓  2 tests/installer/install-project-scripts.pw.spec.ts:90:3 › Install Project Scripts › Install additional scripts via importScripts @smoke (1ms)
+  ✓  3 tests/installer/install-project-scripts.pw.spec.ts:142:3 › Install Project Scripts › Remove scripts when project is removed from config @smoke (1ms)
+  ✓  4 tests/installer/install-project-scripts.pw.spec.ts:194:3 › Install Project Scripts › Handle missing project package.json gracefully @smoke (2ms)
+  ✓  5 tests/installer/install-project-scripts.pw.spec.ts:228:3 › Install Project Scripts › Verify scripts do not change current directory @smoke (1ms)
+Created shared workspace: /workspace/.cache/temp/install-steps-test-1766884898646
+[36m
+[Step 1] Checking environment variables...[0m
+[32m  ✓ All required environment variables are present[0m
+[32m  ✓ Step 1 completed[0m
+[36m
+[Step 2] Downloading repositories...[0m
+[36m  ℹ No repositories to download[0m
+[36m
+[Step 3] Downloading projects...[0m
+[36m  ℹ No projects to download[0m
+  ✓  6 tests/installer/install-steps.pw.spec.ts:129:3 › Installation Steps › Step 3: Download Projects @smoke (17ms)
+[36m
+[Step 4] Checking environment variables again...[0m
+[32m  ✓ All required environment variables are present[0m
+[32m  ✓ Step 4 completed[0m
+[36m
+[Step 5] Setting up modules...[0m
+[36m  ℹ Executing module hooks...[0m
+[32m  ✓ Step 5 completed[0m
+[36m
+[Step 6] Setting up projects...[0m
+[36m  ℹ No projects to setup[0m
+Cleaned up shared workspace: /workspace/.cache/temp/install-steps-test-1766884898646
+  ✓  7 tests/installer/install-steps.pw.spec.ts:173:3 › Installation Steps › Step 6: Setup Projects @smoke (18ms)
+
+  7 passed (723ms)

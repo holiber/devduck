@@ -1,0 +1,38 @@
+{
+  "source": {
+    "snapshotDir": "/workspace/projects/devduck/tests/perf/2025-12-28T011222Z",
+    "installerRaw": "/workspace/projects/devduck/tests/perf/2025-12-28T011222Z/installer-only.raw.txt"
+  },
+  "strategy": "fastest 20% by durationMs (passed tests only)",
+  "count": 7,
+  "items": [
+    {
+      "fullTitle": "Installation Steps > Step 6: Setup Projects",
+      "durationMs": 1.256322
+    },
+    {
+      "fullTitle": "Install Project Scripts > Handle missing project package.json gracefully",
+      "durationMs": 1.419179
+    },
+    {
+      "fullTitle": "Install Project Scripts > Remove scripts when project is removed from config",
+      "durationMs": 1.477297
+    },
+    {
+      "fullTitle": "Installation Steps > Step 3: Download Projects",
+      "durationMs": 1.852041
+    },
+    {
+      "fullTitle": "Install Project Scripts > Install additional scripts via importScripts",
+      "durationMs": 2.389417
+    },
+    {
+      "fullTitle": "Install Project Scripts > Install default scripts from project",
+      "durationMs": 3.181241
+    },
+    {
+      "fullTitle": "Install Project Scripts > Verify scripts do not change current directory",
+      "durationMs": 3.905549
+    }
+  ]
+}
