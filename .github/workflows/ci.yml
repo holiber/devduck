@@ -29,6 +29,16 @@ jobs:
     - name: Run tests
       run: npm test
 
-    - name: Run installer tests (Playwright)
-      run: npm run test:installer:pw
+    - name: Run installer tests (Playwright) + timing report
+      run: npx tsx scripts/capture-playwright-timings.ts --md > tests/perf/timing-comparison.md
+
+    - name: Upload Playwright report artifacts
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: playwright-installer-report
+        path: |
+          playwright-report/
+          test-results/
+          tests/perf/timing-comparison.md
 

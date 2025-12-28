@@ -28,6 +28,11 @@ test-results/
 playwright-report/
 blob-report/
 
+# Perf artifacts (generated locally/CI)
+tests/perf/*
+!tests/perf/templates/
+!tests/perf/templates/*.md
+
 # Projects (workspace-specific, not part of devduck repo)
 projects/
 

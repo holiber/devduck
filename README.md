@@ -139,3 +139,11 @@ Modules from external repositories must include `manifest.json` (or `devduck.man
 
 If something goes wrong remove the `.cache` directory and re-run `node install.js`
 Or type `/troubleshoot` command in AI chat
+
+## Playwright Installer Tests
+
+Installer tests are migrated to Playwright Test and live under `tests/installer/*.pw.spec.ts`.
+
+- **Run installer suite (Playwright)**: `npm run test:installer:pw`
+- **Run smoke group (fastest 20%)**: `npm run test:smoke`
+- **Generate Playwright timing comparison (Markdown)**: `npx tsx scripts/capture-playwright-timings.ts --md`

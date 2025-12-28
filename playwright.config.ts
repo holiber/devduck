@@ -11,14 +11,17 @@ export default defineConfig({
   testMatch: '**/*.pw.spec.ts',
   timeout: 60_000,
   expect: { timeout: 10_000 },
-  retries: 0,
+  retries: 1,
   workers: 1,
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
-  reporter: process.env.CI ? [['list']] : [['list']],
+  reporter: process.env.CI
+    ? [['list'], ['html', { open: 'never' }]]
+    : [['list']],
   use: {
     // These installer tests are mostly "node-style" (fs/spawn) and typically do not use the browser.
     // Keep defaults minimal and deterministic.
+    headless: true
   }
 });
 

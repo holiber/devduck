@@ -15,6 +15,8 @@ function findTestFiles(dir: string, testFiles: string[] = []): string[] {
     const fullPath = join(dir, entry.name);
     
     if (entry.isDirectory()) {
+      // Legacy tests are preserved for reference only (not part of CI).
+      if (entry.name === 'legacy') continue;
       findTestFiles(fullPath, testFiles);
     } else if (entry.isFile() && entry.name.endsWith('.test.ts')) {
       testFiles.push(fullPath);
