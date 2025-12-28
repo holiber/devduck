@@ -1,0 +1,51 @@
+{
+  "source": {
+    "baselineTimings": "tests/perf/node-test-baseline_2025-12-28T01-27-01Z.timings.json",
+    "prefixes": [
+      "Workspace Installer - Unattended Mode",
+      "Workspace Installer - GUI/Interactive Mode",
+      "Workspace Installer - Workspace-local modules/",
+      "Installation Steps",
+      "Install Project Scripts",
+      "workspace modules patterns",
+      "devduck new (npx-friendly bootstrap)",
+      "installer:",
+      "installer summary:"
+    ],
+    "method": "Select top 20% fastest by ms from baseline timings within installer-related tests (prefix filter)."
+  },
+  "totals": {
+    "installerTests": 34,
+    "smokeTests": 7
+  },
+  "smokeTests": [
+    {
+      "name": "Install Project Scripts > Handle missing project package.json gracefully",
+      "ms": 0.844916
+    },
+    {
+      "name": "Installation Steps > Step 6: Setup Projects",
+      "ms": 0.967708
+    },
+    {
+      "name": "Install Project Scripts > Verify scripts do not change current directory",
+      "ms": 0.993583
+    },
+    {
+      "name": "Install Project Scripts > Install additional scripts via importScripts",
+      "ms": 1.259542
+    },
+    {
+      "name": "Installation Steps > Step 3: Download Projects",
+      "ms": 1.311541
+    },
+    {
+      "name": "Installation Steps > Step 2: Download Repos",
+      "ms": 1.474334
+    },
+    {
+      "name": "Install Project Scripts > Install default scripts from project",
+      "ms": 1.877042
+    }
+  ]
+}

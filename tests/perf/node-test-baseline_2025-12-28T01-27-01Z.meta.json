@@ -1,0 +1,220 @@
+{
+  "runner": "node:test via tsx --test (npm test -> scripts/run-tests.ts)",
+  "capturedAt": "2025-12-28T01:28:06.024Z",
+  "wallTimeMs": 63999.728833,
+  "parsed": {
+    "tapRecords": {
+      "total": 142,
+      "tests": 114
+    },
+    "tests": {
+      "count": 114,
+      "totalMs": 60500.857244000006,
+      "fastest": [
+        {
+          "name": "ci: smogcheck-provider > fetchComments works with branch name",
+          "ms": 0.034709
+        },
+        {
+          "name": "issue-tracker: smogcheck-provider > fetchIssue works with issue key",
+          "ms": 0.050875
+        },
+        {
+          "name": "ci: smogcheck-provider > fetchCheckStatus works with checkId",
+          "ms": 0.051208
+        },
+        {
+          "name": "ci: smogcheck-provider > fetchCheckStatus returns annotations for failed checks",
+          "ms": 0.051458
+        },
+        {
+          "name": "issue-tracker: smogcheck-provider > fetchComments includes reactions",
+          "ms": 0.051542
+        },
+        {
+          "name": "email: smogcheck-provider > searchMessages supports filtering by date range",
+          "ms": 0.056208
+        },
+        {
+          "name": "ci: smogcheck-provider > fetchComments includes file location for file comments",
+          "ms": 0.057292
+        },
+        {
+          "name": "workspace-path resolver > resolves ark:/ links using arc root and strips arcadia/ prefix",
+          "ms": 0.059458
+        },
+        {
+          "name": "email: smogcheck-provider > searchMessages supports filtering by participant (to/cc/bcc/from)",
+          "ms": 0.06425
+        },
+        {
+          "name": "ci: smogcheck-provider > fetchPR throws error for non-existent PR",
+          "ms": 0.066125
+        },
+        {
+          "name": "issue-tracker: smogcheck-provider > fetchIssue throws error for non-existent issue",
+          "ms": 0.072
+        },
+        {
+          "name": "email: smogcheck-provider > searchMessages supports filtering by from",
+          "ms": 0.080875
+        },
+        {
+          "name": "issue-tracker: smogcheck-provider > fetchComments returns empty array for issue without comments",
+          "ms": 0.086958
+        },
+        {
+          "name": "ci: smogcheck-provider > fetchCheckStatus works with branch name",
+          "ms": 0.089833
+        },
+        {
+          "name": "workspace-path resolver > if arc root is unavailable, ark:/ falls back to projectRoot",
+          "ms": 0.102916
+        },
+        {
+          "name": "email: smogcheck-provider > getMessage returns a message by id",
+          "ms": 0.112166
+        },
+        {
+          "name": "ci: smogcheck-provider > fetchPR works with branch name",
+          "ms": 0.127375
+        },
+        {
+          "name": "workspace-path resolver > resolves ark:/ links using arc root (fallback to arc root)",
+          "ms": 0.139958
+        },
+        {
+          "name": "issue-tracker: smogcheck-provider > fetchIssue works with URL",
+          "ms": 0.173041
+        },
+        {
+          "name": "messenger: yandex-messenger-provider > matches MessengerProvider contract schema",
+          "ms": 0.175958
+        },
+        {
+          "name": "email: smogcheck-provider > downloadAttachment returns a Buffer for an existing attachment",
+          "ms": 0.191791
+        },
+        {
+          "name": "issue-tracker: smogcheck-provider > fetchPRs returns PR references that match PRReference schema",
+          "ms": 0.215833
+        },
+        {
+          "name": "ci: smogcheck-provider > fetchComments includes reactions",
+          "ms": 0.224583
+        },
+        {
+          "name": "ci: smogcheck-provider > fetchCheckStatus returns check statuses that match CheckStatus schema",
+          "ms": 0.225167
+        },
+        {
+          "name": "issue-tracker: smogcheck-provider > fetchPRs returns empty array for issue without PRs",
+          "ms": 0.227417
+        }
+      ],
+      "slowest": [
+        {
+          "name": "devduck new (npx-friendly bootstrap) > clones DevDuck into devduck/src when not listed in projects",
+          "ms": 10447.933625
+        },
+        {
+          "name": "launch dev starts background processes, runs smokecheck, captures browser console, and allows reuse",
+          "ms": 7580.037834
+        },
+        {
+          "name": "workspace.config.json launch.dev starts processes, runs smokecheck, and supports smokecheck without args",
+          "ms": 5270.793208
+        },
+        {
+          "name": "issue-tracker-github: github-provider > downloadResources creates correct directory structure",
+          "ms": 3957.599
+        },
+        {
+          "name": "issue-tracker-github: github-provider > downloadResources creates resources.json with correct metadata",
+          "ms": 3453.70925
+        },
+        {
+          "name": "devduck new (npx-friendly bootstrap) > resolves relative workspace path from INIT_CWD (npx cache cwd simulation)",
+          "ms": 3353.507291
+        },
+        {
+          "name": "Workspace Installer - Unattended Mode > External Repository Installation > Installation with External Repository",
+          "ms": 3116.039625
+        },
+        {
+          "name": "issue-tracker-github: github-provider > downloadResources downloads resources with distance <= 1",
+          "ms": 2999.640583
+        },
+        {
+          "name": "issue-tracker-github: github-provider > downloadResources creates issue.json with comments",
+          "ms": 2624.715959
+        },
+        {
+          "name": "issue-tracker-github: github-provider > fetchPRs returns PR references that match PRReference schema",
+          "ms": 1153.547458
+        },
+        {
+          "name": "Workspace Installer - Unattended Mode > Existing Workspace Operations > Reinstallation - Module Hooks Re-executed",
+          "ms": 1084.483583
+        },
+        {
+          "name": "Workspace Installer - Unattended Mode > Existing Workspace Operations > Add Modules to Existing Workspace",
+          "ms": 1075.642875
+        },
+        {
+          "name": "Workspace Installer - Unattended Mode > Existing Workspace Operations > Remove Modules from Existing Workspace",
+          "ms": 1041.313208
+        },
+        {
+          "name": "Workspace Installer - Unattended Mode > Existing Workspace Operations > Reinstallation Verification - Preserve Configuration",
+          "ms": 978.1785
+        },
+        {
+          "name": "Workspace Installer - Unattended Mode > Existing Workspace Operations > Reinstall Existing Workspace - Unattended",
+          "ms": 941.881958
+        },
+        {
+          "name": "messenger CLI exposes required inputs as options",
+          "ms": 935.843459
+        },
+        {
+          "name": "mcp: API module > mcp.list can be called via API CLI",
+          "ms": 871.990291
+        },
+        {
+          "name": "mcp: API module > mcp.call can be called via API CLI (help check)",
+          "ms": 789.870041
+        },
+        {
+          "name": "mcp: API module > npm run api lists mcp methods",
+          "ms": 733.277584
+        },
+        {
+          "name": "Workspace Installer - Workspace-local modules/ > Installs module from workspace/modules when listed in config",
+          "ms": 575.175666
+        },
+        {
+          "name": "Workspace Installer - Unattended Mode > Fresh Workspace Installation > Unattended Installation with workspace.config.json (local folder project src)",
+          "ms": 564.489333
+        },
+        {
+          "name": "Workspace Installer - Unattended Mode > Fresh Workspace Installation > Unattended Installation with workspace.config.json seedFiles[] copies seed files/folders",
+          "ms": 493.573458
+        },
+        {
+          "name": "ci CLI positional still works (no duplicate required flags)",
+          "ms": 468.635333
+        },
+        {
+          "name": "Workspace Installer - Unattended Mode > Fresh Workspace Installation > Unattended Installation from fixture - cursor-only",
+          "ms": 466.353917
+        },
+        {
+          "name": "Workspace Installer - Unattended Mode > Fresh Workspace Installation > Unattended Installation - Full Structure Verification",
+          "ms": 460.083083
+        }
+      ]
+    }
+  },
+  "rawLogPath": "tests/perf/node-test-baseline_2025-12-28T01-27-01Z.log"
+}

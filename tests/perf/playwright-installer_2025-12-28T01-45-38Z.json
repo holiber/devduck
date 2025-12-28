@@ -1,0 +1,1534 @@
+{
+  "config": {
+    "configFile": "/Users/alex-nazarov/arcadia/junk/alex-nazarov/devduck-dev-workspace/projects/devduck/playwright.config.ts",
+    "rootDir": "/Users/alex-nazarov/arcadia/junk/alex-nazarov/devduck-dev-workspace/projects/devduck/tests",
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "reporter": [
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "quiet": false,
+    "projects": [
+      {
+        "outputDir": "/Users/alex-nazarov/arcadia/junk/alex-nazarov/devduck-dev-workspace/projects/devduck/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "installer",
+        "name": "installer",
+        "testDir": "/Users/alex-nazarov/arcadia/junk/alex-nazarov/devduck-dev-workspace/projects/devduck/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/installer/**/*.pw.spec.ts"
+        ],
+        "timeout": 120000
+      }
+    ],
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.57.0",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "installer/install-project-scripts.pw.spec.ts",
+      "file": "installer/install-project-scripts.pw.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Install Project Scripts",
+          "file": "installer/install-project-scripts.pw.spec.ts",
+          "line": 21,
+          "column": 6,
+          "specs": [
+            {
+              "title": "@smoke Install default scripts from project",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "installer",
+                  "projectName": "installer",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 7,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-28T01:48:29.564Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ee5419bfb1ffef1a527f-d09894f667fc30729e45",
+              "file": "installer/install-project-scripts.pw.spec.ts",
+              "line": 36,
+              "column": 3
+            },
+            {
+              "title": "@smoke Install additional scripts via importScripts",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "installer",
+                  "projectName": "installer",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 4,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-28T01:48:29.593Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ee5419bfb1ffef1a527f-f4e383f6b3b13cafa08c",
+              "file": "installer/install-project-scripts.pw.spec.ts",
+              "line": 98,
+              "column": 3
+            },
+            {
+              "title": "Remove scripts when project is removed from config",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "installer",
+                  "projectName": "installer",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 5,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-28T01:48:29.603Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ee5419bfb1ffef1a527f-e296301fa86996baf86a",
+              "file": "installer/install-project-scripts.pw.spec.ts",
+              "line": 147,
+              "column": 3
+            },
+            {
+              "title": "@smoke Handle missing project package.json gracefully",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "installer",
+                  "projectName": "installer",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-28T01:48:29.612Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ee5419bfb1ffef1a527f-7e5e16357fa0c65f0f96",
+              "file": "installer/install-project-scripts.pw.spec.ts",
+              "line": 193,
+              "column": 3
+            },
+            {
+              "title": "@smoke Verify scripts do not change current directory",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "installer",
+                  "projectName": "installer",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-28T01:48:29.618Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ee5419bfb1ffef1a527f-6dd3e257dbe0f1c13f08",
+              "file": "installer/install-project-scripts.pw.spec.ts",
+              "line": 227,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "installer/install-steps.pw.spec.ts",
+      "file": "installer/install-steps.pw.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Installation Steps",
+          "file": "installer/install-steps.pw.spec.ts",
+          "line": 34,
+          "column": 15,
+          "specs": [
+            {
+              "title": "Step 1: Check Environment Variables",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "installer",
+                  "projectName": "installer",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 47,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "\u001b[36m\n[Step 1] Checking environment variables...\u001b[0m\n"
+                        },
+                        {
+                          "text": "\u001b[33m\n  ⚠ Missing required environment variables:\u001b[0m\n"
+                        },
+                        {
+                          "text": "\u001b[33m    - TEST_VAR_1 (config) - Test variable 1\u001b[0m\n"
+                        },
+                        {
+                          "text": "\u001b[36m\n  ℹ Please:\u001b[0m\n"
+                        },
+                        {
+                          "text": "\u001b[36m    1. Switch to workspace folder: cd /Users/alex-nazarov/arcadia/junk/alex-nazarov/devduck-dev-workspace/projects/devduck/.cache/temp/install-steps-test-1766886509710\u001b[0m\n"
+                        },
+                        {
+                          "text": "\u001b[36m    2. Set missing variables in .env file or environment variables\u001b[0m\n"
+                        },
+                        {
+                          "text": "\u001b[36m    3. Re-run installation\u001b[0m\n"
+                        },
+                        {
+                          "text": "\u001b[33m  ⚠ Step 1 requires user input\u001b[0m\n"
+                        },
+                        {
+                          "text": "\u001b[36m\n[Step 1] Checking environment variables...\u001b[0m\n"
+                        },
+                        {
+                          "text": "\u001b[32m  ✓ All required environment variables are present\u001b[0m\n"
+                        },
+                        {
+                          "text": "\u001b[32m  ✓ Step 1 completed\u001b[0m\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-28T01:48:29.705Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "13a59e70e881101de059-36a6516c7bd9b94d31cd",
+              "file": "installer/install-steps.pw.spec.ts",
+              "line": 162,
+              "column": 3
+            },
+            {
+              "title": "@smoke Step 2: Download Repos",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "installer",
+                  "projectName": "installer",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 5,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "\u001b[36m\n[Step 2] Downloading repositories...\u001b[0m\n"
+                        },
+                        {
+                          "text": "\u001b[36m  ℹ No repositories to download\u001b[0m\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-28T01:48:29.765Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "13a59e70e881101de059-6ad3544099dda54bf02a",
+              "file": "installer/install-steps.pw.spec.ts",
+              "line": 166,
+              "column": 3
+            },
+            {
+              "title": "@smoke Step 3: Download Projects",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "installer",
+                  "projectName": "installer",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 3,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "\u001b[36m\n[Step 3] Downloading projects...\u001b[0m\n"
+                        },
+                        {
+                          "text": "\u001b[36m  ℹ No projects to download\u001b[0m\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-28T01:48:29.775Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "13a59e70e881101de059-e84fe27c8bb835580e19",
+              "file": "installer/install-steps.pw.spec.ts",
+              "line": 171,
+              "column": 3
+            },
+            {
+              "title": "Step 4: Check Environment Again",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "installer",
+                  "projectName": "installer",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 15,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "\u001b[36m\n[Step 4] Checking environment variables again...\u001b[0m\n"
+                        },
+                        {
+                          "text": "\u001b[32m  ✓ All required environment variables are present\u001b[0m\n"
+                        },
+                        {
+                          "text": "\u001b[32m  ✓ Step 4 completed\u001b[0m\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-28T01:48:29.782Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "13a59e70e881101de059-52451cf26a05bb0905be",
+              "file": "installer/install-steps.pw.spec.ts",
+              "line": 177,
+              "column": 3
+            },
+            {
+              "title": "Step 5: Setup Modules",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "installer",
+                  "projectName": "installer",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 19,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "\u001b[36m\n[Step 5] Setting up modules...\u001b[0m\n"
+                        },
+                        {
+                          "text": "\u001b[36m  ℹ Executing module hooks...\u001b[0m\n"
+                        },
+                        {
+                          "text": "\u001b[32m  ✓ Step 5 completed\u001b[0m\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-28T01:48:29.803Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "13a59e70e881101de059-50caa934e75249942fde",
+              "file": "installer/install-steps.pw.spec.ts",
+              "line": 184,
+              "column": 3
+            },
+            {
+              "title": "@smoke Step 6: Setup Projects",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "installer",
+                  "projectName": "installer",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 4,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "\u001b[36m\n[Step 6] Setting up projects...\u001b[0m\n"
+                        },
+                        {
+                          "text": "\u001b[36m  ℹ No projects to setup\u001b[0m\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-28T01:48:29.827Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "13a59e70e881101de059-f3a1c54e6fa173c990b2",
+              "file": "installer/install-steps.pw.spec.ts",
+              "line": 192,
+              "column": 3
+            },
+            {
+              "title": "Step 7: Verify Installation",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "installer",
+                  "projectName": "installer",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 14,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "\u001b[36m\n[Step 7] Verifying installation...\u001b[0m\n"
+                        },
+                        {
+                          "text": "\u001b[36m  ℹ Verifying 0 check(s)...\u001b[0m\n"
+                        },
+                        {
+                          "text": "\u001b[32m  ✓ All verifications passed (0/0 passed, 0 skipped)\u001b[0m\n"
+                        },
+                        {
+                          "text": "\u001b[32m  ✓ Step 7 completed\u001b[0m\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-28T01:48:29.835Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "13a59e70e881101de059-176e1c63997ab5cc1242",
+              "file": "installer/install-steps.pw.spec.ts",
+              "line": 201,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "installer/installer-gui.pw.spec.ts",
+      "file": "installer/installer-gui.pw.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Workspace Installer - GUI/Interactive Mode",
+          "file": "installer/installer-gui.pw.spec.ts",
+          "line": 19,
+          "column": 6,
+          "specs": [],
+          "suites": [
+            {
+              "title": "Fresh Workspace Installation",
+              "file": "installer/installer-gui.pw.spec.ts",
+              "line": 22,
+              "column": 8,
+              "specs": [
+                {
+                  "title": "GUI Installation - Fresh Workspace",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 120000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "installer",
+                      "projectName": "installer",
+                      "results": [
+                        {
+                          "workerIndex": 0,
+                          "parallelIndex": 0,
+                          "status": "passed",
+                          "duration": 422,
+                          "errors": [],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2025-12-28T01:48:29.870Z",
+                          "annotations": [],
+                          "attachments": []
+                        }
+                      ],
+                      "status": "expected"
+                    }
+                  ],
+                  "id": "598d4cd1732e6d8f629d-bff1ab36e9bf0df7b48b",
+                  "file": "installer/installer-gui.pw.spec.ts",
+                  "line": 23,
+                  "column": 5
+                }
+              ]
+            },
+            {
+              "title": "Existing Workspace Operations",
+              "file": "installer/installer-gui.pw.spec.ts",
+              "line": 59,
+              "column": 8,
+              "specs": [
+                {
+                  "title": "Detect Existing Workspace",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 120000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "installer",
+                      "projectName": "installer",
+                      "results": [
+                        {
+                          "workerIndex": 0,
+                          "parallelIndex": 0,
+                          "status": "passed",
+                          "duration": 459,
+                          "errors": [],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2025-12-28T01:48:30.297Z",
+                          "annotations": [],
+                          "attachments": []
+                        }
+                      ],
+                      "status": "expected"
+                    }
+                  ],
+                  "id": "598d4cd1732e6d8f629d-49b4ce575fb6abbf8fa9",
+                  "file": "installer/installer-gui.pw.spec.ts",
+                  "line": 72,
+                  "column": 5
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "installer/installer-strictness.pw.spec.ts",
+      "file": "installer/installer-strictness.pw.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "installer strictness / UX",
+          "file": "installer/installer-strictness.pw.spec.ts",
+          "line": 11,
+          "column": 6,
+          "specs": [
+            {
+              "title": "installer: hook load failure is fatal",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "installer",
+                  "projectName": "installer",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 492,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-28T01:48:30.777Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "bc0a6694554bb80f6dcd-9cc19bcc62534971f46c",
+              "file": "installer/installer-strictness.pw.spec.ts",
+              "line": 14,
+              "column": 3
+            },
+            {
+              "title": "installer: .env values are available to shell checks (fill-missing)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "installer",
+                  "projectName": "installer",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 411,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-28T01:48:31.273Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "bc0a6694554bb80f6dcd-1fb73757b30bb9098512",
+              "file": "installer/installer-strictness.pw.spec.ts",
+              "line": 63,
+              "column": 3
+            },
+            {
+              "title": "installer: checks without name do not print \"Checking undefined\"",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "installer",
+                  "projectName": "installer",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 430,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-28T01:48:31.688Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "bc0a6694554bb80f6dcd-3741556db3238e86df19",
+              "file": "installer/installer-strictness.pw.spec.ts",
+              "line": 106,
+              "column": 3
+            },
+            {
+              "title": "installer summary: prints INSTALLATION FINISHED WITH ERRORS on failures",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "installer",
+                  "projectName": "installer",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 411,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-28T01:48:32.122Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "bc0a6694554bb80f6dcd-f5b493c82427d53d2a03",
+              "file": "installer/installer-strictness.pw.spec.ts",
+              "line": 150,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "installer/installer-unattended.pw.spec.ts",
+      "file": "installer/installer-unattended.pw.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Workspace Installer - Unattended Mode",
+          "file": "installer/installer-unattended.pw.spec.ts",
+          "line": 24,
+          "column": 6,
+          "specs": [],
+          "suites": [
+            {
+              "title": "Fresh Workspace Installation",
+              "file": "installer/installer-unattended.pw.spec.ts",
+              "line": 27,
+              "column": 8,
+              "specs": [
+                {
+                  "title": "Unattended Installation from fixture - cursor-only",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 120000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "installer",
+                      "projectName": "installer",
+                      "results": [
+                        {
+                          "workerIndex": 0,
+                          "parallelIndex": 0,
+                          "status": "passed",
+                          "duration": 502,
+                          "errors": [],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2025-12-28T01:48:32.544Z",
+                          "annotations": [],
+                          "attachments": []
+                        }
+                      ],
+                      "status": "expected"
+                    }
+                  ],
+                  "id": "c0a899f85dd84a301c93-cba959a642093b3b5084",
+                  "file": "installer/installer-unattended.pw.spec.ts",
+                  "line": 28,
+                  "column": 5
+                },
+                {
+                  "title": "Unattended Installation - Fresh Workspace",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 120000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "installer",
+                      "projectName": "installer",
+                      "results": [
+                        {
+                          "workerIndex": 0,
+                          "parallelIndex": 0,
+                          "status": "passed",
+                          "duration": 406,
+                          "errors": [],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2025-12-28T01:48:33.050Z",
+                          "annotations": [],
+                          "attachments": []
+                        }
+                      ],
+                      "status": "expected"
+                    }
+                  ],
+                  "id": "c0a899f85dd84a301c93-59496fdb922ffaa3bb9a",
+                  "file": "installer/installer-unattended.pw.spec.ts",
+                  "line": 63,
+                  "column": 5
+                },
+                {
+                  "title": "Unattended Installation with Config File",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 120000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "installer",
+                      "projectName": "installer",
+                      "results": [
+                        {
+                          "workerIndex": 0,
+                          "parallelIndex": 0,
+                          "status": "passed",
+                          "duration": 406,
+                          "errors": [],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2025-12-28T01:48:33.460Z",
+                          "annotations": [],
+                          "attachments": []
+                        }
+                      ],
+                      "status": "expected"
+                    }
+                  ],
+                  "id": "c0a899f85dd84a301c93-dd62f66fe384e86909d3",
+                  "file": "installer/installer-unattended.pw.spec.ts",
+                  "line": 98,
+                  "column": 5
+                },
+                {
+                  "title": "Unattended Installation with workspace.config.json (local folder project src)",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 120000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "installer",
+                      "projectName": "installer",
+                      "results": [
+                        {
+                          "workerIndex": 0,
+                          "parallelIndex": 0,
+                          "status": "passed",
+                          "duration": 578,
+                          "errors": [],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2025-12-28T01:48:33.869Z",
+                          "annotations": [],
+                          "attachments": []
+                        }
+                      ],
+                      "status": "expected"
+                    }
+                  ],
+                  "id": "c0a899f85dd84a301c93-020c749079d4d769ceb7",
+                  "file": "installer/installer-unattended.pw.spec.ts",
+                  "line": 136,
+                  "column": 5
+                },
+                {
+                  "title": "Unattended Installation with workspace.config.json seedFiles[] copies seed files/folders",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 120000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "installer",
+                      "projectName": "installer",
+                      "results": [
+                        {
+                          "workerIndex": 0,
+                          "parallelIndex": 0,
+                          "status": "passed",
+                          "duration": 465,
+                          "errors": [],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2025-12-28T01:48:34.452Z",
+                          "annotations": [],
+                          "attachments": []
+                        }
+                      ],
+                      "status": "expected"
+                    }
+                  ],
+                  "id": "c0a899f85dd84a301c93-060c94a94e3e9486b240",
+                  "file": "installer/installer-unattended.pw.spec.ts",
+                  "line": 219,
+                  "column": 5
+                },
+                {
+                  "title": "Unattended Installation - Full Structure Verification",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 120000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "installer",
+                      "projectName": "installer",
+                      "results": [
+                        {
+                          "workerIndex": 0,
+                          "parallelIndex": 0,
+                          "status": "passed",
+                          "duration": 474,
+                          "errors": [],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2025-12-28T01:48:34.920Z",
+                          "annotations": [],
+                          "attachments": []
+                        }
+                      ],
+                      "status": "expected"
+                    }
+                  ],
+                  "id": "c0a899f85dd84a301c93-6b744096c639ad28452b",
+                  "file": "installer/installer-unattended.pw.spec.ts",
+                  "line": 254,
+                  "column": 5
+                }
+              ]
+            },
+            {
+              "title": "Existing Workspace Operations",
+              "file": "installer/installer-unattended.pw.spec.ts",
+              "line": 298,
+              "column": 8,
+              "specs": [
+                {
+                  "title": "Detect Existing Workspace",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 120000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "installer",
+                      "projectName": "installer",
+                      "results": [
+                        {
+                          "workerIndex": 0,
+                          "parallelIndex": 0,
+                          "status": "passed",
+                          "duration": 462,
+                          "errors": [],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2025-12-28T01:48:35.398Z",
+                          "annotations": [],
+                          "attachments": []
+                        }
+                      ],
+                      "status": "expected"
+                    }
+                  ],
+                  "id": "c0a899f85dd84a301c93-7d72b66369e20ad7316f",
+                  "file": "installer/installer-unattended.pw.spec.ts",
+                  "line": 311,
+                  "column": 5
+                },
+                {
+                  "title": "Reinstall Existing Workspace - Unattended",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 120000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "installer",
+                      "projectName": "installer",
+                      "results": [
+                        {
+                          "workerIndex": 0,
+                          "parallelIndex": 0,
+                          "status": "passed",
+                          "duration": 934,
+                          "errors": [],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2025-12-28T01:48:35.869Z",
+                          "annotations": [],
+                          "attachments": []
+                        }
+                      ],
+                      "status": "expected"
+                    }
+                  ],
+                  "id": "c0a899f85dd84a301c93-be2ed628a74cc7e359fa",
+                  "file": "installer/installer-unattended.pw.spec.ts",
+                  "line": 327,
+                  "column": 5
+                },
+                {
+                  "title": "Add Modules to Existing Workspace",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 120000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "installer",
+                      "projectName": "installer",
+                      "results": [
+                        {
+                          "workerIndex": 0,
+                          "parallelIndex": 0,
+                          "status": "passed",
+                          "duration": 928,
+                          "errors": [],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2025-12-28T01:48:36.807Z",
+                          "annotations": [],
+                          "attachments": []
+                        }
+                      ],
+                      "status": "expected"
+                    }
+                  ],
+                  "id": "c0a899f85dd84a301c93-8ff444da27128d3b7714",
+                  "file": "installer/installer-unattended.pw.spec.ts",
+                  "line": 378,
+                  "column": 5
+                },
+                {
+                  "title": "Remove Modules from Existing Workspace",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 120000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "installer",
+                      "projectName": "installer",
+                      "results": [
+                        {
+                          "workerIndex": 0,
+                          "parallelIndex": 0,
+                          "status": "passed",
+                          "duration": 947,
+                          "errors": [],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2025-12-28T01:48:37.739Z",
+                          "annotations": [],
+                          "attachments": []
+                        }
+                      ],
+                      "status": "expected"
+                    }
+                  ],
+                  "id": "c0a899f85dd84a301c93-a6bb871b97eef980ebb2",
+                  "file": "installer/installer-unattended.pw.spec.ts",
+                  "line": 422,
+                  "column": 5
+                },
+                {
+                  "title": "Reinstallation Verification - Preserve Configuration",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 120000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "installer",
+                      "projectName": "installer",
+                      "results": [
+                        {
+                          "workerIndex": 0,
+                          "parallelIndex": 0,
+                          "status": "passed",
+                          "duration": 966,
+                          "errors": [],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2025-12-28T01:48:38.690Z",
+                          "annotations": [],
+                          "attachments": []
+                        }
+                      ],
+                      "status": "expected"
+                    }
+                  ],
+                  "id": "c0a899f85dd84a301c93-bd05479f63163bf04c72",
+                  "file": "installer/installer-unattended.pw.spec.ts",
+                  "line": 463,
+                  "column": 5
+                },
+                {
+                  "title": "Reinstallation - Module Hooks Re-executed",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 120000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "installer",
+                      "projectName": "installer",
+                      "results": [
+                        {
+                          "workerIndex": 0,
+                          "parallelIndex": 0,
+                          "status": "passed",
+                          "duration": 924,
+                          "errors": [],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2025-12-28T01:48:39.660Z",
+                          "annotations": [],
+                          "attachments": []
+                        }
+                      ],
+                      "status": "expected"
+                    }
+                  ],
+                  "id": "c0a899f85dd84a301c93-c06ba893472a0dd90546",
+                  "file": "installer/installer-unattended.pw.spec.ts",
+                  "line": 515,
+                  "column": 5
+                }
+              ]
+            },
+            {
+              "title": "External Repository Installation",
+              "file": "installer/installer-unattended.pw.spec.ts",
+              "line": 556,
+              "column": 8,
+              "specs": [
+                {
+                  "title": "Installation with External Repository",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 120000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "installer",
+                      "projectName": "installer",
+                      "results": [
+                        {
+                          "workerIndex": 0,
+                          "parallelIndex": 0,
+                          "status": "passed",
+                          "duration": 2906,
+                          "errors": [],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2025-12-28T01:48:40.593Z",
+                          "annotations": [],
+                          "attachments": []
+                        }
+                      ],
+                      "status": "expected"
+                    }
+                  ],
+                  "id": "c0a899f85dd84a301c93-10f1a8bb495e8282b756",
+                  "file": "installer/installer-unattended.pw.spec.ts",
+                  "line": 557,
+                  "column": 5
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "installer/module-patterns.pw.spec.ts",
+      "file": "installer/module-patterns.pw.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "workspace modules patterns",
+          "file": "installer/module-patterns.pw.spec.ts",
+          "line": 16,
+          "column": 6,
+          "specs": [
+            {
+              "title": "modules: [\"issue-*\"] expands to issue-tracker and issue-tracker-github",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "installer",
+                  "projectName": "installer",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 11,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-28T01:48:43.507Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "0164c927434980856b54-07d7f6a31e453df13e4b",
+              "file": "installer/module-patterns.pw.spec.ts",
+              "line": 17,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "installer/npx-new-workspace.pw.spec.ts",
+      "file": "installer/npx-new-workspace.pw.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "devduck new (npx-friendly bootstrap)",
+          "file": "installer/npx-new-workspace.pw.spec.ts",
+          "line": 17,
+          "column": 6,
+          "specs": [
+            {
+              "title": "clones DevDuck into devduck/src when not listed in projects",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "installer",
+                  "projectName": "installer",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 9801,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-28T01:48:43.526Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "e9dbe6eedbc1f478b7de-60d93b149ada0bb17008",
+              "file": "installer/npx-new-workspace.pw.spec.ts",
+              "line": 20,
+              "column": 3
+            },
+            {
+              "title": "resolves relative workspace path from INIT_CWD (npx cache cwd simulation)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "installer",
+                  "projectName": "installer",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 4055,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-28T01:48:53.332Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "e9dbe6eedbc1f478b7de-5d4dbae131570bce89c4",
+              "file": "installer/npx-new-workspace.pw.spec.ts",
+              "line": 54,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "installer/workspace-modules-installation.pw.spec.ts",
+      "file": "installer/workspace-modules-installation.pw.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Workspace Installer - Workspace-local modules/",
+          "file": "installer/workspace-modules-installation.pw.spec.ts",
+          "line": 17,
+          "column": 6,
+          "specs": [
+            {
+              "title": "Installs module from workspace/modules when listed in config",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "installer",
+                  "projectName": "installer",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 413,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-28T01:48:57.396Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8b9f9cd7ee3c4ae824cf-daeb811b5bfa4e5ea128",
+              "file": "installer/workspace-modules-installation.pw.spec.ts",
+              "line": 20,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2025-12-28T01:48:28.944Z",
+    "duration": 28876.393,
+    "expected": 35,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

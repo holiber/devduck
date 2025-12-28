@@ -1,0 +1,322 @@
+[
+  {
+    "name": "ci: smogcheck-provider > fetchComments works with branch name",
+    "ms": 0.031417
+  },
+  {
+    "name": "ci: smogcheck-provider > fetchComments includes file location for file comments",
+    "ms": 0.044333
+  },
+  {
+    "name": "ci: smogcheck-provider > fetchCheckStatus returns annotations for failed checks",
+    "ms": 0.04575
+  },
+  {
+    "name": "ci: smogcheck-provider > fetchCheckStatus works with checkId",
+    "ms": 0.0465
+  },
+  {
+    "name": "issue-tracker: smogcheck-provider > fetchIssue works with issue key",
+    "ms": 0.047167
+  },
+  {
+    "name": "issue-tracker: smogcheck-provider > fetchIssue throws error for non-existent issue",
+    "ms": 0.052666
+  },
+  {
+    "name": "workspace-path resolver > resolves ark:/ links using arc root and strips arcadia/ prefix",
+    "ms": 0.060875
+  },
+  {
+    "name": "email: smogcheck-provider > searchMessages supports filtering by date range",
+    "ms": 0.06275
+  },
+  {
+    "name": "issue-tracker: smogcheck-provider > fetchComments includes reactions",
+    "ms": 0.06275
+  },
+  {
+    "name": "email: smogcheck-provider > searchMessages supports filtering by participant (to/cc/bcc/from)",
+    "ms": 0.065042
+  },
+  {
+    "name": "ci: smogcheck-provider > fetchPR throws error for non-existent PR",
+    "ms": 0.066167
+  },
+  {
+    "name": "ci: smogcheck-provider > fetchCheckStatus works with branch name",
+    "ms": 0.075625
+  },
+  {
+    "name": "issue-tracker: smogcheck-provider > fetchComments returns empty array for issue without comments",
+    "ms": 0.082792
+  },
+  {
+    "name": "email: smogcheck-provider > searchMessages supports filtering by from",
+    "ms": 0.091875
+  },
+  {
+    "name": "workspace-path resolver > if arc root is unavailable, ark:/ falls back to projectRoot",
+    "ms": 0.102042
+  },
+  {
+    "name": "email: smogcheck-provider > getMessage returns a message by id",
+    "ms": 0.112459
+  },
+  {
+    "name": "ci: smogcheck-provider > fetchPR works with branch name",
+    "ms": 0.114292
+  },
+  {
+    "name": "issue-tracker: smogcheck-provider > fetchIssue works with URL",
+    "ms": 0.131708
+  },
+  {
+    "name": "workspace-path resolver > resolves ark:/ links using arc root (fallback to arc root)",
+    "ms": 0.152041
+  },
+  {
+    "name": "issue-tracker: smogcheck-provider > fetchPRs returns PR references that match PRReference schema",
+    "ms": 0.192
+  },
+  {
+    "name": "ci: smogcheck-provider > fetchComments includes reactions",
+    "ms": 0.196125
+  },
+  {
+    "name": "email: smogcheck-provider > downloadAttachment returns a Buffer for an existing attachment",
+    "ms": 0.19725
+  },
+  {
+    "name": "ci: smogcheck-provider > fetchCheckStatus returns check statuses that match CheckStatus schema",
+    "ms": 0.201709
+  },
+  {
+    "name": "issue-tracker: smogcheck-provider > fetchPRs returns empty array for issue without PRs",
+    "ms": 0.205625
+  },
+  {
+    "name": "messenger: yandex-messenger-provider > matches MessengerProvider contract schema",
+    "ms": 0.216875
+  },
+  {
+    "name": "ci: smogcheck-provider > fetchComments returns comments that match Comment schema",
+    "ms": 0.239875
+  },
+  {
+    "name": "email: gmail-provider > matches EmailProvider interface",
+    "ms": 0.261708
+  },
+  {
+    "name": "issue-tracker: smogcheck-provider > fetchComments returns comments that match Comment schema",
+    "ms": 0.277583
+  },
+  {
+    "name": "issue-tracker: smogcheck-provider > fetchIssue returns issue that matches Issue schema",
+    "ms": 0.334417
+  },
+  {
+    "name": "email: smogcheck-provider > matches EmailProvider interface",
+    "ms": 0.345916
+  },
+  {
+    "name": "workspace-path resolver > parses ark:/ links as Arcadia links",
+    "ms": 0.369042
+  },
+  {
+    "name": "mcp: API module > mcpRouter.list procedure exists with correct schema",
+    "ms": 0.4225
+  },
+  {
+    "name": "ci: smogcheck-provider > matches CIProvider interface",
+    "ms": 0.433208
+  },
+  {
+    "name": "mcp: API module > mcpRouter.call procedure exists with correct schema",
+    "ms": 0.456625
+  },
+  {
+    "name": "mcp: API module > mcpRouter is defined and has procedures",
+    "ms": 0.644
+  },
+  {
+    "name": "ci: smogcheck-provider > fetchPR returns PR info that matches PRInfo schema",
+    "ms": 1.119125
+  },
+  {
+    "name": "messenger: telegram-provider > matches MessengerProvider contract schema",
+    "ms": 1.1495
+  },
+  {
+    "name": "issue-tracker: smogcheck-provider > matches IssueTrackerProvider contract schema",
+    "ms": 1.297791
+  },
+  {
+    "name": "email: smogcheck-provider > listUnreadMessages returns messages that match Message schema",
+    "ms": 1.355167
+  },
+  {
+    "name": "issue-tracker-github: github-provider > matches IssueTrackerProvider contract schema",
+    "ms": 1.400625
+  },
+  {
+    "name": "mcp: API module > mcp.list can list servers when mcp.json exists",
+    "ms": 1.638416
+  },
+  {
+    "name": "messenger: yandex-messenger-provider > listChats returns chats that match Chat schema",
+    "ms": 2.619709
+  },
+  {
+    "name": "messenger: yandex-messenger-provider > downloadFile returns a descriptor that matches DownloadFileResult schema",
+    "ms": 2.640167
+  },
+  {
+    "name": "issue-tracker: smogcheck-provider > downloadResources tracks resources with distance == 3 without downloading",
+    "ms": 4.133
+  },
+  {
+    "name": "messenger: telegram-provider > downloadFile returns a descriptor that matches DownloadFileResult schema",
+    "ms": 4.141584
+  },
+  {
+    "name": "issue-tracker: smogcheck-provider > downloadResources creates issue.json with comments and PRs",
+    "ms": 4.338166
+  },
+  {
+    "name": "issue-tracker: smogcheck-provider > downloadResources creates PR directories when PRs exist",
+    "ms": 5.338917
+  },
+  {
+    "name": "messenger: telegram-provider > listChats returns chats that match Chat schema",
+    "ms": 5.766625
+  },
+  {
+    "name": "issue-tracker: smogcheck-provider > downloadResources downloads resources with distance <= 2",
+    "ms": 7.234959
+  },
+  {
+    "name": "install/mcp optional servers > marks optional URL-based server failure as non-blocking",
+    "ms": 8.670209
+  },
+  {
+    "name": "issue-tracker: smogcheck-provider > downloadResources creates resources.json with correct metadata",
+    "ms": 8.852
+  },
+  {
+    "name": "messenger: yandex-messenger-provider > getChatHistory returns messages that match ChatMessage schema",
+    "ms": 9.841167
+  },
+  {
+    "name": "install/mcp optional servers > marks optional command-based server failure as non-blocking",
+    "ms": 10.457417
+  },
+  {
+    "name": "issue-tracker: smogcheck-provider > downloadResources creates correct directory structure",
+    "ms": 17.55375
+  },
+  {
+    "name": "messenger: telegram-provider > getChatHistory returns messages that match ChatMessage schema",
+    "ms": 18.613
+  },
+  {
+    "name": "email: provider registry discovery (gmail-provider) > discovers gmail-provider from modules directory and registers it",
+    "ms": 22.954292
+  },
+  {
+    "name": "mcp: API module > mcp module is included in unified API",
+    "ms": 26.385459
+  },
+  {
+    "name": "issue-tracker: provider registry discovery > discovers smogcheck-provider from modules directory and registers it (with schema validation)",
+    "ms": 27.219833
+  },
+  {
+    "name": "messenger: provider registry discovery > discovers messenger providers from modules directory and registers them (with schema validation)",
+    "ms": 28.853708
+  },
+  {
+    "name": "email: provider registry discovery > discovers smogcheck-provider from modules directory and registers it",
+    "ms": 35.810125
+  },
+  {
+    "name": "ci: provider registry discovery > discovers smogcheck-provider from modules directory and registers it",
+    "ms": 41.77075
+  },
+  {
+    "name": "issue-tracker-github: provider registry discovery > discovers github-provider from modules directory and registers it (with schema validation)",
+    "ms": 52.893959
+  },
+  {
+    "name": "ProcessManager writes stdout/stderr logs",
+    "ms": 138.956625
+  },
+  {
+    "name": "stop kills a process group (parent + child)",
+    "ms": 163.414833
+  },
+  {
+    "name": "issue-tracker-github: github-provider > fetchIssue throws error for non-existent issue",
+    "ms": 195.457292
+  },
+  {
+    "name": "issue-tracker-github: github-provider > fetchComments returns comments that match Comment schema",
+    "ms": 211.741375
+  },
+  {
+    "name": "issue-tracker-github: github-provider > fetchIssue works with URL",
+    "ms": 226.21825
+  },
+  {
+    "name": "issue-tracker-github: github-provider > fetchIssue returns issue that matches Issue schema",
+    "ms": 424.493292
+  },
+  {
+    "name": "ci CLI positional still works (no duplicate required flags)",
+    "ms": 525.383916
+  },
+  {
+    "name": "mcp: API module > npm run api lists mcp methods",
+    "ms": 682.311625
+  },
+  {
+    "name": "mcp: API module > mcp.list can be called via API CLI",
+    "ms": 734.008416
+  },
+  {
+    "name": "messenger CLI exposes required inputs as options",
+    "ms": 1048.538916
+  },
+  {
+    "name": "issue-tracker-github: github-provider > fetchPRs returns PR references that match PRReference schema",
+    "ms": 1493.123583
+  },
+  {
+    "name": "mcp: API module > mcp.call can be called via API CLI (help check)",
+    "ms": 2167.472334
+  },
+  {
+    "name": "issue-tracker-github: github-provider > downloadResources creates issue.json with comments",
+    "ms": 3036.821167
+  },
+  {
+    "name": "issue-tracker-github: github-provider > downloadResources downloads resources with distance <= 1",
+    "ms": 3095.674458
+  },
+  {
+    "name": "issue-tracker-github: github-provider > downloadResources creates resources.json with correct metadata",
+    "ms": 3136.217542
+  },
+  {
+    "name": "issue-tracker-github: github-provider > downloadResources creates correct directory structure",
+    "ms": 4301.708917
+  },
+  {
+    "name": "workspace.config.json launch.dev starts processes, runs smokecheck, and supports smokecheck without args",
+    "ms": 5691.2385
+  },
+  {
+    "name": "launch dev starts background processes, runs smokecheck, captures browser console, and allows reuse",
+    "ms": 7348.305833
+  }
+]

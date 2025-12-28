@@ -1,0 +1,422 @@
+{
+  "config": {
+    "configFile": "/Users/alex-nazarov/arcadia/junk/alex-nazarov/devduck-dev-workspace/projects/devduck/playwright.config.ts",
+    "rootDir": "/Users/alex-nazarov/arcadia/junk/alex-nazarov/devduck-dev-workspace/projects/devduck/tests",
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "reporter": [
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "quiet": false,
+    "projects": [
+      {
+        "outputDir": "/Users/alex-nazarov/arcadia/junk/alex-nazarov/devduck-dev-workspace/projects/devduck/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "installer",
+        "name": "installer",
+        "testDir": "/Users/alex-nazarov/arcadia/junk/alex-nazarov/devduck-dev-workspace/projects/devduck/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/installer/**/*.pw.spec.ts"
+        ],
+        "timeout": 120000
+      }
+    ],
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.57.0",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "installer/install-project-scripts.pw.spec.ts",
+      "file": "installer/install-project-scripts.pw.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Install Project Scripts",
+          "file": "installer/install-project-scripts.pw.spec.ts",
+          "line": 21,
+          "column": 6,
+          "specs": [
+            {
+              "title": "@smoke Install default scripts from project",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "installer",
+                  "projectName": "installer",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 7,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-28T01:49:09.125Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ee5419bfb1ffef1a527f-d09894f667fc30729e45",
+              "file": "installer/install-project-scripts.pw.spec.ts",
+              "line": 36,
+              "column": 3
+            },
+            {
+              "title": "@smoke Install additional scripts via importScripts",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "installer",
+                  "projectName": "installer",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 4,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-28T01:49:09.152Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ee5419bfb1ffef1a527f-f4e383f6b3b13cafa08c",
+              "file": "installer/install-project-scripts.pw.spec.ts",
+              "line": 98,
+              "column": 3
+            },
+            {
+              "title": "@smoke Handle missing project package.json gracefully",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "installer",
+                  "projectName": "installer",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 4,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-28T01:49:09.161Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ee5419bfb1ffef1a527f-7e5e16357fa0c65f0f96",
+              "file": "installer/install-project-scripts.pw.spec.ts",
+              "line": 193,
+              "column": 3
+            },
+            {
+              "title": "@smoke Verify scripts do not change current directory",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "installer",
+                  "projectName": "installer",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-28T01:49:09.169Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ee5419bfb1ffef1a527f-6dd3e257dbe0f1c13f08",
+              "file": "installer/install-project-scripts.pw.spec.ts",
+              "line": 227,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "installer/install-steps.pw.spec.ts",
+      "file": "installer/install-steps.pw.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Installation Steps",
+          "file": "installer/install-steps.pw.spec.ts",
+          "line": 34,
+          "column": 15,
+          "specs": [
+            {
+              "title": "@smoke Step 2: Download Repos",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "installer",
+                  "projectName": "installer",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 35,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "\u001b[36m\n[Step 1] Checking environment variables...\u001b[0m\n"
+                        },
+                        {
+                          "text": "\u001b[33m\n  ⚠ Missing required environment variables:\u001b[0m\n"
+                        },
+                        {
+                          "text": "\u001b[33m    - TEST_VAR_1 (config) - Test variable 1\u001b[0m\n"
+                        },
+                        {
+                          "text": "\u001b[36m\n  ℹ Please:\u001b[0m\n"
+                        },
+                        {
+                          "text": "\u001b[36m    1. Switch to workspace folder: cd /Users/alex-nazarov/arcadia/junk/alex-nazarov/devduck-dev-workspace/projects/devduck/.cache/temp/install-steps-test-1766886549267\u001b[0m\n"
+                        },
+                        {
+                          "text": "\u001b[36m    2. Set missing variables in .env file or environment variables\u001b[0m\n"
+                        },
+                        {
+                          "text": "\u001b[36m    3. Re-run installation\u001b[0m\n"
+                        },
+                        {
+                          "text": "\u001b[33m  ⚠ Step 1 requires user input\u001b[0m\n"
+                        },
+                        {
+                          "text": "\u001b[36m\n[Step 1] Checking environment variables...\u001b[0m\n"
+                        },
+                        {
+                          "text": "\u001b[32m  ✓ All required environment variables are present\u001b[0m\n"
+                        },
+                        {
+                          "text": "\u001b[32m  ✓ Step 1 completed\u001b[0m\n"
+                        },
+                        {
+                          "text": "\u001b[36m\n[Step 2] Downloading repositories...\u001b[0m\n"
+                        },
+                        {
+                          "text": "\u001b[36m  ℹ No repositories to download\u001b[0m\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-28T01:49:09.263Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "13a59e70e881101de059-6ad3544099dda54bf02a",
+              "file": "installer/install-steps.pw.spec.ts",
+              "line": 166,
+              "column": 3
+            },
+            {
+              "title": "@smoke Step 3: Download Projects",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "installer",
+                  "projectName": "installer",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 3,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "\u001b[36m\n[Step 3] Downloading projects...\u001b[0m\n"
+                        },
+                        {
+                          "text": "\u001b[36m  ℹ No projects to download\u001b[0m\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-28T01:49:09.309Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "13a59e70e881101de059-e84fe27c8bb835580e19",
+              "file": "installer/install-steps.pw.spec.ts",
+              "line": 171,
+              "column": 3
+            },
+            {
+              "title": "@smoke Step 6: Setup Projects",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "installer",
+                  "projectName": "installer",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 31,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "\u001b[36m\n[Step 4] Checking environment variables again...\u001b[0m\n"
+                        },
+                        {
+                          "text": "\u001b[32m  ✓ All required environment variables are present\u001b[0m\n"
+                        },
+                        {
+                          "text": "\u001b[32m  ✓ Step 4 completed\u001b[0m\n"
+                        },
+                        {
+                          "text": "\u001b[36m\n[Step 5] Setting up modules...\u001b[0m\n"
+                        },
+                        {
+                          "text": "\u001b[36m  ℹ Executing module hooks...\u001b[0m\n"
+                        },
+                        {
+                          "text": "\u001b[32m  ✓ Step 5 completed\u001b[0m\n"
+                        },
+                        {
+                          "text": "\u001b[36m\n[Step 6] Setting up projects...\u001b[0m\n"
+                        },
+                        {
+                          "text": "\u001b[36m  ℹ No projects to setup\u001b[0m\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-28T01:49:09.316Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "13a59e70e881101de059-f3a1c54e6fa173c990b2",
+              "file": "installer/install-steps.pw.spec.ts",
+              "line": 192,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2025-12-28T01:49:08.446Z",
+    "duration": 923.9950000000001,
+    "expected": 7,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

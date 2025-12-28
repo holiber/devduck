@@ -1,0 +1,458 @@
+[
+  {
+    "name": "ci: smogcheck-provider > fetchComments works with branch name",
+    "ms": 0.034709
+  },
+  {
+    "name": "issue-tracker: smogcheck-provider > fetchIssue works with issue key",
+    "ms": 0.050875
+  },
+  {
+    "name": "ci: smogcheck-provider > fetchCheckStatus works with checkId",
+    "ms": 0.051208
+  },
+  {
+    "name": "ci: smogcheck-provider > fetchCheckStatus returns annotations for failed checks",
+    "ms": 0.051458
+  },
+  {
+    "name": "issue-tracker: smogcheck-provider > fetchComments includes reactions",
+    "ms": 0.051542
+  },
+  {
+    "name": "email: smogcheck-provider > searchMessages supports filtering by date range",
+    "ms": 0.056208
+  },
+  {
+    "name": "ci: smogcheck-provider > fetchComments includes file location for file comments",
+    "ms": 0.057292
+  },
+  {
+    "name": "workspace-path resolver > resolves ark:/ links using arc root and strips arcadia/ prefix",
+    "ms": 0.059458
+  },
+  {
+    "name": "email: smogcheck-provider > searchMessages supports filtering by participant (to/cc/bcc/from)",
+    "ms": 0.06425
+  },
+  {
+    "name": "ci: smogcheck-provider > fetchPR throws error for non-existent PR",
+    "ms": 0.066125
+  },
+  {
+    "name": "issue-tracker: smogcheck-provider > fetchIssue throws error for non-existent issue",
+    "ms": 0.072
+  },
+  {
+    "name": "email: smogcheck-provider > searchMessages supports filtering by from",
+    "ms": 0.080875
+  },
+  {
+    "name": "issue-tracker: smogcheck-provider > fetchComments returns empty array for issue without comments",
+    "ms": 0.086958
+  },
+  {
+    "name": "ci: smogcheck-provider > fetchCheckStatus works with branch name",
+    "ms": 0.089833
+  },
+  {
+    "name": "workspace-path resolver > if arc root is unavailable, ark:/ falls back to projectRoot",
+    "ms": 0.102916
+  },
+  {
+    "name": "email: smogcheck-provider > getMessage returns a message by id",
+    "ms": 0.112166
+  },
+  {
+    "name": "ci: smogcheck-provider > fetchPR works with branch name",
+    "ms": 0.127375
+  },
+  {
+    "name": "workspace-path resolver > resolves ark:/ links using arc root (fallback to arc root)",
+    "ms": 0.139958
+  },
+  {
+    "name": "issue-tracker: smogcheck-provider > fetchIssue works with URL",
+    "ms": 0.173041
+  },
+  {
+    "name": "messenger: yandex-messenger-provider > matches MessengerProvider contract schema",
+    "ms": 0.175958
+  },
+  {
+    "name": "email: smogcheck-provider > downloadAttachment returns a Buffer for an existing attachment",
+    "ms": 0.191791
+  },
+  {
+    "name": "issue-tracker: smogcheck-provider > fetchPRs returns PR references that match PRReference schema",
+    "ms": 0.215833
+  },
+  {
+    "name": "ci: smogcheck-provider > fetchComments includes reactions",
+    "ms": 0.224583
+  },
+  {
+    "name": "ci: smogcheck-provider > fetchCheckStatus returns check statuses that match CheckStatus schema",
+    "ms": 0.225167
+  },
+  {
+    "name": "issue-tracker: smogcheck-provider > fetchPRs returns empty array for issue without PRs",
+    "ms": 0.227417
+  },
+  {
+    "name": "ci: smogcheck-provider > fetchComments returns comments that match Comment schema",
+    "ms": 0.266667
+  },
+  {
+    "name": "email: gmail-provider > matches EmailProvider interface",
+    "ms": 0.282583
+  },
+  {
+    "name": "issue-tracker: smogcheck-provider > fetchComments returns comments that match Comment schema",
+    "ms": 0.307291
+  },
+  {
+    "name": "workspace-path resolver > parses ark:/ links as Arcadia links",
+    "ms": 0.340958
+  },
+  {
+    "name": "email: smogcheck-provider > matches EmailProvider interface",
+    "ms": 0.34725
+  },
+  {
+    "name": "issue-tracker: smogcheck-provider > fetchIssue returns issue that matches Issue schema",
+    "ms": 0.439083
+  },
+  {
+    "name": "ci: smogcheck-provider > matches CIProvider interface",
+    "ms": 0.486125
+  },
+  {
+    "name": "mcp: API module > mcpRouter.call procedure exists with correct schema",
+    "ms": 0.486541
+  },
+  {
+    "name": "mcp: API module > mcpRouter.list procedure exists with correct schema",
+    "ms": 0.501291
+  },
+  {
+    "name": "Install Project Scripts > Handle missing project package.json gracefully",
+    "ms": 0.844916
+  },
+  {
+    "name": "mcp: API module > mcpRouter is defined and has procedures",
+    "ms": 0.876375
+  },
+  {
+    "name": "Installation Steps > Step 6: Setup Projects",
+    "ms": 0.967708
+  },
+  {
+    "name": "Install Project Scripts > Verify scripts do not change current directory",
+    "ms": 0.993583
+  },
+  {
+    "name": "messenger: telegram-provider > matches MessengerProvider contract schema",
+    "ms": 1.198125
+  },
+  {
+    "name": "Install Project Scripts > Install additional scripts via importScripts",
+    "ms": 1.259542
+  },
+  {
+    "name": "ci: smogcheck-provider > fetchPR returns PR info that matches PRInfo schema",
+    "ms": 1.27375
+  },
+  {
+    "name": "Installation Steps > Step 3: Download Projects",
+    "ms": 1.311541
+  },
+  {
+    "name": "email: smogcheck-provider > listUnreadMessages returns messages that match Message schema",
+    "ms": 1.356292
+  },
+  {
+    "name": "Installation Steps > Step 2: Download Repos",
+    "ms": 1.474334
+  },
+  {
+    "name": "issue-tracker: smogcheck-provider > matches IssueTrackerProvider contract schema",
+    "ms": 1.515375
+  },
+  {
+    "name": "mcp: API module > mcp.list can list servers when mcp.json exists",
+    "ms": 1.763125
+  },
+  {
+    "name": "Install Project Scripts > Install default scripts from project",
+    "ms": 1.877042
+  },
+  {
+    "name": "issue-tracker-github: github-provider > matches IssueTrackerProvider contract schema",
+    "ms": 1.921709
+  },
+  {
+    "name": "Install Project Scripts > Remove scripts when project is removed from config",
+    "ms": 2.367375
+  },
+  {
+    "name": "messenger: yandex-messenger-provider > downloadFile returns a descriptor that matches DownloadFileResult schema",
+    "ms": 2.884458
+  },
+  {
+    "name": "messenger: yandex-messenger-provider > listChats returns chats that match Chat schema",
+    "ms": 2.94625
+  },
+  {
+    "name": "issue-tracker: smogcheck-provider > downloadResources creates issue.json with comments and PRs",
+    "ms": 4.859542
+  },
+  {
+    "name": "issue-tracker: smogcheck-provider > downloadResources tracks resources with distance == 3 without downloading",
+    "ms": 5.610666
+  },
+  {
+    "name": "messenger: telegram-provider > listChats returns chats that match Chat schema",
+    "ms": 5.650125
+  },
+  {
+    "name": "Installation Steps > Step 7: Verify Installation",
+    "ms": 5.929667
+  },
+  {
+    "name": "messenger: telegram-provider > downloadFile returns a descriptor that matches DownloadFileResult schema",
+    "ms": 5.9995
+  },
+  {
+    "name": "issue-tracker: smogcheck-provider > downloadResources creates PR directories when PRs exist",
+    "ms": 6.263417
+  },
+  {
+    "name": "Installation Steps > Step 4: Check Environment Again",
+    "ms": 6.962
+  },
+  {
+    "name": "install/mcp optional servers > marks optional URL-based server failure as non-blocking",
+    "ms": 8.508291
+  },
+  {
+    "name": "issue-tracker: smogcheck-provider > downloadResources downloads resources with distance <= 2",
+    "ms": 8.842208
+  },
+  {
+    "name": "issue-tracker: smogcheck-provider > downloadResources creates resources.json with correct metadata",
+    "ms": 9.4445
+  },
+  {
+    "name": "install/mcp optional servers > marks optional command-based server failure as non-blocking",
+    "ms": 9.916584
+  },
+  {
+    "name": "messenger: yandex-messenger-provider > getChatHistory returns messages that match ChatMessage schema",
+    "ms": 10.469125
+  },
+  {
+    "name": "Installation Steps > Step 5: Setup Modules",
+    "ms": 11.44775
+  },
+  {
+    "name": "messenger: telegram-provider > getChatHistory returns messages that match ChatMessage schema",
+    "ms": 13.5115
+  },
+  {
+    "name": "issue-tracker: smogcheck-provider > downloadResources creates correct directory structure",
+    "ms": 15.222417
+  },
+  {
+    "name": "workspace modules patterns > modules: [\"issue-*\"] expands to issue-tracker and issue-tracker-github",
+    "ms": 22.684584
+  },
+  {
+    "name": "mcp: API module > mcp module is included in unified API",
+    "ms": 23.776166
+  },
+  {
+    "name": "messenger: provider registry discovery > discovers messenger providers from modules directory and registers them (with schema validation)",
+    "ms": 24.380333
+  },
+  {
+    "name": "email: provider registry discovery (gmail-provider) > discovers gmail-provider from modules directory and registers it",
+    "ms": 25.912625
+  },
+  {
+    "name": "Installation Steps > Step 1: Check Environment Variables",
+    "ms": 27.263583
+  },
+  {
+    "name": "issue-tracker: provider registry discovery > discovers smogcheck-provider from modules directory and registers it (with schema validation)",
+    "ms": 33.335459
+  },
+  {
+    "name": "email: provider registry discovery > discovers smogcheck-provider from modules directory and registers it",
+    "ms": 33.995334
+  },
+  {
+    "name": "issue-tracker-github: provider registry discovery > discovers github-provider from modules directory and registers it (with schema validation)",
+    "ms": 39.859875
+  },
+  {
+    "name": "ci: provider registry discovery > discovers smogcheck-provider from modules directory and registers it",
+    "ms": 41.884584
+  },
+  {
+    "name": "ProcessManager writes stdout/stderr logs",
+    "ms": 139.140917
+  },
+  {
+    "name": "stop kills a process group (parent + child)",
+    "ms": 149.853709
+  },
+  {
+    "name": "issue-tracker-github: github-provider > fetchComments returns comments that match Comment schema",
+    "ms": 211.016084
+  },
+  {
+    "name": "issue-tracker-github: github-provider > fetchIssue works with URL",
+    "ms": 253.479
+  },
+  {
+    "name": "Workspace Installer - GUI/Interactive Mode > Fresh Workspace Installation > GUI Installation - Fresh Workspace",
+    "ms": 340.64175
+  },
+  {
+    "name": "issue-tracker-github: github-provider > fetchIssue throws error for non-existent issue",
+    "ms": 363.009125
+  },
+  {
+    "name": "installer: .env values are available to shell checks (fill-missing)",
+    "ms": 370.410666
+  },
+  {
+    "name": "installer: hook load failure is fatal",
+    "ms": 378.744542
+  },
+  {
+    "name": "Workspace Installer - Unattended Mode > Fresh Workspace Installation > Unattended Installation with Config File",
+    "ms": 385.518375
+  },
+  {
+    "name": "installer: checks without name do not print \"Checking undefined\"",
+    "ms": 389.173917
+  },
+  {
+    "name": "installer summary: prints INSTALLATION FINISHED WITH ERRORS on failures",
+    "ms": 390.49575
+  },
+  {
+    "name": "Workspace Installer - GUI/Interactive Mode > Existing Workspace Operations > Detect Existing Workspace",
+    "ms": 405.284125
+  },
+  {
+    "name": "Workspace Installer - Unattended Mode > Fresh Workspace Installation > Unattended Installation - Fresh Workspace",
+    "ms": 423.267167
+  },
+  {
+    "name": "issue-tracker-github: github-provider > fetchIssue returns issue that matches Issue schema",
+    "ms": 427.697875
+  },
+  {
+    "name": "Workspace Installer - Unattended Mode > Fresh Workspace Installation > Unattended Installation - Full Structure Verification",
+    "ms": 460.083083
+  },
+  {
+    "name": "Workspace Installer - Unattended Mode > Fresh Workspace Installation > Unattended Installation from fixture - cursor-only",
+    "ms": 466.353917
+  },
+  {
+    "name": "ci CLI positional still works (no duplicate required flags)",
+    "ms": 468.635333
+  },
+  {
+    "name": "Workspace Installer - Unattended Mode > Fresh Workspace Installation > Unattended Installation with workspace.config.json seedFiles[] copies seed files/folders",
+    "ms": 493.573458
+  },
+  {
+    "name": "Workspace Installer - Unattended Mode > Fresh Workspace Installation > Unattended Installation with workspace.config.json (local folder project src)",
+    "ms": 564.489333
+  },
+  {
+    "name": "Workspace Installer - Workspace-local modules/ > Installs module from workspace/modules when listed in config",
+    "ms": 575.175666
+  },
+  {
+    "name": "mcp: API module > npm run api lists mcp methods",
+    "ms": 733.277584
+  },
+  {
+    "name": "mcp: API module > mcp.call can be called via API CLI (help check)",
+    "ms": 789.870041
+  },
+  {
+    "name": "mcp: API module > mcp.list can be called via API CLI",
+    "ms": 871.990291
+  },
+  {
+    "name": "messenger CLI exposes required inputs as options",
+    "ms": 935.843459
+  },
+  {
+    "name": "Workspace Installer - Unattended Mode > Existing Workspace Operations > Reinstall Existing Workspace - Unattended",
+    "ms": 941.881958
+  },
+  {
+    "name": "Workspace Installer - Unattended Mode > Existing Workspace Operations > Reinstallation Verification - Preserve Configuration",
+    "ms": 978.1785
+  },
+  {
+    "name": "Workspace Installer - Unattended Mode > Existing Workspace Operations > Remove Modules from Existing Workspace",
+    "ms": 1041.313208
+  },
+  {
+    "name": "Workspace Installer - Unattended Mode > Existing Workspace Operations > Add Modules to Existing Workspace",
+    "ms": 1075.642875
+  },
+  {
+    "name": "Workspace Installer - Unattended Mode > Existing Workspace Operations > Reinstallation - Module Hooks Re-executed",
+    "ms": 1084.483583
+  },
+  {
+    "name": "issue-tracker-github: github-provider > fetchPRs returns PR references that match PRReference schema",
+    "ms": 1153.547458
+  },
+  {
+    "name": "issue-tracker-github: github-provider > downloadResources creates issue.json with comments",
+    "ms": 2624.715959
+  },
+  {
+    "name": "issue-tracker-github: github-provider > downloadResources downloads resources with distance <= 1",
+    "ms": 2999.640583
+  },
+  {
+    "name": "Workspace Installer - Unattended Mode > External Repository Installation > Installation with External Repository",
+    "ms": 3116.039625
+  },
+  {
+    "name": "devduck new (npx-friendly bootstrap) > resolves relative workspace path from INIT_CWD (npx cache cwd simulation)",
+    "ms": 3353.507291
+  },
+  {
+    "name": "issue-tracker-github: github-provider > downloadResources creates resources.json with correct metadata",
+    "ms": 3453.70925
+  },
+  {
+    "name": "issue-tracker-github: github-provider > downloadResources creates correct directory structure",
+    "ms": 3957.599
+  },
+  {
+    "name": "workspace.config.json launch.dev starts processes, runs smokecheck, and supports smokecheck without args",
+    "ms": 5270.793208
+  },
+  {
+    "name": "launch dev starts background processes, runs smokecheck, captures browser console, and allows reuse",
+    "ms": 7580.037834
+  },
+  {
+    "name": "devduck new (npx-friendly bootstrap) > clones DevDuck into devduck/src when not listed in projects",
+    "ms": 10447.933625
+  }
+]
