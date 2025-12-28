@@ -381,13 +381,13 @@ export async function verifyWorkspaceStructure(workspacePath: string): Promise<V
       results.errors.push('.cursor/mcp.json not found');
     }
 
-    // Check .cache/devduck
-    const cacheDir = path.join(workspacePath, '.cache', 'devduck');
+    // Check .cache directory (install runtime + state live here)
+    const cacheDir = path.join(workspacePath, '.cache');
     try {
       await fs.access(cacheDir);
       results.cacheDirExists = true;
     } catch (e) {
-      results.errors.push('.cache/devduck directory not found');
+      results.errors.push('.cache directory not found');
     }
 
     // Check .cursorignore
@@ -514,12 +514,14 @@ export async function verifyModuleInstallation(workspacePath: string, expectedMo
 export async function waitForInstallation(workspacePath: string, timeout = 30000, checkInterval = 100): Promise<boolean> {
   const startTime = Date.now();
   const configPath = path.join(workspacePath, 'workspace.config.yml');
-  const cacheDir = path.join(workspacePath, '.cache', 'devduck');
+  const statePath = path.join(workspacePath, '.cache', 'install-state.json');
+  const generatedTaskfilePath = path.join(workspacePath, '.cache', 'taskfile.generated.yml');
 
   while (Date.now() - startTime < timeout) {
     try {
       await fs.access(configPath);
-      await fs.access(cacheDir);
+      await fs.access(statePath);
+      await fs.access(generatedTaskfilePath);
       return true;
     } catch (e) {
       await new Promise(resolve => setTimeout(resolve, checkInterval));
