@@ -19,7 +19,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  ci:
+  unit:
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -44,6 +44,39 @@ jobs:
       - name: Run unit tests (timed)
         run: node scripts/ci/run-and-record.mjs --name npm_test --allow-failure 1 --cmd "npx c8 --reporter=json-summary --report-dir .cache/coverage npm run test:unit" --log .cache/logs/npm-test.log --out .cache/metrics/test-commands.json
 
+      - name: Upload unit artifacts
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-unit-artifacts
+          path: |
+            .cache/metrics
+            .cache/logs
+            .cache/coverage
+            .cache/ai_logs
+          retention-days: 14
+
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      # Create artifact folders BEFORE any potentially failing steps
+      - name: Prepare artifact folders
+        run: mkdir -p .cache/{logs,metrics,ai_logs,playwright,tmp}
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
@@ -63,6 +96,75 @@ jobs:
           cp -r test-results .cache/playwright/ 2>/dev/null || true
           cp -r playwright-report .cache/playwright/ 2>/dev/null || true
           cp -r blob-report .cache/playwright/ 2>/dev/null || true
+
+      - name: Upload e2e artifacts
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-e2e-artifacts
+          path: |
+            .cache/metrics
+            .cache/logs
+            .cache/playwright
+            .cache/ai_logs
+          retention-days: 14
+
+  metrics:
+    needs: [unit, e2e]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      # Create artifact folders BEFORE any potentially failing steps
+      - name: Prepare artifact folders
+        run: mkdir -p .cache/{logs,metrics,ai_logs,playwright,tmp}
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Download unit artifacts
+        if: ${{ always() }}
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: ci-unit-artifacts
+          path: .cache/_jobs/unit
+
+      - name: Download e2e artifacts
+        if: ${{ always() }}
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: ci-e2e-artifacts
+          path: .cache/_jobs/e2e
+
+      - name: Consolidate artifacts from parallel jobs
+        if: ${{ always() }}
+        run: |
+          mkdir -p .cache/{logs,metrics,ai_logs,playwright,coverage}
+          cp -r ".cache/_jobs/unit/.cache/logs/." ".cache/logs/" 2>/dev/null || true
+          cp -r ".cache/_jobs/e2e/.cache/logs/." ".cache/logs/" 2>/dev/null || true
+          cp -r ".cache/_jobs/unit/.cache/coverage/." ".cache/coverage/" 2>/dev/null || true
+          cp -r ".cache/_jobs/unit/.cache/ai_logs/." ".cache/ai_logs/" 2>/dev/null || true
+          cp -r ".cache/_jobs/e2e/.cache/ai_logs/." ".cache/ai_logs/" 2>/dev/null || true
+          cp -r ".cache/_jobs/e2e/.cache/playwright/." ".cache/playwright/" 2>/dev/null || true
+
+      - name: Merge recorded test results
+        if: ${{ always() }}
+        run: >
+          node scripts/ci/merge-test-commands.mjs
+          --out .cache/metrics/test-commands.json
+          --in .cache/_jobs/unit/.cache/metrics/test-commands.json
+          --in .cache/_jobs/e2e/.cache/metrics/test-commands.json
 
       - name: Checkout gh-pages (baseline + history)
         if: ${{ always() }}
