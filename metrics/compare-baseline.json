@@ -1,11 +1,11 @@
 {
   "meta": {
-    "collectedAt": "2025-12-28T10:53:33.775Z",
+    "collectedAt": "2025-12-28T11:00:46.516Z",
     "repository": "holiber/devduck",
     "eventName": "push",
-    "sha": "8fab5b1cf3e1cfc8c52c8418e1b15a2afa9a91e6",
+    "sha": "94442657f68fda73fb32e38c9532b26bb6d14459",
     "ref": "refs/heads/main",
-    "runId": "20552735053",
+    "runId": "20552798195",
     "runAttempt": "1",
     "node": "v24.12.0"
   },
@@ -14,26 +14,26 @@
       "name": "npm_test",
       "command": "npm run test:unit",
       "exitCode": 0,
-      "durationMs": 22053,
-      "collectedAt": "2025-12-28T10:52:42.010Z"
+      "durationMs": 23807,
+      "collectedAt": "2025-12-28T10:59:53.875Z"
     },
     "pw_installer": {
       "name": "pw_installer",
       "command": "npx playwright test -c tests/installer/playwright.config.ts --reporter=list",
       "exitCode": 0,
-      "durationMs": 30066,
-      "collectedAt": "2025-12-28T10:53:33.091Z"
+      "durationMs": 30963,
+      "collectedAt": "2025-12-28T11:00:45.753Z"
     },
     "npm_pack": {
       "name": "npm-pack",
       "command": "npm pack --silent",
       "exitCode": 0,
-      "durationMs": 734
+      "durationMs": 785
     }
   },
   "sizes": {
     "npm_pack": {
-      "bytes": 2945108
+      "bytes": 2945814
     }
   },
   "tests": {
@@ -43,15 +43,15 @@
       "passed": 83,
       "failed": 0,
       "skipped": 8,
-      "reportedDurationMs": 21400.102941,
-      "durationMs": 22053,
+      "reportedDurationMs": 22986.224308,
+      "durationMs": 23807,
       "exitCode": 0
     },
     "e2e_installer": {
       "total": 34,
       "passed": 34,
-      "reportedDurationMs": 29000,
-      "durationMs": 30066,
+      "reportedDurationMs": 29700,
+      "durationMs": 30963,
       "exitCode": 0
     },
     "flaky": {
@@ -59,8 +59,8 @@
     }
   },
   "code": {
-    "scriptCodeLines": 34108,
-    "totalTextLines": 43475,
+    "scriptCodeLines": 34125,
+    "totalTextLines": 43492,
     "hugeScripts": 3
   },
   "notes": [
