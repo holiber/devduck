@@ -110,7 +110,11 @@ async function main(argv = process.argv): Promise<void> {
     }
   }
 
-  const { getProvider: getMessengerProvider } = await initializeProviders(workspaceRoot);
+  // Help should work even when no providers are available (or when discovery is expensive).
+  const wantsHelp = argv.some((a) => a === '--help' || a === '-h');
+  const { getProvider: getMessengerProvider } = wantsHelp
+    ? { getProvider: () => null }
+    : await initializeProviders(workspaceRoot);
 
   const yargsInstance = messengerRouter.toCli(
     createYargs(argv).scriptName('messenger').strict().usage('Usage: $0 <command> [options]'),

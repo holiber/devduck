@@ -110,7 +110,9 @@ async function main(argv = process.argv): Promise<void> {
     }
   }
   
-  const { getProvider: getCIProvider } = await initializeProviders(workspaceRoot);
+  // Help should work even when no providers are available (or when discovery is expensive).
+  const wantsHelp = argv.some((a) => a === '--help' || a === '-h');
+  const { getProvider: getCIProvider } = wantsHelp ? { getProvider: () => null } : await initializeProviders(workspaceRoot);
 
   // Build yargs with commands generated from router
   const yargsInstance = ciRouter.toCli(

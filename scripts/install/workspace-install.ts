@@ -1,22 +1,16 @@
 import fs from 'fs';
 import path from 'path';
 import { readJSON } from '../lib/config.js';
-import { readWorkspaceConfigFile, writeWorkspaceConfigFile } from '../lib/workspace-config.js';
+import { readWorkspaceConfigFile, readWorkspaceConfigFileResolved, writeWorkspaceConfigFile } from '../lib/workspace-config.js';
 import type { WorkspaceConfig } from '../schemas/workspace-config.zod.js';
 import YAML from 'yaml';
+import { buildGeneratedTaskfileFromWorkspaceConfig } from '../lib/generated-taskfile.js';
 import { setupEnvFile } from './env.js';
 import { generateMcpJson } from './mcp.js';
 import { createInstallLogger, type InstallLogger } from './logger.js';
 import { runInstall, type InstallContext, type InstallStep, type RunInstallResult } from './runner.js';
 import { print, symbols } from '../utils.js';
 import { loadInstallState, saveInstallState } from './install-state.js';
-
-type GeneratedTaskfile = {
-  version: string;
-  output?: string;
-  vars?: Record<string, string>;
-  tasks: Record<string, unknown>;
-};
 
 function ensureWorkspaceTaskfile(workspaceRoot: string, devduckPathRel: string): void {
   const taskfilePath = path.join(workspaceRoot, 'Taskfile.yml');
@@ -42,45 +36,16 @@ function ensureWorkspaceTaskfile(workspaceRoot: string, devduckPathRel: string):
   fs.writeFileSync(taskfilePath, content, 'utf8');
 }
 
-function buildGeneratedTaskfile(devduckPathRel: string): GeneratedTaskfile {
-  const stepCmd = (stepId: string) =>
-    `tsx {{.DEVDUCK_ROOT}}/scripts/install/run-step.ts ${stepId} --workspace-root {{.WORKSPACE_ROOT}} --project-root {{.DEVDUCK_ROOT}} --unattended`;
-
-  return {
-    version: '3',
-    output: 'interleaved',
-    vars: {
-      DEVDUCK_ROOT: devduckPathRel,
-      WORKSPACE_ROOT: '{{ default "." .WORKSPACE_ROOT }}'
-    },
-    tasks: {
-      install: {
-        desc: 'Run full installation sequence (Steps 1–7)',
-        cmds: [
-          { task: 'install:1-check-env' },
-          { task: 'install:2-download-repos' },
-          { task: 'install:3-download-projects' },
-          { task: 'install:4-check-env-again' },
-          { task: 'install:5-setup-modules' },
-          { task: 'install:6-setup-projects' },
-          { task: 'install:7-verify-installation' }
-        ]
-      },
-      'install:1-check-env': { desc: 'Verify required environment variables', cmds: [stepCmd('check-env')] },
-      'install:2-download-repos': { desc: 'Download external module repositories', cmds: [stepCmd('download-repos')] },
-      'install:3-download-projects': { desc: 'Clone/link workspace projects', cmds: [stepCmd('download-projects')] },
-      'install:4-check-env-again': { desc: 'Re-check environment variables', cmds: [stepCmd('check-env-again')] },
-      'install:5-setup-modules': { desc: 'Setup all DevDuck modules', cmds: [stepCmd('setup-modules')] },
-      'install:6-setup-projects': { desc: 'Setup all workspace projects', cmds: [stepCmd('setup-projects')] },
-      'install:7-verify-installation': { desc: 'Verify installation correctness', cmds: [stepCmd('verify-installation')] }
-    }
-  };
-}
-
-function ensureGeneratedTaskfile(workspaceRoot: string, cacheDir: string, devduckPathRel: string): void {
+function ensureGeneratedTaskfile(params: {
+  workspaceRoot: string;
+  cacheDir: string;
+  devduckPathRel: string;
+  config: Record<string, unknown>;
+}): void {
+  const { workspaceRoot, cacheDir, devduckPathRel, config } = params;
   fs.mkdirSync(cacheDir, { recursive: true });
   const generatedPath = path.join(cacheDir, 'taskfile.generated.yml');
-  const generated = buildGeneratedTaskfile(devduckPathRel);
+  const generated = buildGeneratedTaskfileFromWorkspaceConfig({ config, devduckPathRel });
   const out = YAML.stringify(generated);
   fs.writeFileSync(generatedPath, out.endsWith('\n') ? out : out + '\n', 'utf8');
   ensureWorkspaceTaskfile(workspaceRoot, devduckPathRel);
@@ -214,7 +179,16 @@ export async function installWorkspace(params: {
         ? String((latestConfig as { devduck_path?: unknown }).devduck_path).trim()
         : './projects/devduck';
     // This is a convenience for Taskfile-based workflows: keep runtime taskfile in .cache updated.
-    ensureGeneratedTaskfile(workspaceRoot, cacheDir, devduckPathRel);
+    const resolved = readWorkspaceConfigFileResolved<Record<string, unknown>>({
+      workspaceRoot,
+      entryFilePath: configFilePath
+    });
+    ensureGeneratedTaskfile({
+      workspaceRoot,
+      cacheDir,
+      devduckPathRel,
+      config: resolved.config || (latestConfig as Record<string, unknown>)
+    });
   }
 
   let moduleChecks: Array<{ name?: string; mcpSettings?: Record<string, unknown> }> = [];

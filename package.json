@@ -9,6 +9,7 @@
     "create-devduck-workspace": "./bin/devduck.js"
   },
   "scripts": {
+    "api": "tsx scripts/api-cli.ts",
     "install:check": "tsx scripts/install.ts",
     "postinstall": "npx playwright install chromium",
     "devduck:service": "tsx scripts/devduck-service/src/service.ts",

@@ -135,6 +135,18 @@ const WorkspaceConfigSchema = z
     version: z.union([z.string(), z.number()]),
     devduck_path: z.string().optional(),
 
+    // Explicit config layering.
+    extends: z.array(z.string()).optional(),
+
+    // Taskfile generation inputs (written into `.cache/taskfile.generated.yml`).
+    taskfile: z
+      .object({
+        vars: z.record(z.string(), z.string()).optional(),
+        tasks: z.record(z.string(), z.any()).optional(),
+      })
+      .passthrough()
+      .optional(),
+
     // Seed files/folders to copy into a *new* workspace when creating it via `--workspace-config`.
     // Paths are relative to the folder containing the provided workspace config file.
     seedFiles: z.array(z.string()).optional(),
