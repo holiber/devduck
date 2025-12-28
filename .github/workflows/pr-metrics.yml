@@ -9,6 +9,12 @@ concurrency:
   group: pr-metrics-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
+# Permissions required for PR comments and artifacts
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
 jobs:
   metrics:
     name: Collect Metrics & Artifacts
