@@ -71,48 +71,56 @@ tsx ./devduck/src/scripts/devduck-cli.ts sync
 npx --yes -p @go-task/cli task install
 ```
 
-## CI Metrics and Artifacts
+## CI Metrics & Dashboard
 
-DevDuck includes a comprehensive CI metrics and artifacts collection system that automatically tracks performance and quality metrics for every Pull Request.
+DevDuck features a unified CI system with beautiful HTML dashboard that automatically tracks performance across all PRs.
 
-### Features
+### 🎯 Features
 
-- **📊 Automatic Metrics Collection**: Build time, test time, bundle size, code changes
-- **🎭 Playwright Integration**: Screenshots and videos for failed E2E tests
-- **🤖 AI Agent Logging**: Track AI interactions during development
-- **📈 Trend Visualization**: Compare metrics across PRs and detect regressions
-- **💬 PR Comments**: Automatic summary comments on every PR
+- **📊 Unified CI Workflow**: Tests run **once** - no duplication
+- **📈 Beautiful HTML Dashboard**: Chart.js visualizations with trends
+- **🌐 GitHub Pages**: Public dashboard at https://[owner].github.io/devduck/metrics.html
+- **⚡ Baseline Comparison**: Automatic delta calculation vs main
+- **📜 History Tracking**: Last 30 runs with trend analysis
+- **🎭 Playwright Integration**: Screenshots and videos for failed tests
+- **💬 PR Comments**: Automatic metrics table with 🔴🟢 indicators
 
-### Quick Start
-
-The CI system runs automatically on every PR. To use it locally:
+### 🚀 Quick Start
 
 ```bash
 # Collect metrics
 npm run ci:metrics
 
-# Compare with baseline
-npm run ci:compare .cache/metrics/metrics.json baseline.json
+# Update history
+npm run ci:history
 
-# Visualize trends
-npm run ci:visualize
+# Generate HTML dashboard
+npm run ci:report
 
-# Log AI agent actions
-npm run ci:ai-log simple-log "cursor-ai" "Task completed"
+# All-in-one (runs in CI automatically)
+npm run ci:metrics && npm run ci:history && npm run ci:report
 ```
 
-### Documentation
+### 📊 Dashboard Preview
 
-For detailed information, see:
-- [CI Metrics Documentation](docs/CI_METRICS.md) - Complete guide
-- [CI Scripts README](scripts/ci/README.md) - Script usage and API
+Live dashboard includes:
+- 6 metric cards (Build time, Test time, Bundle size, Tests status, Code changes, History)
+- Interactive Chart.js line charts for trends
+- Responsive gradient design
+- PR metadata display
 
-### Workflows
+### 📖 Documentation
 
-- **pr-metrics.yml**: Runs on every PR, collects metrics and artifacts
-- **ci.yml**: Basic CI tests on push and PR
+- [Unified CI Implementation](CI_UNIFIED_IMPLEMENTATION.md) - Architecture and features
+- [CI Scripts README](scripts/ci/README.md) - Script usage
+- [Original CI Metrics Docs](docs/CI_METRICS.md) - Detailed reference
 
-All artifacts (logs, screenshots, videos, AI logs) are automatically uploaded and available for 30 days.
+### 🔄 How It Works
+
+1. **On PR**: Workflow runs tests → collects metrics → compares with main → posts comment
+2. **On Main Merge**: Updates baseline → publishes dashboard to GitHub Pages
+
+All artifacts (logs, screenshots, videos) available for 30 days.
 
 ## Commands
 

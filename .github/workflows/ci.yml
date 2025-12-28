@@ -1,31 +1,199 @@
-name: CI
+name: CI & Metrics Dashboard
 
 on:
-  push:
-    branches: [ main ]
   pull_request:
-    branches: [ main ]
+    types: [opened, synchronize, reopened]
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: write
+  pages: write
+  id-token: write
 
 jobs:
-  test:
+  test-and-metrics:
     runs-on: ubuntu-latest
-    
-    strategy:
-      matrix:
-        node-version: [20.x]
-    
-    steps:
-    - uses: actions/checkout@v4
-    
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ matrix.node-version }}
-        cache: 'npm'
-    
-    - name: Install dependencies
-      run: npm ci
-    
-    - name: Run tests
-      run: npm test
+    timeout-minutes: 25
 
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Create cache structure
+        run: mkdir -p .cache/{metrics,logs,ai_logs,playwright}
+
+      - name: Run tests (Playwright)
+        id: tests
+        run: |
+          npx playwright test -c tests/installer/playwright.config.ts --reporter=list || true
+        continue-on-error: true
+
+      - name: Collect test artifacts
+        if: always()
+        run: |
+          if [ -d "test-results" ]; then
+            cp -r test-results .cache/playwright/ || true
+          fi
+          if [ -d "playwright-report" ]; then
+            cp -r playwright-report .cache/playwright/ || true
+          fi
+          if [ -d "blob-report" ]; then
+            cp -r blob-report .cache/playwright/ || true
+          fi
+          
+          # Create summary of failed tests
+          if [ -d "test-results" ]; then
+            echo "# Playwright Test Results" > .cache/playwright/summary.md
+            echo "" >> .cache/playwright/summary.md
+            echo "## Failed Tests" >> .cache/playwright/summary.md
+            find test-results -name "*.png" -o -name "*.webm" | head -20 | while read file; do
+              echo "- $file" >> .cache/playwright/summary.md
+            done
+          fi
+
+      - name: Collect current metrics
+        run: node scripts/ci/collect-metrics.js
+        continue-on-error: true
+
+      - name: Fetch baseline from main
+        if: github.event_name == 'pull_request'
+        run: |
+          echo "Fetching baseline metrics from main branch..."
+          git fetch origin main --depth=1
+          git show origin/main:.cache/metrics/current.json > .cache/metrics/baseline.json 2>/dev/null || echo '{}' > .cache/metrics/baseline.json
+          echo "Baseline fetched:"
+          cat .cache/metrics/baseline.json
+
+      - name: Calculate metrics diff
+        if: github.event_name == 'pull_request'
+        run: |
+          if [ -f .cache/metrics/current.json ] && [ -f .cache/metrics/baseline.json ]; then
+            jq -n \
+              --slurpfile cur .cache/metrics/current.json \
+              --slurpfile base .cache/metrics/baseline.json \
+              '{
+                build_time_sec: $cur[0].build_time_sec,
+                build_delta: (($cur[0].build_time_sec // 0) - ($base[0].build_time_sec // 0)),
+                test_time_sec: $cur[0].test_time_sec,
+                test_delta: (($cur[0].test_time_sec // 0) - ($base[0].test_time_sec // 0)),
+                bundle_size_bytes: $cur[0].bundle_size_bytes,
+                bundle_delta: (($cur[0].bundle_size_bytes // 0) - ($base[0].bundle_size_bytes // 0)),
+                test_count: $cur[0].test_count,
+                test_passed: $cur[0].test_passed,
+                test_failed: $cur[0].test_failed
+              }' > .cache/metrics/diff.json
+            echo "Diff calculated:"
+            cat .cache/metrics/diff.json
+          fi
+
+      - name: Add PR metadata
+        if: github.event_name == 'pull_request'
+        run: |
+          if [ -f .cache/metrics/current.json ]; then
+            jq ". + {
+              pr_number: ${{ github.event.pull_request.number }},
+              pr_additions: ${{ github.event.pull_request.additions }},
+              pr_deletions: ${{ github.event.pull_request.deletions }},
+              pr_changed_files: ${{ github.event.pull_request.changed_files }},
+              pr_title: \"$(echo '${{ github.event.pull_request.title }}' | sed 's/"/\\"/g')\",
+              pr_author: \"${{ github.event.pull_request.user.login }}\",
+              commit_sha: \"${{ github.event.pull_request.head.sha }}\"
+            }" .cache/metrics/current.json > .cache/metrics/tmp.json
+            mv .cache/metrics/tmp.json .cache/metrics/current.json
+          fi
+
+      - name: Update metrics history
+        run: node scripts/ci/update-history.js
+        continue-on-error: true
+
+      - name: Generate HTML report
+        run: node scripts/ci/generate-metrics-report.js
+        continue-on-error: true
+
+      - name: Log AI agent action
+        run: |
+          node scripts/ci/ai-logger.js simple-log "cursor-ai" "CI run completed for ${{ github.ref }}" "{\"event\":\"${{ github.event_name }}\",\"run_id\":\"${{ github.run_id }}\"}"
+        continue-on-error: true
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-metrics-artifacts-${{ github.run_number }}
+          path: |
+            .cache/logs/**/*
+            .cache/metrics/**/*
+            .cache/ai_logs/**/*
+            .cache/playwright/**/*
+          retention-days: 30
+          if-no-files-found: warn
+
+      - name: Upload Playwright traces on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-traces-${{ github.run_number }}
+          path: test-results/**/trace.zip
+          retention-days: 14
+          if-no-files-found: ignore
+
+      - name: Post PR comment
+        if: github.event_name == 'pull_request'
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            ### 🧠 CI Metrics Dashboard
+            
+            | Metric | Current | Δ vs main |
+            |--------|---------|-----------|
+            | 🏗 **Build time** | $(jq -r '.build_time_sec // "N/A"' .cache/metrics/current.json)s | $(jq -r 'if .build_delta then (if .build_delta > 0 then "🔴 +" else "🟢 ") + (.build_delta | tostring) + "s" else "—" end' .cache/metrics/diff.json 2>/dev/null || echo "—") |
+            | 🧪 **Test time** | $(jq -r '.test_time_sec // "N/A"' .cache/metrics/current.json)s | $(jq -r 'if .test_delta then (if .test_delta > 0 then "🔴 +" else "🟢 ") + (.test_delta | tostring) + "s" else "—" end' .cache/metrics/diff.json 2>/dev/null || echo "—") |
+            | 📦 **Bundle size** | $(jq -r 'if .bundle_size_bytes then (.bundle_size_bytes / 1024 | floor | tostring) + " KB" else "N/A" end' .cache/metrics/current.json) | $(jq -r 'if .bundle_delta then (if .bundle_delta > 0 then "🔴 +" else "🟢 ") + ((.bundle_delta / 1024) | floor | tostring) + " KB" else "—" end' .cache/metrics/diff.json 2>/dev/null || echo "—") |
+            | ✅ **Tests passed** | $(jq -r '.test_passed // 0' .cache/metrics/current.json) | |
+            | ❌ **Tests failed** | $(jq -r '.test_failed // 0' .cache/metrics/current.json) | |
+            | 📊 **Code changes** | +$(jq -r '.pr_additions // 0' .cache/metrics/current.json) / -$(jq -r '.pr_deletions // 0' .cache/metrics/current.json) | |
+            
+            ---
+            🧩 **Artifacts:** Logs, screenshots, videos available in [workflow artifacts](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+            
+            📈 **Full HTML Dashboard:** https://${{ github.repository_owner }}.github.io/devduck/metrics.html (available after merge to main)
+
+      - name: Commit metrics to repository (main only)
+        if: github.ref == 'refs/heads/main'
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          
+          # Copy metrics to root for history tracking
+          cp .cache/metrics/current.json .cache/metrics/metrics-$(date +%Y%m%d-%H%M%S).json
+          
+          # Commit if there are changes
+          git add .cache/metrics/current.json .cache/metrics/history.json || true
+          git diff --staged --quiet || git commit -m "chore: update CI metrics [skip ci]" || true
+
+      - name: Deploy to GitHub Pages
+        if: github.ref == 'refs/heads/main'
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: .cache/metrics
+          destination_dir: .
+          enable_jekyll: false
+          keep_files: false

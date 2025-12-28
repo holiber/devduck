@@ -17,10 +17,12 @@
     "test:pw": "playwright test -c tests/installer/playwright.config.ts",
     "test:installer:pw": "playwright test -c tests/installer/playwright.config.ts",
     "test:smoke": "playwright test -c tests/installer/playwright.config.ts --grep @smoke",
-    "ci:metrics": "tsx scripts/ci/collect-metrics.ts",
+    "ci:metrics": "node scripts/ci/collect-metrics.js",
+    "ci:history": "node scripts/ci/update-history.js",
+    "ci:report": "node scripts/ci/generate-metrics-report.js",
+    "ci:ai-log": "node scripts/ci/ai-logger.js",
     "ci:compare": "tsx scripts/ci/compare-metrics.ts",
-    "ci:visualize": "tsx scripts/ci/visualize-metrics.ts",
-    "ci:ai-log": "tsx scripts/ci/ai-logger.ts"
+    "ci:visualize": "tsx scripts/ci/visualize-metrics.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.25.1",
