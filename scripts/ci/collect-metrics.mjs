@@ -15,7 +15,7 @@
 import fs from 'node:fs';
 import fsp from 'node:fs/promises';
 import path from 'node:path';
-import { spawn } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 
 const CACHE_ROOT = '.cache';
 const METRICS_DIR = path.join(CACHE_ROOT, 'metrics');
@@ -72,6 +72,81 @@ function tryReadJsonFileSync(p) {
 function stripAnsi(s) {
   // Basic ANSI escape stripping (colors, cursor moves).
   return String(s).replace(/\x1b\[[0-9;]*[A-Za-z]/gu, '');
+}
+
+function countLines(text) {
+  const s = String(text);
+  if (s.length === 0) return 0;
+  let n = 1;
+  for (let i = 0; i < s.length; i++) {
+    if (s.charCodeAt(i) === 10) n++;
+  }
+  return n;
+}
+
+function listGitFilesOrEmpty() {
+  try {
+    const res = spawnSync('git', ['ls-files', '-z'], { encoding: 'utf8' });
+    if (res.status !== 0 || !res.stdout) return [];
+    return res.stdout.split('\0').filter(Boolean);
+  } catch {
+    return [];
+  }
+}
+
+function isCodeExt(ext) {
+  return (
+    ext === '.ts' ||
+    ext === '.tsx' ||
+    ext === '.mts' ||
+    ext === '.cts' ||
+    ext === '.js' ||
+    ext === '.jsx' ||
+    ext === '.mjs' ||
+    ext === '.cjs'
+  );
+}
+
+function isTsOrJsScriptExt(ext) {
+  // "Scripts" in the request: treat TS/JS variants as scripts.
+  return isCodeExt(ext);
+}
+
+function parsePlaywrightFlakyTestIds(raw) {
+  const text = stripAnsi(raw);
+  const lines = text.split(/\r?\n/gu);
+  const ids = new Set();
+  for (const line of lines) {
+    if (!/\bretry\s*#\s*\d+\b/iu.test(line)) continue;
+    const normalized = line.replace(/\s*\(retry\s*#\s*\d+\)\s*/giu, '').trim();
+    if (normalized) ids.add(normalized);
+  }
+  return ids;
+}
+
+async function computeRepoCodeMetrics() {
+  const files = listGitFilesOrEmpty();
+  let totalCodeLines = 0;
+  let hugeScripts = 0;
+
+  for (const file of files) {
+    // Note: CI checks out gh-pages into a sibling folder; keep repo-only metrics.
+    if (file.startsWith('gh-pages/')) continue;
+    const ext = path.extname(file).toLowerCase();
+    if (!isCodeExt(ext)) continue;
+
+    let raw;
+    try {
+      raw = await fsp.readFile(file, 'utf8');
+    } catch {
+      continue;
+    }
+    const lines = countLines(raw);
+    totalCodeLines += lines;
+    if (isTsOrJsScriptExt(ext) && lines > 1000) hugeScripts += 1;
+  }
+
+  return { totalCodeLines, hugeScripts };
 }
 
 function parseNodeTestSummary(raw) {
@@ -248,8 +323,17 @@ async function main() {
     },
     sizes: {},
     tests: {},
+    code: {},
     notes: []
   };
+
+  // Repo code metrics (best-effort, based on git-tracked files).
+  try {
+    const { totalCodeLines, hugeScripts } = await computeRepoCodeMetrics();
+    metrics.code = { totalLines: totalCodeLines, hugeScripts };
+  } catch {
+    metrics.notes.push('Failed to compute repo code metrics.');
+  }
 
   // Test stats (best-effort): counts + durations from logs + wall-clock from test-commands.json.
   try {
@@ -276,6 +360,24 @@ async function main() {
         exitCode: metrics.commands?.pw_installer?.exitCode
       };
     }
+  } catch {
+    // ignore
+  }
+
+  // Flaky tests: count unique tests that show a retry marker in logs.
+  try {
+    const flakyIds = new Set();
+    const pwInstallerLogPath = path.join(LOGS_DIR, 'pw-installer.log');
+    if (await pathExists(pwInstallerLogPath)) {
+      const raw = await fsp.readFile(pwInstallerLogPath, 'utf8');
+      for (const id of parsePlaywrightFlakyTestIds(raw)) flakyIds.add(id);
+    }
+    const pwSmokeLogPath = path.join(LOGS_DIR, 'pw-smoke.log');
+    if (await pathExists(pwSmokeLogPath)) {
+      const raw = await fsp.readFile(pwSmokeLogPath, 'utf8');
+      for (const id of parsePlaywrightFlakyTestIds(raw)) flakyIds.add(id);
+    }
+    metrics.tests.flaky = { count: flakyIds.size };
   } catch {
     // ignore
   }
@@ -365,6 +467,16 @@ async function main() {
     'e2e',
     metrics.tests?.e2e_installer?.total ?? 'n/a',
     `(${metrics.tests?.e2e_installer?.reportedDurationMs ?? metrics.tests?.e2e_installer?.durationMs ?? 'n/a'}ms)`
+  );
+  // eslint-disable-next-line no-console
+  console.log(
+    '[metrics] code:',
+    'totalLines',
+    metrics.code?.totalLines ?? 'n/a',
+    '; hugeScripts(>1000 LOC)',
+    metrics.code?.hugeScripts ?? 'n/a',
+    '; flakyTests',
+    metrics.tests?.flaky?.count ?? 'n/a'
   );
 }
 

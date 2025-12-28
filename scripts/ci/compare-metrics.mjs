@@ -49,7 +49,10 @@ async function main() {
       dev_ready_ms: delta(num(cur?.commands?.dev_start?.readyAtMs), num(base?.commands?.dev_start?.readyAtMs)),
       npm_pack_bytes: delta(num(cur?.sizes?.npm_pack?.bytes), num(base?.sizes?.npm_pack?.bytes)),
       dist_bytes: delta(num(cur?.sizes?.dist?.bytes), num(base?.sizes?.dist?.bytes)),
-      build_output_bytes: delta(num(cur?.sizes?.build_output_dir?.bytes), num(base?.sizes?.build_output_dir?.bytes))
+      build_output_bytes: delta(num(cur?.sizes?.build_output_dir?.bytes), num(base?.sizes?.build_output_dir?.bytes)),
+      repo_code_lines: delta(num(cur?.code?.totalLines), num(base?.code?.totalLines)),
+      huge_scripts: delta(num(cur?.code?.hugeScripts), num(base?.code?.hugeScripts)),
+      flaky_tests: delta(num(cur?.tests?.flaky?.count), num(base?.tests?.flaky?.count))
     }
   };
 

@@ -49,6 +49,17 @@ function fmtDeltaBytes(bytes) {
   return `${sign}${fmtBytes(bytes)}`;
 }
 
+function fmtInt(n) {
+  if (n == null || !Number.isFinite(n)) return 'n/a';
+  return new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(n);
+}
+
+function fmtDeltaInt(n) {
+  if (n == null || !Number.isFinite(n)) return 'n/a';
+  const sign = n > 0 ? '+' : '';
+  return `${sign}${fmtInt(n)}`;
+}
+
 function runUrl() {
   const repo = process.env.GITHUB_REPOSITORY;
   const runId = process.env.GITHUB_RUN_ID;
@@ -88,6 +99,9 @@ async function main() {
   lines.push(`| Dev ready | ${fmtMs(current?.commands?.dev_start?.readyAtMs)} | ${fmtDeltaMs(deltas.dev_ready_ms)} |`);
   lines.push(`| npm pack size | ${fmtBytes(current?.sizes?.npm_pack?.bytes)} | ${fmtDeltaBytes(deltas.npm_pack_bytes)} |`);
   lines.push(`| dist size | ${fmtBytes(current?.sizes?.dist?.bytes)} | ${fmtDeltaBytes(deltas.dist_bytes)} |`);
+  lines.push(`| Repo code lines | ${fmtInt(current?.code?.totalLines)} | ${fmtDeltaInt(deltas.repo_code_lines)} |`);
+  lines.push(`| Huge scripts (>1000 LOC) | ${fmtInt(current?.code?.hugeScripts)} | ${fmtDeltaInt(deltas.huge_scripts)} |`);
+  lines.push(`| Flaky tests (retried) | ${fmtInt(current?.tests?.flaky?.count)} | ${fmtDeltaInt(deltas.flaky_tests)} |`);
   lines.push(
     `| Unit tests | ${current?.tests?.unit?.total ?? 'n/a'} tests / ${fmtMs(current?.tests?.unit?.reportedDurationMs ?? current?.tests?.unit?.durationMs)} | — |`
   );
