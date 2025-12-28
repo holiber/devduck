@@ -1,0 +1,59 @@
+{
+  "frozenAt": "2025-12-28T01:27:33.545Z",
+  "baselineSnapshot": "baseline-2025-12-28.json",
+  "description": "Frozen list of fastest 20% installer tests for smoke group",
+  "smokeTests": [
+    {
+      "file": "install-project-scripts.pw.spec.ts",
+      "test": "@smoke Install additional scripts via importScripts",
+      "originalFile": "install-project-scripts.test.ts",
+      "originalTest": "Install additional scripts via importScripts",
+      "duration": 1
+    },
+    {
+      "file": "install-project-scripts.pw.spec.ts",
+      "test": "@smoke Remove scripts when project is removed from config",
+      "originalFile": "install-project-scripts.test.ts",
+      "originalTest": "Remove scripts when project is removed from config",
+      "duration": 1
+    },
+    {
+      "file": "install-project-scripts.pw.spec.ts",
+      "test": "@smoke Handle missing project package.json gracefully",
+      "originalFile": "install-project-scripts.test.ts",
+      "originalTest": "Handle missing project package.json gracefully",
+      "duration": 1
+    },
+    {
+      "file": "install-project-scripts.pw.spec.ts",
+      "test": "@smoke Verify scripts do not change current directory",
+      "originalFile": "install-project-scripts.test.ts",
+      "originalTest": "Verify scripts do not change current directory",
+      "duration": 1
+    },
+    {
+      "file": "install-steps.pw.spec.ts",
+      "test": "@smoke Step 3: Download Projects",
+      "originalFile": "install-steps.test.ts",
+      "originalTest": "Step 3: Download Projects",
+      "duration": 2
+    },
+    {
+      "file": "install-steps.pw.spec.ts",
+      "test": "@smoke Step 6: Setup Projects",
+      "originalFile": "install-steps.test.ts",
+      "originalTest": "Step 6: Setup Projects",
+      "duration": 2
+    },
+    {
+      "file": "install-project-scripts.pw.spec.ts",
+      "test": "@smoke Install default scripts from project",
+      "originalFile": "install-project-scripts.test.ts",
+      "originalTest": "Install default scripts from project",
+      "duration": 3
+    }
+  ],
+  "totalInstallerTests": 35,
+  "smokeTestCount": 7,
+  "percentage": 20
+}

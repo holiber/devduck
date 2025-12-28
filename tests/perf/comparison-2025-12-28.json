@@ -1,0 +1,24 @@
+{
+  "timestamp": "2025-12-28T01:30:32.331Z",
+  "baseline": {
+    "snapshot": "baseline-2025-12-28.json",
+    "totalDuration": 32432.170047,
+    "installerTestCount": 35
+  },
+  "playwright": {
+    "totalDuration": 14500,
+    "installerTestCount": 0,
+    "smokeTestCount": 0
+  },
+  "comparison": {
+    "totalDurationDiff": -17932.170047,
+    "totalDurationDiffPercent": -55.291304963599686,
+    "avgInstallerTestDuration": {
+      "baseline": 543.8285714285714,
+      "playwright": null,
+      "diff": null,
+      "diffPercent": null
+    },
+    "smokeGroupDuration": 0
+  }
+}
