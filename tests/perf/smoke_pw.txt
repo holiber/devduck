@@ -1,0 +1,35 @@
+
+> devduck@0.2.0 test:smoke
+> playwright test --grep @smoke
+
+
+Running 7 tests using 2 workers
+
+(node:7805) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:7806) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:7805) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:7806) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 tests/installer/install-project-scripts.pw.spec.ts:110:3 › Install Project Scripts › Install additional scripts via importScripts @smoke (9ms)
+Created shared workspace: /workspace/.cache/temp/install-steps-test-1766885646631
+  ✓  3 tests/installer/install-project-scripts.pw.spec.ts:172:3 › Install Project Scripts › Remove scripts when project is removed from config @smoke (6ms)
+[36m
+[Step 2] Downloading repositories...[0m
+[36m  ℹ No repositories to download[0m
+  ✓  2 tests/installer/install-steps.pw.spec.ts:85:3 › Installation Steps › Step 2: Download Repos @smoke (7ms)
+  ✓  4 tests/installer/install-project-scripts.pw.spec.ts:234:3 › Install Project Scripts › Handle missing project package.json gracefully @smoke (14ms)
+[36m
+[Step 3] Downloading projects...[0m
+[36m  ℹ No projects to download[0m
+  ✓  5 tests/installer/install-steps.pw.spec.ts:103:3 › Installation Steps › Step 3: Download Projects @smoke (4ms)
+[36m
+[Step 6] Setting up projects...[0m
+[36m  ℹ No projects to setup[0m
+Cleaned up shared workspace: /workspace/.cache/temp/install-steps-test-1766885646631
+  ✓  6 tests/installer/install-project-scripts.pw.spec.ts:274:3 › Install Project Scripts › Verify scripts do not change current directory @smoke (5ms)
+  ✓  7 tests/installer/install-steps.pw.spec.ts:154:3 › Installation Steps › Step 6: Setup Projects @smoke (7ms)
+
+  7 passed (876ms)

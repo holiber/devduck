@@ -1,0 +1,248 @@
+{
+  "timestamp": "2025-12-28T01:28:05.174Z",
+  "total_duration_ms": 14643.818224,
+  "count": 33,
+  "tests": [
+    {
+      "name": "Handle missing project package.json gracefully",
+      "suite": "Install Project Scripts",
+      "duration": 1.214049,
+      "file": "install-project-scripts.test.ts"
+    },
+    {
+      "name": "Verify scripts do not change current directory",
+      "suite": "Install Project Scripts",
+      "duration": 1.246401,
+      "file": "install-project-scripts.test.ts"
+    },
+    {
+      "name": "Step 3: Download Projects",
+      "suite": "Installation Steps",
+      "duration": 1.550924,
+      "file": "install-steps.test.ts"
+    },
+    {
+      "name": "Install additional scripts via importScripts",
+      "suite": "Install Project Scripts",
+      "duration": 1.593895,
+      "file": "install-project-scripts.test.ts"
+    },
+    {
+      "name": "Step 6: Setup Projects",
+      "suite": "Installation Steps",
+      "duration": 1.62532,
+      "file": "install-steps.test.ts"
+    },
+    {
+      "name": "Remove scripts when project is removed from config",
+      "suite": "Install Project Scripts",
+      "duration": 1.858059,
+      "file": "install-project-scripts.test.ts"
+    },
+    {
+      "name": "Step 2: Download Repos",
+      "suite": "Installation Steps",
+      "duration": 2.477919,
+      "file": "install-steps.test.ts"
+    },
+    {
+      "name": "Install default scripts from project",
+      "suite": "Install Project Scripts",
+      "duration": 3.200804,
+      "file": "install-project-scripts.test.ts"
+    },
+    {
+      "name": "Step 7: Verify Installation",
+      "suite": "Installation Steps",
+      "duration": 7.479713,
+      "file": "install-steps.test.ts"
+    },
+    {
+      "name": "Step 4: Check Environment Again",
+      "suite": "Installation Steps",
+      "duration": 9.424737,
+      "file": "install-steps.test.ts"
+    },
+    {
+      "name": "Step 5: Setup Modules",
+      "suite": "Installation Steps",
+      "duration": 13.147118,
+      "file": "install-steps.test.ts"
+    },
+    {
+      "name": "modules: [\"issue-*\"] expands to issue-tracker and issue-tracker-github",
+      "suite": "workspace modules patterns",
+      "duration": 16.512756,
+      "file": "module-patterns.test.ts"
+    },
+    {
+      "name": "Step 1: Check Environment Variables",
+      "suite": "Installation Steps",
+      "duration": 31.613523,
+      "file": "install-steps.test.ts"
+    },
+    {
+      "name": "Unattended Installation with Config File",
+      "suite": "Workspace Installer - Unattended Mode",
+      "duration": 318.133671,
+      "file": "installer-unattended.test.ts"
+    },
+    {
+      "name": "installer summary: prints INSTALLATION FINISHED WITH ERRORS on failures",
+      "duration": 319.017868,
+      "file": "installer-strictness.test.ts"
+    },
+    {
+      "name": "installer: .env values are available to shell checks (fill-missing)",
+      "duration": 323.497461,
+      "file": "installer-strictness.test.ts"
+    },
+    {
+      "name": "Unattended Installation - Fresh Workspace",
+      "suite": "Workspace Installer - Unattended Mode",
+      "duration": 324.321388,
+      "file": "installer-unattended.test.ts"
+    },
+    {
+      "name": "Unattended Installation with workspace.config.json seedFiles[] copies seed files/folders",
+      "suite": "Workspace Installer - Unattended Mode",
+      "duration": 340.151253,
+      "file": "installer-unattended.test.ts"
+    },
+    {
+      "name": "Unattended Installation - Full Structure Verification",
+      "suite": "Workspace Installer - Unattended Mode",
+      "duration": 343.208323,
+      "file": "installer-unattended.test.ts"
+    },
+    {
+      "name": "Unattended Installation from fixture - cursor-only",
+      "suite": "Workspace Installer - Unattended Mode",
+      "duration": 361.607381,
+      "file": "installer-unattended.test.ts"
+    },
+    {
+      "name": "Detect Existing Workspace",
+      "suite": "Workspace Installer - GUI/Interactive Mode",
+      "duration": 373.850092,
+      "file": "installer-gui.test.ts"
+    },
+    {
+      "name": "GUI Installation - Fresh Workspace",
+      "suite": "Workspace Installer - GUI/Interactive Mode",
+      "duration": 374.812165,
+      "file": "installer-gui.test.ts"
+    },
+    {
+      "name": "Installs module from workspace/modules when listed in config",
+      "suite": "Workspace Installer - Workspace-local modules/",
+      "duration": 376.44149,
+      "file": "workspace-modules-installation.test.ts"
+    },
+    {
+      "name": "installer: hook load failure is fatal",
+      "duration": 404.898778,
+      "file": "installer-strictness.test.ts"
+    },
+    {
+      "name": "Unattended Installation with workspace.config.json (local folder project src)",
+      "suite": "Workspace Installer - Unattended Mode",
+      "duration": 425.568277,
+      "file": "installer-unattended.test.ts"
+    },
+    {
+      "name": "Reinstall Existing Workspace - Unattended",
+      "suite": "Workspace Installer - Unattended Mode",
+      "duration": 677.076198,
+      "file": "installer-unattended.test.ts"
+    },
+    {
+      "name": "Reinstallation - Module Hooks Re-executed",
+      "suite": "Workspace Installer - Unattended Mode",
+      "duration": 683.257159,
+      "file": "installer-unattended.test.ts"
+    },
+    {
+      "name": "Add Modules to Existing Workspace",
+      "suite": "Workspace Installer - Unattended Mode",
+      "duration": 683.632333,
+      "file": "installer-unattended.test.ts"
+    },
+    {
+      "name": "Remove Modules from Existing Workspace",
+      "suite": "Workspace Installer - Unattended Mode",
+      "duration": 691.253184,
+      "file": "installer-unattended.test.ts"
+    },
+    {
+      "name": "Reinstallation Verification - Preserve Configuration",
+      "suite": "Workspace Installer - Unattended Mode",
+      "duration": 697.263767,
+      "file": "installer-unattended.test.ts"
+    },
+    {
+      "name": "Installation with External Repository",
+      "suite": "Workspace Installer - Unattended Mode",
+      "duration": 860.859609,
+      "file": "installer-unattended.test.ts"
+    },
+    {
+      "name": "resolves relative workspace path from INIT_CWD (npx cache cwd simulation)",
+      "suite": "devduck new (npx-friendly bootstrap)",
+      "duration": 2297.591599,
+      "file": "npx-new-workspace.test.ts"
+    },
+    {
+      "name": "clones DevDuck into devduck/src when not listed in projects",
+      "suite": "devduck new (npx-friendly bootstrap)",
+      "duration": 3674.43101,
+      "file": "npx-new-workspace.test.ts"
+    }
+  ],
+  "all_suites_found": [
+    "Install Project Scripts",
+    "Install default scripts from project",
+    "Install additional scripts via importScripts",
+    "Remove scripts when project is removed from config",
+    "Handle missing project package.json gracefully",
+    "Verify scripts do not change current directory",
+    "Installation Steps",
+    "Step 1: Check Environment Variables",
+    "Step 2: Download Repos",
+    "Step 3: Download Projects",
+    "Step 4: Check Environment Again",
+    "Step 5: Setup Modules",
+    "Step 6: Setup Projects",
+    "Step 7: Verify Installation",
+    "Workspace Installer - GUI/Interactive Mode",
+    "Fresh Workspace Installation",
+    "Existing Workspace Operations",
+    "GUI Installation - Fresh Workspace",
+    "Detect Existing Workspace",
+    "installer: hook load failure is fatal",
+    "installer: .env values are available to shell checks (fill-missing)",
+    "installer: checks without name do not print \\",
+    "installer summary: prints INSTALLATION FINISHED WITH ERRORS on failures",
+    "Workspace Installer - Unattended Mode",
+    "External Repository Installation",
+    "Unattended Installation from fixture - cursor-only",
+    "Unattended Installation - Fresh Workspace",
+    "Unattended Installation with Config File",
+    "Unattended Installation with workspace.config.json (local folder project src)",
+    "Unattended Installation with workspace.config.json seedFiles[] copies seed files/folders",
+    "Unattended Installation - Full Structure Verification",
+    "Reinstall Existing Workspace - Unattended",
+    "Add Modules to Existing Workspace",
+    "Remove Modules from Existing Workspace",
+    "Reinstallation Verification - Preserve Configuration",
+    "Reinstallation - Module Hooks Re-executed",
+    "Installation with External Repository",
+    "workspace modules patterns",
+    "modules: [",
+    "devduck new (npx-friendly bootstrap)",
+    "clones DevDuck into devduck/src when not listed in projects",
+    "resolves relative workspace path from INIT_CWD (npx cache cwd simulation)",
+    "Workspace Installer - Workspace-local modules/",
+    "Installs module from workspace/modules when listed in config"
+  ]
+}

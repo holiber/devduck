@@ -1,14 +1,7 @@
-#!/usr/bin/env node
 
-/**
- * Tests for workspace.config.json module patterns (e.g. "issue-*").
- */
-
-import { test, describe } from 'node:test';
-import assert from 'node:assert';
-import path from 'node:path';
-import { promises as fs } from 'node:fs';
-
+import { test, expect } from '@playwright/test';
+import path from 'path';
+import { promises as fs } from 'fs';
 import { getAllModules, resolveModules } from '../../scripts/install/module-resolver.js';
 
 async function readJson(p: string): Promise<any> {
@@ -16,7 +9,7 @@ async function readJson(p: string): Promise<any> {
   return JSON.parse(raw);
 }
 
-describe('workspace modules patterns', () => {
+test.describe('workspace modules patterns', () => {
   test('modules: ["issue-*"] expands to issue-tracker and issue-tracker-github', async () => {
     const fixtureConfigPath = path.join(
       process.cwd(),
@@ -27,16 +20,15 @@ describe('workspace modules patterns', () => {
     );
 
     const cfg = await readJson(fixtureConfigPath);
-    assert.deepStrictEqual(cfg.modules, ['issue-*'], 'fixture should keep the pattern in modules[]');
+    expect(cfg.modules, 'fixture should keep the pattern in modules[]').toEqual(['issue-*']);
 
     const all = getAllModules();
     const resolved = resolveModules(cfg, all).map((m) => m.name);
 
-    assert.ok(resolved.includes('issue-tracker'), 'issue-tracker should be resolved from issue-*');
-    assert.ok(
+    expect(resolved.includes('issue-tracker'), 'issue-tracker should be resolved from issue-*').toBeTruthy();
+    expect(
       resolved.includes('issue-tracker-github'),
       'issue-tracker-github should be resolved from issue-*'
-    );
+    ).toBeTruthy();
   });
 });
-

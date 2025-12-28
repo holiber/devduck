@@ -1,11 +1,5 @@
-#!/usr/bin/env node
 
-/**
- * Tests for install-project-scripts functionality
- */
-
-import { test, describe, before, after } from 'node:test';
-import assert from 'node:assert';
+import { test, expect } from '@playwright/test';
 import path from 'path';
 import { promises as fs } from 'fs';
 import { installProjectScripts } from '../../scripts/install/install-project-scripts.js';
@@ -14,7 +8,7 @@ import { createWorkspaceFromFixture, cleanupTempWorkspace } from './helpers.js';
 /**
  * Read JSON file
  */
-async function readJSON(filePath) {
+async function readJSON(filePath: string) {
   try {
     const content = await fs.readFile(filePath, 'utf8');
     return JSON.parse(content);
@@ -23,16 +17,16 @@ async function readJSON(filePath) {
   }
 }
 
-describe('Install Project Scripts', () => {
-  let tempWorkspace;
+test.describe('Install Project Scripts', () => {
+  let tempWorkspace: string;
 
-  before(async () => {
+  test.beforeAll(async () => {
     tempWorkspace = await createWorkspaceFromFixture('empty', {
       prefix: 'devduck-scripts-test-'
     });
   });
 
-  after(async () => {
+  test.afterAll(async () => {
     if (tempWorkspace) {
       await cleanupTempWorkspace(tempWorkspace);
     }
@@ -85,36 +79,35 @@ describe('Install Project Scripts', () => {
       ]
     };
 
-    const logMessages = [];
-    const log = (msg) => logMessages.push(msg);
+    const logMessages: string[] = [];
+    const log = (msg: string) => logMessages.push(msg);
 
     // Install scripts
     installProjectScripts(tempWorkspace, config.projects, config, log);
 
     // Verify workspace package.json
     const updatedWorkspacePackageJson = await readJSON(path.join(tempWorkspace, 'package.json'));
-    assert.ok(updatedWorkspacePackageJson, 'Workspace package.json should exist');
-    assert.ok(updatedWorkspacePackageJson.scripts, 'Scripts section should exist');
+    expect(updatedWorkspacePackageJson, 'Workspace package.json should exist').toBeTruthy();
+    expect(updatedWorkspacePackageJson.scripts, 'Scripts section should exist').toBeTruthy();
 
     // Check that default scripts are installed
-    assert.ok(updatedWorkspacePackageJson.scripts[`${projectName}:test`], 'test script should be installed');
-    assert.ok(updatedWorkspacePackageJson.scripts[`${projectName}:dev`], 'dev script should be installed');
-    assert.ok(updatedWorkspacePackageJson.scripts[`${projectName}:build`], 'build script should be installed');
-    assert.ok(updatedWorkspacePackageJson.scripts[`${projectName}:start`], 'start script should be installed');
-    assert.ok(updatedWorkspacePackageJson.scripts[`${projectName}:lint`], 'lint script should be installed');
+    expect(updatedWorkspacePackageJson.scripts[`${projectName}:test`], 'test script should be installed').toBeTruthy();
+    expect(updatedWorkspacePackageJson.scripts[`${projectName}:dev`], 'dev script should be installed').toBeTruthy();
+    expect(updatedWorkspacePackageJson.scripts[`${projectName}:build`], 'build script should be installed').toBeTruthy();
+    expect(updatedWorkspacePackageJson.scripts[`${projectName}:start`], 'start script should be installed').toBeTruthy();
+    expect(updatedWorkspacePackageJson.scripts[`${projectName}:lint`], 'lint script should be installed').toBeTruthy();
 
     // Check that custom script is NOT installed (not in default list)
-    assert.ok(!updatedWorkspacePackageJson.scripts[`${projectName}:custom`], 'custom script should not be installed');
+    expect(updatedWorkspacePackageJson.scripts[`${projectName}:custom`], 'custom script should not be installed').toBeFalsy();
 
     // Check that scripts use --prefix to avoid changing directory
-    assert.strictEqual(
+    expect(
       updatedWorkspacePackageJson.scripts[`${projectName}:test`],
-      `npm run --prefix projects/${projectName} test`,
       'Script should use --prefix'
-    );
+    ).toBe(`npm run --prefix projects/${projectName} test`);
   });
 
-  test('Install additional scripts via importScripts', async () => {
+  test('Install additional scripts via importScripts @smoke', async () => {
     // Create workspace package.json
     const workspacePackageJson = {
       name: 'test-workspace',
@@ -166,17 +159,17 @@ describe('Install Project Scripts', () => {
     const updatedWorkspacePackageJson = await readJSON(path.join(tempWorkspace, 'package.json'));
 
     // Check that default scripts are installed
-    assert.ok(updatedWorkspacePackageJson.scripts[`${projectName}:test`], 'test script should be installed');
+    expect(updatedWorkspacePackageJson.scripts[`${projectName}:test`], 'test script should be installed').toBeTruthy();
 
     // Check that importScripts are installed
-    assert.ok(updatedWorkspacePackageJson.scripts[`${projectName}:format`], 'format script should be installed');
-    assert.ok(updatedWorkspacePackageJson.scripts[`${projectName}:type-check`], 'type-check script should be installed');
+    expect(updatedWorkspacePackageJson.scripts[`${projectName}:format`], 'format script should be installed').toBeTruthy();
+    expect(updatedWorkspacePackageJson.scripts[`${projectName}:type-check`], 'type-check script should be installed').toBeTruthy();
 
     // Check that custom script is NOT installed
-    assert.ok(!updatedWorkspacePackageJson.scripts[`${projectName}:custom`], 'custom script should not be installed');
+    expect(updatedWorkspacePackageJson.scripts[`${projectName}:custom`], 'custom script should not be installed').toBeFalsy();
   });
 
-  test('Remove scripts when project is removed from config', async () => {
+  test('Remove scripts when project is removed from config @smoke', async () => {
     // Create workspace package.json with existing project scripts
     const workspacePackageJson = {
       name: 'test-workspace',
@@ -228,17 +221,17 @@ describe('Install Project Scripts', () => {
     const updatedWorkspacePackageJson = await readJSON(path.join(tempWorkspace, 'package.json'));
 
     // Check that old project scripts are removed
-    assert.ok(!updatedWorkspacePackageJson.scripts['old-project:test'], 'old-project:test should be removed');
-    assert.ok(!updatedWorkspacePackageJson.scripts['old-project:dev'], 'old-project:dev should be removed');
+    expect(updatedWorkspacePackageJson.scripts['old-project:test'], 'old-project:test should be removed').toBeFalsy();
+    expect(updatedWorkspacePackageJson.scripts['old-project:dev'], 'old-project:dev should be removed').toBeFalsy();
 
     // Check that new project scripts are installed
-    assert.ok(updatedWorkspacePackageJson.scripts[`${projectName}:test`], 'new-project:test should be installed');
+    expect(updatedWorkspacePackageJson.scripts[`${projectName}:test`], 'new-project:test should be installed').toBeTruthy();
 
     // Check that non-project scripts are preserved
-    assert.ok(updatedWorkspacePackageJson.scripts['other-script'], 'other-script should be preserved');
+    expect(updatedWorkspacePackageJson.scripts['other-script'], 'other-script should be preserved').toBeTruthy();
   });
 
-  test('Handle missing project package.json gracefully', async () => {
+  test('Handle missing project package.json gracefully @smoke', async () => {
     // Create workspace package.json
     const workspacePackageJson = {
       name: 'test-workspace',
@@ -266,19 +259,19 @@ describe('Install Project Scripts', () => {
       ]
     };
 
-    const logMessages = [];
-    const log = (msg) => logMessages.push(msg);
+    const logMessages: string[] = [];
+    const log = (msg: string) => logMessages.push(msg);
 
     // Install scripts (should not crash)
     installProjectScripts(tempWorkspace, config.projects, config, log);
 
     // Verify workspace package.json is unchanged
     const updatedWorkspacePackageJson = await readJSON(path.join(tempWorkspace, 'package.json'));
-    assert.ok(updatedWorkspacePackageJson, 'Workspace package.json should exist');
-    assert.strictEqual(Object.keys(updatedWorkspacePackageJson.scripts || {}).length, 0, 'No scripts should be added');
+    expect(updatedWorkspacePackageJson, 'Workspace package.json should exist').toBeTruthy();
+    expect(Object.keys(updatedWorkspacePackageJson.scripts || {}).length, 'No scripts should be added').toBe(0);
   });
 
-  test('Verify scripts do not change current directory', async () => {
+  test('Verify scripts do not change current directory @smoke', async () => {
     // Create workspace package.json
     const workspacePackageJson = {
       name: 'test-workspace',
@@ -327,9 +320,8 @@ describe('Install Project Scripts', () => {
 
     // Check that script uses --prefix (doesn't change directory)
     const scriptCommand = updatedWorkspacePackageJson.scripts[`${projectName}:test`];
-    assert.ok(scriptCommand, 'Script should exist');
-    assert.ok(scriptCommand.includes('--prefix'), 'Script should use --prefix flag');
-    assert.ok(!scriptCommand.includes('cd '), 'Script should not use cd command');
+    expect(scriptCommand, 'Script should exist').toBeTruthy();
+    expect(scriptCommand.includes('--prefix'), 'Script should use --prefix flag').toBeTruthy();
+    expect(scriptCommand.includes('cd '), 'Script should not use cd command').toBeFalsy();
   });
 });
-
