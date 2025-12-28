@@ -2,6 +2,8 @@
 
 import path from 'path';
 import { spawnSync } from 'node:child_process';
+import fs from 'node:fs';
+import { readWorkspaceConfigFile, writeWorkspaceConfigFile } from './lib/workspace-config.js';
 import { print, symbols } from './utils.js';
 import { fileURLToPath } from 'url';
 import { showStatus } from './install/status.js';
@@ -26,6 +28,66 @@ const { flags, paths, initLogging, log } = runtime;
 // NOTE: seed-files copy helpers were moved to ./install/installer-utils.ts
 
 // NOTE: workspace installer moved to scripts/install/workspace-install.ts
+
+function ensureWorkspaceConfigExistsForSync(params: {
+  workspaceRoot: string;
+  projectRoot: string;
+  configFilePath: string;
+  installModules: string | undefined;
+  workspaceConfigPath: string | undefined;
+  configFilePathOverride: string | undefined;
+}): void {
+  const { workspaceRoot, projectRoot, configFilePath, installModules, workspaceConfigPath, configFilePathOverride } =
+    params;
+
+  if (fs.existsSync(configFilePath)) return;
+
+  const modules = installModules ? installModules.split(',').map((m) => m.trim()).filter(Boolean) : ['core', 'cursor'];
+
+  let devduckPath = path.relative(workspaceRoot, projectRoot);
+  if (!devduckPath || devduckPath === '.') {
+    devduckPath = './projects/devduck';
+  } else if (!devduckPath.startsWith('.')) {
+    devduckPath = './' + devduckPath;
+  }
+
+  let config: Record<string, unknown> = {
+    version: '0.1.0',
+    devduck_path: devduckPath,
+    modules,
+    moduleSettings: {},
+    repos: [],
+    projects: [],
+    checks: [],
+    env: []
+  };
+
+  // Merge optional provided workspace config template first.
+  if (workspaceConfigPath && fs.existsSync(workspaceConfigPath)) {
+    const providedWorkspaceConfig = readWorkspaceConfigFile<Record<string, unknown>>(workspaceConfigPath);
+    if (providedWorkspaceConfig) {
+      config = { ...config, ...providedWorkspaceConfig };
+      if ((providedWorkspaceConfig as { modules?: unknown }).modules) {
+        (config as { modules: unknown }).modules = (providedWorkspaceConfig as { modules: unknown }).modules;
+      }
+    }
+  }
+
+  // Merge --config (installer CLI) next to allow tests to tweak modules/repoType/etc.
+  if (configFilePathOverride && fs.existsSync(configFilePathOverride)) {
+    const providedConfig = readWorkspaceConfigFile<Record<string, unknown>>(configFilePathOverride);
+    if (providedConfig) {
+      config = { ...config, ...providedConfig };
+      if ((providedConfig as { modules?: unknown }).modules) {
+        (config as { modules: unknown }).modules = (providedConfig as { modules: unknown }).modules;
+      }
+    }
+  }
+
+  writeWorkspaceConfigFile(configFilePath, config);
+  print(`\n${symbols.success} Created workspace config`, 'green');
+  log(`Created workspace config at ${path.relative(workspaceRoot, configFilePath) || 'workspace.config.yml'}`);
+}
 
 function runSyncAndInstallViaTaskfile(params: { workspaceRoot: string; autoYes: boolean }): void {
   const { workspaceRoot, autoYes } = params;
@@ -127,6 +189,17 @@ async function main(): Promise<void> {
 
   // Default behavior: rely on Taskfile-generated runtime as the single source of truth.
   print(`\n${symbols.search} Installing workspace (Taskfile)...\n`, 'blue');
+
+  // `devduck-cli sync` expects workspace.config.yml to exist. When running installer on an empty folder
+  // (common in Playwright installer tests / fresh workspace installs), create a minimal config first.
+  ensureWorkspaceConfigExistsForSync({
+    workspaceRoot: paths.workspaceRoot,
+    projectRoot: PROJECT_ROOT,
+    configFilePath: paths.configFile,
+    installModules: flags.installModules,
+    workspaceConfigPath: flags.workspaceConfigPath,
+    configFilePathOverride: flags.configFilePath
+  });
   runSyncAndInstallViaTaskfile({ workspaceRoot: paths.workspaceRoot, autoYes: flags.autoYes });
 
   // Keep compatibility with npm install lifecycle expectations.

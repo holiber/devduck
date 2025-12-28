@@ -14,9 +14,9 @@
     "devduck:service": "tsx scripts/devduck-service/src/service.ts",
     "devduck:launch": "tsx scripts/devduck-service/src/cli.ts",
     "test": "tsx scripts/run-tests.ts",
-    "test:pw": "playwright test -c tests/installer/playwright.config.ts",
-    "test:installer:pw": "playwright test -c tests/installer/playwright.config.ts",
-    "test:smoke": "playwright test -c tests/installer/playwright.config.ts --grep @smoke"
+    "test:pw": "playwright test -c playwright.config.ts",
+    "test:installer:pw": "playwright test -c playwright.config.ts --project=installer",
+    "test:smoke": "playwright test -c playwright.config.ts --project=installer --grep @smoke"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.25.1",

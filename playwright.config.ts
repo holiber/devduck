@@ -1,11 +1,12 @@
 import { defineConfig } from '@playwright/test';
 
 /**
- * Playwright Test configuration for DevDuck *installer* tests.
+ * Playwright Test configuration for DevDuck.
  *
- * We keep installer tests separate from the legacy node:test runner:
- * - node:test continues to run `*.test.ts`
- * - Playwright runs `*.pw.spec.ts`
+ * Notes:
+ * - Node.js `node:test` suites live in `*.test.ts` and are run via `npm test` (see `scripts/run-tests.ts`)
+ * - Playwright suites live in `*.pw.spec.ts`
+ *   - `npm test` runs all Playwright projects from this config
  */
 export default defineConfig({
   testDir: './tests',
