@@ -148,7 +148,7 @@ A workspace is a directory containing:
 
 ```
 workspace/
-├── workspace.config.json  # Workspace configuration
+├── workspace.config.yml   # Workspace configuration
 ├── devduck/               # Link or copy to devduck tool
 ├── .cursorignore          # Created by core module hooks
 ├── .arcignore            # Created by external modules (if installed)
@@ -162,7 +162,7 @@ workspace/
 
 ### Workspace Configuration
 
-`workspace.config.json` is the workspace “source of truth”. It drives:
+`workspace.config.yml` is the workspace “source of truth”. It drives:
 
 - **Module installation**: which modules to install and how they are configured
 - **External module sources**: additional repositories to load modules from
@@ -170,50 +170,34 @@ workspace/
 - **Checks & MCP**: checks to run, plus generation of `.cursor/mcp.json`
 - **Environment**: what to write into the workspace `.env` file
 
-`workspace.config.json` structure (v0.1.0):
+`workspace.config.yml` structure (example):
 
-```json
-{
-  "workspaceVersion": "0.1.0",
-  "devduckPath": "./devduck",
-  "modules": ["core", "cursor"],
-  "moduleSettings": {
-    "module-name": {
-      "settingName": "override value"
-    }
-  },
-  "repos": ["github.com/org/custom-devduck-modules"],
-  "projects": [
-    {
-      "src": "arc://junk/user/my-service",
-      "checks": [
-        {
-          "name": "node",
-          "description": "Node.js is installed",
-          "test": "node --version",
-          "tier": "pre-install"
-        }
-      ]
-    }
-  ],
-  "checks": [
-    {
-      "name": "my-mcp-server",
-      "description": "Expose MCP server to Cursor",
-      "mcpSettings": {
-        "command": "npx",
-        "args": ["-y", "@modelcontextprotocol/server-git"]
-      }
-    }
-  ],
-  "env": [
-    {
-      "name": "GITHUB_TOKEN",
-      "description": "Used by GitHub integration scripts",
-      "default": ""
-    }
-  ]
-}
+```yaml
+workspaceVersion: "0.1.0"
+devduckPath: "./devduck"
+modules: ["core", "cursor"]
+moduleSettings:
+  module-name:
+    settingName: "override value"
+repos:
+  - "github.com/org/custom-devduck-modules"
+projects:
+  - src: "arc://junk/user/my-service"
+    checks:
+      - name: "node"
+        description: "Node.js is installed"
+        test: "node --version"
+        tier: "pre-install"
+checks:
+  - name: "my-mcp-server"
+    description: "Expose MCP server to Cursor"
+    mcpSettings:
+      command: "npx"
+      args: ["-y", "@modelcontextprotocol/server-git"]
+env:
+  - name: "GITHUB_TOKEN"
+    description: "Used by GitHub integration scripts"
+    default: ""
 ```
 
 **Fields:**
@@ -268,7 +252,7 @@ Each env entry is an object:
 
 ## Module Installation Process
 
-1. **Read workspace.config.json** - Load workspace configuration
+1. **Read workspace.config.yml** - Load workspace configuration
 2. **Load external repositories** - If `repos` specified, load modules from external sources
    - Parse repository URLs (git, arcadia)
    - Check version compatibility via manifest.json
@@ -508,7 +492,7 @@ By default, the following scripts are imported from each project:
 
 ### Additional Scripts
 
-You can import additional scripts by specifying them in `workspace.config.json`:
+You can import additional scripts by specifying them in `workspace.config.yml`:
 
 ```json
 {
@@ -540,7 +524,7 @@ These commands will execute the scripts in the `projects/myproject` directory wi
 
 ### Script Cleanup
 
-When a project is removed from `workspace.config.json`, all scripts for that project are automatically removed from the workspace `package.json`.
+When a project is removed from `workspace.config.yml`, all scripts for that project are automatically removed from the workspace `package.json`.
 
 ## Cache Management
 
@@ -557,7 +541,7 @@ All temporary files are stored in `.cache/devduck/` directory within the workspa
 2. Create `MODULE.md` with YAML frontmatter
 3. Add module resources (scripts, commands, rules, etc.)
 4. Declare dependencies in MODULE.md
-5. Add module to workspace.config.json if needed
+5. Add module to workspace.config.yml if needed
 
 ### Module Best Practices
 
@@ -612,7 +596,7 @@ export const moduleRouter = t.router({
 The unified API system automatically discovers and collects routers from all modules:
 
 1. **Discovery**: Scans `modules/` directories for `api.ts` files
-2. **External repos**: Also discovers modules from external repositories defined in `workspace.config.json`
+2. **External repos**: Also discovers modules from external repositories defined in `workspace.config.yml`
 3. **Environment loading**: Automatically loads `.env` variables before importing modules
 4. **Caching**: API is collected once and cached for performance
 

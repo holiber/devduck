@@ -24,16 +24,12 @@ This module provides a GitHub-backed provider for the `issue-tracker` module.
 
 ## Usage
 
-The provider is automatically discovered when the module is loaded. Configure it in `workspace.config.json`:
+The provider is automatically discovered when the module is loaded. Configure it in `workspace.config.yml`:
 
-```json
-{
-  "moduleSettings": {
-    "issueTracker": {
-      "provider": "github-provider"
-    }
-  }
-}
+```yaml
+moduleSettings:
+  issueTracker:
+    provider: github-provider
 ```
 
 Or set `ISSUE_TRACKER_PROVIDER=github-provider` environment variable.

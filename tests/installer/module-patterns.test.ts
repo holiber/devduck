@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Tests for workspace.config.json module patterns (e.g. "issue-*").
+ * Tests for workspace config module patterns (e.g. "issue-*").
  */
 
 import { test, describe } from 'node:test';
@@ -10,10 +10,11 @@ import path from 'node:path';
 import { promises as fs } from 'node:fs';
 
 import { getAllModules, resolveModules } from '../../scripts/install/module-resolver.js';
+import YAML from 'yaml';
 
-async function readJson(p: string): Promise<any> {
+async function readYaml(p: string): Promise<any> {
   const raw = await fs.readFile(p, 'utf8');
-  return JSON.parse(raw);
+  return YAML.parse(raw);
 }
 
 describe('workspace modules patterns', () => {
@@ -23,10 +24,10 @@ describe('workspace modules patterns', () => {
       'tests',
       'workspace-fixtures',
       'modules-issue-star',
-      'workspace.config.json'
+      'workspace.config.yml'
     );
 
-    const cfg = await readJson(fixtureConfigPath);
+    const cfg = await readYaml(fixtureConfigPath);
     assert.deepStrictEqual(cfg.modules, ['issue-*'], 'fixture should keep the pattern in modules[]');
 
     const all = getAllModules();

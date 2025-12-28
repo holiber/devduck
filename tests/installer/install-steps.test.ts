@@ -28,6 +28,7 @@ import { runStep5SetupModules } from '../../scripts/install/install-5-setup-modu
 import { runStep6SetupProjects } from '../../scripts/install/install-6-setup-projects.js';
 import { runStep7VerifyInstallation } from '../../scripts/install/install-7-verify-installation.js';
 import { fileURLToPath } from 'url';
+import YAML from 'yaml';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -101,10 +102,10 @@ describe('Installation Steps', () => {
     }
 
     // Test with no repos configured (should skip)
-    const configPath = path.join(sharedWorkspace, 'workspace.config.json');
-    const config = JSON.parse(await fs.readFile(configPath, 'utf8'));
+    const configPath = path.join(sharedWorkspace, 'workspace.config.yml');
+    const config = YAML.parse(await fs.readFile(configPath, 'utf8'));
     config.repos = [];
-    await fs.writeFile(configPath, JSON.stringify(config, null, 2));
+    await fs.writeFile(configPath, YAML.stringify(config), 'utf8');
 
     const result1 = await runStep2DownloadRepos(sharedWorkspace);
     assert.strictEqual(result1.repos.length, 0, 'Should have no repos when none configured');
@@ -125,10 +126,10 @@ describe('Installation Steps', () => {
     }
 
     // Test with no projects configured (should skip)
-    const configPath = path.join(sharedWorkspace, 'workspace.config.json');
-    const config = JSON.parse(await fs.readFile(configPath, 'utf8'));
+    const configPath = path.join(sharedWorkspace, 'workspace.config.yml');
+    const config = YAML.parse(await fs.readFile(configPath, 'utf8'));
     config.projects = [];
-    await fs.writeFile(configPath, JSON.stringify(config, null, 2));
+    await fs.writeFile(configPath, YAML.stringify(config), 'utf8');
 
     const result1 = await runStep3DownloadProjects(sharedWorkspace);
     assert.strictEqual(result1.projects.length, 0, 'Should have no projects when none configured');

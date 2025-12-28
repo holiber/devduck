@@ -435,7 +435,7 @@ export async function checkMcpServers(
 }
 
 /**
- * Generate mcp.json from workspace.config.json and module checks
+ * Generate mcp.json from workspace config and module checks
  */
 export function generateMcpJson(
   workspaceRoot: string,

@@ -63,7 +63,7 @@ This module provides:
 
 ## Configuration
 
-You can override the default `.gitignore` content in `workspace.config.json`:
+You can override the default `.gitignore` content in `workspace.config.yml`:
 
 ```json
 {

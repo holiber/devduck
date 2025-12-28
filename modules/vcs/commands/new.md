@@ -15,7 +15,7 @@ The `/new` command helps you start fresh by:
 ## Workflow
 
 1. **Check git repositories**:
-   - For each git project in `workspace.config.json`:
+   - For each git project in `workspace.config.yml`:
      - Check for uncommitted changes (`git status --porcelain`)
      - Check for untracked files
      - If clean, determine base branch (main/master) and prepare for checkout/pull

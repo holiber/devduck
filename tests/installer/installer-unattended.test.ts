@@ -8,6 +8,7 @@ import { test, describe, before, after } from 'node:test';
 import assert from 'node:assert';
 import path from 'path';
 import { promises as fs } from 'fs';
+import YAML from 'yaml';
 import {
   createTempWorkspace,
   createWorkspaceFromFixture,
@@ -39,7 +40,7 @@ describe('Workspace Installer - Unattended Mode', () => {
         assert.ok(installed, 'Installation should complete');
 
         const structure = await verifyWorkspaceStructure(tempWorkspace);
-        assert.ok(structure.workspaceConfigExists, 'workspace.config.json should exist');
+        assert.ok(structure.workspaceConfigExists, 'workspace.config.yml should exist');
         assert.ok(structure.cursorDirExists, '.cursor directory should exist');
         assert.ok(structure.mcpJsonExists, '.cursor/mcp.json should exist');
 
@@ -78,7 +79,7 @@ describe('Workspace Installer - Unattended Mode', () => {
         assert.ok(!hasPrompts, 'Unattended mode should not show prompts');
 
         const structure = await verifyWorkspaceStructure(tempWorkspace);
-        assert.ok(structure.workspaceConfigExists, 'workspace.config.json should exist');
+        assert.ok(structure.workspaceConfigExists, 'workspace.config.yml should exist');
         // Fresh/core-only install should not require Cursor integration artifacts.
 
         const configVerification = await verifyWorkspaceConfig(tempWorkspace, {
@@ -94,7 +95,7 @@ describe('Workspace Installer - Unattended Mode', () => {
 
     test('Unattended Installation with Config File', async () => {
       const tempWorkspace = await createTempWorkspace();
-      const configPath = path.join(tempWorkspace, 'test-config.json');
+      const configPath = path.join(tempWorkspace, 'test-config.yml');
       
       try {
         const config = {
@@ -103,7 +104,7 @@ describe('Workspace Installer - Unattended Mode', () => {
           modules: ['core', 'vcs'],
           skipRepoInit: true
         };
-        await fs.writeFile(configPath, JSON.stringify(config, null, 2), 'utf8');
+        await fs.writeFile(configPath, YAML.stringify(config), 'utf8');
 
         const result = await runInstaller(tempWorkspace, {
           unattended: true,
@@ -127,9 +128,9 @@ describe('Workspace Installer - Unattended Mode', () => {
       }
     });
 
-    test('Unattended Installation with workspace.config.json (local folder project src)', async () => {
+    test('Unattended Installation with workspace config template (local folder project src)', async () => {
       const tempWorkspace = await createTempWorkspace();
-      const providedWorkspaceConfigPath = path.join(tempWorkspace, 'provided-workspace.config.json');
+      const providedWorkspaceConfigPath = path.join(tempWorkspace, 'provided-workspace.config.yml');
       const localProjectsRoot = path.join(tempWorkspace, 'local-projects');
       const localProjectPath = path.join(localProjectsRoot, 'my-local-project');
       
@@ -160,7 +161,7 @@ describe('Workspace Installer - Unattended Mode', () => {
             }
           ]
         };
-        await fs.writeFile(providedWorkspaceConfigPath, JSON.stringify(providedWorkspaceConfig, null, 2), 'utf8');
+        await fs.writeFile(providedWorkspaceConfigPath, YAML.stringify(providedWorkspaceConfig), 'utf8');
 
         const result = await runInstaller(tempWorkspace, {
           unattended: true,
@@ -203,9 +204,9 @@ describe('Workspace Installer - Unattended Mode', () => {
           'Installer output should include HelloJS output after installation'
         );
 
-        // Ensure workspace.config.json exists (created from provided config)
+        // Ensure workspace.config.yml exists (created from provided config)
         const structure = await verifyWorkspaceStructure(tempWorkspace);
-        assert.ok(structure.workspaceConfigExists, 'workspace.config.json should exist');
+        assert.ok(structure.workspaceConfigExists, 'workspace.config.yml should exist');
 
         // Verify symlink was created in projects/
         const symlinkPath = path.join(tempWorkspace, 'projects', 'my-local-project');
@@ -219,14 +220,14 @@ describe('Workspace Installer - Unattended Mode', () => {
       }
     });
 
-    test('Unattended Installation with workspace.config.json seedFiles[] copies seed files/folders', async () => {
+    test('Unattended Installation with workspace config template seedFiles[] copies seed files/folders', async () => {
       const sourceWorkspace = await createWorkspaceFromFixture('seed-source', {
         prefix: 'devduck-seed-source-test-'
       });
       const destWorkspace = await createWorkspaceFromFixture('empty', {
         prefix: 'devduck-seed-dest-test-'
       });
-      const providedWorkspaceConfigPath = path.join(sourceWorkspace, 'workspace.config.json');
+      const providedWorkspaceConfigPath = path.join(sourceWorkspace, 'workspace.config.yml');
 
       try {
         const result = await runInstaller(destWorkspace, {
@@ -274,7 +275,7 @@ describe('Workspace Installer - Unattended Mode', () => {
         assert.ok(installed, 'Installation should complete');
 
         const structure = await verifyWorkspaceStructure(tempWorkspace);
-        assert.ok(structure.workspaceConfigExists, 'workspace.config.json should exist');
+        assert.ok(structure.workspaceConfigExists, 'workspace.config.yml should exist');
         assert.ok(structure.cursorDirExists, '.cursor directory should exist');
         assert.ok(structure.commandsDirExists, '.cursor/commands directory should exist');
         assert.ok(structure.rulesDirExists, '.cursor/rules directory should exist');
@@ -289,7 +290,7 @@ describe('Workspace Installer - Unattended Mode', () => {
         const configVerification = await verifyWorkspaceConfig(tempWorkspace, {
           modules: ['core', 'cursor', 'plan', 'vcs']
         });
-        assert.ok(configVerification.valid, 'workspace.config.json should be valid');
+        assert.ok(configVerification.valid, 'workspace.config.yml should be valid');
         assert.ok(configVerification.config, 'Config should be loaded');
 
         const moduleVerification = await verifyModuleInstallation(tempWorkspace, ['core', 'cursor']);
@@ -342,7 +343,7 @@ describe('Workspace Installer - Unattended Mode', () => {
         assert.ok(afterReinstall.config.modules.includes('vcs'), 'vcs module should be added');
 
         const structure = await verifyWorkspaceStructure(tempWorkspace);
-        assert.ok(structure.workspaceConfigExists, 'workspace.config.json should still exist');
+        assert.ok(structure.workspaceConfigExists, 'workspace.config.yml should still exist');
         assert.ok(structure.cursorDirExists, '.cursor directory should still exist');
 
         const moduleVerification = await verifyModuleInstallation(tempWorkspace, ['core', 'cursor', 'vcs']);
@@ -456,16 +457,16 @@ describe('Workspace Installer - Unattended Mode', () => {
 
         await waitForInstallation(tempWorkspace, 30000);
 
-        const configPath = path.join(tempWorkspace, 'workspace.config.json');
+        const configPath = path.join(tempWorkspace, 'workspace.config.yml');
         const initialConfigContent = await fs.readFile(configPath, 'utf8');
-        const initialConfig = JSON.parse(initialConfigContent);
+        const initialConfig = YAML.parse(initialConfigContent);
 
         initialConfig.moduleSettings = {
           core: {
             testSetting: 'testValue'
           }
         };
-        await fs.writeFile(configPath, JSON.stringify(initialConfig, null, 2), 'utf8');
+        await fs.writeFile(configPath, YAML.stringify(initialConfig), 'utf8');
 
         const reinstallResult = await runInstaller(tempWorkspace, {
           unattended: true,
@@ -553,7 +554,7 @@ describe('Workspace Installer - Unattended Mode', () => {
       
       try {
         // Create config with external repository
-        const configPath = path.join(tempWorkspace, 'test-config.json');
+        const configPath = path.join(tempWorkspace, 'test-config.yml');
         const config = {
           aiAgent: 'cursor',
           repoType: 'none',
@@ -561,7 +562,7 @@ describe('Workspace Installer - Unattended Mode', () => {
           repos: ['github.com/holiber/devduck-test-repo'],
           skipRepoInit: true
         };
-        await fs.writeFile(configPath, JSON.stringify(config, null, 2), 'utf8');
+        await fs.writeFile(configPath, YAML.stringify(config), 'utf8');
 
         const result = await runInstaller(tempWorkspace, {
           unattended: true,
@@ -573,7 +574,7 @@ describe('Workspace Installer - Unattended Mode', () => {
         const installed = await waitForInstallation(tempWorkspace, 30000);
         assert.ok(installed, 'Installation should complete');
 
-        // Verify workspace.config.json includes the repo
+        // Verify workspace config includes the repo
         const configVerification = await verifyWorkspaceConfig(tempWorkspace);
         assert.ok(configVerification.valid, 'Config should be valid');
         assert.ok(configVerification.config.repos, 'Config should have repos field');
@@ -582,7 +583,7 @@ describe('Workspace Installer - Unattended Mode', () => {
           'Config should include devduck-test-repo in repos'
         );
 
-        // Repos from workspace.config.json should be cloned under <workspace>/devduck/
+        // Repos from workspace config should be cloned under <workspace>/devduck/
         // (not hidden under .cache/), so users can inspect/edit them easily.
         const expectedGitUrl = 'https://github.com/holiber/devduck-test-repo.git';
         const expectedRepoName = expectedGitUrl

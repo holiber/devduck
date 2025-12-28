@@ -1,4 +1,4 @@
-Workspace fixture with **only** the `cursor` module listed in `workspace.config.json`.
+Workspace fixture with **only** the `cursor` module listed in `workspace.config.yml`.
 
 Used to verify that:
 - dependency resolution pulls in `core`

@@ -33,7 +33,7 @@ The module defines a Zod contract that CI providers must implement:
 
 ## Provider selection
 
-- `workspace.config.json`: `moduleSettings.ci.provider`
+- `workspace.config.yml`: `moduleSettings.ci.provider`
 - Environment variable: `CI_PROVIDER`
 - Fallback: first available provider (after discovery)
 

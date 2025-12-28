@@ -1,8 +1,8 @@
 /**
- * Zod schema for `workspace.config.json`.
+ * Zod schema for workspace config.
  *
  * Notes:
- * - This repo currently reads the config via ad-hoc `JSON.parse` in several scripts.
+ * - The schema is primarily for documentation / shared shape / defensive parsing.
  * - The schema is primarily for documentation / shared shape / defensive parsing.
  * - Keep the schema permissive via `.passthrough()` so new fields don't break consumers.
  */

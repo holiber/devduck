@@ -5,6 +5,7 @@ import { hideBin } from 'yargs/helpers';
 
 import { resolveWorkspaceRoot } from '../lib/workspace-path.js';
 import { getWorkspaceConfigFilePath } from '../lib/workspace-config.js';
+import { findWorkspaceRoot } from '../lib/workspace-root.js';
 import { createInstallLogger, type InstallLogger } from './logger.js';
 
 export type InstallCliFlags = {
@@ -29,26 +30,9 @@ export type InstallPaths = {
   projectsDir: string;
 };
 
-function findWorkspaceRoot(startPath: string): string | null {
-  let current = path.resolve(startPath);
-  const maxDepth = 10;
-  let depth = 0;
-
-  while (depth < maxDepth) {
-    const json = path.join(current, 'workspace.config.json');
-    const yml = path.join(current, 'workspace.config.yml');
-    const yaml = path.join(current, 'workspace.config.yaml');
-    if (fs.existsSync(json) || fs.existsSync(yml) || fs.existsSync(yaml)) return current;
-
-    const parent = path.dirname(current);
-    if (parent === current) {
-      break;
-    }
-    current = parent;
-    depth++;
-  }
-
-  return null;
+function findWorkspaceRootCompat(startPath: string): string | null {
+  // Shared, YAML-only workspace root detection (also throws on legacy JSON).
+  return findWorkspaceRoot(startPath);
 }
 
 function parseCommaList(value: string | undefined): string[] | null {
@@ -71,7 +55,7 @@ export function createInstallRuntime(argv: string[], projectRoot: string): {
     .option('workspace-path', { type: 'string', description: 'Path to workspace directory' })
     .option('workspace-config', {
       type: 'string',
-      description: 'Path to an existing workspace.config.json to use when creating a workspace'
+      description: 'Path to an existing workspace.config.yml to use when creating a workspace'
     })
     .option('modules', { type: 'string', description: 'Comma-separated list of modules to install' })
     // Keep these options for compatibility even if not currently used in code paths.
@@ -120,9 +104,9 @@ export function createInstallRuntime(argv: string[], projectRoot: string): {
 
   let workspaceRoot: string;
   if (workspacePath) {
-    workspaceRoot = resolveWorkspaceRoot(workspacePath, { projectRoot, findWorkspaceRoot });
+    workspaceRoot = resolveWorkspaceRoot(workspacePath, { projectRoot, findWorkspaceRoot: findWorkspaceRootCompat });
   } else {
-    workspaceRoot = findWorkspaceRoot(projectRoot) || projectRoot;
+    workspaceRoot = findWorkspaceRootCompat(projectRoot) || projectRoot;
   }
 
   const cacheDir = path.join(workspaceRoot, '.cache');

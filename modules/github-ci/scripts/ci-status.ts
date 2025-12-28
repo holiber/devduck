@@ -6,6 +6,7 @@ import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { resolveCorePaths } from '../../../scripts/lib/devduck-paths.js';
 import { findWorkspaceRoot } from '../../../scripts/lib/workspace-root.js';
+import { getWorkspaceConfigFilePath, readWorkspaceConfigFile } from '../../../scripts/lib/workspace-config.js';
 import type { ExecuteCommandResult } from '../../../scripts/utils.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -296,10 +297,12 @@ export async function main(): Promise<void> {
   if (!fs.existsSync(path.join(repoPath, '.git'))) {
     // Try to find GitHub repos in workspace
     if (workspaceRoot) {
-      const configPath = path.join(workspaceRoot, 'workspace.config.json');
+      const configPath = getWorkspaceConfigFilePath(workspaceRoot);
       if (fs.existsSync(configPath)) {
         try {
-          const config = JSON.parse(fs.readFileSync(configPath, 'utf8')) as { projects?: Array<{ src?: string; [key: string]: unknown }> };
+          const config = readWorkspaceConfigFile<{ projects?: Array<{ src?: string; [key: string]: unknown }> }>(
+            configPath
+          );
           if (config.projects && Array.isArray(config.projects)) {
             // Find first GitHub repo
             for (const project of config.projects) {

@@ -103,23 +103,23 @@ export async function installWorkspace(params: {
     }
 
     writeWorkspaceConfigFile(configFilePath, config);
-    print(`\n${symbols.success} Created workspace.config.json`, 'green');
+    print(`\n${symbols.success} Created workspace config`, 'green');
     log(
-      `Created workspace.config.json with modules: ${
+      `Created workspace config with modules: ${
         Array.isArray((config as { modules?: unknown }).modules) ? (config as { modules: string[] }).modules.join(', ') : ''
       }`
     );
   } else {
     if (workspaceConfigPath) {
-      print(`\n${symbols.info} workspace.config.json already exists, ignoring --workspace-config`, 'cyan');
-      log(`workspace.config.json already exists at ${configFilePath}, ignoring --workspace-config=${workspaceConfigPath}`);
+      print(`\n${symbols.info} Workspace config already exists, ignoring --workspace-config`, 'cyan');
+      log(`Workspace config already exists at ${configFilePath}, ignoring --workspace-config=${workspaceConfigPath}`);
     }
     if (installModules) {
       const modules = installModules.split(',').map((m) => m.trim());
       (config as { modules: string[] }).modules = modules;
       writeWorkspaceConfigFile(configFilePath, config);
-      print(`\n${symbols.info} Updated workspace.config.json with modules: ${modules.join(', ')}`, 'cyan');
-      log(`Updated workspace.config.json with modules: ${modules.join(', ')}`);
+      print(`\n${symbols.info} Updated workspace config with modules: ${modules.join(', ')}`, 'cyan');
+      log(`Updated workspace config with modules: ${modules.join(', ')}`);
     }
   }
 

@@ -37,14 +37,14 @@ describe('Workspace Installer - GUI/Interactive Mode', () => {
         assert.ok(installed, 'Installation should complete');
 
         const structure = await verifyWorkspaceStructure(tempWorkspace);
-        assert.ok(structure.workspaceConfigExists, 'workspace.config.json should exist');
+        assert.ok(structure.workspaceConfigExists, 'workspace.config.yml should exist');
         assert.ok(structure.cacheDirExists, '.cache/devduck directory should exist');
         // In core-only installs, Cursor integration artifacts are optional.
 
         const configVerification = await verifyWorkspaceConfig(tempWorkspace, {
           modules: ['core', 'plan', 'vcs']
         });
-        assert.ok(configVerification.valid, 'workspace.config.json should be valid');
+        assert.ok(configVerification.valid, 'workspace.config.yml should be valid');
         assert.ok(configVerification.config, 'Config should be loaded');
 
         // This test validates interactive installer flow; do not require cursor module.
@@ -78,7 +78,7 @@ describe('Workspace Installer - GUI/Interactive Mode', () => {
         unattended: false
       });
 
-      const configPath = path.join(tempWorkspace, 'workspace.config.json');
+      const configPath = path.join(tempWorkspace, 'workspace.config.yml');
       const configExists = await fs.access(configPath).then(() => true).catch(() => false);
       assert.ok(configExists, 'Existing workspace should be detected');
     });

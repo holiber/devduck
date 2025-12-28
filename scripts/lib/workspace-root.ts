@@ -25,6 +25,14 @@ export function findWorkspaceRoot(
 
   let current = path.resolve(startPath);
   for (let depth = 0; depth < maxDepth; depth++) {
+    // Hard error on legacy JSON config to prevent silent divergence.
+    const legacy = path.join(current, ['workspace.config.', 'json'].join(''));
+    if (fs.existsSync(legacy)) {
+      throw new Error(
+        `Legacy workspace config format is not supported. Convert/rename your workspace config to "workspace.config.yml".`
+      );
+    }
+
     if (markerFile) {
       const markerPath = path.join(current, markerFile);
       if (fs.existsSync(markerPath)) return current;

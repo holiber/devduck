@@ -86,7 +86,7 @@ function writeJSON(filePath: string, data: PackageJson): void {
  * Install project scripts to workspace package.json
  * 
  * @param workspaceRoot - Path to workspace root
- * @param projects - Array of projects from workspace.config.json
+ * @param projects - Array of projects from workspace config
  * @param config - Full workspace config object (for importScripts)
  * @param log - Optional logging function
  */

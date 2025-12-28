@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import { promises as fs } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import YAML from 'yaml';
 
 import { createTempWorkspace, cleanupTempWorkspace, runInstaller } from './helpers.js';
 
@@ -67,8 +68,8 @@ test('installer: .env values are available to shell checks (fill-missing)', asyn
     await fs.writeFile(path.join(tempWorkspace, '.env'), 'ARCADIA_ROOT=from_env_file\n', 'utf8');
 
     await fs.writeFile(
-      path.join(tempWorkspace, 'workspace.config.json'),
-      JSON.stringify(
+      path.join(tempWorkspace, 'workspace.config.yml'),
+      YAML.stringify(
         {
           workspaceVersion: '0.1.0',
           devduckPath: './projects/devduck',
@@ -84,9 +85,7 @@ test('installer: .env values are available to shell checks (fill-missing)', asyn
             }
           ],
           env: []
-        },
-        null,
-        2
+        }
       ),
       'utf8'
     );
@@ -151,8 +150,8 @@ test('installer summary: prints INSTALLATION FINISHED WITH ERRORS on failures', 
   const tempWorkspace = await createTempWorkspace('devduck-summary-fail-');
   try {
     await fs.writeFile(
-      path.join(tempWorkspace, 'workspace.config.json'),
-      JSON.stringify(
+      path.join(tempWorkspace, 'workspace.config.yml'),
+      YAML.stringify(
         {
           workspaceVersion: '0.1.0',
           devduckPath: './projects/devduck',
@@ -167,9 +166,7 @@ test('installer summary: prints INSTALLATION FINISHED WITH ERRORS on failures', 
             }
           ],
           env: []
-        },
-        null,
-        2
+        }
       ),
       'utf8'
     );

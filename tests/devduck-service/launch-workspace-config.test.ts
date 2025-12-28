@@ -7,6 +7,7 @@ import net from 'net';
 import os from 'os';
 import path from 'path';
 import { spawnSync } from 'child_process';
+import YAML from 'yaml';
 
 function runLaunch(repoRoot: string, cwd: string, args: string[], opts?: { timeoutMs?: number }) {
   const cliPath = path.join(repoRoot, 'scripts', 'devduck-service', 'src', 'cli.ts');
@@ -66,7 +67,7 @@ async function waitForUrl(url: string, timeoutMs: number) {
 }
 
 test(
-  'workspace.config.json launch.dev starts processes, runs smokecheck, and supports smokecheck without args',
+  'workspace config launch.dev starts processes, runs smokecheck, and supports smokecheck without args',
   { timeout: 300_000 },
   async () => {
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'devduck-launch-config-'));
@@ -81,8 +82,8 @@ test(
     const playwrightBin = path.join(repoRoot, 'node_modules', '.bin', 'playwright');
 
     fs.writeFileSync(
-      path.join(tmp, 'workspace.config.json'),
-      JSON.stringify(
+      path.join(tmp, 'workspace.config.yml'),
+      YAML.stringify(
         {
           workspaceVersion: '0.1.0',
           launch: {
@@ -114,9 +115,7 @@ test(
               }
             }
           }
-        },
-        null,
-        2
+        }
       ),
       'utf8'
     );

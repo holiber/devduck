@@ -6,7 +6,7 @@ import { spawnSync } from 'node:child_process';
 import yargs from 'yargs/yargs';
 import { hideBin } from 'yargs/helpers';
 import YAML from 'yaml';
-import { readWorkspaceConfigFromRoot } from './lib/workspace-config.js';
+import { readWorkspaceConfigFromRoot, writeWorkspaceConfigFile } from './lib/workspace-config.js';
 
 type WorkspaceConfigLike = {
   workspaceVersion?: string;
@@ -27,19 +27,14 @@ type GeneratedTaskfile = {
   tasks: Record<string, unknown>;
 };
 
-function readJsonIfExists<T>(p: string): T | null {
+function readYamlIfExists<T>(p: string): T | null {
   try {
     if (!fs.existsSync(p)) return null;
     const raw = fs.readFileSync(p, 'utf8');
-    return JSON.parse(raw) as T;
+    return YAML.parse(raw) as T;
   } catch {
     return null;
   }
-}
-
-function writeJson(p: string, obj: unknown): void {
-  fs.mkdirSync(path.dirname(p), { recursive: true });
-  fs.writeFileSync(p, JSON.stringify(obj, null, 2) + '\n', 'utf8');
 }
 
 function ensureWorkspacePackageJson(workspaceRoot: string): void {
@@ -70,7 +65,8 @@ function ensureWorkspacePackageJson(workspaceRoot: string): void {
     }
   };
 
-  writeJson(pkgPath, pkg);
+  fs.mkdirSync(path.dirname(pkgPath), { recursive: true });
+  fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n', 'utf8');
 }
 
 function runNpmInstall(workspaceRoot: string): void {
@@ -322,7 +318,7 @@ async function main(argv = process.argv): Promise<void> {
           })
           .option('workspace-config', {
             type: 'string',
-            describe: 'Path to a template workspace.config.json to start from'
+            describe: 'Path to a template workspace.config.yml to start from'
           })
           .option('devduck-repo', {
             type: 'string',
@@ -347,12 +343,12 @@ async function main(argv = process.argv): Promise<void> {
         const workspaceRoot = path.resolve(invocationCwd, String(args.workspacePath));
         fs.mkdirSync(workspaceRoot, { recursive: true });
 
-        const configPath = path.join(workspaceRoot, 'workspace.config.json');
+        const configPath = path.join(workspaceRoot, 'workspace.config.yml');
         const templatePath = args['workspace-config']
           ? path.resolve(invocationCwd, String(args['workspace-config']))
           : null;
 
-        const templateCfg = templatePath ? readJsonIfExists<WorkspaceConfigLike>(templatePath) : null;
+        const templateCfg = templatePath ? readYamlIfExists<WorkspaceConfigLike>(templatePath) : null;
         const config: WorkspaceConfigLike = {
           ...buildDefaultWorkspaceConfig(),
           ...(templateCfg || {})
@@ -368,7 +364,7 @@ async function main(argv = process.argv): Promise<void> {
             : undefined
         });
 
-        writeJson(configPath, config);
+        writeWorkspaceConfigFile(configPath, config);
 
         // Create workspace package.json and install dependencies.
         // `npm install` will automatically run the workspace "install" script, which bootstraps the workspace.

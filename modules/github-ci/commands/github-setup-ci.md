@@ -12,7 +12,7 @@ The AI agent should:
 
 ### 1. Find GitHub repositories
 
-- Load `workspace.config.json` from workspace root
+- Load `workspace.config.yml` from workspace root
 - Find all projects in `projects` array
 - Filter projects where `src` contains `github.com`
 - For each GitHub repository:
@@ -110,5 +110,5 @@ jobs:
 - The workflow uses Node.js 20.x (latest stable)
 - Test command is auto-detected from `package.json` scripts.test
 - If no test script is found, defaults to `npm test`
-- The script works with repositories in `workspace.config.json` projects array
+- The script works with repositories in `workspace.config.yml` projects array
 

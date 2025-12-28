@@ -14,10 +14,11 @@ import { promises as fs } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 
 import { createTempWorkspace, cleanupTempWorkspace } from './helpers.js';
+import YAML from 'yaml';
 
-async function readJson(p: string): Promise<any> {
+async function readYaml(p: string): Promise<any> {
   const raw = await fs.readFile(p, 'utf8');
-  return JSON.parse(raw);
+  return YAML.parse(raw);
 }
 
 describe('devduck new (npx-friendly bootstrap)', () => {
@@ -43,8 +44,8 @@ describe('devduck new (npx-friendly bootstrap)', () => {
 
       assert.strictEqual(result.status, 0, `command should succeed. stderr: ${result.stderr || ''}`);
 
-      const cfgPath = path.join(workspaceRoot, 'workspace.config.json');
-      const cfg = await readJson(cfgPath);
+      const cfgPath = path.join(workspaceRoot, 'workspace.config.yml');
+      const cfg = await readYaml(cfgPath);
       assert.strictEqual(cfg.devduckPath, './devduck/src', 'devduckPath should point to local devduck/src');
 
       const clonedPackageJson = path.join(workspaceRoot, 'devduck', 'src', 'package.json');
@@ -76,8 +77,8 @@ describe('devduck new (npx-friendly bootstrap)', () => {
 
       assert.strictEqual(result.status, 0, `command should succeed. stderr: ${result.stderr || ''}`);
 
-      const cfgPath = path.join(workspaceRoot, 'workspace.config.json');
-      const cfg = await readJson(cfgPath);
+      const cfgPath = path.join(workspaceRoot, 'workspace.config.yml');
+      const cfg = await readYaml(cfgPath);
       assert.strictEqual(cfg.devduckPath, './devduck/src', 'devduckPath should point to local devduck/src');
 
       const clonedPackageJson = path.join(workspaceRoot, 'devduck', 'src', 'package.json');

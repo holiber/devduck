@@ -61,7 +61,7 @@ export async function runStep1CheckEnv(
   
   try {
     // Load available modules (without external repos at this step), then resolve
-    // the *selected* modules from workspace.config.json (including dependencies).
+    // the *selected* modules from workspace config (including dependencies).
     //
     // IMPORTANT: Do NOT collect env requirements from all available modules,
     // otherwise we will incorrectly require tokens for modules that are not installed.

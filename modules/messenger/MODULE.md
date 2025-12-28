@@ -23,7 +23,7 @@ Providers are expected to cache results in `.cache/devduck/messenger/` to avoid 
 
 ## Provider selection
 
-- `workspace.config.json`: `moduleSettings.messenger.provider`
+- `workspace.config.yml`: `moduleSettings.messenger.provider`
 - Environment variable: `MESSENGER_PROVIDER`
 - Fallback: first available provider (after discovery)
 

@@ -5,10 +5,10 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { createYargs, installEpipeHandler } from '../../../scripts/lib/cli.js';
-import { readJSON } from '../../../scripts/lib/config.js';
 import { resolveDevduckRoot } from '../../../scripts/lib/devduck-paths.js';
 import { findWorkspaceRoot } from '../../../scripts/lib/workspace-root.js';
 import { readEnvFile } from '../../../scripts/lib/env.js';
+import { getWorkspaceConfigFilePath, readWorkspaceConfigFile } from '../../../scripts/lib/workspace-config.js';
 import {
   discoverProvidersFromModules,
   getProvidersByType,
@@ -37,10 +37,10 @@ function pickProviderNameFromConfig(workspaceRoot: string | null): string | null
   const root = workspaceRoot || findWorkspaceRoot(process.cwd());
   if (!root) return null;
 
-  const configPath = path.join(root, 'workspace.config.json');
+  const configPath = getWorkspaceConfigFilePath(root);
   if (!fs.existsSync(configPath)) return null;
 
-  const cfg = readJSON<WorkspaceConfigLike>(configPath);
+  const cfg = readWorkspaceConfigFile<WorkspaceConfigLike>(configPath);
   const moduleSettings = (cfg && cfg.moduleSettings) || {};
   const messengerSettings = (moduleSettings as Record<string, unknown>).messenger as Record<string, unknown> | undefined;
   const name = messengerSettings && typeof messengerSettings.provider === 'string' ? messengerSettings.provider : '';
@@ -57,9 +57,9 @@ async function initializeProviders(workspaceRoot: string | null): Promise<{
 
   // Discover providers from external repositories
   if (workspaceRoot) {
-    const configPath = path.join(workspaceRoot, 'workspace.config.json');
+    const configPath = getWorkspaceConfigFilePath(workspaceRoot);
     if (fs.existsSync(configPath)) {
-      const config = readJSON<WorkspaceConfigLike>(configPath);
+      const config = readWorkspaceConfigFile<WorkspaceConfigLike>(configPath);
       if (config && config.repos && Array.isArray(config.repos)) {
         const { loadModulesFromRepo, getDevduckVersion } = await import('../../../scripts/lib/repo-modules.js');
         const devduckVersion = getDevduckVersion();

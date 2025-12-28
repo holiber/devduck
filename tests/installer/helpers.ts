@@ -11,6 +11,7 @@ import http from 'node:http';
 import { once } from 'node:events';
 import os from 'os';
 import { fileURLToPath } from 'url';
+import YAML from 'yaml';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -283,10 +284,10 @@ async function workspaceNeedsCursorModule(params: {
   const fromArg = normalizeModulesList(params.modulesArg);
   if (fromArg) return fromArg.includes('cursor');
 
-  const readModulesFromJsonFile = async (filePath: string): Promise<string[] | null> => {
+  const readModulesFromYamlFile = async (filePath: string): Promise<string[] | null> => {
     try {
       const raw = await fs.readFile(filePath, 'utf8');
-      const parsed = JSON.parse(raw) as { modules?: unknown };
+      const parsed = YAML.parse(raw) as { modules?: unknown };
       return Array.isArray(parsed.modules) ? (parsed.modules as string[]) : null;
     } catch {
       return null;
@@ -295,21 +296,21 @@ async function workspaceNeedsCursorModule(params: {
 
   // If a config file is passed, infer modules from it (common in tests).
   if (params.configPath) {
-    const mods = await readModulesFromJsonFile(params.configPath);
+    const mods = await readModulesFromYamlFile(params.configPath);
     if (mods && mods.includes('cursor')) return true;
   }
 
   // If a workspace-config template is passed, infer modules from it.
   if (params.workspaceConfigPath) {
-    const mods = await readModulesFromJsonFile(params.workspaceConfigPath);
+    const mods = await readModulesFromYamlFile(params.workspaceConfigPath);
     if (mods && mods.includes('cursor')) return true;
   }
 
-  // If modules are not passed via args, attempt to infer from an existing workspace.config.json (fixtures).
-  const configPath = path.join(params.workspacePath, 'workspace.config.json');
+  // If modules are not passed via args, attempt to infer from an existing workspace config (fixtures).
+  const configPath = path.join(params.workspacePath, 'workspace.config.yml');
   try {
     const raw = await fs.readFile(configPath, 'utf8');
-    const parsed = JSON.parse(raw) as { modules?: unknown };
+    const parsed = YAML.parse(raw) as { modules?: unknown };
     const mods = Array.isArray(parsed.modules) ? (parsed.modules as string[]) : [];
     return mods.includes('cursor');
   } catch {
@@ -333,13 +334,13 @@ export async function verifyWorkspaceStructure(workspacePath: string): Promise<V
   };
 
   try {
-    // Check workspace.config.json
-    const configPath = path.join(workspacePath, 'workspace.config.json');
+    // Check workspace.config.yml
+    const configPath = path.join(workspacePath, 'workspace.config.yml');
     try {
       await fs.access(configPath);
       results.workspaceConfigExists = true;
     } catch (e) {
-      results.errors.push('workspace.config.json not found');
+      results.errors.push('workspace.config.yml not found');
     }
 
     // Check .cursor directory
@@ -406,7 +407,7 @@ export async function verifyWorkspaceStructure(workspacePath: string): Promise<V
 }
 
 /**
- * Verify workspace.config.json content
+ * Verify workspace config content
  */
 export async function verifyWorkspaceConfig(workspacePath: string, expectedConfig: Record<string, unknown> = {}): Promise<ConfigVerificationResult> {
   const results: ConfigVerificationResult = {
@@ -416,9 +417,9 @@ export async function verifyWorkspaceConfig(workspacePath: string, expectedConfi
   };
 
   try {
-    const configPath = path.join(workspacePath, 'workspace.config.json');
+    const configPath = path.join(workspacePath, 'workspace.config.yml');
     const content = await fs.readFile(configPath, 'utf8');
-    results.config = JSON.parse(content) as Record<string, unknown>;
+    results.config = YAML.parse(content) as Record<string, unknown>;
     const config = results.config;
 
     // Verify required fields
@@ -512,7 +513,7 @@ export async function verifyModuleInstallation(workspacePath: string, expectedMo
  */
 export async function waitForInstallation(workspacePath: string, timeout = 30000, checkInterval = 100): Promise<boolean> {
   const startTime = Date.now();
-  const configPath = path.join(workspacePath, 'workspace.config.json');
+  const configPath = path.join(workspacePath, 'workspace.config.yml');
   const cacheDir = path.join(workspacePath, '.cache', 'devduck');
 
   while (Date.now() - startTime < timeout) {
@@ -529,7 +530,7 @@ export async function waitForInstallation(workspacePath: string, timeout = 30000
 }
 
 /**
- * Create a mock workspace.config.json for existing workspace tests
+ * Create a mock workspace config for existing workspace tests
  */
 export async function createMockWorkspace(workspacePath: string, config: Record<string, unknown> = {}): Promise<void> {
   const defaultConfig = {
@@ -540,9 +541,9 @@ export async function createMockWorkspace(workspacePath: string, config: Record<
   };
 
   const finalConfig = { ...defaultConfig, ...config };
-  const configPath = path.join(workspacePath, 'workspace.config.json');
+  const configPath = path.join(workspacePath, 'workspace.config.yml');
   await fs.mkdir(workspacePath, { recursive: true });
-  await fs.writeFile(configPath, JSON.stringify(finalConfig, null, 2), 'utf8');
+  await fs.writeFile(configPath, YAML.stringify(finalConfig), 'utf8');
 }
 
 /**

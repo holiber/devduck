@@ -53,7 +53,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed - 2025-12-25
 
-- 🔗 **Symlink support for external repositories** - External repositories from `workspace.config.json.repos` now create symlinks when the same repo exists in `projects/`
+- 🔗 **Symlink support for external repositories** - External repositories from `workspace.config.yml.repos` now create symlinks when the same repo exists in `projects/`
   - Repositories appear in `devduck/%repo_name%` directory
   - If the same repo is listed in `projects`, a symlink is created from `devduck/%repo_name%` to `projects/%repo_name%`
   - For Arcadia repos not in projects, symlinks are created to the actual Arcadia path
@@ -84,7 +84,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed - 2025-12-25
 
-- 📦 **External repositories clone location** - Git repositories listed in `workspace.config.json.repos` are now cloned under `<workspace>/devduck/` (instead of `.cache/...`).
+- 📦 **External repositories clone location** - Git repositories listed in `workspace.config.yml.repos` are now cloned under `<workspace>/devduck/` (instead of `.cache/...`).
 - 🧭 **Module resolution priority** - When installing a module by name, resolution now prefers:
   - `<workspace>/modules/`
   - `<workspace>/projects/*/modules/`
@@ -102,7 +102,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Installation fails if required tokens are missing or tests fail
   - See `ARCHITECTURE.md` for configuration details
 
-- 🔌 **CI module provider discovery from external repositories** - CI module now discovers providers from external repositories defined in `workspace.config.json`
+- 🔌 **CI module provider discovery from external repositories** - CI module now discovers providers from external repositories defined in `workspace.config.yml`
   - Providers from `repos` in workspace config are automatically loaded
   - Enables using providers from external module repositories
   - Works with both Arcadia (`arc://`) and Git repository URLs
@@ -111,7 +111,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - First checks if repository exists in workspace `projects/` directory
   - Falls back to Arcadia root detection if not found in workspace
   - Supports both relative paths (e.g., `arc://junk/user/repo`) and absolute paths
-  - Allows using same `workspace.config.json` across different developer machines
+  - Allows using same `workspace.config.yml` across different developer machines
 
 ### Changed - 2025-12-24
 
@@ -133,7 +133,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - ✉️ **Email module with provider system** - Added `modules/email/` with a Zod-based provider contract and a `/email` command
   - Contract lives in `modules/email/schemas/contract.ts` (tools, common types, provider manifest)
-  - Provider selection via `EMAIL_PROVIDER`, `workspace.config.json` (`moduleSettings.email.provider`), or first discovered provider
+  - Provider selection via `EMAIL_PROVIDER`, `workspace.config.yml` (`moduleSettings.email.provider`), or first discovered provider
 
 - 🧩 **Global provider registry** - Added `scripts/lib/provider-registry.ts` for registering and discovering providers across modules
   - Supports module scanning for providers from both `modules/<module>/providers/*` and standalone provider modules (`modules/<module>/PROVIDER.md`)

@@ -18,18 +18,18 @@ npx --yes github:holiber/devduck new ./my-devduck-workspace
 ```
 
 This will:
-- create `./my-devduck-workspace/workspace.config.json` (DevDuck also supports `workspace.config.yml` / `workspace.config.yaml`)
+- create `./my-devduck-workspace/workspace.config.yml`
 - clone DevDuck into `./my-devduck-workspace/devduck/src` (unless DevDuck is already listed in `projects[]`)
 
-### Create a new workspace from an existing `workspace.config.json`
+### Create a new workspace from an existing `workspace.config.yml`
 
-If you already have a `workspace.config.json` (for example, checked into another repo or shared in your team), you can use it as a template:
+If you already have a `workspace.config.yml` (for example, checked into another repo or shared in your team), you can use it as a template:
 
 ```bash
-npx --yes github:holiber/devduck new ./my-devduck-workspace --workspace-config /path/to/workspace.config.json
+npx --yes github:holiber/devduck new ./my-devduck-workspace --workspace-config /path/to/workspace.config.yml
 ```
 
-DevDuck will merge your template on top of the defaults and write the result to `./my-devduck-workspace/workspace.config.json`.
+DevDuck will merge your template on top of the defaults and write the result to `./my-devduck-workspace/workspace.config.yml`.
 
 Your workspace can reference local projects too, for example:
 
@@ -68,7 +68,7 @@ If you prefer a declarative Taskfile workflow (CursorCloud-friendly):
 tsx ./devduck/src/scripts/devduck-cli.ts sync
 
 # Run installation via go-task
-npx task install
+npx --yes -p @go-task/cli task install
 ```
 
 ## Commands
