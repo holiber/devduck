@@ -8,6 +8,8 @@
  * - Bundle size
  * - Test summary
  *
+ * Output: .cache/metrics/current.json
+ *
  * Usage:
  *   npx tsx scripts/metrics/collect-metrics.ts [--skip-build] [--skip-dev] [--skip-tests]
  */
@@ -25,6 +27,9 @@ const args = process.argv.slice(2);
 const skipBuild = args.includes('--skip-build');
 const skipDev = args.includes('--skip-dev');
 const skipTests = args.includes('--skip-tests');
+
+// Output file name (current.json for compatibility with history/comparison)
+const OUTPUT_FILE = 'current.json';
 
 /**
  * Ensures all cache directories exist
@@ -266,10 +271,14 @@ async function collectMetrics(): Promise<PRMetrics> {
     console.log(`   Tests: ${metrics.tests.passed}/${metrics.tests.total} passed`);
   }
 
-  // Write metrics to file
-  const metricsPath = path.join(config.metricsDir, 'metrics.json');
+  // Write metrics to file (current.json for history/comparison compatibility)
+  const metricsPath = path.join(config.metricsDir, OUTPUT_FILE);
   writeFileSync(metricsPath, JSON.stringify(metrics, null, 2));
   console.log(`\n✅ Metrics saved to ${metricsPath}`);
+
+  // Also write to metrics.json for backwards compatibility
+  const legacyPath = path.join(config.metricsDir, 'metrics.json');
+  writeFileSync(legacyPath, JSON.stringify(metrics, null, 2));
 
   return metrics;
 }

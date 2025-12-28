@@ -1,31 +1,227 @@
-name: CI
+name: CI & Metrics Dashboard
 
 on:
-  push:
-    branches: [ main ]
   pull_request:
-    branches: [ main ]
+    types: [opened, synchronize, reopened]
+  push:
+    branches: [main]
+
+# Allow one concurrent run per branch/PR
+concurrency:
+  group: ci-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+# Permissions for PR comments and GitHub Pages
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+  pages: write
+  id-token: write
 
 jobs:
   test:
+    name: Tests & Metrics
     runs-on: ubuntu-latest
-    
-    strategy:
-      matrix:
-        node-version: [20.x]
-    
-    steps:
-    - uses: actions/checkout@v4
-    
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ matrix.node-version }}
-        cache: 'npm'
-    
-    - name: Install dependencies
-      run: npm ci
-    
-    - name: Run tests
-      run: npm test
+    timeout-minutes: 20
 
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Create cache structure
+        run: mkdir -p .cache/{logs,metrics,ai_logs,playwright,tmp}
+
+      - name: Collect build metrics
+        id: metrics
+        run: |
+          npx tsx scripts/metrics/collect-metrics.ts --skip-tests --skip-dev
+
+          # Add PR info if available
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            jq ". + { 
+              additions: ${{ github.event.pull_request.additions }}, 
+              deletions: ${{ github.event.pull_request.deletions }},
+              prNumber: ${{ github.event.pull_request.number }}
+            }" .cache/metrics/current.json > .cache/metrics/tmp.json && mv .cache/metrics/tmp.json .cache/metrics/current.json
+          fi
+
+          echo "build_time=$(jq -r '.buildTimeSec // "n/a"' .cache/metrics/current.json)" >> $GITHUB_OUTPUT
+
+      - name: Run unit tests
+        id: unit_tests
+        continue-on-error: true
+        run: |
+          npm test 2>&1 | tee .cache/logs/test.log
+          echo "exit_code=${PIPESTATUS[0]}" >> $GITHUB_OUTPUT
+
+      - name: Setup Playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: Run Playwright E2E tests
+        id: playwright
+        continue-on-error: true
+        run: |
+          npx playwright test \
+            -c tests/installer/playwright.config.ts \
+            --reporter=list,html \
+            2>&1 | tee .cache/logs/playwright.log
+          echo "exit_code=${PIPESTATUS[0]}" >> $GITHUB_OUTPUT
+
+      - name: Collect Playwright artifacts
+        if: always()
+        run: |
+          cp -r test-results .cache/playwright/ 2>/dev/null || true
+          cp -r playwright-report .cache/playwright/ 2>/dev/null || true
+
+      - name: Scan for AI agent logs
+        if: always()
+        run: |
+          npx tsx scripts/metrics/ai-logger.ts --scan || true
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            AI_LOG_AGENT="github-ci" \
+            AI_LOG_SUMMARY="PR #${{ github.event.pull_request.number }}: ${{ github.event.pull_request.title }}" \
+            npx tsx scripts/metrics/ai-logger.ts || true
+          fi
+
+      - name: Fetch baseline from main
+        if: github.event_name == 'pull_request'
+        run: |
+          git fetch origin main --depth=1
+          git show origin/main:.cache/metrics/current.json > .cache/metrics/baseline.json 2>/dev/null || echo '{}' > .cache/metrics/baseline.json
+
+      - name: Compare metrics with baseline
+        if: github.event_name == 'pull_request'
+        run: |
+          npx tsx scripts/metrics/compare-metrics.ts
+
+      - name: Update metrics history
+        run: npx tsx scripts/metrics/update-history.ts
+
+      - name: Generate HTML report
+        run: npx tsx scripts/metrics/generate-report.ts
+
+      - name: Update test results in metrics
+        if: always()
+        run: |
+          jq ". + {
+            tests: {
+              unitPassed: ${{ steps.unit_tests.outputs.exit_code == 0 }},
+              e2ePassed: ${{ steps.playwright.outputs.exit_code == 0 }}
+            }
+          }" .cache/metrics/current.json > .cache/metrics/tmp.json && mv .cache/metrics/tmp.json .cache/metrics/current.json
+
+      - name: Upload all artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-artifacts-${{ github.run_number }}
+          path: |
+            .cache/logs
+            .cache/metrics
+            .cache/ai_logs
+            .cache/playwright
+          retention-days: 30
+
+      - name: Read metrics for comment
+        if: github.event_name == 'pull_request'
+        id: read_metrics
+        run: |
+          echo "build_time=$(jq -r '.buildTimeSec // "n/a"' .cache/metrics/current.json)" >> $GITHUB_OUTPUT
+          echo "bundle_size=$(jq -r '.bundleSizeBytes // 0' .cache/metrics/current.json)" >> $GITHUB_OUTPUT
+
+          if [ -f ".cache/metrics/diff.json" ]; then
+            echo "build_delta=$(jq -r '.buildDelta // 0' .cache/metrics/diff.json)" >> $GITHUB_OUTPUT
+            echo "bundle_delta=$(jq -r '.bundleDelta // 0' .cache/metrics/diff.json)" >> $GITHUB_OUTPUT
+          else
+            echo "build_delta=0" >> $GITHUB_OUTPUT
+            echo "bundle_delta=0" >> $GITHUB_OUTPUT
+          fi
+
+          # Count artifacts
+          echo "screenshots=$(find .cache/playwright -name '*.png' 2>/dev/null | wc -l || echo 0)" >> $GITHUB_OUTPUT
+          echo "videos=$(find .cache/playwright -name '*.webm' 2>/dev/null | wc -l || echo 0)" >> $GITHUB_OUTPUT
+          echo "ai_logs=$(ls .cache/ai_logs/*.json 2>/dev/null | wc -l || echo 0)" >> $GITHUB_OUTPUT
+
+      - name: Format metrics for comment
+        if: github.event_name == 'pull_request'
+        id: format
+        run: |
+          # Format bundle size
+          bytes=${{ steps.read_metrics.outputs.bundle_size }}
+          if [ "$bytes" -gt 1048576 ] 2>/dev/null; then
+            echo "bundle_formatted=$(echo "scale=2; $bytes / 1048576" | bc)MB" >> $GITHUB_OUTPUT
+          elif [ "$bytes" -gt 1024 ] 2>/dev/null; then
+            echo "bundle_formatted=$(echo "scale=2; $bytes / 1024" | bc)KB" >> $GITHUB_OUTPUT
+          else
+            echo "bundle_formatted=${bytes}B" >> $GITHUB_OUTPUT
+          fi
+
+          # Format deltas with +/- prefix
+          build_delta=${{ steps.read_metrics.outputs.build_delta }}
+          bundle_delta=${{ steps.read_metrics.outputs.bundle_delta }}
+
+          if [ "$(echo "$build_delta > 0" | bc -l)" = "1" ]; then
+            echo "build_delta_formatted=+${build_delta}s 🔺" >> $GITHUB_OUTPUT
+          elif [ "$(echo "$build_delta < 0" | bc -l)" = "1" ]; then
+            echo "build_delta_formatted=${build_delta}s 🟢" >> $GITHUB_OUTPUT
+          else
+            echo "build_delta_formatted=0s" >> $GITHUB_OUTPUT
+          fi
+
+          if [ "$bundle_delta" -gt 0 ] 2>/dev/null; then
+            echo "bundle_delta_formatted=+${bundle_delta}B 🔺" >> $GITHUB_OUTPUT
+          elif [ "$bundle_delta" -lt 0 ] 2>/dev/null; then
+            echo "bundle_delta_formatted=${bundle_delta}B 🟢" >> $GITHUB_OUTPUT
+          else
+            echo "bundle_delta_formatted=0B" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Post PR Comment
+        if: github.event_name == 'pull_request'
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            ## 📊 CI Metrics Dashboard
+
+            | Metric | Current | Δ vs main |
+            |--------|---------|-----------|
+            | 🏗 **Build time** | ${{ steps.read_metrics.outputs.build_time }}s | ${{ steps.format.outputs.build_delta_formatted }} |
+            | 📦 **Bundle size** | ${{ steps.format.outputs.bundle_formatted }} | ${{ steps.format.outputs.bundle_delta_formatted }} |
+            | 📝 **Code changes** | +${{ github.event.pull_request.additions }} / -${{ github.event.pull_request.deletions }} | — |
+
+            ### 🧪 Tests
+            - Unit tests: ${{ steps.unit_tests.outputs.exit_code == 0 && '✅ Passed' || '❌ Failed' }}
+            - E2E tests: ${{ steps.playwright.outputs.exit_code == 0 && '✅ Passed' || '❌ Failed' }}
+
+            ### 📦 Artifacts
+            - 📸 Screenshots: ${{ steps.read_metrics.outputs.screenshots }}
+            - 🎬 Videos: ${{ steps.read_metrics.outputs.videos }}
+            - 🤖 AI Logs: ${{ steps.read_metrics.outputs.ai_logs }}
+
+            > 🔗 [View artifacts](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}) • [Metrics Dashboard](https://holiber.github.io/devduck/metrics.html)
+
+            ---
+            <sub>Generated by CI & Metrics Dashboard • Commit: ${{ github.sha }}</sub>
+          reactions: eyes
+
+      - name: Deploy to GitHub Pages
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: .cache/metrics
+          destination_dir: metrics
+          keep_files: true
