@@ -44,6 +44,11 @@ function fmtMs(ms) {
   return `${ms.toFixed(0)}ms`;
 }
 
+function fmtInt(n) {
+  if (n == null || !Number.isFinite(n)) return 'n/a';
+  return new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(n);
+}
+
 function clsForDelta(n) {
   if (n == null || !Number.isFinite(n) || n === 0) return '';
   return n > 0 ? 'pos' : 'neg';
@@ -70,6 +75,10 @@ async function main() {
   const outBytes = current?.sizes?.build_output_dir?.bytes;
   const unitTests = current?.tests?.unit;
   const e2eInstaller = current?.tests?.e2e_installer;
+  const scriptCodeLines = current?.code?.scriptCodeLines;
+  const totalTextLines = current?.code?.totalTextLines;
+  const hugeScripts = current?.code?.hugeScripts;
+  const flakyTests = current?.tests?.flaky?.count;
 
   const html = `<!DOCTYPE html>
 <html lang="en">
@@ -135,6 +144,26 @@ async function main() {
           <td>🧱 build output size</td>
           <td>${fmtBytes(outBytes)}</td>
           <td class="${clsForDelta(diff?.deltas?.build_output_bytes)}">${fmtBytes(diff?.deltas?.build_output_bytes)}</td>
+        </tr>
+        <tr>
+          <td>🧾 Script code lines</td>
+          <td>${fmtInt(scriptCodeLines)}</td>
+          <td class="${clsForDelta(diff?.deltas?.script_code_lines)}">${fmtInt(diff?.deltas?.script_code_lines)}</td>
+        </tr>
+        <tr>
+          <td>📚 Total text lines</td>
+          <td>${fmtInt(totalTextLines)}</td>
+          <td class="${clsForDelta(diff?.deltas?.total_text_lines)}">${fmtInt(diff?.deltas?.total_text_lines)}</td>
+        </tr>
+        <tr>
+          <td>📜 Huge scripts (&gt;1000 LOC)</td>
+          <td>${fmtInt(hugeScripts)}</td>
+          <td class="${clsForDelta(diff?.deltas?.huge_scripts)}">${fmtInt(diff?.deltas?.huge_scripts)}</td>
+        </tr>
+        <tr>
+          <td>🎲 Flaky tests (retried)</td>
+          <td>${fmtInt(flakyTests)}</td>
+          <td class="${clsForDelta(diff?.deltas?.flaky_tests)}">${fmtInt(diff?.deltas?.flaky_tests)}</td>
         </tr>
       </tbody>
     </table>
