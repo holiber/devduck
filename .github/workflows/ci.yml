@@ -9,9 +9,13 @@ on:
 permissions:
   contents: write
   pull-requests: write
+  issues: write
+  pages: write
+  id-token: write
 
 concurrency:
-  group: ci-metrics-${{ github.event.pull_request.number || github.ref }}
+  # Avoid referencing github.event.pull_request on push events (can be null).
+  group: ci-metrics-${{ github.head_ref || github.ref_name }}
   cancel-in-progress: true
 
 jobs:
@@ -49,7 +53,7 @@ jobs:
 
       # Optional smoke suite (only makes sense when BASE_URL is provided).
       - name: Run Playwright smoke suite (timed)
-        if: ${{ env.BASE_URL != '' }}
+        if: ${{ env.BASE_URL }}
         run: node scripts/ci/run-and-record.mjs --name pw_smoke --cmd "npx playwright test -c tests/smoke/playwright.config.ts --reporter=list --trace=retain-on-failure --video=retain-on-failure --screenshot=only-on-failure" --log .cache/logs/pw-smoke.log --out .cache/metrics/test-commands.json
 
       - name: Collect Playwright artifacts into .cache
