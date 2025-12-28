@@ -160,11 +160,16 @@ export function requiresSudo(command: string): boolean {
  * @param command - Command to execute
  * @returns Result object with success and error fields (no output capture)
  */
-export function executeInteractiveCommand(command: string): ExecuteInteractiveCommandResult {
+export function executeInteractiveCommand(
+  command: string,
+  options?: { cwd?: string; env?: NodeJS.ProcessEnv }
+): ExecuteInteractiveCommandResult {
   try {
     const result = spawnSync(command, {
       shell: true,
-      stdio: 'inherit'
+      stdio: 'inherit',
+      cwd: options?.cwd,
+      env: options?.env
     });
 
     return {
@@ -181,4 +186,5 @@ export function executeInteractiveCommand(command: string): ExecuteInteractiveCo
     };
   }
 }
+
 

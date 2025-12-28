@@ -50,13 +50,18 @@ export interface ModuleHooks {
   [key: string]: ((context: HookContext) => Promise<HookResult | void> | HookResult | void) | undefined;
 }
 
+type LoadModuleHooksResult =
+  | { status: 'missing' }
+  | { status: 'loaded'; hooksPath: string; hooks: ModuleHooks }
+  | { status: 'error'; hooksPath: string; error: Error };
+
 /**
  * Load hooks from module
  * Supports both .js and .ts files
  * @param modulePath - Path to module directory
- * @returns Hooks object or null if not found
+ * @returns Hooks load result
  */
-export async function loadModuleHooks(modulePath: string): Promise<ModuleHooks | null> {
+export async function loadModuleHooks(modulePath: string): Promise<LoadModuleHooksResult> {
   // Try .ts first (for TypeScript modules)
   const hooksTsPath = path.join(modulePath, 'hooks.ts');
   const hooksJsPath = path.join(modulePath, 'hooks.js');
@@ -69,7 +74,7 @@ export async function loadModuleHooks(modulePath: string): Promise<ModuleHooks |
   }
   
   if (!hooksPath) {
-    return null;
+    return { status: 'missing' };
   }
 
   try {
@@ -81,7 +86,7 @@ export async function loadModuleHooks(modulePath: string): Promise<ModuleHooks |
       const fileUrl = `file://${resolvedPath}`;
       const hooksModule = await import(fileUrl);
       const hooks = hooksModule.default || hooksModule;
-      return hooks as ModuleHooks;
+      return { status: 'loaded', hooksPath, hooks: hooks as ModuleHooks };
     } else {
       // For .js files, use require() directly for CommonJS compatibility
       // CommonJS modules (using module.exports) work better with require()
@@ -92,16 +97,11 @@ export async function loadModuleHooks(modulePath: string): Promise<ModuleHooks |
       const hooksModule = require(resolvedPath);
       // Handle both default export and module.exports
       const hooks = hooksModule.default || hooksModule;
-      return hooks as ModuleHooks;
+      return { status: 'loaded', hooksPath, hooks: hooks as ModuleHooks };
     }
   } catch (error) {
     const err = error as Error;
-    // Log more details for debugging
-    console.warn(`Warning: Failed to load hooks from ${hooksPath}: ${err.message}`);
-    if (err.stack && process.env.NODE_ENV === 'test') {
-      console.warn(`Stack: ${err.stack}`);
-    }
-    return null;
+    return { status: 'error', hooksPath, error: err };
   }
 }
 
@@ -117,9 +117,9 @@ export async function executeHook(
   hookName: string,
   context: HookContext
 ): Promise<HookResult> {
-  const hooks = await loadModuleHooks(module.path);
+  const loaded = await loadModuleHooks(module.path);
   
-  if (!hooks) {
+  if (loaded.status === 'missing') {
     // No hooks file - module doesn't define hooks
     // Log this for debugging (only in test mode to avoid noise)
     if (process.env.NODE_ENV === 'test') {
@@ -132,7 +132,15 @@ export async function executeHook(
     };
   }
 
-  const hook = hooks[hookName];
+  if (loaded.status === 'error') {
+    return {
+      success: false,
+      errors: [`Failed to load hooks from ${loaded.hooksPath}: ${loaded.error.message}`],
+      stack: loaded.error.stack
+    };
+  }
+
+  const hook = loaded.hooks[hookName];
   
   if (!hook) {
     // Hook not defined - not an error, just skip

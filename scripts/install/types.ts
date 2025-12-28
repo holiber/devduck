@@ -3,7 +3,7 @@
  */
 
 export interface CheckItem {
-  name: string;
+  name?: string;
   description?: string;
   test?: string;
   install?: string;
@@ -23,5 +23,16 @@ export interface CheckResult {
   statusCode?: number;
   error?: string;
   description?: string;
+}
+
+export function getCheckDisplayName(check: CheckItem): string {
+  const anyCheck = check as { var?: unknown; id?: unknown; type?: unknown };
+  const name =
+    (typeof check.name === 'string' && check.name.trim()) ||
+    (typeof anyCheck.var === 'string' && anyCheck.var.trim()) ||
+    (typeof anyCheck.id === 'string' && anyCheck.id.trim()) ||
+    (typeof anyCheck.type === 'string' && anyCheck.type.trim()) ||
+    '<unknown-check>';
+  return name;
 }
 

@@ -55,11 +55,11 @@ Module description and usage instructions.
 - `tags`: Array of tags for categorization (e.g., `vcs`, `yandex`, `security`)
 - `dependencies`: Array of module names this module depends on
 - `defaultSettings`: Module-specific default settings (e.g., `cursorignore`, `arcignore`)
-- `checks`: Array of pre-install checks (see [Pre-install Checks](#pre-install-checks))
+- `checks`: Array of checks (see [Checks](#checks))
 
-#### Pre-install Checks
+#### Checks
 
-Modules can define pre-install checks that are executed before module installation to verify required environment variables and validate token functionality.
+Modules can define checks that are executed during installation to verify required environment variables and validate token functionality.
 
 **Check Types:**
 

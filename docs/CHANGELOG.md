@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed - 2025-12-28
+
+- 🧰 **Installer CLI refactor** - Moved CLI argument parsing + workspace path resolution into `scripts/install/cli-runtime.ts`, keeping installer steps visible near the top of `scripts/install.ts`.
+- 🔌 **DevduckService socket fallback** - On macOS, when the default Unix socket path is too long, DevduckService now falls back to a short `/tmp/devduck-<hash>.sock` path to avoid `EINVAL` on `listen()`.
+
+### Changed - 2025-12-27
+
+- 🧾 **Installer state file** - Deprecated/removed `.cache/install-check.json`; installer now uses `.cache/install-state.json` as the single source of truth (including `installedModules`).
+- 🪵 **Installer logging** - Installation now uses a pino-compatible (levels-only) logger writing NDJSON into `.cache/install.log`.
+- 🧩 **Installer runner** - Workspace installation orchestration is driven by a small `runInstall(steps, ctx)` runner and step wrappers for readability.
+
 ### Fixed - 2025-12-25
 
 - 🔧 **API command handling in install checks** - Fixed issue where `api` commands (e.g., `api mcp.hasTool deepagent generate_answer`) were not properly handled during installation checks
@@ -78,11 +89,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `<workspace>/modules/`
   - `<workspace>/projects/*/modules/`
   - DevDuck built-in `modules/`
-- 🗂️ **Persist resolved module paths** - Installer now records installed module name → path mapping in `.cache/install-check.json` (`installedModules`) for downstream tooling.
+- 🗂️ **Persist resolved module paths** - Installer now records installed module name → path mapping in `.cache/install-state.json` (`installedModules`) for downstream tooling.
 
 ### Added - 2025-12-24
 
-- ✅ **Pre-install checks system** - Modules can now define pre-install checks to verify required environment variables and validate token functionality
+- ✅ **Checks system** - Modules can define checks to verify required environment variables and validate token functionality
   - Auth checks verify that required tokens are present before installation
   - Test checks validate token functionality using `curl` commands or HTTP requests
   - Checks are collected from all modules and projects before installation

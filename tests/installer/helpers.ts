@@ -7,6 +7,8 @@
 import { promises as fs } from 'fs';
 import path from 'path';
 import { spawn } from 'child_process';
+import http from 'node:http';
+import { once } from 'node:events';
 import os from 'os';
 import { fileURLToPath } from 'url';
 
@@ -47,7 +49,7 @@ interface VerificationResult {
 
 interface ConfigVerificationResult {
   valid: boolean;
-  config: unknown;
+  config: Record<string, unknown> | null;
   errors: string[];
 }
 
@@ -123,8 +125,8 @@ export async function createWorkspaceFromFixture(
 /**
  * Execute installer with given options
  */
-export function runInstaller(workspacePath: string, options: RunInstallerOptions = {}): Promise<InstallerResult> {
-  return new Promise((resolve, reject) => {
+export async function runInstaller(workspacePath: string, options: RunInstallerOptions = {}): Promise<InstallerResult> {
+  return await new Promise(async (resolve, reject) => {
     const args = ['--workspace-path', workspacePath];
     
     if (options.unattended) {
@@ -160,19 +162,33 @@ export function runInstaller(workspacePath: string, options: RunInstallerOptions
     let inputIndex = 0;
     
     // Installer tests run in CI without user secrets; however some modules (e.g. cursor) require tokens.
-    // Provide deterministic dummy values so pre-install checks don't block unattended installs.
+    // Provide deterministic dummy values so installer checks don't block unattended installs.
+    const needsCursor = await workspaceNeedsCursorModule({
+      workspacePath,
+      modulesArg: options.modules,
+      configPath: options.config,
+      workspaceConfigPath: options.workspaceConfig
+    });
+    const mockCursorApiBaseUrl = needsCursor ? await getOrStartMockCursorApiBaseUrl() : null;
     const proc = spawn('tsx', [INSTALLER_SCRIPT, ...args], {
       cwd: PROJECT_ROOT,
       env: {
         ...process.env,
         NODE_ENV: 'test',
-        CURSOR_API_KEY: process.env.CURSOR_API_KEY || 'test-cursor-api-key'
+        ...(needsCursor
+          ? {
+              CURSOR_API_KEY: process.env.CURSOR_API_KEY || 'test-cursor-api-key',
+              // Avoid hitting the real Cursor API in tests; make cursor-api-key-valid deterministic.
+              CURSOR_API_BASE_URL: process.env.CURSOR_API_BASE_URL || (mockCursorApiBaseUrl ?? undefined)
+            }
+          : {})
       }
     });
 
     // Handle inputs for interactive mode
     if (options.inputs && options.inputs.length > 0) {
-      proc.stdin.setEncoding('utf8');
+      // Writable doesn't have setEncoding; use setDefaultEncoding instead.
+      proc.stdin.setDefaultEncoding('utf8');
       
       // Send inputs with delays to simulate user interaction
       const sendInput = () => {
@@ -215,6 +231,90 @@ export function runInstaller(workspacePath: string, options: RunInstallerOptions
       reject(error);
     });
   });
+}
+
+let mockCursorApiServer: http.Server | null = null;
+let mockCursorApiBaseUrl: string | null = null;
+
+async function getOrStartMockCursorApiBaseUrl(): Promise<string> {
+  if (mockCursorApiBaseUrl) return mockCursorApiBaseUrl;
+
+  mockCursorApiServer = http.createServer((req, res) => {
+    // Mimic the endpoint used in modules/cursor/MODULE.md
+    if (req.url?.startsWith('/v1/models')) {
+      res.statusCode = 200;
+      res.setHeader('Content-Type', 'application/json');
+      res.end(JSON.stringify({ data: [] }));
+      return;
+    }
+    res.statusCode = 404;
+    res.end();
+  });
+
+  // Important: do not keep the test runner alive because of this server.
+  // We'll allow Node to exit even if the mock server is still listening.
+  mockCursorApiServer.unref();
+
+  mockCursorApiServer.listen(0, '127.0.0.1');
+  await once(mockCursorApiServer, 'listening');
+  const addr = mockCursorApiServer.address();
+  if (!addr || typeof addr === 'string') {
+    throw new Error('Failed to start mock Cursor API server');
+  }
+  mockCursorApiBaseUrl = `http://127.0.0.1:${addr.port}`;
+  return mockCursorApiBaseUrl;
+}
+
+function normalizeModulesList(modules: string | string[] | undefined): string[] | null {
+  if (!modules) return null;
+  if (Array.isArray(modules)) return modules;
+  return modules
+    .split(',')
+    .map((m) => m.trim())
+    .filter((m) => m.length > 0);
+}
+
+async function workspaceNeedsCursorModule(params: {
+  workspacePath: string;
+  modulesArg: string | string[] | undefined;
+  configPath: string | undefined;
+  workspaceConfigPath: string | undefined;
+}): Promise<boolean> {
+  const fromArg = normalizeModulesList(params.modulesArg);
+  if (fromArg) return fromArg.includes('cursor');
+
+  const readModulesFromJsonFile = async (filePath: string): Promise<string[] | null> => {
+    try {
+      const raw = await fs.readFile(filePath, 'utf8');
+      const parsed = JSON.parse(raw) as { modules?: unknown };
+      return Array.isArray(parsed.modules) ? (parsed.modules as string[]) : null;
+    } catch {
+      return null;
+    }
+  };
+
+  // If a config file is passed, infer modules from it (common in tests).
+  if (params.configPath) {
+    const mods = await readModulesFromJsonFile(params.configPath);
+    if (mods && mods.includes('cursor')) return true;
+  }
+
+  // If a workspace-config template is passed, infer modules from it.
+  if (params.workspaceConfigPath) {
+    const mods = await readModulesFromJsonFile(params.workspaceConfigPath);
+    if (mods && mods.includes('cursor')) return true;
+  }
+
+  // If modules are not passed via args, attempt to infer from an existing workspace.config.json (fixtures).
+  const configPath = path.join(params.workspacePath, 'workspace.config.json');
+  try {
+    const raw = await fs.readFile(configPath, 'utf8');
+    const parsed = JSON.parse(raw) as { modules?: unknown };
+    const mods = Array.isArray(parsed.modules) ? (parsed.modules as string[]) : [];
+    return mods.includes('cursor');
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -319,18 +419,19 @@ export async function verifyWorkspaceConfig(workspacePath: string, expectedConfi
     const configPath = path.join(workspacePath, 'workspace.config.json');
     const content = await fs.readFile(configPath, 'utf8');
     results.config = JSON.parse(content) as Record<string, unknown>;
+    const config = results.config;
 
     // Verify required fields
-    if (!results.config.workspaceVersion) {
+    if (!config.workspaceVersion) {
       results.errors.push('workspaceVersion missing');
     }
-    if (!results.config.modules || !Array.isArray(results.config.modules)) {
+    if (!config.modules || !Array.isArray(config.modules)) {
       results.errors.push('modules missing or invalid');
     }
 
     // Verify expected values
     if (expectedConfig.modules) {
-      const actualModules = (results.config.modules || []) as string[];
+      const actualModules = (config.modules || []) as string[];
       const expectedModules = expectedConfig.modules as string[];
       const missing = expectedModules.filter(m => !actualModules.includes(m));
       if (missing.length > 0) {
@@ -338,8 +439,8 @@ export async function verifyWorkspaceConfig(workspacePath: string, expectedConfi
       }
     }
 
-    if (expectedConfig.devduckPath && results.config.devduckPath !== expectedConfig.devduckPath) {
-      results.errors.push(`devduckPath mismatch: expected ${expectedConfig.devduckPath}, got ${results.config.devduckPath}`);
+    if (expectedConfig.devduckPath && config.devduckPath !== expectedConfig.devduckPath) {
+      results.errors.push(`devduckPath mismatch: expected ${expectedConfig.devduckPath}, got ${config.devduckPath}`);
     }
 
     results.valid = results.errors.length === 0;
@@ -451,6 +552,110 @@ export function checkInstallerResult(result: InstallerResult): void {
   if (result.exitCode !== 0) {
     const errorMsg = result.stderr || result.stdout || 'Unknown error';
     throw new Error(`Installer failed with exit code ${result.exitCode}. Error: ${errorMsg}`);
+  }
+}
+
+/**
+ * Create a shared temporary workspace in .cache/temp directory
+ * @param prefix - Prefix for the workspace directory name
+ * @returns Path to the created workspace
+ */
+export async function createSharedTempWorkspace(prefix = 'install-steps-test-'): Promise<string> {
+  const cacheTempDir = path.join(PROJECT_ROOT, '.cache', 'temp');
+  await fs.mkdir(cacheTempDir, { recursive: true });
+  
+  const workspaceName = prefix + Date.now();
+  const workspacePath = path.join(cacheTempDir, workspaceName);
+  await fs.mkdir(workspacePath, { recursive: true });
+  
+  return workspacePath;
+}
+
+/**
+ * Clean up shared temporary workspace
+ * @param workspacePath - Path to workspace to clean up
+ */
+export async function cleanupSharedTempWorkspace(workspacePath: string): Promise<void> {
+  // Safety check: only clean .cache/temp/ directories
+  const cacheTempDir = path.join(PROJECT_ROOT, '.cache', 'temp');
+  const normalizedPath = path.resolve(workspacePath);
+  const normalizedCacheTemp = path.resolve(cacheTempDir);
+  
+  if (!normalizedPath.startsWith(normalizedCacheTemp)) {
+    throw new Error('Safety check: Only cleaning up .cache/temp/ directories');
+  }
+  
+  try {
+    await fs.rm(workspacePath, { recursive: true, force: true });
+  } catch (error: unknown) {
+    // Ignore errors during cleanup
+    const err = error as { message?: string };
+    console.warn(`Warning: Failed to cleanup ${workspacePath}: ${err.message || String(error)}`);
+  }
+}
+
+/**
+ * Check if a step is completed in install-state.json
+ * @param workspaceRoot - Workspace root directory
+ * @param stepName - Name of the step to check
+ * @returns True if step is completed successfully
+ */
+export async function isStepCompleted(workspaceRoot: string, stepName: string): Promise<boolean> {
+  const { loadInstallState } = await import('../../scripts/install/install-state.js');
+  const state = loadInstallState(workspaceRoot);
+  
+  const stepKey = stepName as keyof typeof state.steps;
+  return state.steps[stepKey]?.completed === true;
+}
+
+/**
+ * Get step result from install-state.json
+ * @param workspaceRoot - Workspace root directory
+ * @param stepName - Name of the step
+ * @returns Step result or null if step not completed
+ */
+export async function getStepResult(workspaceRoot: string, stepName: string): Promise<unknown> {
+  const { loadInstallState } = await import('../../scripts/install/install-state.js');
+  const state = loadInstallState(workspaceRoot);
+  
+  const stepKey = stepName as keyof typeof state.steps;
+  return state.steps[stepKey]?.result || null;
+}
+
+/**
+ * Get list of executed checks from install-state.json
+ * @param workspaceRoot - Workspace root directory
+ * @returns Array of executed checks
+ */
+export async function getExecutedChecks(workspaceRoot: string): Promise<Array<{checkId: string; step: string; passed: boolean | null; executedAt: string; checkName?: string}>> {
+  const { loadInstallState } = await import('../../scripts/install/install-state.js');
+  const state = loadInstallState(workspaceRoot);
+  
+  return state.executedChecks || [];
+}
+
+/**
+ * Verify step state matches expected status
+ * @param workspaceRoot - Workspace root directory
+ * @param stepName - Name of the step
+ * @param expectedStatus - Expected status ('completed' or 'failed')
+ * @returns True if state matches expected status
+ */
+export async function verifyStepState(
+  workspaceRoot: string,
+  stepName: string,
+  expectedStatus: 'completed' | 'failed'
+): Promise<boolean> {
+  const { loadInstallState } = await import('../../scripts/install/install-state.js');
+  const state = loadInstallState(workspaceRoot);
+  
+  const stepKey = stepName as keyof typeof state.steps;
+  const step = state.steps[stepKey];
+  
+  if (expectedStatus === 'completed') {
+    return step?.completed === true && !step.error;
+  } else {
+    return step?.completed === true && !!step.error;
   }
 }
 
