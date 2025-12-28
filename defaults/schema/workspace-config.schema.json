@@ -1,13 +1,18 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://devduck.dev/schema/workspace-config.schema.json",
-  "title": "DevDuck Workspace Config (YAML nadformat)",
+  "title": "DevDuck Workspace Config (YAML format)",
   "type": "object",
   "additionalProperties": true,
   "properties": {
-    "version": { "type": ["integer", "string"], "description": "Schema version (nadformat)" },
+    "version": { "type": ["integer", "string"], "description": "Schema version" },
     "name": { "type": "string" },
     "devduck_path": { "type": "string", "description": "Path to DevDuck sources (relative to workspace root)" },
+    "extends": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "List of config files to extend from. Supports 'devduck:<relative-path>' syntax."
+    },
     "repos": { "type": "array", "items": { "type": "string" } },
     "modules": { "type": "array", "items": { "type": "string" } },
     "moduleSettings": { "type": "object", "additionalProperties": true },
@@ -38,11 +43,7 @@
         }
       }
     },
-    "extends": {
-      "type": "array",
-      "items": { "type": "string" },
-      "description": "Optional list of taskfile fragments (not interpreted by DevDuck yet)"
-    }
+    "taskfile": { "$ref": "#/$defs/taskfile" }
   },
   "$defs": {
     "checks": {
@@ -59,6 +60,55 @@
           "test": { "type": "string" },
           "install": { "type": "string" },
           "mcpSettings": { "type": "object", "additionalProperties": true }
+        }
+      }
+    },
+    "taskfile": {
+      "type": "object",
+      "description": "Taskfile configuration for generated .cache/taskfile.generated.yml",
+      "additionalProperties": true,
+      "properties": {
+        "vars": {
+          "type": "object",
+          "description": "Taskfile variables",
+          "additionalProperties": { "type": "string" }
+        },
+        "tasks": {
+          "type": "object",
+          "description": "Taskfile tasks",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+              "desc": { "type": "string" },
+              "cmds": {
+                "type": "array",
+                "items": {
+                  "oneOf": [
+                    { "type": "string" },
+                    {
+                      "type": "object",
+                      "properties": { "task": { "type": "string" } },
+                      "additionalProperties": true
+                    }
+                  ]
+                }
+              },
+              "deps": {
+                "type": "array",
+                "items": {
+                  "oneOf": [
+                    { "type": "string" },
+                    {
+                      "type": "object",
+                      "properties": { "task": { "type": "string" } },
+                      "additionalProperties": true
+                    }
+                  ]
+                }
+              }
+            }
+          }
         }
       }
     }

@@ -130,10 +130,35 @@ const WorkspaceLaunchSchema = z
   })
   .passthrough();
 
+/**
+ * Taskfile task definition (as used in taskfile.tasks).
+ */
+const TaskfileTaskSchema = z
+  .object({
+    desc: z.string().optional(),
+    cmds: z.array(z.union([z.string(), z.object({ task: z.string() }).passthrough()])).optional(),
+    deps: z.array(z.union([z.string(), z.object({ task: z.string() }).passthrough()])).optional(),
+  })
+  .passthrough();
+
+/**
+ * Taskfile section: defines vars and tasks for generated Taskfile.
+ */
+const TaskfileSectionSchema = z
+  .object({
+    vars: z.record(z.string(), z.string()).optional(),
+    tasks: z.record(z.string(), TaskfileTaskSchema).optional(),
+  })
+  .passthrough();
+
 const WorkspaceConfigSchema = z
   .object({
     version: z.union([z.string(), z.number()]),
     devduck_path: z.string().optional(),
+
+    // Config inheritance: list of paths to extend from.
+    // Supports "devduck:<relative-path>" syntax resolved via devduck_path.
+    extends: z.array(z.string()).optional(),
 
     // Seed files/folders to copy into a *new* workspace when creating it via `--workspace-config`.
     // Paths are relative to the folder containing the provided workspace config file.
@@ -161,6 +186,9 @@ const WorkspaceConfigSchema = z
 
     // Declarative dev/smokecheck launch workflows.
     launch: WorkspaceLaunchSchema.optional(),
+
+    // Taskfile section: vars and tasks for generated .cache/taskfile.generated.yml.
+    taskfile: TaskfileSectionSchema.optional(),
   })
   .passthrough();
 
@@ -170,4 +198,9 @@ export {
   WorkspaceCheckSchema,
   WorkspaceEnvVarSchema,
   McpServerSettingsSchema,
+  TaskfileSectionSchema,
+  TaskfileTaskSchema,
 };
+
+export type WorkspaceConfig = z.infer<typeof WorkspaceConfigSchema>;
+export type TaskfileSection = z.infer<typeof TaskfileSectionSchema>;

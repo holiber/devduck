@@ -6,17 +6,31 @@ import { spawnSync } from 'node:child_process';
 import yargs from 'yargs/yargs';
 import { hideBin } from 'yargs/helpers';
 import YAML from 'yaml';
-import { readWorkspaceConfigFromRoot, writeWorkspaceConfigFile } from './lib/workspace-config.js';
+import { readMergedWorkspaceConfig, writeWorkspaceConfigFile } from './lib/workspace-config.js';
+
+type TaskfileTask = {
+  desc?: string;
+  cmds?: Array<string | { task: string }>;
+  deps?: Array<string | { task: string }>;
+  [k: string]: unknown;
+};
+
+type TaskfileSection = {
+  vars?: Record<string, string>;
+  tasks?: Record<string, TaskfileTask>;
+};
 
 type WorkspaceConfigLike = {
   version?: string | number;
   devduck_path?: string;
+  extends?: string[];
   modules?: string[];
   moduleSettings?: Record<string, unknown>;
   repos?: string[];
   projects?: Array<{ src?: string } & Record<string, unknown>>;
   checks?: unknown[];
   env?: unknown[];
+  taskfile?: TaskfileSection;
   [k: string]: unknown;
 };
 
@@ -111,7 +125,10 @@ function ensureWorkspaceTaskfile(workspaceRoot: string, devduckPathRel: string):
   fs.writeFileSync(taskfilePath, content, 'utf8');
 }
 
-function buildGeneratedTaskfile(devduckPathRel: string): GeneratedTaskfile {
+/**
+ * Build the default hardcoded taskfile (fallback when config has no taskfile section).
+ */
+function buildDefaultTaskfile(devduckPathRel: string): GeneratedTaskfile {
   const stepCmd = (stepId: string) =>
     `tsx {{.DEVDUCK_ROOT}}/scripts/install/run-step.ts ${stepId} --workspace-root {{.WORKSPACE_ROOT}} --project-root {{.DEVDUCK_ROOT}} --unattended`;
 
@@ -143,6 +160,48 @@ function buildGeneratedTaskfile(devduckPathRel: string): GeneratedTaskfile {
       'install:6-setup-projects': { desc: 'Setup all workspace projects', cmds: [stepCmd('setup-projects')] },
       'install:7-verify-installation': { desc: 'Verify installation correctness', cmds: [stepCmd('verify-installation')] }
     }
+  };
+}
+
+/**
+ * Build the generated taskfile from merged config.
+ *
+ * Uses config.taskfile section if available, otherwise falls back to hardcoded defaults.
+ * Always injects/ensures DEVDUCK_ROOT and WORKSPACE_ROOT vars.
+ */
+function buildGeneratedTaskfile(devduckPathRel: string, config?: WorkspaceConfigLike | null): GeneratedTaskfile {
+  const taskfileSection = config?.taskfile;
+
+  // If no taskfile section in config, use hardcoded fallback
+  if (!taskfileSection || (!taskfileSection.vars && !taskfileSection.tasks)) {
+    return buildDefaultTaskfile(devduckPathRel);
+  }
+
+  // Build from config's taskfile section
+  const vars: Record<string, string> = {
+    // Always inject these required vars
+    DEVDUCK_ROOT: devduckPathRel,
+    WORKSPACE_ROOT: '{{ default "." .WORKSPACE_ROOT }}',
+    // Merge in config vars (config can override defaults)
+    ...(taskfileSection.vars || {})
+  };
+
+  // Ensure DEVDUCK_ROOT and WORKSPACE_ROOT are present (config may have overridden them,
+  // but we need to make sure they exist)
+  if (!vars.DEVDUCK_ROOT) {
+    vars.DEVDUCK_ROOT = devduckPathRel;
+  }
+  if (!vars.WORKSPACE_ROOT) {
+    vars.WORKSPACE_ROOT = '{{ default "." .WORKSPACE_ROOT }}';
+  }
+
+  const tasks = taskfileSection.tasks || {};
+
+  return {
+    version: '3',
+    output: 'interleaved',
+    vars,
+    tasks
   };
 }
 
@@ -282,7 +341,8 @@ async function main(argv = process.argv): Promise<void> {
         const invocationCwd = process.env.INIT_CWD ? path.resolve(process.env.INIT_CWD) : process.cwd();
         const workspaceRoot = path.resolve(invocationCwd, String(args.workspacePath || '.'));
 
-        const { config, configFile } = readWorkspaceConfigFromRoot<WorkspaceConfigLike>(workspaceRoot);
+        // Use merged config (with extends resolution) for taskfile generation
+        const { config, configFile } = readMergedWorkspaceConfig<WorkspaceConfigLike>(workspaceRoot);
         if (!config) {
           throw new Error(`Cannot read workspace config: ${configFile}`);
         }
@@ -295,7 +355,8 @@ async function main(argv = process.argv): Promise<void> {
         const cacheDir = path.join(workspaceRoot, '.cache');
         fs.mkdirSync(cacheDir, { recursive: true });
 
-        const generated = buildGeneratedTaskfile(devduckPathRel);
+        // Build taskfile from merged config (uses taskfile section if available)
+        const generated = buildGeneratedTaskfile(devduckPathRel, config);
         const generatedPath = path.join(cacheDir, 'taskfile.generated.yml');
         const out = YAML.stringify(generated);
         fs.writeFileSync(generatedPath, out.endsWith('\n') ? out : out + '\n', 'utf8');
