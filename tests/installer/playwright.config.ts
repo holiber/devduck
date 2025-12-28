@@ -11,6 +11,12 @@ export default defineConfig({
   workers: 1,
   retries: 0,
   timeout: 60_000,
-  reporter: 'list'
+  reporter: 'list',
+  use: {
+    // Keep CI artifacts for failures; see CI uploading `.cache/playwright/`.
+    trace: 'retain-on-failure',
+    screenshot: 'only-on-failure',
+    video: 'retain-on-failure'
+  }
 });
 

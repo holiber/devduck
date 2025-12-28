@@ -19,6 +19,12 @@ const __dirname = path.dirname(__filename);
 const PROJECT_ROOT = path.resolve(__dirname, '../..');
 const INSTALLER_SCRIPT = path.join(PROJECT_ROOT, 'scripts', 'install.ts');
 const WORKSPACE_FIXTURES_ROOT = path.resolve(__dirname, '..', 'workspace-fixtures');
+const TSX_BIN = path.join(
+  PROJECT_ROOT,
+  'node_modules',
+  '.bin',
+  process.platform === 'win32' ? 'tsx.cmd' : 'tsx'
+);
 
 interface RunInstallerOptions {
   unattended?: boolean;
@@ -171,7 +177,7 @@ export async function runInstaller(workspacePath: string, options: RunInstallerO
       workspaceConfigPath: options.workspaceConfig
     });
     const mockCursorApiBaseUrl = needsCursor ? await getOrStartMockCursorApiBaseUrl() : null;
-    const proc = spawn('tsx', [INSTALLER_SCRIPT, ...args], {
+    const proc = spawn(TSX_BIN, [INSTALLER_SCRIPT, ...args], {
       cwd: PROJECT_ROOT,
       env: {
         ...process.env,

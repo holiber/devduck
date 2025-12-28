@@ -10,7 +10,10 @@ export default defineConfig({
   retries: 0,
   use: {
     baseURL: process.env.BASE_URL,
-    headless: true
+    headless: true,
+    trace: 'retain-on-failure',
+    screenshot: 'only-on-failure',
+    video: 'retain-on-failure'
   }
 });
 
