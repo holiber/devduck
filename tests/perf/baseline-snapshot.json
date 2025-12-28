@@ -1,0 +1,187 @@
+{
+  "timestamp": "2025-12-28T01:27:08.404Z",
+  "totalDuration_ms": 474.710524,
+  "totalTests": 34,
+  "totalSuites": 12,
+  "testTimings": [
+    {
+      "name": "Install default scripts from project",
+      "duration_ms": 3.294434,
+      "type": "test"
+    },
+    {
+      "name": "Install additional scripts via importScripts",
+      "duration_ms": 2.073637,
+      "type": "test"
+    },
+    {
+      "name": "Remove scripts when project is removed from config",
+      "duration_ms": 2.157323,
+      "type": "test"
+    },
+    {
+      "name": "Handle missing project package.json gracefully",
+      "duration_ms": 2.233848,
+      "type": "test"
+    },
+    {
+      "name": "Verify scripts do not change current directory",
+      "duration_ms": 1.832283,
+      "type": "test"
+    },
+    {
+      "name": "Step 1: Check Environment Variables",
+      "duration_ms": 43.703753,
+      "type": "test"
+    },
+    {
+      "name": "Step 2: Download Repos",
+      "duration_ms": 3.138254,
+      "type": "test"
+    },
+    {
+      "name": "Step 3: Download Projects",
+      "duration_ms": 3.877142,
+      "type": "test"
+    },
+    {
+      "name": "Step 4: Check Environment Again",
+      "duration_ms": 11.332263,
+      "type": "test"
+    },
+    {
+      "name": "Step 5: Setup Modules",
+      "duration_ms": 14.318969,
+      "type": "test"
+    },
+    {
+      "name": "Step 6: Setup Projects",
+      "duration_ms": 1.664848,
+      "type": "test"
+    },
+    {
+      "name": "Step 7: Verify Installation",
+      "duration_ms": 15.977311,
+      "type": "test"
+    },
+    {
+      "name": "GUI Installation - Fresh Workspace",
+      "duration_ms": 494.545315,
+      "type": "test"
+    },
+    {
+      "name": "Detect Existing Workspace",
+      "duration_ms": 516.681576,
+      "type": "test"
+    },
+    {
+      "name": "installer: hook load failure is fatal",
+      "duration_ms": 588.880349,
+      "type": "test"
+    },
+    {
+      "name": "installer: .env values are available to shell checks (fill-missing)",
+      "duration_ms": 449.29477,
+      "type": "test"
+    },
+    {
+      "name": "installer: checks without name do not print \"Checking undefined\"",
+      "duration_ms": 496.983809,
+      "type": "test"
+    },
+    {
+      "name": "installer summary: prints INSTALLATION FINISHED WITH ERRORS on failures",
+      "duration_ms": 479.339795,
+      "type": "test"
+    },
+    {
+      "name": "Unattended Installation from fixture - cursor-only",
+      "duration_ms": 569.818993,
+      "type": "test"
+    },
+    {
+      "name": "Unattended Installation - Fresh Workspace",
+      "duration_ms": 479.583634,
+      "type": "test"
+    },
+    {
+      "name": "Unattended Installation with Config File",
+      "duration_ms": 497.185853,
+      "type": "test"
+    },
+    {
+      "name": "Unattended Installation with workspace.config.json (local folder project src)",
+      "duration_ms": 541.336667,
+      "type": "test"
+    },
+    {
+      "name": "Unattended Installation with workspace.config.json seedFiles[] copies seed files/folders",
+      "duration_ms": 503.329458,
+      "type": "test"
+    },
+    {
+      "name": "Unattended Installation - Full Structure Verification",
+      "duration_ms": 385.379285,
+      "type": "test"
+    },
+    {
+      "name": "Reinstall Existing Workspace - Unattended",
+      "duration_ms": 759.643738,
+      "type": "test"
+    },
+    {
+      "name": "Add Modules to Existing Workspace",
+      "duration_ms": 918.323895,
+      "type": "test"
+    },
+    {
+      "name": "Remove Modules from Existing Workspace",
+      "duration_ms": 939.624104,
+      "type": "test"
+    },
+    {
+      "name": "Reinstallation Verification - Preserve Configuration",
+      "duration_ms": 827.652275,
+      "type": "test"
+    },
+    {
+      "name": "Reinstallation - Module Hooks Re-executed",
+      "duration_ms": 866.367308,
+      "type": "test"
+    },
+    {
+      "name": "Installation with External Repository",
+      "duration_ms": 1056.744548,
+      "type": "test"
+    },
+    {
+      "name": "modules: [\"issue-*\"] expands to issue-tracker and issue-tracker-github",
+      "duration_ms": 17.030282,
+      "type": "test"
+    },
+    {
+      "name": "clones DevDuck into devduck/src when not listed in projects",
+      "duration_ms": 4293.256585,
+      "type": "test"
+    },
+    {
+      "name": "resolves relative workspace path from INIT_CWD (npx cache cwd simulation)",
+      "duration_ms": 2753.385164,
+      "type": "test"
+    },
+    {
+      "name": "Installs module from workspace/modules when listed in config",
+      "duration_ms": 474.070099,
+      "type": "test"
+    }
+  ],
+  "fastest20": [
+    "Step 6: Setup Projects",
+    "Verify scripts do not change current directory",
+    "Install additional scripts via importScripts",
+    "Remove scripts when project is removed from config",
+    "Handle missing project package.json gracefully",
+    "Step 2: Download Repos",
+    "Install default scripts from project"
+  ]
+}

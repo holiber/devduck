@@ -1,0 +1,337 @@
+TAP version 13
+# Subtest: Install Project Scripts
+    # Subtest: Install default scripts from project
+    ok 1 - Install default scripts from project
+      ---
+      duration_ms: 3.294434
+      type: 'test'
+      ...
+    # Subtest: Install additional scripts via importScripts
+    ok 2 - Install additional scripts via importScripts
+      ---
+      duration_ms: 2.073637
+      type: 'test'
+      ...
+    # Subtest: Remove scripts when project is removed from config
+    ok 3 - Remove scripts when project is removed from config
+      ---
+      duration_ms: 2.157323
+      type: 'test'
+      ...
+    # Subtest: Handle missing project package.json gracefully
+    ok 4 - Handle missing project package.json gracefully
+      ---
+      duration_ms: 2.233848
+      type: 'test'
+      ...
+    # Subtest: Verify scripts do not change current directory
+    ok 5 - Verify scripts do not change current directory
+      ---
+      duration_ms: 1.832283
+      type: 'test'
+      ...
+    1..5
+ok 1 - Install Project Scripts
+  ---
+  duration_ms: 20.135617
+  type: 'suite'
+  ...
+# Created shared workspace: /workspace/.cache/temp/install-steps-test-1766885191706
+# [36m
+# [Step 1] Checking environment variables...[0m
+# [33m
+#   ⚠ Missing required environment variables:[0m
+# [33m    - TEST_VAR_1 (config) - Test variable 1[0m
+# [36m
+#   ℹ Please:[0m
+# [36m    1. Switch to workspace folder: cd /workspace/.cache/temp/install-steps-test-1766885191706[0m
+# [36m    2. Set missing variables in .env file or environment variables[0m
+# [36m    3. Re-run installation[0m
+# [33m  ⚠ Step 1 requires user input[0m
+# [36m
+# [Step 1] Checking environment variables...[0m
+# [32m  ✓ All required environment variables are present[0m
+# [32m  ✓ Step 1 completed[0m
+# Subtest: Installation Steps
+    # Subtest: Step 1: Check Environment Variables
+    ok 1 - Step 1: Check Environment Variables
+      ---
+      duration_ms: 43.703753
+      type: 'test'
+      ...
+# [36m
+# [Step 2] Downloading repositories...[0m
+# [36m  ℹ No repositories to download[0m
+    # Subtest: Step 2: Download Repos
+    ok 2 - Step 2: Download Repos
+      ---
+      duration_ms: 3.138254
+      type: 'test'
+      ...
+# [36m
+# [Step 3] Downloading projects...[0m
+# [36m  ℹ No projects to download[0m
+# [36m
+# [Step 4] Checking environment variables again...[0m
+# [32m  ✓ All required environment variables are present[0m
+# [32m  ✓ Step 4 completed[0m
+    # Subtest: Step 3: Download Projects
+    ok 3 - Step 3: Download Projects
+      ---
+      duration_ms: 3.877142
+      type: 'test'
+      ...
+# [36m
+# [Step 5] Setting up modules...[0m
+# [36m  ℹ Executing module hooks...[0m
+    # Subtest: Step 4: Check Environment Again
+    ok 4 - Step 4: Check Environment Again
+      ---
+      duration_ms: 11.332263
+      type: 'test'
+      ...
+# [32m  ✓ Step 5 completed[0m
+# [36m
+# [Step 6] Setting up projects...[0m
+# [36m  ℹ No projects to setup[0m
+# [36m
+# [Step 7] Verifying installation...[0m
+# [36m  ℹ Verifying 0 check(s)...[0m
+# [32m  ✓ All verifications passed (0/0 passed, 0 skipped)[0m
+# [32m  ✓ Step 7 completed[0m
+    # Subtest: Step 5: Setup Modules
+    ok 5 - Step 5: Setup Modules
+      ---
+      duration_ms: 14.318969
+      type: 'test'
+      ...
+    # Subtest: Step 6: Setup Projects
+    ok 6 - Step 6: Setup Projects
+      ---
+      duration_ms: 1.664848
+      type: 'test'
+      ...
+    # Subtest: Step 7: Verify Installation
+    ok 7 - Step 7: Verify Installation
+      ---
+      duration_ms: 15.977311
+      type: 'test'
+      ...
+# Cleaned up shared workspace: /workspace/.cache/temp/install-steps-test-1766885191706
+    1..7
+ok 2 - Installation Steps
+  ---
+  duration_ms: 99.649765
+  type: 'suite'
+  ...
+# Subtest: Workspace Installer - GUI/Interactive Mode
+    # Subtest: Fresh Workspace Installation
+        # Subtest: GUI Installation - Fresh Workspace
+        ok 1 - GUI Installation - Fresh Workspace
+          ---
+          duration_ms: 494.545315
+          type: 'test'
+          ...
+        1..1
+    ok 1 - Fresh Workspace Installation
+      ---
+      duration_ms: 495.077918
+      type: 'suite'
+      ...
+    # Subtest: Existing Workspace Operations
+        # Subtest: Detect Existing Workspace
+        ok 1 - Detect Existing Workspace
+          ---
+          duration_ms: 516.681576
+          type: 'test'
+          ...
+        1..1
+    ok 2 - Existing Workspace Operations
+      ---
+      duration_ms: 524.231914
+      type: 'suite'
+      ...
+    1..2
+ok 3 - Workspace Installer - GUI/Interactive Mode
+  ---
+  duration_ms: 1019.743189
+  type: 'suite'
+  ...
+# Subtest: installer: hook load failure is fatal
+ok 4 - installer: hook load failure is fatal
+  ---
+  duration_ms: 588.880349
+  type: 'test'
+  ...
+# Subtest: installer: .env values are available to shell checks (fill-missing)
+ok 5 - installer: .env values are available to shell checks (fill-missing)
+  ---
+  duration_ms: 449.29477
+  type: 'test'
+  ...
+# Subtest: installer: checks without name do not print "Checking undefined"
+ok 6 - installer: checks without name do not print "Checking undefined"
+  ---
+  duration_ms: 496.983809
+  type: 'test'
+  ...
+# Subtest: installer summary: prints INSTALLATION FINISHED WITH ERRORS on failures
+ok 7 - installer summary: prints INSTALLATION FINISHED WITH ERRORS on failures
+  ---
+  duration_ms: 479.339795
+  type: 'test'
+  ...
+# Subtest: Workspace Installer - Unattended Mode
+    # Subtest: Fresh Workspace Installation
+        # Subtest: Unattended Installation from fixture - cursor-only
+        ok 1 - Unattended Installation from fixture - cursor-only
+          ---
+          duration_ms: 569.818993
+          type: 'test'
+          ...
+        # Subtest: Unattended Installation - Fresh Workspace
+        ok 2 - Unattended Installation - Fresh Workspace
+          ---
+          duration_ms: 479.583634
+          type: 'test'
+          ...
+        # Subtest: Unattended Installation with Config File
+        ok 3 - Unattended Installation with Config File
+          ---
+          duration_ms: 497.185853
+          type: 'test'
+          ...
+        # Subtest: Unattended Installation with workspace.config.json (local folder project src)
+        ok 4 - Unattended Installation with workspace.config.json (local folder project src)
+          ---
+          duration_ms: 541.336667
+          type: 'test'
+          ...
+        # Subtest: Unattended Installation with workspace.config.json seedFiles[] copies seed files/folders
+        ok 5 - Unattended Installation with workspace.config.json seedFiles[] copies seed files/folders
+          ---
+          duration_ms: 503.329458
+          type: 'test'
+          ...
+        # Subtest: Unattended Installation - Full Structure Verification
+        ok 6 - Unattended Installation - Full Structure Verification
+          ---
+          duration_ms: 385.379285
+          type: 'test'
+          ...
+        1..6
+    ok 1 - Fresh Workspace Installation
+      ---
+      duration_ms: 2977.526424
+      type: 'suite'
+      ...
+    # Subtest: Existing Workspace Operations
+        # Subtest: Reinstall Existing Workspace - Unattended
+        ok 1 - Reinstall Existing Workspace - Unattended
+          ---
+          duration_ms: 759.643738
+          type: 'test'
+          ...
+        # Subtest: Add Modules to Existing Workspace
+        ok 2 - Add Modules to Existing Workspace
+          ---
+          duration_ms: 918.323895
+          type: 'test'
+          ...
+        # Subtest: Remove Modules from Existing Workspace
+        ok 3 - Remove Modules from Existing Workspace
+          ---
+          duration_ms: 939.624104
+          type: 'test'
+          ...
+        # Subtest: Reinstallation Verification - Preserve Configuration
+        ok 4 - Reinstallation Verification - Preserve Configuration
+          ---
+          duration_ms: 827.652275
+          type: 'test'
+          ...
+        # Subtest: Reinstallation - Module Hooks Re-executed
+        ok 5 - Reinstallation - Module Hooks Re-executed
+          ---
+          duration_ms: 866.367308
+          type: 'test'
+          ...
+        1..5
+    ok 2 - Existing Workspace Operations
+      ---
+      duration_ms: 4312.178271
+      type: 'suite'
+      ...
+    # Subtest: External Repository Installation
+        # Subtest: Installation with External Repository
+        ok 1 - Installation with External Repository
+          ---
+          duration_ms: 1056.744548
+          type: 'test'
+          ...
+        1..1
+    ok 3 - External Repository Installation
+      ---
+      duration_ms: 1056.921005
+      type: 'suite'
+      ...
+    1..3
+ok 8 - Workspace Installer - Unattended Mode
+  ---
+  duration_ms: 8347.121981
+  type: 'suite'
+  ...
+# Subtest: workspace modules patterns
+    # Subtest: modules: ["issue-*"] expands to issue-tracker and issue-tracker-github
+    ok 1 - modules: ["issue-*"] expands to issue-tracker and issue-tracker-github
+      ---
+      duration_ms: 17.030282
+      type: 'test'
+      ...
+    1..1
+ok 9 - workspace modules patterns
+  ---
+  duration_ms: 17.659485
+  type: 'suite'
+  ...
+# Subtest: devduck new (npx-friendly bootstrap)
+    # Subtest: clones DevDuck into devduck/src when not listed in projects
+    ok 1 - clones DevDuck into devduck/src when not listed in projects
+      ---
+      duration_ms: 4293.256585
+      type: 'test'
+      ...
+    # Subtest: resolves relative workspace path from INIT_CWD (npx cache cwd simulation)
+    ok 2 - resolves relative workspace path from INIT_CWD (npx cache cwd simulation)
+      ---
+      duration_ms: 2753.385164
+      type: 'test'
+      ...
+    1..2
+ok 10 - devduck new (npx-friendly bootstrap)
+  ---
+  duration_ms: 7047.559841
+  type: 'suite'
+  ...
+# Subtest: Workspace Installer - Workspace-local modules/
+    # Subtest: Installs module from workspace/modules when listed in config
+    ok 1 - Installs module from workspace/modules when listed in config
+      ---
+      duration_ms: 474.070099
+      type: 'test'
+      ...
+    1..1
+ok 11 - Workspace Installer - Workspace-local modules/
+  ---
+  duration_ms: 474.710524
+  type: 'suite'
+  ...
+1..11
+# tests 34
+# suites 12
+# pass 34
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 8898.714188

@@ -13,7 +13,10 @@
     "postinstall": "npx playwright install chromium",
     "devduck:service": "tsx scripts/devduck-service/src/service.ts",
     "devduck:launch": "tsx scripts/devduck-service/src/cli.ts",
-    "test": "tsx scripts/run-tests.ts"
+    "test": "tsx scripts/run-tests.ts",
+    "test:pw": "playwright test",
+    "test:installer:pw": "playwright test tests/installer/",
+    "test:smoke": "playwright test --grep @smoke"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.25.1",
