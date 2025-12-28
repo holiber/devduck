@@ -162,7 +162,7 @@ export async function runInstaller(workspacePath: string, options: RunInstallerO
     let inputIndex = 0;
     
     // Installer tests run in CI without user secrets; however some modules (e.g. cursor) require tokens.
-    // Provide deterministic dummy values so pre-install checks don't block unattended installs.
+    // Provide deterministic dummy values so installer checks don't block unattended installs.
     const needsCursor = await workspaceNeedsCursorModule({
       workspacePath,
       modulesArg: options.modules,

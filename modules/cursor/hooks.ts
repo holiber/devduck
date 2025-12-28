@@ -220,12 +220,8 @@ export default {
         }
       }
       
-      // Log summary
-      const successfulTests = testResults.filter(r => r.success).length;
-      const totalTests = testResults.length;
-      if (totalTests > 0) {
-        console.log(`\nMCP servers tested: ${successfulTests}/${totalTests} successful`);
-      }
+      // Avoid printing a global-looking MCP health summary here.
+      // The installer prints a canonical MCP summary at the end based on persisted results.
       
       // Fail installation if non-optional servers failed
       if (failedNonOptionalServers.length > 0) {

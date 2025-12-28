@@ -13,9 +13,10 @@ import {
 import { checkFileExists, isFilePath } from './installer-utils.js';
 import { makeHttpRequest } from './http-utils.js';
 import { createVariableReplacer } from './config-utils.js';
+import { getCheckDisplayName } from './types.js';
 
 export type CheckItem = {
-  name: string;
+  name?: string;
   description?: string;
   test?: string;
   install?: string;
@@ -51,6 +52,22 @@ export function createCheckEngine(params: {
 } {
   const { workspaceRoot, projectRoot, envFilePath, projectsDir, autoYes, log } = params;
 
+  function mergeEnvFillMissing(base: NodeJS.ProcessEnv, fromDotEnv: Record<string, string>): NodeJS.ProcessEnv {
+    const merged: NodeJS.ProcessEnv = { ...base };
+    for (const [k, v] of Object.entries(fromDotEnv)) {
+      if (merged[k] === undefined || merged[k] === '') {
+        merged[k] = v;
+      }
+    }
+    return merged;
+  }
+
+  function extractHttpCode(output: string | null | undefined): string | null {
+    if (!output) return null;
+    const last = output.trim().split('\n').pop()?.trim() || '';
+    return /^\d{3}$/.test(last) ? last : null;
+  }
+
   const { replaceVariablesWithLog, replaceVariablesInObjectWithLog } = createVariableReplacer({
     log,
     print,
@@ -58,20 +75,22 @@ export function createCheckEngine(params: {
   });
 
   async function installSoftware(item: CheckItem): Promise<boolean> {
-    const { name, description, install } = item;
+    const displayName = getCheckDisplayName(item);
+    const name = item.name ?? displayName;
+    const { description, install } = item;
 
-    print(`  ${symbols.info} Installation command found for ${name}`, 'cyan');
+    print(`  ${symbols.info} Installation command found for ${displayName}`, 'cyan');
     log(`Installation command: ${install}`);
 
     // Ask user if they want to install (unless running in non-interactive mode)
     let answer = 'y';
     if (!autoYes) {
       const rl = createReadlineInterface();
-      answer = await promptUser(rl, `  Do you want to install ${name}? (y/n) [y]: `);
+      answer = await promptUser(rl, `  Do you want to install ${displayName}? (y/n) [y]: `);
       rl.close();
     } else {
-      print(`  ${symbols.info} Non-interactive mode: auto-installing ${name}`, 'cyan');
-      log(`Non-interactive mode: auto-installing ${name}`);
+      print(`  ${symbols.info} Non-interactive mode: auto-installing ${displayName}`, 'cyan');
+      log(`Non-interactive mode: auto-installing ${displayName}`);
     }
 
     if (answer.toLowerCase() === 'n' || answer.toLowerCase() === 'no') {
@@ -80,14 +99,15 @@ export function createCheckEngine(params: {
       return false;
     }
 
-    print(`  Installing ${name}...`, 'cyan');
+    print(`  Installing ${displayName}...`, 'cyan');
     log(`Executing installation command: ${install}`);
 
     try {
+      const envForCommand = mergeEnvFillMissing(process.env, readEnvFile(envFilePath));
       const isSudo = requiresSudo(install);
       const result = isSudo
-        ? executeInteractiveCommand(install)
-        : executeCommand(install, { shell: '/bin/bash', cwd: item._execCwd });
+        ? executeInteractiveCommand(install, { cwd: item._execCwd, env: envForCommand })
+        : executeCommand(install, { shell: '/bin/bash', cwd: item._execCwd, env: envForCommand });
 
       if (result.success) {
         print(`  ${symbols.success} Installation command completed`, 'green');
@@ -115,10 +135,11 @@ export function createCheckEngine(params: {
     skipInstall = false
   ): Promise<CheckResult> {
     const { name, description, test, install } = item;
+    const displayName = getCheckDisplayName(item);
     const contextSuffix = context ? ` [${context}]` : '';
 
-    print(`Checking ${name}${contextSuffix}...`, 'cyan');
-    log(`Checking command: ${name} (${description})`);
+    print(`Checking ${displayName}${contextSuffix}...`, 'cyan');
+    log(`Checking command: ${displayName} (${description})`);
 
     // Read .env file for variable substitution
     const env = readEnvFile(envFilePath);
@@ -131,13 +152,13 @@ export function createCheckEngine(params: {
     }
 
     if (!effectiveTest) {
-      print(`${symbols.warning} ${name} - No test command specified`, 'yellow');
+      print(`${symbols.warning} ${displayName} - No test command specified`, 'yellow');
       if (description) {
         print(description, 'yellow');
       }
-      log(`No test command specified for ${name}`);
+      log(`No test command specified for ${displayName}`);
       return {
-        name,
+        name: displayName,
         passed: false,
         version: null,
         note: 'No test command specified'
@@ -155,18 +176,18 @@ export function createCheckEngine(params: {
 
         if (fileCheck.exists && (fileCheck.isFile || fileCheck.isDirectory)) {
           const typeLabel = fileCheck.isDirectory ? 'Directory' : 'File';
-          print(`${symbols.success} ${name} - OK`, 'green');
+          print(`${symbols.success} ${displayName} - OK`, 'green');
           log(`Result: SUCCESS - ${typeLabel} exists: ${fileCheck.path}`);
 
           return {
-            name,
+            name: displayName,
             passed: true,
             version: fileCheck.isDirectory ? 'directory exists' : 'file exists',
             filePath: fileCheck.path
           };
         }
 
-        print(`${symbols.error} ${name} - Path not found: ${testWithVars}`, 'red');
+        print(`${symbols.error} ${displayName} - Path not found: ${testWithVars}`, 'red');
         if (description) {
           print(description, 'red');
         }
@@ -181,17 +202,17 @@ export function createCheckEngine(params: {
           const installed = await installSoftware(itemWithVars);
 
           if (installed) {
-            print(`Re-checking ${name}${contextSuffix}...`, 'cyan');
-            log(`Re-checking ${name} after installation`);
+            print(`Re-checking ${displayName}${contextSuffix}...`, 'cyan');
+            log(`Re-checking ${displayName} after installation`);
 
             const recheckFile = checkFileExists(testWithVars, { baseDir: projectRoot });
             if (recheckFile.exists && (recheckFile.isFile || recheckFile.isDirectory)) {
               const typeLabel = recheckFile.isDirectory ? 'Directory' : 'File';
-              print(`${symbols.success} ${name} - OK`, 'green');
+              print(`${symbols.success} ${displayName} - OK`, 'green');
               log(`Re-check SUCCESS - ${typeLabel} exists: ${recheckFile.path}`);
 
               return {
-                name,
+                name: displayName,
                 passed: true,
                 version: recheckFile.isDirectory ? 'directory exists' : 'file exists',
                 filePath: recheckFile.path,
@@ -199,14 +220,14 @@ export function createCheckEngine(params: {
               };
             }
 
-            print(`${symbols.warning} ${name} - Installation completed but path not found`, 'yellow');
+            print(`${symbols.warning} ${displayName} - Installation completed but path not found`, 'yellow');
             if (description) {
               print(description, 'yellow');
             }
             log(`Re-check FAILED - Installation may have succeeded but path not found`);
 
             return {
-              name,
+              name: displayName,
               passed: false,
               version: null,
               note: 'Installation attempted but path not found'
@@ -215,7 +236,7 @@ export function createCheckEngine(params: {
         }
 
         return {
-          name,
+          name: displayName,
           passed: false,
           version: null,
           filePath: fileCheck.path
@@ -256,8 +277,11 @@ export function createCheckEngine(params: {
         }
       }
 
+      const envForCommand = mergeEnvFillMissing(process.env, env);
       const isSudo = requiresSudo(command);
-      const result = isSudo ? executeInteractiveCommand(command) : executeCommand(command, execOptions);
+      const result = isSudo
+        ? executeInteractiveCommand(command, { cwd: execOptions.cwd, env: envForCommand })
+        : executeCommand(command, { ...execOptions, env: envForCommand });
 
       // For API commands, check if output is "true" to determine success
       let commandSuccess = result.success;
@@ -269,9 +293,9 @@ export function createCheckEngine(params: {
       if (commandSuccess) {
         const isTestCheck = item.type === 'test' || (item.type === 'auth' && item.test);
         const version = isSudo ? 'passed' : (result.output || (isTestCheck ? 'OK' : 'unknown'));
-        print(`${symbols.success} ${name} - ${version}`, 'green');
+        print(`${symbols.success} ${displayName} - ${version}`, 'green');
         log(`Result: SUCCESS - Version: ${version}`);
-        return { name, passed: true, version };
+        return { name: displayName, passed: true, version };
       }
 
       const itemVar = (item as { var?: string }).var;
@@ -282,11 +306,20 @@ export function createCheckEngine(params: {
         errorLabel = `the ${itemVar} exist but "${testWithVars}" returned ${returnValue}`;
       } else if (item.type === 'auth' && itemVar) {
         errorLabel = `${itemVar} check failed`;
+      } else if (item.type === 'test') {
+        const httpCode = extractHttpCode(result.output);
+        if (httpCode) {
+          errorLabel = `HTTP ${httpCode}`;
+        } else if (result.output && result.output.trim()) {
+          errorLabel = `Failed: ${result.output.trim().split('\n').pop()?.trim()}`;
+        } else {
+          errorLabel = `Failed (${result.error || 'exit'})`;
+        }
       } else {
         errorLabel = 'Not installed';
       }
 
-      print(`${symbols.error} ${name} - ${errorLabel}`, 'red');
+      print(`${symbols.error} ${displayName} - ${errorLabel}`, 'red');
       if (description) {
         print(description, 'red');
       }
@@ -296,33 +329,38 @@ export function createCheckEngine(params: {
       }
       log(`Result: FAILED - ${errorLabel}${result.error ? ` (${result.error})` : ''}`);
 
+      if (item.type === 'test') {
+        print(`  ${symbols.info} See log: ${path.join(workspaceRoot, '.cache', 'install.log')} (search: ${displayName})`, 'cyan');
+      }
+
       if (install && !skipInstall) {
         const itemWithCwd = { ...item, _execCwd: execOptions.cwd };
         const installed = await installSoftware(itemWithCwd);
         if (installed) {
-          print(`Re-checking ${name}${contextSuffix}...`, 'cyan');
-          log(`Re-checking ${name} after installation`);
+          print(`Re-checking ${displayName}${contextSuffix}...`, 'cyan');
+          log(`Re-checking ${displayName} after installation`);
 
+          const recheckEnv = mergeEnvFillMissing(process.env, env);
           const recheckResult = isSudo
-            ? executeInteractiveCommand(command)
-            : executeCommand(command, execOptions);
+            ? executeInteractiveCommand(command, { cwd: execOptions.cwd, env: recheckEnv })
+            : executeCommand(command, { ...execOptions, env: recheckEnv });
 
           if (recheckResult.success) {
             const isTestCheck = item.type === 'test' || (item.type === 'auth' && item.test);
             const version = isSudo ? 'passed' : (recheckResult.output || (isTestCheck ? 'OK' : 'unknown'));
-            print(`${symbols.success} ${name} - ${version}`, 'green');
+            print(`${symbols.success} ${displayName} - ${version}`, 'green');
             log(`Re-check SUCCESS - Version: ${version}`);
-            return { name, passed: true, version, note: 'Installed during setup' };
+            return { name: displayName, passed: true, version, note: 'Installed during setup' };
           }
 
           const retryErrorLabel = isAuth ? `${itemVar} check failed` : 'Installation completed but verification failed';
-          print(`${symbols.warning} ${name} - ${retryErrorLabel}`, 'yellow');
+          print(`${symbols.warning} ${displayName} - ${retryErrorLabel}`, 'yellow');
           if (description) {
             print(description, 'yellow');
           }
           log(`Re-check FAILED - ${retryErrorLabel}`);
           return {
-            name,
+            name: displayName,
             passed: false,
             version: null,
             note: isAuth ? retryErrorLabel : 'Installation attempted but verification failed'
@@ -331,14 +369,14 @@ export function createCheckEngine(params: {
       }
 
       return {
-        name,
+        name: displayName,
         passed: false,
         version: null,
         note: isAuth ? `${itemVar} check failed` : undefined
       };
     } catch (error) {
       const err = error as Error;
-      print(`${symbols.error} ${name} - Error: ${err.message}`, 'red');
+      print(`${symbols.error} ${displayName} - Error: ${err.message}`, 'red');
       if (description) {
         print(description, 'red');
       }
@@ -347,16 +385,17 @@ export function createCheckEngine(params: {
         print(docs, 'red');
       }
       log(`Result: ERROR - ${err.message}`);
-      return { name, passed: false, version: null };
+      return { name: displayName, passed: false, version: null };
     }
   }
 
   async function checkHttpAccess(item: CheckItem, context: string | null = null): Promise<CheckResult> {
     const { name, description, test } = item;
+    const displayName = getCheckDisplayName(item);
     const contextSuffix = context ? ` [${context}]` : '';
 
-    print(`Checking ${name}${contextSuffix}...`, 'cyan');
-    log(`Checking HTTP access: ${name} (${description})`);
+    print(`Checking ${displayName}${contextSuffix}...`, 'cyan');
+    log(`Checking HTTP access: ${displayName} (${description})`);
     log(`Request: ${test}`);
 
     try {
@@ -371,12 +410,12 @@ export function createCheckEngine(params: {
       const result = await makeHttpRequest(method, url);
 
       if (result.success) {
-        print(`${symbols.success} ${name} - OK`, 'green');
+        print(`${symbols.success} ${displayName} - OK`, 'green');
         log(`Result: SUCCESS - Status: ${result.statusCode}`);
-        return { name, passed: true, statusCode: result.statusCode ?? undefined };
+        return { name: displayName, passed: true, statusCode: result.statusCode ?? undefined };
       }
 
-      print(`${symbols.error} ${name} - Failed (${result.statusCode || result.error})`, 'red');
+      print(`${symbols.error} ${displayName} - Failed (${result.statusCode || result.error})`, 'red');
       if (description) {
         print(description, 'red');
       }
@@ -385,10 +424,10 @@ export function createCheckEngine(params: {
         print(docs, 'red');
       }
       log(`Result: FAILED - Status: ${result.statusCode || 'N/A'}, Error: ${result.error || 'N/A'}`);
-      return { name, passed: false, error: result.error || `HTTP ${result.statusCode}` };
+      return { name: displayName, passed: false, error: result.error || `HTTP ${result.statusCode}` };
     } catch (error) {
       const err = error as Error;
-      print(`${symbols.error} ${name} - Error: ${err.message}`, 'red');
+      print(`${symbols.error} ${displayName} - Error: ${err.message}`, 'red');
       if (description) {
         print(description, 'red');
       }
@@ -397,7 +436,7 @@ export function createCheckEngine(params: {
         print(docs, 'red');
       }
       log(`Result: ERROR - ${err.message}`);
-      return { name, passed: false, error: err.message };
+      return { name: displayName, passed: false, error: err.message };
     }
   }
 

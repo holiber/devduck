@@ -14,7 +14,6 @@ import path from 'path';
 import { spawnSync, execSync } from 'child_process';
 import { fileURLToPath } from 'url';
 import { compareVersions } from 'compare-versions';
-import { findWorkspaceRoot } from './workspace-root.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -60,22 +59,6 @@ function findArcadiaRoot(): string | null {
   const envRoot = process.env.ARCADIA_ROOT;
   if (envRoot && fs.existsSync(path.join(envRoot, '.arcadia.root'))) {
     return envRoot;
-  }
-
-  // Check cache file
-  const workspaceRoot = findWorkspaceRoot();
-  if (workspaceRoot) {
-    const cachePath = path.join(workspaceRoot, '.cache', 'pre-install-check.json');
-    if (fs.existsSync(cachePath)) {
-      try {
-        const cache = JSON.parse(fs.readFileSync(cachePath, 'utf8'));
-        if (cache.arcadiaRoot && fs.existsSync(cache.arcadiaRoot)) {
-          return cache.arcadiaRoot;
-        }
-      } catch {
-        // Cache invalid, continue to command
-      }
-    }
   }
 
   // Execute `arc root` command

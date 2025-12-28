@@ -14,7 +14,7 @@ checks:
     name: "cursor-api-key-valid"
     description: "Probes Cursor API to check the key works"
     var: "CURSOR_API_KEY"
-    test: "sh -c 'test -n \"$CURSOR_API_KEY\" || exit 1; base=\"${CURSOR_API_BASE_URL:-https://api.cursor.sh}\"; code=\"$(curl -s -o /dev/null -w \"%{http_code}\" \"$base/v1/models\" -H \"Authorization: Bearer $CURSOR_API_KEY\")\"; test \"$code\" = \"200\" -o \"$code\" = \"429\"'"
+    test: "sh -c 'test -n \"$CURSOR_API_KEY\" || exit 1; base=\"${CURSOR_API_BASE_URL:-https://api.cursor.sh}\"; code=\"$(curl -s -o /dev/null -w \"%{http_code}\" \"$base/v1/models\" -H \"Authorization: Bearer $CURSOR_API_KEY\")\"; echo \"$code\"; test \"$code\" = \"200\" -o \"$code\" = \"429\"'"
 ---
 # Cursor Module
 

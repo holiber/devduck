@@ -14,6 +14,7 @@ import { readJSON } from '../lib/config.js';
 import { print, symbols } from '../utils.js';
 import { loadModulesForChecks, createCheckFunctions } from './install-common.js';
 import { markStepCompleted, type ModuleResult, getExecutedChecks, trackCheckExecution, generateCheckId } from './install-state.js';
+import { loadInstallState } from './install-state.js';
 import { processCheck } from './process-check.js';
 import { executeHooksForStage, createHookContext } from './module-hooks.js';
 import { loadModuleResources } from './module-loader.js';
@@ -161,13 +162,33 @@ export async function runStep5SetupModules(
   const preInstallContexts = loadedModules.map(module => 
     createHookContext(workspaceRoot, module, loadedModules)
   );
-  await executeHooksForStage(loadedModules, 'pre-install', preInstallContexts);
+  const preInstallResults = await executeHooksForStage(loadedModules, 'pre-install', preInstallContexts);
+  const preInstallFailures = preInstallResults.filter(r => !r.success);
+  if (preInstallFailures.length > 0) {
+    const first = preInstallFailures[0];
+    const msg = `Module ${first.module} ${first.hook} hook failed: ${(first.errors || []).join(', ') || 'unknown error'}`;
+    print(`  ${symbols.error} ${msg}`, 'red');
+    if (log) log(`[Step 5] ERROR: ${msg}`);
+    const result: SetupModulesStepResult = { modules: [] };
+    markStepCompleted(workspaceRoot, 'setup-modules', result, msg);
+    return result;
+  }
   
   // Install hooks
   const installContexts = loadedModules.map(module => 
     createHookContext(workspaceRoot, module, loadedModules)
   );
-  await executeHooksForStage(loadedModules, 'install', installContexts);
+  const installHookResults = await executeHooksForStage(loadedModules, 'install', installContexts);
+  const installFailures = installHookResults.filter(r => !r.success);
+  if (installFailures.length > 0) {
+    const first = installFailures[0];
+    const msg = `Module ${first.module} ${first.hook} hook failed: ${(first.errors || []).join(', ') || 'unknown error'}`;
+    print(`  ${symbols.error} ${msg}`, 'red');
+    if (log) log(`[Step 5] ERROR: ${msg}`);
+    const result: SetupModulesStepResult = { modules: [] };
+    markStepCompleted(workspaceRoot, 'setup-modules', result, msg);
+    return result;
+  }
   
   // Post-install hooks
   const postInstallContexts = loadedModules.map(module => 
@@ -287,6 +308,11 @@ export async function installStep5SetupModules(ctx: InstallContext): Promise<Ste
     (m) => ctx.logger.info(m),
     ctx.autoYes
   );
+
+  const step = loadInstallState(ctx.workspaceRoot).steps['setup-modules'];
+  if (step?.error) {
+    return { status: 'failed', error: step.error };
+  }
 
   const installedModules: Record<string, string> = {};
   if (res?.modules) {

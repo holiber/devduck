@@ -8,8 +8,8 @@ import { showStatus } from './install/status.js';
 import { checkTokensOnly } from './install/tokens.js';
 import { runSelectedChecks } from './install/selected-checks.js';
 import { installWorkspace } from './install/workspace-install.js';
-import { runLegacyInstallationCheck } from './install/legacy-install-check.js';
 import { createInstallRuntime } from './install/cli-runtime.js';
+import { printInstallSummary } from './install/summary.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -98,6 +98,8 @@ async function getInstallSteps(): Promise<InstallStep[]> {
  * Main installation check function
  */
 async function main(): Promise<void> {
+  const isNpmInstallLifecycle = process.env.npm_lifecycle_event === 'install' || process.env.npm_command === 'install';
+
   if (flags.statusOnly) {
     await showStatus({ workspaceRoot: paths.workspaceRoot, cacheDir: paths.cacheDir });
     return;
@@ -142,7 +144,7 @@ async function main(): Promise<void> {
 
   if (flags.workspacePath) {
     print(`\n${symbols.search} Installing workspace...\n`, 'blue');
-    await installWorkspace({
+    const result = await installWorkspace({
       workspaceRoot: paths.workspaceRoot,
       projectRoot: PROJECT_ROOT,
       configFilePath: paths.configFile,
@@ -158,17 +160,36 @@ async function main(): Promise<void> {
       logger: getLogger(),
       getInstallSteps
     });
-    process.exit(0);
+    const { hasFailures } = printInstallSummary({ workspaceRoot: paths.workspaceRoot, logFilePath: paths.logFile });
+    if (isNpmInstallLifecycle) process.exit(0);
+    if (result.status === 'paused') process.exit(2);
+    process.exit(hasFailures ? 1 : 0);
   }
 
-  print(`\n${symbols.search} Checking environment installation...\n`, 'blue');
-  await runLegacyInstallationCheck({
+  // Default behavior: run the step-based installer against the current workspaceRoot.
+  print(`\n${symbols.search} Installing workspace...\n`, 'blue');
+  const result = await installWorkspace({
     workspaceRoot: paths.workspaceRoot,
     projectRoot: PROJECT_ROOT,
     configFilePath: paths.configFile,
+    envFilePath: paths.envFile,
+    cacheDir: paths.cacheDir,
+    logFilePath: paths.logFile,
+    projectsDir: paths.projectsDir,
     autoYes: flags.autoYes,
-    log
+    installModules: flags.installModules,
+    workspaceConfigPath: flags.workspaceConfigPath,
+    configFilePathOverride: flags.configFilePath,
+    log,
+    logger: getLogger(),
+    getInstallSteps
   });
+
+  const { hasFailures } = printInstallSummary({ workspaceRoot: paths.workspaceRoot, logFilePath: paths.logFile });
+
+  if (isNpmInstallLifecycle) process.exit(0);
+  if (result.status === 'paused') process.exit(2);
+  process.exit(hasFailures ? 1 : 0);
 }
 
 // Run main function

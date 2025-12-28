@@ -10,7 +10,13 @@ import path from 'path';
 import { readJSON } from '../lib/config.js';
 import { print, symbols } from '../utils.js';
 import { loadModulesForChecks, loadProjectsForChecks, createCheckFunctions } from './install-common.js';
-import { markStepCompleted, type VerificationResult, getExecutedChecks, trackCheckExecution, generateCheckId } from './install-state.js';
+import {
+  markStepCompleted,
+  type VerificationResult,
+  getExecutedChecks,
+  trackCheckExecution,
+  generateCheckId
+} from './install-state.js';
 import { processCheck } from './process-check.js';
 import type { WorkspaceConfig } from '../schemas/workspace-config.zod.js';
 import type { CheckItem, CheckResult } from './types.js';
@@ -173,19 +179,28 @@ export async function runStep7VerifyInstallation(
   }
   
   const result: VerifyInstallationStepResult = { results: verificationResults };
-  markStepCompleted(workspaceRoot, 'verify-installation', verificationResults);
+  const errorMsg = failed > 0 ? `${failed} verification check(s) failed` : undefined;
+  markStepCompleted(workspaceRoot, 'verify-installation', verificationResults, errorMsg);
   
   if (log) {
     log(`[Step 7] Completed: ${passed} passed, ${failed} failed, ${skipped} skipped`);
   }
   
-  print(`  ${symbols.success} Step 7 completed`, 'green');
+  if (failed > 0) {
+    print(`  ${symbols.warning} Step 7 completed with errors`, 'yellow');
+  } else {
+    print(`  ${symbols.success} Step 7 completed`, 'green');
+  }
   
   return result;
 }
 
 export async function installStep7VerifyInstallation(ctx: InstallContext): Promise<StepOutcome> {
-  await runStep7VerifyInstallation(ctx.workspaceRoot, ctx.projectRoot, (m) => ctx.logger.info(m), ctx.autoYes);
-  return { status: 'ok' };
+  const res = await runStep7VerifyInstallation(ctx.workspaceRoot, ctx.projectRoot, (m) => ctx.logger.info(m), ctx.autoYes);
+  const failed = res.results.filter((r) => r.passed === false).length;
+  if (failed > 0) {
+    return { status: 'failed', error: `${failed} verification check(s) failed`, result: res.results };
+  }
+  return { status: 'ok', result: res.results };
 }
 

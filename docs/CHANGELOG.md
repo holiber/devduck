@@ -93,7 +93,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added - 2025-12-24
 
-- ✅ **Pre-install checks system** - Modules can now define pre-install checks to verify required environment variables and validate token functionality
+- ✅ **Checks system** - Modules can define checks to verify required environment variables and validate token functionality
   - Auth checks verify that required tokens are present before installation
   - Test checks validate token functionality using `curl` commands or HTTP requests
   - Checks are collected from all modules and projects before installation

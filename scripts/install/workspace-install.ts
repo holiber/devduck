@@ -5,8 +5,9 @@ import type { WorkspaceConfig } from '../schemas/workspace-config.zod.js';
 import { setupEnvFile } from './env.js';
 import { generateMcpJson } from './mcp.js';
 import { createInstallLogger, type InstallLogger } from './logger.js';
-import { runInstall, type InstallContext, type InstallStep } from './runner.js';
+import { runInstall, type InstallContext, type InstallStep, type RunInstallResult } from './runner.js';
 import { print, symbols } from '../utils.js';
+import { loadInstallState, saveInstallState } from './install-state.js';
 
 export async function installWorkspace(params: {
   workspaceRoot: string;
@@ -23,7 +24,7 @@ export async function installWorkspace(params: {
   log: (message: string) => void;
   logger: InstallLogger | null;
   getInstallSteps: () => Promise<InstallStep[]>;
-}): Promise<void> {
+}): Promise<RunInstallResult> {
   const {
     workspaceRoot,
     projectRoot,
@@ -167,6 +168,21 @@ export async function installWorkspace(params: {
 
   generateMcpJson(workspaceRoot, { log, print, symbols, moduleChecks });
 
+  // Check MCP servers (canonical results persisted into install-state.json)
+  try {
+    const { readJSON } = await import('../lib/config.js');
+    const { checkMcpServers } = await import('./mcp.js');
+    const mcpJsonPath = path.join(workspaceRoot, '.cursor', 'mcp.json');
+    const mcpConfig = readJSON(mcpJsonPath) as { mcpServers?: Record<string, Record<string, unknown>> } | null;
+    const mcpServers = mcpConfig?.mcpServers || {};
+    const mcpResults = await checkMcpServers(mcpServers, workspaceRoot, { log, print, symbols });
+    const state = loadInstallState(workspaceRoot);
+    state.mcpServers = mcpResults as unknown[];
+    saveInstallState(workspaceRoot, state);
+  } catch {
+    // ignore MCP check failures here; they will be reflected via missing results and/or later checks
+  }
+
   const steps = await getInstallSteps();
 
   const installLogger = logger ?? createInstallLogger(workspaceRoot, { filePath: logFilePath });
@@ -182,11 +198,11 @@ export async function installWorkspace(params: {
   const result = await runInstall(steps, ctx);
   if (result.status === 'paused') {
     print(`\n${symbols.warning} Installation paused: Please set missing environment variables and re-run`, 'yellow');
-    return;
+    return result;
   }
   if (result.status === 'failed') {
     print(`\n${symbols.error} Installation failed: ${result.error}`, 'red');
-    process.exit(1);
+    return result;
   }
 
   // Install project scripts to workspace package.json
@@ -221,13 +237,14 @@ export async function installWorkspace(params: {
     fs.mkdirSync(cacheDevduckDir, { recursive: true });
   }
 
-  print(`\n${symbols.success} Workspace installation completed!`, 'green');
   log(`Workspace installation completed at ${new Date().toISOString()}`);
 
   // Ensure cache dir exists (best effort) to match old expectations.
   if (!fs.existsSync(cacheDir)) {
     fs.mkdirSync(cacheDir, { recursive: true });
   }
+
+  return result;
 }
 
 
