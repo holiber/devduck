@@ -1,16 +1,16 @@
-import { describe, test, beforeEach, afterEach } from 'node:test';
+import { test } from '@playwright/test';
 import assert from 'node:assert';
 import path from 'node:path';
-import fs from 'fs';
+import fs from 'node:fs';
 
-import provider from '../../modules/issue-tracker/providers/smogcheck-provider/index.js';
+import provider from '../../modules/issue-tracker/providers/smogcheck-provider/index.ts';
 import {
   IssueTrackerProviderSchema,
   IssueSchema,
   CommentSchema,
   PRReferenceSchema,
   DownloadResourcesResultSchema
-} from '../../modules/issue-tracker/schemas/contract.js';
+} from '../../modules/issue-tracker/schemas/contract.ts';
 
 import {
   clearProvidersForTests,
@@ -18,16 +18,16 @@ import {
   getProvider,
   getProvidersByType,
   setProviderTypeSchema
-} from '../../scripts/lib/provider-registry.js';
-import { findWorkspaceRoot } from '../../scripts/lib/workspace-root.js';
+} from '../../scripts/lib/provider-registry.ts';
+import { findWorkspaceRoot } from '../../scripts/lib/workspace-root.ts';
 import {
   getIssueCacheDir,
   getResourcesJsonPath,
   getIssueResourcesDir,
   readResourcesJson
-} from '../../modules/issue-tracker/scripts/resources.js';
+} from '../../modules/issue-tracker/scripts/resources.ts';
 
-describe('issue-tracker: smogcheck-provider', () => {
+test.describe('issue-tracker: smogcheck-provider', () => {
   test('matches IssueTrackerProvider contract schema', () => {
     const res = IssueTrackerProviderSchema.safeParse(provider);
     assert.ok(res.success, res.success ? '' : res.error.message);
@@ -117,13 +117,11 @@ describe('issue-tracker: smogcheck-provider', () => {
   });
 
   test('downloadResources creates correct directory structure', async () => {
-    // Use workspace root if found, otherwise use current working directory (project root)
     const workspaceRoot = findWorkspaceRoot(process.cwd()) || process.cwd();
 
     const issueId = 'issue-1';
     const result = await provider.downloadResources({ issueId, maxDistance: 2 });
 
-    // Verify result matches schema
     const parsed = DownloadResourcesResultSchema.safeParse(result);
     assert.ok(parsed.success, parsed.success ? '' : parsed.error.message);
     assert.strictEqual(result.issueId, issueId);
@@ -131,7 +129,6 @@ describe('issue-tracker: smogcheck-provider', () => {
     assert.ok(typeof result.resourcesJsonPath === 'string');
     assert.ok(result.downloadedCount > 0);
 
-    // Verify directories exist
     const issueDir = getIssueCacheDir(workspaceRoot, issueId);
     const resourcesDir = getIssueResourcesDir(workspaceRoot, issueId);
     const resourcesJsonPath = getResourcesJsonPath(workspaceRoot, issueId);
@@ -142,22 +139,18 @@ describe('issue-tracker: smogcheck-provider', () => {
     assert.strictEqual(result.resourcesPath, resourcesDir);
     assert.strictEqual(result.resourcesJsonPath, resourcesJsonPath);
 
-    // Cleanup
     if (fs.existsSync(issueDir)) {
       fs.rmSync(issueDir, { recursive: true, force: true });
     }
   });
 
   test('downloadResources creates resources.json with correct metadata', async () => {
-    // Use workspace root if found, otherwise use current working directory (project root)
     const workspaceRoot = findWorkspaceRoot(process.cwd()) || process.cwd();
-
     const issueId = 'issue-1';
     await provider.downloadResources({ issueId, maxDistance: 2 });
 
     const resourcesJson = readResourcesJson(workspaceRoot, issueId);
 
-    // Verify resources.json structure
     assert.ok(typeof resourcesJson === 'object');
     assert.ok('resources/issue.json' in resourcesJson, 'Should have issue.json entry');
 
@@ -170,7 +163,6 @@ describe('issue-tracker: smogcheck-provider', () => {
     assert.ok(typeof issueMetadata.indexedAt === 'string');
     assert.ok(typeof issueMetadata.size === 'number');
 
-    // Cleanup
     const issueDir = getIssueCacheDir(workspaceRoot, issueId);
     if (fs.existsSync(issueDir)) {
       fs.rmSync(issueDir, { recursive: true, force: true });
@@ -178,26 +170,25 @@ describe('issue-tracker: smogcheck-provider', () => {
   });
 
   test('downloadResources downloads resources with distance <= 2', async () => {
-    // Use workspace root if found, otherwise use current working directory (project root)
     const workspaceRoot = findWorkspaceRoot(process.cwd()) || process.cwd();
-
     const issueId = 'issue-1';
     await provider.downloadResources({ issueId, maxDistance: 2 });
 
     const resourcesJson = readResourcesJson(workspaceRoot, issueId);
     const resourcesDir = getIssueResourcesDir(workspaceRoot, issueId);
 
-    // Check that resources with distance <= 2 are downloaded
     for (const [resourceId, metadata] of Object.entries(resourcesJson)) {
       if (metadata.distance <= 2) {
-        assert.strictEqual(metadata.downloaded, true, `Resource ${resourceId} with distance ${metadata.distance} should be downloaded`);
-        // metadata.path is relative to resources directory (no 'resources/' prefix)
+        assert.strictEqual(
+          metadata.downloaded,
+          true,
+          `Resource ${resourceId} with distance ${metadata.distance} should be downloaded`
+        );
         const filePath = path.join(resourcesDir, metadata.path);
         assert.ok(fs.existsSync(filePath), `Resource file ${filePath} should exist`);
       }
     }
 
-    // Cleanup
     const issueDir = getIssueCacheDir(workspaceRoot, issueId);
     if (fs.existsSync(issueDir)) {
       fs.rmSync(issueDir, { recursive: true, force: true });
@@ -205,30 +196,21 @@ describe('issue-tracker: smogcheck-provider', () => {
   });
 
   test('downloadResources tracks resources with distance == 3 without downloading', async () => {
-    // Use workspace root if found, otherwise use current working directory (project root)
     const workspaceRoot = findWorkspaceRoot(process.cwd()) || process.cwd();
-
     const issueId = 'issue-1';
     await provider.downloadResources({ issueId, maxDistance: 3 });
 
     const resourcesJson = readResourcesJson(workspaceRoot, issueId);
     const resourcesDir = getIssueResourcesDir(workspaceRoot, issueId);
 
-    // Check that resources with distance == 3 are tracked but not downloaded
-    let foundDistance3 = false;
     for (const [resourceId, metadata] of Object.entries(resourcesJson)) {
       if (metadata.distance === 3) {
-        foundDistance3 = true;
         assert.strictEqual(metadata.downloaded, false, `Resource ${resourceId} with distance 3 should not be downloaded`);
         const filePath = path.join(resourcesDir, metadata.path);
         assert.ok(!fs.existsSync(filePath), `Resource file ${filePath} should not exist`);
       }
     }
 
-    // Note: This test may not always find distance 3 resources depending on mock data structure
-    // The important thing is that if they exist, they're tracked but not downloaded
-
-    // Cleanup
     const issueDir = getIssueCacheDir(workspaceRoot, issueId);
     if (fs.existsSync(issueDir)) {
       fs.rmSync(issueDir, { recursive: true, force: true });
@@ -236,9 +218,7 @@ describe('issue-tracker: smogcheck-provider', () => {
   });
 
   test('downloadResources creates issue.json with comments and PRs', async () => {
-    // Use workspace root if found, otherwise use current working directory (project root)
     const workspaceRoot = findWorkspaceRoot(process.cwd()) || process.cwd();
-
     const issueId = 'issue-1';
     await provider.downloadResources({ issueId, maxDistance: 2 });
 
@@ -252,7 +232,6 @@ describe('issue-tracker: smogcheck-provider', () => {
     assert.ok(Array.isArray(issueData.comments));
     assert.ok(issueData.comments.length > 0);
 
-    // Check for PRs section if PRs exist
     if (issueData.prs) {
       assert.ok(Array.isArray(issueData.prs));
       for (const pr of issueData.prs) {
@@ -262,7 +241,6 @@ describe('issue-tracker: smogcheck-provider', () => {
       }
     }
 
-    // Cleanup
     const issueDir = getIssueCacheDir(workspaceRoot, issueId);
     if (fs.existsSync(issueDir)) {
       fs.rmSync(issueDir, { recursive: true, force: true });
@@ -270,9 +248,7 @@ describe('issue-tracker: smogcheck-provider', () => {
   });
 
   test('downloadResources creates PR directories when PRs exist', async () => {
-    // Use workspace root if found, otherwise use current working directory (project root)
     const workspaceRoot = findWorkspaceRoot(process.cwd()) || process.cwd();
-
     const issueId = 'issue-1';
     await provider.downloadResources({ issueId, maxDistance: 2 });
 
@@ -284,13 +260,11 @@ describe('issue-tracker: smogcheck-provider', () => {
         assert.ok(fs.existsSync(prDir), `PR directory ${prDir} should exist`);
       }
 
-      // Cleanup PR directories
       if (fs.existsSync(prsDir)) {
         fs.rmSync(prsDir, { recursive: true, force: true });
       }
     }
 
-    // Cleanup issue directory
     const issueDir = getIssueCacheDir(workspaceRoot, issueId);
     if (fs.existsSync(issueDir)) {
       fs.rmSync(issueDir, { recursive: true, force: true });
@@ -298,8 +272,8 @@ describe('issue-tracker: smogcheck-provider', () => {
   });
 });
 
-describe('issue-tracker: provider registry discovery', () => {
-  beforeEach(() => {
+test.describe('issue-tracker: provider registry discovery', () => {
+  test.beforeEach(() => {
     clearProvidersForTests();
   });
 

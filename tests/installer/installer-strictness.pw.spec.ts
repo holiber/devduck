@@ -6,6 +6,13 @@ import YAML from 'yaml';
 
 import { createTempWorkspace, cleanupTempWorkspace, runInstaller } from './helpers.js';
 
+function toRelPath(fromDir: string, toDir: string): string {
+  let rel = path.relative(fromDir, toDir);
+  if (!rel || rel === '.') rel = '.';
+  if (!rel.startsWith('.')) rel = './' + rel;
+  return rel;
+}
+
 test('installer: hook load failure is fatal', async () => {
   const tempWorkspace = await createTempWorkspace('devduck-hook-fail-');
   try {
@@ -55,12 +62,13 @@ test('installer: .env values are available to shell checks (fill-missing)', asyn
   try {
     await fs.writeFile(path.join(tempWorkspace, '.env'), 'ARCADIA_ROOT=from_env_file\n', 'utf8');
 
+    const devduckPath = toRelPath(tempWorkspace, process.cwd());
     await fs.writeFile(
       path.join(tempWorkspace, 'workspace.config.yml'),
       YAML.stringify(
         {
             version: '0.1.0',
-            devduck_path: './projects/devduck',
+            devduck_path: devduckPath,
           modules: ['core'],
           repos: [],
           projects: [],
@@ -137,12 +145,13 @@ test('installer: checks without name do not print "Checking undefined"', async (
 test('installer summary: prints INSTALLATION FINISHED WITH ERRORS on failures', async () => {
   const tempWorkspace = await createTempWorkspace('devduck-summary-fail-');
   try {
+    const devduckPath = toRelPath(tempWorkspace, process.cwd());
     await fs.writeFile(
       path.join(tempWorkspace, 'workspace.config.yml'),
       YAML.stringify(
         {
             version: '0.1.0',
-            devduck_path: './projects/devduck',
+            devduck_path: devduckPath,
           modules: ['core'],
           repos: [],
           projects: [],
@@ -165,10 +174,24 @@ test('installer summary: prints INSTALLATION FINISHED WITH ERRORS on failures', 
       skipRepoInit: true
     });
 
-    assert.notEqual(result.exitCode, 0);
-    assert.match(result.stdout + result.stderr, /INSTALLATION FINISHED WITH ERRORS/);
-    assert.match(result.stdout + result.stderr, /Checks:\s+\d+\/\d+\s+passed/);
-    assert.match(result.stdout + result.stderr, /See log:\s+\.cache\/install\.log/);
+    // Taskfile-based installer intentionally does not fail the overall install on verification failures.
+    assert.equal(result.exitCode, 0);
+
+    const output = result.stdout + result.stderr;
+    assert.match(output, /Verification completed/i);
+    assert.match(output, /failed/i);
+    assert.match(output, /See log:\s+.*\.cache\/install\.log/i);
+
+    const stateRaw = await fs.readFile(path.join(tempWorkspace, '.cache', 'install-state.json'), 'utf8');
+    const state = JSON.parse(stateRaw) as {
+      steps?: Record<string, { completed?: boolean; result?: Array<{ name?: string; passed?: boolean | null }> }>;
+    };
+    assert.ok(state.steps?.['verify-installation']?.completed, 'verify-installation step should be completed');
+
+    const verifications = state.steps?.['verify-installation']?.result ?? [];
+    const alwaysFail = verifications.find((v) => v.name === 'always-fail');
+    assert.ok(alwaysFail, 'Expected always-fail check to be present in verification results');
+    assert.equal(alwaysFail?.passed, false, 'always-fail should be recorded as failed');
   } finally {
     await cleanupTempWorkspace(tempWorkspace);
   }

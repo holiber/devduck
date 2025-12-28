@@ -1,16 +1,16 @@
-import { describe, test, beforeEach } from 'node:test';
+import { test } from '@playwright/test';
 import assert from 'node:assert';
 import path from 'node:path';
 
-import telegramProvider from '../../modules/messenger-telegram/providers/telegram-provider/index.js';
-import yandexProvider from '../../modules/messenger-yandex-messenger/providers/yandex-messenger-provider/index.js';
+import telegramProvider from '../../modules/messenger-telegram/providers/telegram-provider/index.ts';
+import yandexProvider from '../../modules/messenger-yandex-messenger/providers/yandex-messenger-provider/index.ts';
 import {
   ChatMessageSchema,
   ChatSchema,
   DownloadFileResultSchema,
   MessengerProviderSchema,
   type MessengerProvider
-} from '../../modules/messenger/schemas/contract.js';
+} from '../../modules/messenger/schemas/contract.ts';
 
 import {
   clearProvidersForTests,
@@ -18,9 +18,9 @@ import {
   getProvider,
   getProvidersByType,
   setProviderTypeSchema
-} from '../../scripts/lib/provider-registry.js';
+} from '../../scripts/lib/provider-registry.ts';
 
-describe('messenger: telegram-provider', () => {
+test.describe('messenger: telegram-provider', () => {
   test('matches MessengerProvider contract schema', () => {
     const p = telegramProvider as MessengerProvider;
     const parsed = MessengerProviderSchema.safeParse(p);
@@ -59,7 +59,7 @@ describe('messenger: telegram-provider', () => {
   });
 });
 
-describe('messenger: yandex-messenger-provider', () => {
+test.describe('messenger: yandex-messenger-provider', () => {
   test('matches MessengerProvider contract schema', () => {
     const p = yandexProvider as MessengerProvider;
     const parsed = MessengerProviderSchema.safeParse(p);
@@ -98,8 +98,8 @@ describe('messenger: yandex-messenger-provider', () => {
   });
 });
 
-describe('messenger: provider registry discovery', () => {
-  beforeEach(() => {
+test.describe('messenger: provider registry discovery', () => {
+  test.beforeEach(() => {
     clearProvidersForTests();
   });
 

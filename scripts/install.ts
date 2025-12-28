@@ -40,7 +40,34 @@ function ensureWorkspaceConfigExistsForSync(params: {
   const { workspaceRoot, projectRoot, configFilePath, installModules, workspaceConfigPath, configFilePathOverride } =
     params;
 
-  if (fs.existsSync(configFilePath)) return;
+  if (fs.existsSync(configFilePath)) {
+    // When re-installing an existing workspace, allow CLI flags to update the config,
+    // so `devduck install --modules ...` is an actual override.
+    const existing = readWorkspaceConfigFile<Record<string, unknown>>(configFilePath);
+    if (existing) {
+      if (installModules) {
+        const modules = installModules
+          .split(',')
+          .map((m) => m.trim())
+          .filter(Boolean);
+        existing.modules = modules;
+      }
+
+      if (configFilePathOverride && fs.existsSync(configFilePathOverride)) {
+        const providedConfig = readWorkspaceConfigFile<Record<string, unknown>>(configFilePathOverride);
+        if (providedConfig) {
+          const merged = { ...existing, ...providedConfig };
+          // Preserve explicit modules list from --modules (highest priority).
+          if (installModules) merged.modules = existing.modules;
+          existing.modules = merged.modules;
+          for (const [k, v] of Object.entries(merged)) (existing as any)[k] = v;
+        }
+      }
+
+      writeWorkspaceConfigFile(configFilePath, existing);
+    }
+    return;
+  }
 
   const modules = installModules ? installModules.split(',').map((m) => m.trim()).filter(Boolean) : ['core', 'cursor'];
 
@@ -87,6 +114,26 @@ function ensureWorkspaceConfigExistsForSync(params: {
   writeWorkspaceConfigFile(configFilePath, config);
   print(`\n${symbols.success} Created workspace config`, 'green');
   log(`Created workspace config at ${path.relative(workspaceRoot, configFilePath) || 'workspace.config.yml'}`);
+}
+
+function ensureWorkspaceConfigHasUsableDevduckPath(params: { workspaceRoot: string; projectRoot: string; configFilePath: string }): void {
+  const { workspaceRoot, projectRoot, configFilePath } = params;
+  const config = readWorkspaceConfigFile<Record<string, unknown>>(configFilePath);
+  if (!config) return;
+
+  const raw = typeof config.devduck_path === 'string' ? config.devduck_path.trim() : '';
+  const resolved = raw ? (path.isAbsolute(raw) ? raw : path.resolve(workspaceRoot, raw)) : '';
+  if (resolved && fs.existsSync(resolved)) return;
+
+  // If devduck_path is missing or points to a non-existent path, repair it.
+  // This is common in fixtures/templates; the installer knows its own location (projectRoot),
+  // so we can safely point the workspace back to it.
+  let rel = path.relative(workspaceRoot, projectRoot);
+  if (!rel || rel === '.') rel = '.';
+  if (!rel.startsWith('.')) rel = './' + rel;
+  config.devduck_path = rel;
+  writeWorkspaceConfigFile(configFilePath, config);
+  log(`Repaired devduck_path in workspace config: ${rel}`);
 }
 
 function runSyncAndInstallViaTaskfile(params: { workspaceRoot: string; autoYes: boolean }): void {
@@ -192,6 +239,7 @@ async function main(): Promise<void> {
 
   // `devduck-cli sync` expects workspace.config.yml to exist. When running installer on an empty folder
   // (common in Playwright installer tests / fresh workspace installs), create a minimal config first.
+  const configExistedBefore = fs.existsSync(paths.configFile);
   ensureWorkspaceConfigExistsForSync({
     workspaceRoot: paths.workspaceRoot,
     projectRoot: PROJECT_ROOT,
@@ -200,6 +248,29 @@ async function main(): Promise<void> {
     workspaceConfigPath: flags.workspaceConfigPath,
     configFilePathOverride: flags.configFilePath
   });
+  ensureWorkspaceConfigHasUsableDevduckPath({
+    workspaceRoot: paths.workspaceRoot,
+    projectRoot: PROJECT_ROOT,
+    configFilePath: paths.configFile
+  });
+
+  // If we created workspace.config.yml from a provided template, apply `seedFiles[]` / legacy `files[]`
+  // by copying them into the workspace root. This keeps installer behavior consistent across runtimes.
+  if (!configExistedBefore && flags.workspaceConfigPath && fs.existsSync(flags.workspaceConfigPath)) {
+    const provided = readWorkspaceConfigFile<Record<string, unknown>>(flags.workspaceConfigPath);
+    if (provided) {
+      const seedFiles = (provided as Record<string, unknown>).seedFiles ?? (provided as Record<string, unknown>).files;
+      const { copySeedFilesFromProvidedWorkspaceConfig } = await import('./install/installer-utils.js');
+      copySeedFilesFromProvidedWorkspaceConfig({
+        workspaceRoot: paths.workspaceRoot,
+        providedWorkspaceConfigPath: flags.workspaceConfigPath,
+        seedFiles,
+        print: print as unknown as (msg: string, color?: any) => void,
+        symbols,
+        log
+      });
+    }
+  }
   runSyncAndInstallViaTaskfile({ workspaceRoot: paths.workspaceRoot, autoYes: flags.autoYes });
 
   // Keep compatibility with npm install lifecycle expectations.

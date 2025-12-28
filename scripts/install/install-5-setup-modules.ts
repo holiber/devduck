@@ -13,8 +13,15 @@ import fs from 'fs';
 import { readWorkspaceConfigFromRoot } from '../lib/workspace-config.js';
 import { print, symbols } from '../utils.js';
 import { loadModulesForChecks, createCheckFunctions } from './install-common.js';
-import { markStepCompleted, type ModuleResult, getExecutedChecks, trackCheckExecution, generateCheckId } from './install-state.js';
-import { loadInstallState } from './install-state.js';
+import {
+  markStepCompleted,
+  type ModuleResult,
+  getExecutedChecks,
+  trackCheckExecution,
+  generateCheckId,
+  loadInstallState,
+  saveInstallState
+} from './install-state.js';
 import { processCheck } from './process-check.js';
 import { executeHooksForStage, createHookContext } from './module-hooks.js';
 import { loadModuleResources } from './module-loader.js';
@@ -294,6 +301,16 @@ export async function runStep5SetupModules(
   
   const result: SetupModulesStepResult = { modules: moduleResults };
   markStepCompleted(workspaceRoot, 'setup-modules', moduleResults);
+
+  // Persist installed module locations at top-level in install-state.json so it is available
+  // regardless of whether the install is executed via `runner.ts` or via Taskfile `run-step.ts`.
+  try {
+    const state = loadInstallState(workspaceRoot);
+    state.installedModules = Object.fromEntries(moduleResults.map((m) => [m.name, m.path]));
+    saveInstallState(workspaceRoot, state);
+  } catch {
+    // best-effort
+  }
   
   if (log) {
     log(`[Step 5] Completed: ${moduleResults.length} module(s) processed`);
