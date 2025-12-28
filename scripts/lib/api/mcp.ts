@@ -51,7 +51,39 @@ type McpServerConfig = {
   command?: string;
   args?: string[];
   env?: Record<string, string>;
+  url?: string;
 };
+
+function normalizeMcpServerConfig(raw: unknown): McpServerConfig {
+  if (!raw || typeof raw !== 'object') return {};
+  const obj = raw as Record<string, unknown>;
+
+  // Support both shapes:
+  // 1) Cursor `.cursor/mcp.json` format: { command, args, env, url, ... }
+  // 2) DevDuck-like/check-like format mistakenly placed into `.cursor/mcp.json`:
+  //    { description, install, mcpSettings: { command, args, env, url, ... } }
+  const nested =
+    obj.mcpSettings && typeof obj.mcpSettings === 'object'
+      ? (obj.mcpSettings as Record<string, unknown>)
+      : null;
+  const src = nested || obj;
+
+  const command = typeof src.command === 'string' ? src.command : undefined;
+  const url = typeof src.url === 'string' ? src.url : undefined;
+  const args = Array.isArray(src.args)
+    ? (src.args.filter((x) => typeof x === 'string') as string[])
+    : undefined;
+
+  const envRaw = src.env;
+  const env =
+    envRaw && typeof envRaw === 'object'
+      ? Object.fromEntries(
+          Object.entries(envRaw as Record<string, unknown>).filter(([, v]) => typeof v === 'string')
+        )
+      : undefined;
+
+  return { command, args, env, url };
+}
 
 function expandValue(v: string): string {
   let out = String(v || '');
@@ -89,6 +121,12 @@ async function spawnMcpClient(serverName: string, serverConfig: McpServerConfig,
 
   const { command, args, env } = expandCommandAndArgs(serverConfig);
   if (!command) {
+    const url = String(serverConfig.url || '').trim();
+    if (url) {
+      throw new Error(
+        `MCP server "${serverName}" is URL-based (${url}). devduck CLI currently supports only command-based MCP servers.`
+      );
+    }
     throw new Error(`MCP server "${serverName}" is missing command`);
   }
 
@@ -336,9 +374,9 @@ export const mcpRouter = t.router({
       // Check if serverName is provided (for listing tools)
       if (input.serverName) {
         const serverName = input.serverName;
-        const serverConfig = servers[serverName] as McpServerConfig | undefined;
+        const serverConfig = normalizeMcpServerConfig(servers[serverName]);
         
-        if (!serverConfig) {
+        if (!serverConfig.command && !serverConfig.url) {
           throw new Error(`MCP server "${serverName}" not found`);
         }
 
@@ -380,9 +418,9 @@ export const mcpRouter = t.router({
       }
 
       const servers = mcpConfig.mcpServers;
-      const serverConfig = servers[input.serverName] as { command?: string; args?: string[] } | undefined;
+      const serverConfig = normalizeMcpServerConfig(servers[input.serverName]);
       
-      if (!serverConfig) {
+      if (!serverConfig.command && !serverConfig.url) {
         throw new Error(`MCP server "${input.serverName}" not found`);
       }
 
@@ -420,8 +458,8 @@ export const mcpRouter = t.router({
       }
 
       const servers = mcpConfig.mcpServers;
-      const serverConfig = servers[input.serverName] as McpServerConfig | undefined;
-      if (!serverConfig) {
+      const serverConfig = normalizeMcpServerConfig(servers[input.serverName]);
+      if (!serverConfig.command && !serverConfig.url) {
         throw new Error(`MCP server "${input.serverName}" not found`);
       }
 
