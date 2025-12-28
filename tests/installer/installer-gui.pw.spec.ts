@@ -1,13 +1,8 @@
-#!/usr/bin/env node
-
-/**
- * Tests for workspace installer in GUI/interactive mode
- */
-
-import { test, describe, before, after } from 'node:test';
+import { test } from '@playwright/test';
 import assert from 'node:assert';
-import path from 'path';
-import { promises as fs } from 'fs';
+import path from 'node:path';
+import { promises as fs } from 'node:fs';
+
 import {
   createTempWorkspace,
   createWorkspaceFromFixture,
@@ -19,11 +14,11 @@ import {
   waitForInstallation
 } from './helpers.js';
 
-describe('Workspace Installer - GUI/Interactive Mode', () => {
-  describe('Fresh Workspace Installation', () => {
+test.describe('Workspace Installer - GUI/Interactive Mode', () => {
+  test.describe('Fresh Workspace Installation', () => {
     test('GUI Installation - Fresh Workspace', async () => {
       const tempWorkspace = await createTempWorkspace();
-      
+
       try {
         const result = await runInstaller(tempWorkspace, {
           unattended: false,
@@ -58,23 +53,23 @@ describe('Workspace Installer - GUI/Interactive Mode', () => {
     });
   });
 
-  describe('Existing Workspace Operations', () => {
-    let tempWorkspace;
+  test.describe('Existing Workspace Operations', () => {
+    let tempWorkspace: string;
 
-    before(async () => {
+    test.beforeAll(async () => {
       tempWorkspace = await createWorkspaceFromFixture('existing-workspace', {
         prefix: 'devduck-existing-workspace-test-'
       });
     });
 
-    after(async () => {
+    test.afterAll(async () => {
       if (tempWorkspace) {
         await cleanupTempWorkspace(tempWorkspace);
       }
     });
 
     test('Detect Existing Workspace', async () => {
-      const result = await runInstaller(tempWorkspace, {
+      await runInstaller(tempWorkspace, {
         unattended: false
       });
 
