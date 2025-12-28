@@ -132,8 +132,8 @@ const WorkspaceLaunchSchema = z
 
 const WorkspaceConfigSchema = z
   .object({
-    workspaceVersion: z.string(),
-    devduckPath: z.string().optional(),
+    version: z.union([z.string(), z.number()]),
+    devduck_path: z.string().optional(),
 
     // Seed files/folders to copy into a *new* workspace when creating it via `--workspace-config`.
     // Paths are relative to the folder containing the provided workspace config file.

@@ -1,14 +1,46 @@
 import fs from 'fs';
 import path from 'path';
-import { readJSON } from '../lib/config.js';
-import { readWorkspaceConfigFile, writeWorkspaceConfigFile } from '../lib/workspace-config.js';
-import type { WorkspaceConfig } from '../schemas/workspace-config.zod.js';
+import { readWorkspaceConfigFile, readWorkspaceConfigFromRoot, writeWorkspaceConfigFile } from '../lib/workspace-config.js';
+import YAML from 'yaml';
+import { buildGeneratedTaskfile } from '../lib/taskfile-gen.js';
 import { setupEnvFile } from './env.js';
 import { generateMcpJson } from './mcp.js';
 import { createInstallLogger, type InstallLogger } from './logger.js';
 import { runInstall, type InstallContext, type InstallStep, type RunInstallResult } from './runner.js';
 import { print, symbols } from '../utils.js';
 import { loadInstallState, saveInstallState } from './install-state.js';
+
+type WorkspaceConfig = Record<string, unknown> & {
+  version?: string | number;
+  devduck_path?: string;
+  repos?: string[];
+  modules?: string[];
+  projects?: unknown[];
+  checks?: unknown[];
+  env?: Array<{ name: string; default?: string; description?: string }>;
+};
+
+type WorkspaceConfigLike = Record<string, unknown> & {
+  devduck_path?: string;
+  taskfile?: {
+    output?: string;
+    vars?: Record<string, unknown>;
+    tasks?: Record<string, unknown>;
+  };
+};
+
+function ensureGeneratedTaskfile(
+  workspaceRoot: string,
+  cacheDir: string,
+  devduckPathRel: string,
+  config: WorkspaceConfigLike
+): void {
+  fs.mkdirSync(cacheDir, { recursive: true });
+  const generatedPath = path.join(cacheDir, 'taskfile.generated.yml');
+  const generated = buildGeneratedTaskfile({ workspaceRoot, config, devduckPathRel });
+  const out = YAML.stringify(generated);
+  fs.writeFileSync(generatedPath, out.endsWith('\n') ? out : out + '\n', 'utf8');
+}
 
 export async function installWorkspace(params: {
   workspaceRoot: string;
@@ -59,8 +91,8 @@ export async function installWorkspace(params: {
     }
 
     config = {
-      workspaceVersion: '0.1.0',
-      devduckPath,
+      version: '0.1.0',
+      devduck_path: devduckPath,
       modules,
       moduleSettings: {},
       repos: [],
@@ -126,11 +158,21 @@ export async function installWorkspace(params: {
   await setupEnvFile(workspaceRoot, config as WorkspaceConfig, {
     autoYes,
     log,
-    print,
+    print: print as unknown as (msg: string, color?: string) => void,
     symbols
   });
 
   const latestConfig = readWorkspaceConfigFile<Record<string, unknown>>(configFilePath) || config;
+  const resolvedConfig =
+    readWorkspaceConfigFromRoot<WorkspaceConfigLike>(workspaceRoot).config || (latestConfig as WorkspaceConfigLike);
+  {
+    const devduckPathRel =
+      typeof resolvedConfig.devduck_path === 'string' && resolvedConfig.devduck_path.trim().length > 0
+        ? resolvedConfig.devduck_path.trim()
+        : './projects/devduck';
+    // This is a convenience for Taskfile-based workflows: keep runtime taskfile in .cache updated.
+    ensureGeneratedTaskfile(workspaceRoot, cacheDir, devduckPathRel, resolvedConfig);
+  }
 
   let moduleChecks: Array<{ name?: string; mcpSettings?: Record<string, unknown> }> = [];
   try {
@@ -167,7 +209,7 @@ export async function installWorkspace(params: {
     // ignore
   }
 
-  generateMcpJson(workspaceRoot, { log, print, symbols, moduleChecks });
+  generateMcpJson(workspaceRoot, { log, print: print as unknown as (msg: string, color?: string) => void, symbols, moduleChecks });
 
   // Check MCP servers (canonical results persisted into install-state.json)
   try {
@@ -176,7 +218,7 @@ export async function installWorkspace(params: {
     const mcpJsonPath = path.join(workspaceRoot, '.cursor', 'mcp.json');
     const mcpConfig = readJSON(mcpJsonPath) as { mcpServers?: Record<string, Record<string, unknown>> } | null;
     const mcpServers = mcpConfig?.mcpServers || {};
-    const mcpResults = await checkMcpServers(mcpServers, workspaceRoot, { log, print, symbols });
+    const mcpResults = await checkMcpServers(mcpServers, workspaceRoot, { log, print: print as unknown as (msg: string, color?: string) => void, symbols });
     const state = loadInstallState(workspaceRoot);
     state.mcpServers = mcpResults as unknown[];
     saveInstallState(workspaceRoot, state);
@@ -211,7 +253,7 @@ export async function installWorkspace(params: {
     const { installProjectScripts } = await import('./install-project-scripts.js');
     print(`\n${symbols.info} Installing project scripts to workspace package.json...`, 'cyan');
     log(`Installing project scripts to workspace package.json`);
-    installProjectScripts(workspaceRoot, (config as { projects?: unknown[] }).projects || [], config, log);
+    installProjectScripts(workspaceRoot, ((config as { projects?: unknown[] }).projects || []) as unknown as any[], config, log);
     print(`  ${symbols.success} Project scripts installed`, 'green');
   } catch (error) {
     const err = error as Error;

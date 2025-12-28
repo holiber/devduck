@@ -37,7 +37,9 @@ export async function runStep5SetupModules(
   log?: (message: string) => void,
   autoYes = false
 ): Promise<SetupModulesStepResult> {
-  print(`\n[Step 5] Setting up modules...`, 'cyan');
+  if (process.env.DEVDUCK_SUPPRESS_STEP_HEADER !== '1') {
+    print(`\n[Step 5] Setting up modules...`, 'cyan');
+  }
   if (log) {
     log(`[Step 5] Starting module setup`);
   }
@@ -165,7 +167,8 @@ export async function runStep5SetupModules(
   const preInstallFailures = preInstallResults.filter(r => !r.success);
   if (preInstallFailures.length > 0) {
     const first = preInstallFailures[0];
-    const msg = `Module ${first.module} ${first.hook} hook failed: ${(first.errors || []).join(', ') || 'unknown error'}`;
+    const details = (first.errors && first.errors.length > 0 ? first.errors.join(', ') : (first.message || 'unknown error'));
+    const msg = `Module ${first.module} ${first.hook} hook failed: ${details}`;
     print(`  ${symbols.error} ${msg}`, 'red');
     if (log) log(`[Step 5] ERROR: ${msg}`);
     const result: SetupModulesStepResult = { modules: [] };
@@ -181,7 +184,8 @@ export async function runStep5SetupModules(
   const installFailures = installHookResults.filter(r => !r.success);
   if (installFailures.length > 0) {
     const first = installFailures[0];
-    const msg = `Module ${first.module} ${first.hook} hook failed: ${(first.errors || []).join(', ') || 'unknown error'}`;
+    const details = (first.errors && first.errors.length > 0 ? first.errors.join(', ') : (first.message || 'unknown error'));
+    const msg = `Module ${first.module} ${first.hook} hook failed: ${details}`;
     print(`  ${symbols.error} ${msg}`, 'red');
     if (log) log(`[Step 5] ERROR: ${msg}`);
     const result: SetupModulesStepResult = { modules: [] };

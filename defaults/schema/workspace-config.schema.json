@@ -8,7 +8,6 @@
     "version": { "type": ["integer", "string"], "description": "Schema version (nadformat)" },
     "name": { "type": "string" },
     "devduck_path": { "type": "string", "description": "Path to DevDuck sources (relative to workspace root)" },
-    "devduckPath": { "type": "string", "description": "Legacy key; kept for compatibility" },
     "repos": { "type": "array", "items": { "type": "string" } },
     "modules": { "type": "array", "items": { "type": "string" } },
     "moduleSettings": { "type": "object", "additionalProperties": true },

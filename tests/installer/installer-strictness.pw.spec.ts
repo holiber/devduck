@@ -59,8 +59,8 @@ test('installer: .env values are available to shell checks (fill-missing)', asyn
       path.join(tempWorkspace, 'workspace.config.yml'),
       YAML.stringify(
         {
-          workspaceVersion: '0.1.0',
-          devduckPath: './projects/devduck',
+            version: '0.1.0',
+            devduck_path: './projects/devduck',
           modules: ['core'],
           repos: [],
           projects: [],
@@ -141,8 +141,8 @@ test('installer summary: prints INSTALLATION FINISHED WITH ERRORS on failures', 
       path.join(tempWorkspace, 'workspace.config.yml'),
       YAML.stringify(
         {
-          workspaceVersion: '0.1.0',
-          devduckPath: './projects/devduck',
+            version: '0.1.0',
+            devduck_path: './projects/devduck',
           modules: ['core'],
           repos: [],
           projects: [],

@@ -7,24 +7,23 @@ import yargs from 'yargs/yargs';
 import { hideBin } from 'yargs/helpers';
 import YAML from 'yaml';
 import { readWorkspaceConfigFromRoot, writeWorkspaceConfigFile } from './lib/workspace-config.js';
+import { buildGeneratedTaskfile } from './lib/taskfile-gen.js';
 
 type WorkspaceConfigLike = {
-  workspaceVersion?: string;
-  devduckPath?: string;
+  version?: string | number;
+  devduck_path?: string;
   modules?: string[];
   moduleSettings?: Record<string, unknown>;
   repos?: string[];
   projects?: Array<{ src?: string } & Record<string, unknown>>;
   checks?: unknown[];
   env?: unknown[];
+  taskfile?: {
+    output?: string;
+    vars?: Record<string, unknown>;
+    tasks?: Record<string, unknown>;
+  };
   [k: string]: unknown;
-};
-
-type GeneratedTaskfile = {
-  version: string;
-  output?: string;
-  vars?: Record<string, string>;
-  tasks: Record<string, unknown>;
 };
 
 function readYamlIfExists<T>(p: string): T | null {
@@ -84,66 +83,6 @@ function runNpmInstall(workspaceRoot: string): void {
     const details = (res.stderr || res.stdout || '').toString().trim();
     throw new Error(`npm install failed (exit ${res.status ?? 'unknown'}). ${details}`);
   }
-}
-
-function ensureWorkspaceTaskfile(workspaceRoot: string, devduckPathRel: string): void {
-  const taskfilePath = path.join(workspaceRoot, 'Taskfile.yml');
-  if (fs.existsSync(taskfilePath)) return;
-
-  // Keep this file tiny and stable: it delegates to DevDuck's default taskfile.
-  const includePath = path.posix.join(devduckPathRel.replace(/\\/g, '/'), 'defaults', 'install.taskfile.yml');
-  const content =
-    `version: '3'\n` +
-    `output: interleaved\n\n` +
-    `includes:\n` +
-    `  devduck:\n` +
-    `    taskfile: ${includePath}\n\n` +
-    `tasks:\n` +
-    `  sync:\n` +
-    `    desc: "Generate .cache/taskfile.generated.yml from workspace config"\n` +
-    `    cmds:\n` +
-    `      - task: devduck:sync\n\n` +
-    `  install:\n` +
-    `    desc: "Run full installation sequence (Steps 1–7)"\n` +
-    `    cmds:\n` +
-    `      - task: devduck:install\n`;
-
-  fs.writeFileSync(taskfilePath, content, 'utf8');
-}
-
-function buildGeneratedTaskfile(devduckPathRel: string): GeneratedTaskfile {
-  const stepCmd = (stepId: string) =>
-    `tsx {{.DEVDUCK_ROOT}}/scripts/install/run-step.ts ${stepId} --workspace-root {{.WORKSPACE_ROOT}} --project-root {{.DEVDUCK_ROOT}} --unattended`;
-
-  return {
-    version: '3',
-    output: 'interleaved',
-    vars: {
-      DEVDUCK_ROOT: devduckPathRel,
-      WORKSPACE_ROOT: '{{ default "." .WORKSPACE_ROOT }}'
-    },
-    tasks: {
-      install: {
-        desc: 'Run full installation sequence (Steps 1–7)',
-        cmds: [
-          { task: 'install:1-check-env' },
-          { task: 'install:2-download-repos' },
-          { task: 'install:3-download-projects' },
-          { task: 'install:4-check-env-again' },
-          { task: 'install:5-setup-modules' },
-          { task: 'install:6-setup-projects' },
-          { task: 'install:7-verify-installation' }
-        ]
-      },
-      'install:1-check-env': { desc: 'Verify required environment variables', cmds: [stepCmd('check-env')] },
-      'install:2-download-repos': { desc: 'Download external module repositories', cmds: [stepCmd('download-repos')] },
-      'install:3-download-projects': { desc: 'Clone/link workspace projects', cmds: [stepCmd('download-projects')] },
-      'install:4-check-env-again': { desc: 'Re-check environment variables', cmds: [stepCmd('check-env-again')] },
-      'install:5-setup-modules': { desc: 'Setup all DevDuck modules', cmds: [stepCmd('setup-modules')] },
-      'install:6-setup-projects': { desc: 'Setup all workspace projects', cmds: [stepCmd('setup-projects')] },
-      'install:7-verify-installation': { desc: 'Verify installation correctness', cmds: [stepCmd('verify-installation')] }
-    }
-  };
 }
 
 function isDevduckProjectSrc(src: string): boolean {
@@ -246,8 +185,8 @@ function ensureDevduckInWorkspace(params: {
     }
   }
 
-  if (!config.devduckPath) {
-    config.devduckPath = './devduck/src';
+  if (!config.devduck_path) {
+    config.devduck_path = './devduck/src';
   }
 
   return config;
@@ -255,8 +194,8 @@ function ensureDevduckInWorkspace(params: {
 
 function buildDefaultWorkspaceConfig(): WorkspaceConfigLike {
   return {
-    workspaceVersion: '0.1.0',
-    devduckPath: './devduck/src',
+    version: '0.1.0',
+    devduck_path: './devduck/src',
     modules: ['core', 'cursor'],
     moduleSettings: {},
     repos: [],
@@ -288,19 +227,17 @@ async function main(argv = process.argv): Promise<void> {
         }
 
         const devduckPathRel =
-          typeof config.devduckPath === 'string' && config.devduckPath.trim().length > 0
-            ? config.devduckPath.trim()
+          typeof config.devduck_path === 'string' && config.devduck_path.trim().length > 0
+            ? config.devduck_path.trim()
             : './devduck/src';
 
         const cacheDir = path.join(workspaceRoot, '.cache');
         fs.mkdirSync(cacheDir, { recursive: true });
 
-        const generated = buildGeneratedTaskfile(devduckPathRel);
+        const generated = buildGeneratedTaskfile({ workspaceRoot, config, devduckPathRel });
         const generatedPath = path.join(cacheDir, 'taskfile.generated.yml');
         const out = YAML.stringify(generated);
         fs.writeFileSync(generatedPath, out.endsWith('\n') ? out : out + '\n', 'utf8');
-
-        ensureWorkspaceTaskfile(workspaceRoot, devduckPathRel);
 
         // eslint-disable-next-line no-console
         console.log(`Generated ${path.relative(workspaceRoot, generatedPath)} from ${path.basename(configFile)}`);

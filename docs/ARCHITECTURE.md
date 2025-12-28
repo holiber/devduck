@@ -173,8 +173,8 @@ workspace/
 `workspace.config.yml` structure (example):
 
 ```yaml
-workspaceVersion: "0.1.0"
-devduckPath: "./devduck"
+version: "0.1.0"
+devduck_path: "./devduck"
 modules: ["core", "cursor"]
 moduleSettings:
   module-name:
@@ -201,8 +201,8 @@ env:
 ```
 
 **Fields:**
-- **`workspaceVersion`**: workspace config version string (currently `0.1.0`)
-- **`devduckPath`**: path to the Devduck installation (relative to workspace root); used by tooling to locate scripts/modules
+- **`version`**: workspace config version string (currently `0.1.0`)
+- **`devduck_path`**: path to the DevDuck sources (relative to workspace root); used by tooling to locate scripts/modules
 - **`modules`**: list of module names to install; supports `["*"]` to mean "all available modules"
 - **`moduleSettings`**: per-module settings override, merged on top of each module's `defaultSettings`
 - **`repos`**: list of external repositories to load additional modules from (Git or Arcadia URLs)

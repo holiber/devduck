@@ -1,0 +1,45 @@
+import { test } from '@playwright/test';
+import assert from 'node:assert';
+import path from 'node:path';
+
+import provider from '../../modules/email-gmail/providers/gmail-provider/index.ts';
+import type { EmailProvider } from '../../modules/email/schemas/contract.ts';
+
+import {
+  clearProvidersForTests,
+  discoverProvidersFromModules,
+  getProvider
+} from '../../scripts/lib/provider-registry.ts';
+
+test.describe('email: gmail-provider', () => {
+  test('matches EmailProvider interface', () => {
+    const p = provider as EmailProvider;
+    assert.ok(p.name);
+    assert.ok(p.version);
+    assert.ok(p.manifest);
+    assert.strictEqual(p.manifest.type, 'email');
+    assert.strictEqual(p.manifest.name, 'gmail-provider');
+    assert.ok(Array.isArray(p.manifest.tools));
+    assert.ok(p.manifest.tools.includes('listUnreadMessages'));
+    assert.ok(typeof p.getMessage === 'function');
+    assert.ok(typeof p.searchMessages === 'function');
+    assert.ok(typeof p.downloadAttachment === 'function');
+    assert.ok(typeof p.listUnreadMessages === 'function');
+  });
+});
+
+test.describe('email: provider registry discovery (gmail-provider)', () => {
+  test.beforeEach(() => {
+    clearProvidersForTests();
+  });
+
+  test('discovers gmail-provider from modules directory and registers it', async () => {
+    const modulesDir = path.resolve(process.cwd(), 'modules');
+    await discoverProvidersFromModules({ modulesDir });
+
+    const p = getProvider('email', 'gmail-provider');
+    assert.ok(p);
+    assert.strictEqual(p?.manifest?.type, 'email');
+  });
+});
+

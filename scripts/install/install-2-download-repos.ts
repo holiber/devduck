@@ -26,7 +26,9 @@ export async function runStep2DownloadRepos(
   workspaceRoot: string,
   log?: (message: string) => void
 ): Promise<DownloadReposStepResult> {
-  print(`\n[Step 2] Downloading repositories...`, 'cyan');
+  if (process.env.DEVDUCK_SUPPRESS_STEP_HEADER !== '1') {
+    print(`\n[Step 2] Downloading repositories...`, 'cyan');
+  }
   if (log) {
     log(`[Step 2] Starting repository download`);
   }
