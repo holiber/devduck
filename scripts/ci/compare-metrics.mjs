@@ -53,7 +53,12 @@ async function main() {
       script_code_lines: delta(num(cur?.code?.scriptCodeLines), num(base?.code?.scriptCodeLines)),
       total_text_lines: delta(num(cur?.code?.totalTextLines), num(base?.code?.totalTextLines)),
       huge_scripts: delta(num(cur?.code?.hugeScripts), num(base?.code?.hugeScripts)),
-      flaky_tests: delta(num(cur?.tests?.flaky?.count), num(base?.tests?.flaky?.count))
+      flaky_tests: delta(num(cur?.tests?.flaky?.count), num(base?.tests?.flaky?.count)),
+
+      // Quality metrics
+      coverage_lines_pct: delta(num(cur?.quality?.coverage?.linesPct), num(base?.quality?.coverage?.linesPct)),
+      slow_tests_over_20s: delta(num(cur?.quality?.slowTests?.count), num(base?.quality?.slowTests?.count)),
+      duplication_pct: delta(num(cur?.quality?.duplication?.duplicatedPct), num(base?.quality?.duplication?.duplicatedPct))
     }
   };
 

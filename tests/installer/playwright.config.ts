@@ -11,7 +11,12 @@ export default defineConfig({
   workers: 1,
   retries: 0,
   timeout: 60_000,
-  reporter: 'list',
+  reporter: process.env.CI
+    ? [
+        ['list'],
+        ['json', { outputFile: '.cache/metrics/pw-installer-report.json' }]
+      ]
+    : 'list',
   use: {
     // Keep CI artifacts for failures; see CI uploading `.cache/playwright/`.
     trace: 'retain-on-failure',
