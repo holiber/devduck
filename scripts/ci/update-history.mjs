@@ -40,6 +40,8 @@ async function main() {
 
   const sliced = next.length > limit ? next.slice(-limit) : next;
   await fsp.writeFile(historyPath, JSON.stringify(sliced, null, 2) + '\n', 'utf8');
+  // eslint-disable-next-line no-console
+  console.log('[metrics] history wrote', historyPath, `(records=${sliced.length}, limit=${limit})`);
 }
 
 main().catch((err) => {

@@ -189,6 +189,9 @@ async function main() {
       await writeFileEnsuringDir(dst, f === 'history.json' ? '[]\n' : '{}\n');
     }
   }
+
+  // eslint-disable-next-line no-console
+  console.log('[metrics] dashboard wrote', path.join(metricsOutDir, 'index.html'));
 }
 
 main().catch((err) => {

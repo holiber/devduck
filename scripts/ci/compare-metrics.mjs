@@ -54,6 +54,21 @@ async function main() {
   };
 
   await fsp.writeFile(outPath, JSON.stringify(out, null, 2) + '\n', 'utf8');
+  // eslint-disable-next-line no-console
+  console.log('[metrics] diff wrote', outPath);
+  // eslint-disable-next-line no-console
+  console.log(
+    '[metrics] deltas:',
+    'build',
+    out.deltas.build_duration_ms ?? 'n/a',
+    'ms;',
+    'devReady',
+    out.deltas.dev_ready_ms ?? 'n/a',
+    'ms;',
+    'npm_pack',
+    out.deltas.npm_pack_bytes ?? 'n/a',
+    'bytes'
+  );
 }
 
 main().catch((err) => {

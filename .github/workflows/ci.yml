@@ -27,12 +27,14 @@ jobs:
         with:
           node-version: 24
           cache: npm
+          cache-dependency-path: package-lock.json
 
-      - name: Install dependencies
-        run: npm ci
-
+      # Create artifact folders BEFORE any potentially failing steps
       - name: Prepare artifact folders
         run: mkdir -p .cache/{logs,metrics,ai_logs,playwright,tmp}
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
 
       # Unit tests (run ONCE per workflow)
       - name: Run unit tests (timed)
@@ -83,6 +85,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 24
+          cache: npm
+          cache-dependency-path: package-lock.json
 
       - name: Download test artifacts
         uses: actions/download-artifact@v4
@@ -147,11 +151,11 @@ jobs:
           body-path: .cache/metrics/pr-comment.md
 
       - name: Update history (main only)
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.test.result == 'success'
         run: node scripts/ci/update-history.mjs --dir .cache/metrics --limit 200
 
       - name: Update baseline (main only)
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.test.result == 'success'
         run: cp .cache/metrics/current.json .cache/metrics/baseline.json
 
       - name: Generate HTML dashboard (always)
@@ -171,7 +175,7 @@ jobs:
           retention-days: 14
 
       - name: Deploy dashboard to GitHub Pages (main only)
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.test.result == 'success'
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}

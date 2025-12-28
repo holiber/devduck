@@ -226,7 +226,21 @@ async function main() {
   metrics.sizes.npm_pack = { bytes: pack.bytes };
 
   // Write `current.json`
-  await fsp.writeFile(path.join(METRICS_DIR, 'current.json'), JSON.stringify(metrics, null, 2) + '\n', 'utf8');
+  const outPath = path.join(METRICS_DIR, 'current.json');
+  await fsp.writeFile(outPath, JSON.stringify(metrics, null, 2) + '\n', 'utf8');
+
+  // Human-friendly summary for CI logs.
+  const buildMs = metrics?.commands?.build?.durationMs;
+  const devReadyMs = metrics?.commands?.dev_start?.readyAtMs;
+  const packBytes = metrics?.sizes?.npm_pack?.bytes;
+  const distBytes = metrics?.sizes?.dist?.bytes;
+  const outBytes = metrics?.sizes?.build_output_dir?.bytes;
+  // eslint-disable-next-line no-console
+  console.log('[metrics] wrote', outPath);
+  // eslint-disable-next-line no-console
+  console.log('[metrics] build:', buildMs ?? 'n/a', 'ms; devReady:', devReadyMs ?? 'n/a', 'ms');
+  // eslint-disable-next-line no-console
+  console.log('[metrics] npm_pack:', packBytes ?? 'n/a', 'bytes; dist:', distBytes ?? 'n/a', 'bytes; build_out:', outBytes ?? 'n/a', 'bytes');
 }
 
 main().catch(async (err) => {
