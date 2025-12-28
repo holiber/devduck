@@ -42,7 +42,7 @@ jobs:
 
       # Unit tests (run once, but don't stop artifact/metrics collection)
       - name: Run unit tests (timed)
-        run: node scripts/ci/run-and-record.mjs --name npm_test --allow-failure 1 --cmd "npm test" --log .cache/logs/npm-test.log --out .cache/metrics/test-commands.json
+        run: node scripts/ci/run-and-record.mjs --name npm_test --allow-failure 1 --cmd "npm run test:unit" --log .cache/logs/npm-test.log --out .cache/metrics/test-commands.json
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
