@@ -61,8 +61,14 @@ async function main() {
   const start = Date.now();
   const child = spawn(cmd, { shell: true, env: process.env, stdio: ['ignore', 'pipe', 'pipe'] });
 
-  child.stdout?.on('data', (c) => out.write(c));
-  child.stderr?.on('data', (c) => out.write(c));
+  child.stdout?.on('data', (c) => {
+    out.write(c);
+    process.stdout.write(c);
+  });
+  child.stderr?.on('data', (c) => {
+    out.write(c);
+    process.stderr.write(c);
+  });
 
   const code = await new Promise((resolve) => child.on('close', resolve));
   const durationMs = Date.now() - start;

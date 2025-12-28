@@ -19,8 +19,9 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  test:
+  ci:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
       - name: Checkout repository
@@ -39,21 +40,21 @@ jobs:
       - name: Install dependencies
         run: npm ci --no-audit --no-fund
 
-      # Unit tests (run ONCE per workflow)
+      # Unit tests (run once, but don't stop artifact/metrics collection)
       - name: Run unit tests (timed)
-        run: node scripts/ci/run-and-record.mjs --name npm_test --cmd "npm test" --log .cache/logs/npm-test.log --out .cache/metrics/test-commands.json
+        run: node scripts/ci/run-and-record.mjs --name npm_test --allow-failure 1 --cmd "npm test" --log .cache/logs/npm-test.log --out .cache/metrics/test-commands.json
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
-      # E2E tests (installer suite). Keep artifacts for failures.
+      # E2E tests (installer suite). Keep artifacts for failures, but don't stop collection.
       - name: Run Playwright installer suite (timed)
-        run: node scripts/ci/run-and-record.mjs --name pw_installer --cmd "npx playwright test -c tests/installer/playwright.config.ts --reporter=list --trace=retain-on-failure --video=retain-on-failure --screenshot=only-on-failure" --log .cache/logs/pw-installer.log --out .cache/metrics/test-commands.json
+        run: node scripts/ci/run-and-record.mjs --name pw_installer --allow-failure 1 --cmd "npx playwright test -c tests/installer/playwright.config.ts --reporter=list --trace=retain-on-failure --video=retain-on-failure --screenshot=only-on-failure" --log .cache/logs/pw-installer.log --out .cache/metrics/test-commands.json
 
       # Optional smoke suite (only makes sense when BASE_URL is provided).
       - name: Run Playwright smoke suite (timed)
         if: ${{ env.BASE_URL }}
-        run: node scripts/ci/run-and-record.mjs --name pw_smoke --cmd "npx playwright test -c tests/smoke/playwright.config.ts --reporter=list --trace=retain-on-failure --video=retain-on-failure --screenshot=only-on-failure" --log .cache/logs/pw-smoke.log --out .cache/metrics/test-commands.json
+        run: node scripts/ci/run-and-record.mjs --name pw_smoke --allow-failure 1 --cmd "npx playwright test -c tests/smoke/playwright.config.ts --reporter=list --trace=retain-on-failure --video=retain-on-failure --screenshot=only-on-failure" --log .cache/logs/pw-smoke.log --out .cache/metrics/test-commands.json
 
       - name: Collect Playwright artifacts into .cache
         if: ${{ always() }}
@@ -63,40 +64,8 @@ jobs:
           cp -r playwright-report .cache/playwright/ 2>/dev/null || true
           cp -r blob-report .cache/playwright/ 2>/dev/null || true
 
-      - name: Upload test artifacts
-        if: ${{ always() }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-artifacts
-          path: |
-            .cache/logs
-            .cache/metrics/test-commands.json
-            .cache/playwright
-          retention-days: 14
-
-  metrics:
-    runs-on: ubuntu-latest
-    needs: test
-    if: ${{ always() }}
-    timeout-minutes: 20
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          cache: npm
-
-      - name: Download test artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: test-artifacts
-          path: .cache
-
       - name: Checkout gh-pages (baseline + history)
+        if: ${{ always() }}
         id: ghpages
         continue-on-error: true
         uses: actions/checkout@v4
@@ -106,6 +75,7 @@ jobs:
           fetch-depth: 1
 
       - name: Load baseline/history from gh-pages (if present)
+        if: ${{ always() }}
         run: |
           mkdir -p .cache/metrics
           if [ -f "gh-pages/metrics/baseline.json" ]; then cp "gh-pages/metrics/baseline.json" ".cache/metrics/baseline.json"; else echo '{}' > ".cache/metrics/baseline.json"; fi
@@ -113,6 +83,7 @@ jobs:
           cp ".cache/metrics/baseline.json" ".cache/metrics/compare-baseline.json"
 
       - name: Collect current metrics (no tests)
+        if: ${{ always() }}
         run: node scripts/ci/collect-metrics.mjs
         # Optional: plug in your project-specific commands later via workflow env:
         # - BUILD_COMMAND (e.g. "npm run build")
@@ -122,6 +93,7 @@ jobs:
         # - DEV_TIMEOUT_MS (e.g. "8000")
 
       - name: Compare with baseline
+        if: ${{ always() }}
         run: node scripts/ci/compare-metrics.mjs --dir .cache/metrics --baseline .cache/metrics/compare-baseline.json
 
       - name: Render PR comment
@@ -152,11 +124,11 @@ jobs:
           body-path: .cache/metrics/pr-comment.md
 
       - name: Update history (main only)
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.test.result == 'success'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: node scripts/ci/update-history.mjs --dir .cache/metrics --limit 200
 
       - name: Update baseline (main only)
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.test.result == 'success'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: cp .cache/metrics/current.json .cache/metrics/baseline.json
 
       - name: Generate HTML dashboard (always)
@@ -176,9 +148,13 @@ jobs:
           retention-days: 14
 
       - name: Deploy dashboard to GitHub Pages (main only)
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.test.result == 'success'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: .cache/metrics-pages
+
+      - name: Fail workflow if tests failed
+        if: ${{ always() }}
+        run: node scripts/ci/assert-tests-passed.mjs --file .cache/metrics/test-commands.json --require npm_test --require pw_installer
 
