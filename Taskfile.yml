@@ -1,0 +1,17 @@
+version: '3'
+output: interleaved
+
+includes:
+  devduck:
+    taskfile: defaults/install.taskfile.yml
+
+tasks:
+  sync:
+    desc: "Generate .cache/taskfile.generated.yml from workspace config"
+    cmds:
+      - task: devduck:sync
+
+  install:
+    desc: "Run full installation sequence (Steps 1–7)"
+    cmds:
+      - task: devduck:install

@@ -1,0 +1,22 @@
+version: "0.1.0"
+
+# Extend from DevDuck's baseline install config
+extends:
+  - "devduck:defaults/workspace.install.yml"
+
+# This repo IS DevDuck itself
+devduck_path: "."
+
+modules:
+  - core
+  - cursor
+
+moduleSettings: {}
+
+repos: []
+
+projects: []
+
+checks: []
+
+env: []

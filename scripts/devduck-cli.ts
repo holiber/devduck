@@ -8,7 +8,7 @@ import { hideBin } from 'yargs/helpers';
 import YAML from 'yaml';
 import { readWorkspaceConfigFromRoot, writeWorkspaceConfigFile } from './lib/workspace-config.js';
 
-type WorkspaceConfigLike = {
+type WorkspaceConfig = {
   version?: string | number;
   devduck_path?: string;
   modules?: string[];
@@ -17,8 +17,14 @@ type WorkspaceConfigLike = {
   projects?: Array<{ src?: string } & Record<string, unknown>>;
   checks?: unknown[];
   env?: unknown[];
+  taskfile?: {
+    vars?: Record<string, string>;
+    tasks?: Record<string, unknown>;
+  };
   [k: string]: unknown;
 };
+
+type WorkspaceConfigLike = WorkspaceConfig;
 
 type GeneratedTaskfile = {
   version: string;
@@ -111,7 +117,31 @@ function ensureWorkspaceTaskfile(workspaceRoot: string, devduckPathRel: string):
   fs.writeFileSync(taskfilePath, content, 'utf8');
 }
 
-function buildGeneratedTaskfile(devduckPathRel: string): GeneratedTaskfile {
+function buildGeneratedTaskfile(
+  devduckPathRel: string,
+  config?: WorkspaceConfigLike
+): GeneratedTaskfile {
+  // If config has a taskfile section, use it; otherwise fall back to hardcoded defaults
+  if (config?.taskfile && typeof config.taskfile === 'object') {
+    const taskfile = config.taskfile as {
+      vars?: Record<string, string>;
+      tasks?: Record<string, unknown>;
+    };
+    
+    return {
+      version: '3',
+      output: 'interleaved',
+      vars: {
+        ...(taskfile.vars || {}),
+        // Always inject/ensure these vars (they override any from config)
+        DEVDUCK_ROOT: devduckPathRel,
+        WORKSPACE_ROOT: '{{ default "." .WORKSPACE_ROOT }}'
+      },
+      tasks: taskfile.tasks || {}
+    };
+  }
+  
+  // Fallback: hardcoded defaults for backward compatibility
   const stepCmd = (stepId: string) =>
     `tsx {{.DEVDUCK_ROOT}}/scripts/install/run-step.ts ${stepId} --workspace-root {{.WORKSPACE_ROOT}} --project-root {{.DEVDUCK_ROOT}} --unattended`;
 
@@ -282,7 +312,9 @@ async function main(argv = process.argv): Promise<void> {
         const invocationCwd = process.env.INIT_CWD ? path.resolve(process.env.INIT_CWD) : process.cwd();
         const workspaceRoot = path.resolve(invocationCwd, String(args.workspacePath || '.'));
 
-        const { config, configFile } = readWorkspaceConfigFromRoot<WorkspaceConfigLike>(workspaceRoot);
+        const { config, configFile } = readWorkspaceConfigFromRoot<WorkspaceConfigLike>(workspaceRoot, {
+          withExtends: true
+        });
         if (!config) {
           throw new Error(`Cannot read workspace config: ${configFile}`);
         }
@@ -295,7 +327,7 @@ async function main(argv = process.argv): Promise<void> {
         const cacheDir = path.join(workspaceRoot, '.cache');
         fs.mkdirSync(cacheDir, { recursive: true });
 
-        const generated = buildGeneratedTaskfile(devduckPathRel);
+        const generated = buildGeneratedTaskfile(devduckPathRel, config);
         const generatedPath = path.join(cacheDir, 'taskfile.generated.yml');
         const out = YAML.stringify(generated);
         fs.writeFileSync(generatedPath, out.endsWith('\n') ? out : out + '\n', 'utf8');

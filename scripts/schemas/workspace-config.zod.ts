@@ -130,10 +130,38 @@ const WorkspaceLaunchSchema = z
   })
   .passthrough();
 
+/**
+ * Taskfile task definition (go-task format).
+ */
+const TaskfileTaskSchema = z
+  .object({
+    desc: z.string().optional(),
+    cmds: z.array(z.union([z.string(), z.record(z.string(), z.any())])).optional(),
+    deps: z.array(z.string()).optional(),
+    task: z.string().optional(),
+  })
+  .passthrough();
+
+/**
+ * Taskfile section for workspace config.
+ */
+const WorkspaceTaskfileSchema = z
+  .object({
+    vars: z.record(z.string(), z.string()).optional(),
+    tasks: z.record(z.string(), TaskfileTaskSchema).optional(),
+  })
+  .passthrough();
+
 const WorkspaceConfigSchema = z
   .object({
     version: z.union([z.string(), z.number()]),
     devduck_path: z.string().optional(),
+
+    // Config inheritance: load and merge base configs
+    extends: z.array(z.string()).optional(),
+
+    // Taskfile generation: vars and tasks for .cache/taskfile.generated.yml
+    taskfile: WorkspaceTaskfileSchema.optional(),
 
     // Seed files/folders to copy into a *new* workspace when creating it via `--workspace-config`.
     // Paths are relative to the folder containing the provided workspace config file.
@@ -170,4 +198,10 @@ export {
   WorkspaceCheckSchema,
   WorkspaceEnvVarSchema,
   McpServerSettingsSchema,
+  WorkspaceTaskfileSchema,
+  TaskfileTaskSchema,
 };
+
+export type WorkspaceConfig = z.infer<typeof WorkspaceConfigSchema>;
+export type WorkspaceTaskfile = z.infer<typeof WorkspaceTaskfileSchema>;
+export type TaskfileTask = z.infer<typeof TaskfileTaskSchema>;
