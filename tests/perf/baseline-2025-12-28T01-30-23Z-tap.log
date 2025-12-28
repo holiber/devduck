@@ -1,0 +1,985 @@
+TAP version 13
+# Subtest: ci: smogcheck-provider
+    # Subtest: matches CIProvider interface
+    ok 1 - matches CIProvider interface
+      ---
+      duration_ms: 0.540423
+      type: 'test'
+      ...
+    # Subtest: fetchPR returns PR info that matches PRInfo schema
+    ok 2 - fetchPR returns PR info that matches PRInfo schema
+      ---
+      duration_ms: 1.318274
+      type: 'test'
+      ...
+    # Subtest: fetchPR throws error for non-existent PR
+    ok 3 - fetchPR throws error for non-existent PR
+      ---
+      duration_ms: 0.124015
+      type: 'test'
+      ...
+    # Subtest: fetchPR works with branch name
+    ok 4 - fetchPR works with branch name
+      ---
+      duration_ms: 0.220674
+      type: 'test'
+      ...
+    # Subtest: fetchCheckStatus returns check statuses that match CheckStatus schema
+    ok 5 - fetchCheckStatus returns check statuses that match CheckStatus schema
+      ---
+      duration_ms: 1.349528
+      type: 'test'
+      ...
+    # Subtest: fetchCheckStatus returns annotations for failed checks
+    ok 6 - fetchCheckStatus returns annotations for failed checks
+      ---
+      duration_ms: 0.141971
+      type: 'test'
+      ...
+    # Subtest: fetchCheckStatus works with checkId
+    ok 7 - fetchCheckStatus works with checkId
+      ---
+      duration_ms: 0.09593
+      type: 'test'
+      ...
+    # Subtest: fetchCheckStatus works with branch name
+    ok 8 - fetchCheckStatus works with branch name
+      ---
+      duration_ms: 0.07248
+      type: 'test'
+      ...
+    # Subtest: fetchComments returns comments that match Comment schema
+    ok 9 - fetchComments returns comments that match Comment schema
+      ---
+      duration_ms: 0.29296
+      type: 'test'
+      ...
+    # Subtest: fetchComments includes reactions
+    ok 10 - fetchComments includes reactions
+      ---
+      duration_ms: 0.162558
+      type: 'test'
+      ...
+    # Subtest: fetchComments includes file location for file comments
+    ok 11 - fetchComments includes file location for file comments
+      ---
+      duration_ms: 0.111486
+      type: 'test'
+      ...
+    # Subtest: fetchComments works with branch name
+    ok 12 - fetchComments works with branch name
+      ---
+      duration_ms: 0.072055
+      type: 'test'
+      ...
+    1..12
+ok 1 - ci: smogcheck-provider
+  ---
+  duration_ms: 5.315807
+  type: 'suite'
+  ...
+# Subtest: ci: provider registry discovery
+    # Subtest: discovers smogcheck-provider from modules directory and registers it
+    ok 1 - discovers smogcheck-provider from modules directory and registers it
+      ---
+      duration_ms: 27.222807
+      type: 'test'
+      ...
+    1..1
+ok 2 - ci: provider registry discovery
+  ---
+  duration_ms: 27.288143
+  type: 'suite'
+  ...
+# Subtest: launch dev starts background processes, runs smokecheck, captures browser console, and allows reuse
+ok 3 - launch dev starts background processes, runs smokecheck, captures browser console, and allows reuse
+  ---
+  duration_ms: 5007.477476
+  type: 'test'
+  ...
+# Subtest: workspace.config.json launch.dev starts processes, runs smokecheck, and supports smokecheck without args
+ok 4 - workspace.config.json launch.dev starts processes, runs smokecheck, and supports smokecheck without args
+  ---
+  duration_ms: 4801.723185
+  type: 'test'
+  ...
+# Subtest: ProcessManager writes stdout/stderr logs
+ok 5 - ProcessManager writes stdout/stderr logs
+  ---
+  duration_ms: 88.641476
+  type: 'test'
+  ...
+# Subtest: stop kills a process group (parent + child)
+ok 6 - stop kills a process group (parent + child)
+  ---
+  duration_ms: 109.529989
+  type: 'test'
+  ...
+# Subtest: email: gmail-provider
+    # Subtest: matches EmailProvider interface
+    ok 1 - matches EmailProvider interface
+      ---
+      duration_ms: 0.398747
+      type: 'test'
+      ...
+    1..1
+ok 7 - email: gmail-provider
+  ---
+  duration_ms: 0.906045
+  type: 'suite'
+  ...
+# Subtest: email: provider registry discovery (gmail-provider)
+    # Subtest: discovers gmail-provider from modules directory and registers it
+    ok 1 - discovers gmail-provider from modules directory and registers it
+      ---
+      duration_ms: 30.769061
+      type: 'test'
+      ...
+    1..1
+ok 8 - email: provider registry discovery (gmail-provider)
+  ---
+  duration_ms: 30.856631
+  type: 'suite'
+  ...
+# Subtest: email: smogcheck-provider
+    # Subtest: matches EmailProvider interface
+    ok 1 - matches EmailProvider interface
+      ---
+      duration_ms: 0.511148
+      type: 'test'
+      ...
+    # Subtest: listUnreadMessages returns messages that match Message schema
+    ok 2 - listUnreadMessages returns messages that match Message schema
+      ---
+      duration_ms: 1.625688
+      type: 'test'
+      ...
+    # Subtest: getMessage returns a message by id
+    ok 3 - getMessage returns a message by id
+      ---
+      duration_ms: 0.246601
+      type: 'test'
+      ...
+    # Subtest: searchMessages supports filtering by from
+    ok 4 - searchMessages supports filtering by from
+      ---
+      duration_ms: 0.15839
+      type: 'test'
+      ...
+    # Subtest: searchMessages supports filtering by participant (to/cc/bcc/from)
+    ok 5 - searchMessages supports filtering by participant (to/cc/bcc/from)
+      ---
+      duration_ms: 0.139092
+      type: 'test'
+      ...
+    # Subtest: searchMessages supports filtering by date range
+    ok 6 - searchMessages supports filtering by date range
+      ---
+      duration_ms: 0.107348
+      type: 'test'
+      ...
+    # Subtest: downloadAttachment returns a Buffer for an existing attachment
+    ok 7 - downloadAttachment returns a Buffer for an existing attachment
+      ---
+      duration_ms: 0.202727
+      type: 'test'
+      ...
+    1..7
+ok 9 - email: smogcheck-provider
+  ---
+  duration_ms: 3.676158
+  type: 'suite'
+  ...
+# Subtest: email: provider registry discovery
+    # Subtest: discovers smogcheck-provider from modules directory and registers it
+    ok 1 - discovers smogcheck-provider from modules directory and registers it
+      ---
+      duration_ms: 34.427918
+      type: 'test'
+      ...
+    1..1
+ok 10 - email: provider registry discovery
+  ---
+  duration_ms: 34.553076
+  type: 'suite'
+  ...
+# Subtest: install/mcp optional servers
+    # Subtest: marks optional URL-based server failure as non-blocking
+    ok 1 - marks optional URL-based server failure as non-blocking
+      ---
+      duration_ms: 12.151903
+      type: 'test'
+      ...
+    # Subtest: marks optional command-based server failure as non-blocking
+    ok 2 - marks optional command-based server failure as non-blocking
+      ---
+      duration_ms: 4.752522
+      type: 'test'
+      ...
+    1..2
+ok 11 - install/mcp optional servers
+  ---
+  duration_ms: 17.501303
+  type: 'suite'
+  ...
+# Subtest: Install Project Scripts
+    # Subtest: Install default scripts from project
+    ok 1 - Install default scripts from project
+      ---
+      duration_ms: 3.192898
+      type: 'test'
+      ...
+    # Subtest: Install additional scripts via importScripts
+    ok 2 - Install additional scripts via importScripts
+      ---
+      duration_ms: 2.027717
+      type: 'test'
+      ...
+    # Subtest: Remove scripts when project is removed from config
+    ok 3 - Remove scripts when project is removed from config
+      ---
+      duration_ms: 1.525211
+      type: 'test'
+      ...
+    # Subtest: Handle missing project package.json gracefully
+    ok 4 - Handle missing project package.json gracefully
+      ---
+      duration_ms: 1.003245
+      type: 'test'
+      ...
+    # Subtest: Verify scripts do not change current directory
+    ok 5 - Verify scripts do not change current directory
+      ---
+      duration_ms: 1.112952
+      type: 'test'
+      ...
+    1..5
+ok 12 - Install Project Scripts
+  ---
+  duration_ms: 14.704608
+  type: 'suite'
+  ...
+# Created shared workspace: /workspace/.cache/temp/install-steps-test-1766885468433
+# [36m
+# [Step 1] Checking environment variables...[0m
+# [33m
+#   ⚠ Missing required environment variables:[0m
+# [33m    - TEST_VAR_1 (config) - Test variable 1[0m
+# [36m
+#   ℹ Please:[0m
+# [36m    1. Switch to workspace folder: cd /workspace/.cache/temp/install-steps-test-1766885468433[0m
+# [36m    2. Set missing variables in .env file or environment variables[0m
+# [36m    3. Re-run installation[0m
+# [33m  ⚠ Step 1 requires user input[0m
+# [36m
+# [Step 1] Checking environment variables...[0m
+# [32m  ✓ All required environment variables are present[0m
+# [32m  ✓ Step 1 completed[0m
+# Subtest: Installation Steps
+    # Subtest: Step 1: Check Environment Variables
+    ok 1 - Step 1: Check Environment Variables
+      ---
+      duration_ms: 27.982774
+      type: 'test'
+      ...
+# [36m
+# [Step 2] Downloading repositories...[0m
+# [36m  ℹ No repositories to download[0m
+    # Subtest: Step 2: Download Repos
+    ok 2 - Step 2: Download Repos
+      ---
+      duration_ms: 4.792808
+      type: 'test'
+      ...
+# [36m
+# [Step 3] Downloading projects...[0m
+# [36m  ℹ No projects to download[0m
+# [36m
+# [Step 4] Checking environment variables again...[0m
+# [32m  ✓ All required environment variables are present[0m
+# [32m  ✓ Step 4 completed[0m
+# [36m
+# [Step 5] Setting up modules...[0m
+# [36m  ℹ Executing module hooks...[0m
+# [32m  ✓ Step 5 completed[0m
+# [36m
+# [Step 6] Setting up projects...[0m
+# [36m  ℹ No projects to setup[0m
+# [36m
+# [Step 7] Verifying installation...[0m
+# [36m  ℹ Verifying 0 check(s)...[0m
+# [32m  ✓ All verifications passed (0/0 passed, 0 skipped)[0m
+# [32m  ✓ Step 7 completed[0m
+    # Subtest: Step 3: Download Projects
+    ok 3 - Step 3: Download Projects
+      ---
+      duration_ms: 2.385645
+      type: 'test'
+      ...
+    # Subtest: Step 4: Check Environment Again
+    ok 4 - Step 4: Check Environment Again
+      ---
+      duration_ms: 5.68271
+      type: 'test'
+      ...
+    # Subtest: Step 5: Setup Modules
+    ok 5 - Step 5: Setup Modules
+      ---
+      duration_ms: 11.247577
+      type: 'test'
+      ...
+    # Subtest: Step 6: Setup Projects
+    ok 6 - Step 6: Setup Projects
+      ---
+      duration_ms: 0.91172
+      type: 'test'
+      ...
+    # Subtest: Step 7: Verify Installation
+    ok 7 - Step 7: Verify Installation
+      ---
+      duration_ms: 6.169745
+      type: 'test'
+      ...
+# Cleaned up shared workspace: /workspace/.cache/temp/install-steps-test-1766885468433
+    1..7
+ok 13 - Installation Steps
+  ---
+  duration_ms: 64.636905
+  type: 'suite'
+  ...
+# Subtest: Workspace Installer - GUI/Interactive Mode
+    # Subtest: Fresh Workspace Installation
+        # Subtest: GUI Installation - Fresh Workspace
+        ok 1 - GUI Installation - Fresh Workspace
+          ---
+          duration_ms: 363.501162
+          type: 'test'
+          ...
+        1..1
+    ok 1 - Fresh Workspace Installation
+      ---
+      duration_ms: 364.03423
+      type: 'suite'
+      ...
+    # Subtest: Existing Workspace Operations
+        # Subtest: Detect Existing Workspace
+        ok 1 - Detect Existing Workspace
+          ---
+          duration_ms: 382.363749
+          type: 'test'
+          ...
+        1..1
+    ok 2 - Existing Workspace Operations
+      ---
+      duration_ms: 386.562684
+      type: 'suite'
+      ...
+    1..2
+ok 14 - Workspace Installer - GUI/Interactive Mode
+  ---
+  duration_ms: 750.93672
+  type: 'suite'
+  ...
+# Subtest: installer: hook load failure is fatal
+ok 15 - installer: hook load failure is fatal
+  ---
+  duration_ms: 422.851103
+  type: 'test'
+  ...
+# Subtest: installer: .env values are available to shell checks (fill-missing)
+ok 16 - installer: .env values are available to shell checks (fill-missing)
+  ---
+  duration_ms: 355.913412
+  type: 'test'
+  ...
+# Subtest: installer: checks without name do not print "Checking undefined"
+ok 17 - installer: checks without name do not print "Checking undefined"
+  ---
+  duration_ms: 355.499375
+  type: 'test'
+  ...
+# Subtest: installer summary: prints INSTALLATION FINISHED WITH ERRORS on failures
+ok 18 - installer summary: prints INSTALLATION FINISHED WITH ERRORS on failures
+  ---
+  duration_ms: 347.536041
+  type: 'test'
+  ...
+# Subtest: Workspace Installer - Unattended Mode
+    # Subtest: Fresh Workspace Installation
+        # Subtest: Unattended Installation from fixture - cursor-only
+        ok 1 - Unattended Installation from fixture - cursor-only
+          ---
+          duration_ms: 394.505983
+          type: 'test'
+          ...
+        # Subtest: Unattended Installation - Fresh Workspace
+        ok 2 - Unattended Installation - Fresh Workspace
+          ---
+          duration_ms: 349.444609
+          type: 'test'
+          ...
+        # Subtest: Unattended Installation with Config File
+        ok 3 - Unattended Installation with Config File
+          ---
+          duration_ms: 340.613053
+          type: 'test'
+          ...
+        # Subtest: Unattended Installation with workspace.config.json (local folder project src)
+        ok 4 - Unattended Installation with workspace.config.json (local folder project src)
+          ---
+          duration_ms: 448.429096
+          type: 'test'
+          ...
+        # Subtest: Unattended Installation with workspace.config.json seedFiles[] copies seed files/folders
+        ok 5 - Unattended Installation with workspace.config.json seedFiles[] copies seed files/folders
+          ---
+          duration_ms: 383.879422
+          type: 'test'
+          ...
+        # Subtest: Unattended Installation - Full Structure Verification
+        ok 6 - Unattended Installation - Full Structure Verification
+          ---
+          duration_ms: 376.546007
+          type: 'test'
+          ...
+        1..6
+    ok 1 - Fresh Workspace Installation
+      ---
+      duration_ms: 2294.227216
+      type: 'suite'
+      ...
+    # Subtest: Existing Workspace Operations
+        # Subtest: Reinstall Existing Workspace - Unattended
+        ok 1 - Reinstall Existing Workspace - Unattended
+          ---
+          duration_ms: 739.458939
+          type: 'test'
+          ...
+        # Subtest: Add Modules to Existing Workspace
+        ok 2 - Add Modules to Existing Workspace
+          ---
+          duration_ms: 738.782135
+          type: 'test'
+          ...
+        # Subtest: Remove Modules from Existing Workspace
+        ok 3 - Remove Modules from Existing Workspace
+          ---
+          duration_ms: 745.684725
+          type: 'test'
+          ...
+        # Subtest: Reinstallation Verification - Preserve Configuration
+        ok 4 - Reinstallation Verification - Preserve Configuration
+          ---
+          duration_ms: 767.190086
+          type: 'test'
+          ...
+        # Subtest: Reinstallation - Module Hooks Re-executed
+        ok 5 - Reinstallation - Module Hooks Re-executed
+          ---
+          duration_ms: 759.194102
+          type: 'test'
+          ...
+        1..5
+    ok 2 - Existing Workspace Operations
+      ---
+      duration_ms: 3750.754766
+      type: 'suite'
+      ...
+    # Subtest: External Repository Installation
+        # Subtest: Installation with External Repository
+        ok 1 - Installation with External Repository
+          ---
+          duration_ms: 891.355092
+          type: 'test'
+          ...
+        1..1
+    ok 3 - External Repository Installation
+      ---
+      duration_ms: 891.489763
+      type: 'suite'
+      ...
+    1..3
+ok 19 - Workspace Installer - Unattended Mode
+  ---
+  duration_ms: 6936.839845
+  type: 'suite'
+  ...
+# Subtest: workspace modules patterns
+    # Subtest: modules: ["issue-*"] expands to issue-tracker and issue-tracker-github
+    ok 1 - modules: ["issue-*"] expands to issue-tracker and issue-tracker-github
+      ---
+      duration_ms: 17.013376
+      type: 'test'
+      ...
+    1..1
+ok 20 - workspace modules patterns
+  ---
+  duration_ms: 17.615535
+  type: 'suite'
+  ...
+# Subtest: devduck new (npx-friendly bootstrap)
+    # Subtest: clones DevDuck into devduck/src when not listed in projects
+    ok 1 - clones DevDuck into devduck/src when not listed in projects
+      ---
+      duration_ms: 2167.151811
+      type: 'test'
+      ...
+    # Subtest: resolves relative workspace path from INIT_CWD (npx cache cwd simulation)
+    ok 2 - resolves relative workspace path from INIT_CWD (npx cache cwd simulation)
+      ---
+      duration_ms: 2375.001784
+      type: 'test'
+      ...
+    1..2
+ok 21 - devduck new (npx-friendly bootstrap)
+  ---
+  duration_ms: 4542.946389
+  type: 'suite'
+  ...
+# Subtest: Workspace Installer - Workspace-local modules/
+    # Subtest: Installs module from workspace/modules when listed in config
+    ok 1 - Installs module from workspace/modules when listed in config
+      ---
+      duration_ms: 406.643019
+      type: 'test'
+      ...
+    1..1
+ok 22 - Workspace Installer - Workspace-local modules/
+  ---
+  duration_ms: 407.299668
+  type: 'suite'
+  ...
+# Subtest: issue-tracker-github: github-provider
+    # Subtest: matches IssueTrackerProvider contract schema
+    ok 1 - matches IssueTrackerProvider contract schema
+      ---
+      duration_ms: 1.464634
+      type: 'test'
+      ...
+    # Subtest: fetchIssue returns issue that matches Issue schema
+    ok 2 - fetchIssue returns issue that matches Issue schema
+      ---
+      duration_ms: 0.121749
+      type: 'test'
+      ...
+    # Subtest: fetchIssue works with URL
+        # Subtest: GITHUB_TOKEN not set
+        ok 1 - GITHUB_TOKEN not set # SKIP
+          ---
+          duration_ms: 0.076608
+          type: 'test'
+          ...
+        1..1
+    ok 3 - fetchIssue works with URL
+      ---
+      duration_ms: 0.247315
+      type: 'test'
+      ...
+    # Subtest: fetchIssue throws error for non-existent issue
+        # Subtest: GITHUB_TOKEN not set
+        ok 1 - GITHUB_TOKEN not set # SKIP
+          ---
+          duration_ms: 0.092281
+          type: 'test'
+          ...
+        1..1
+    ok 4 - fetchIssue throws error for non-existent issue
+      ---
+      duration_ms: 0.211471
+      type: 'test'
+      ...
+    # Subtest: fetchComments returns comments that match Comment schema
+        # Subtest: GITHUB_TOKEN not set
+        ok 1 - GITHUB_TOKEN not set # SKIP
+          ---
+          duration_ms: 0.08816
+          type: 'test'
+          ...
+        1..1
+    ok 5 - fetchComments returns comments that match Comment schema
+      ---
+      duration_ms: 0.204406
+      type: 'test'
+      ...
+    # Subtest: fetchPRs returns PR references that match PRReference schema
+        # Subtest: GITHUB_TOKEN not set
+        ok 1 - GITHUB_TOKEN not set # SKIP
+          ---
+          duration_ms: 0.11771
+          type: 'test'
+          ...
+        1..1
+    ok 6 - fetchPRs returns PR references that match PRReference schema
+      ---
+      duration_ms: 0.334153
+      type: 'test'
+      ...
+    # Subtest: downloadResources creates correct directory structure
+        # Subtest: GITHUB_TOKEN not set
+        ok 1 - GITHUB_TOKEN not set # SKIP
+          ---
+          duration_ms: 0.113738
+          type: 'test'
+          ...
+        1..1
+    ok 7 - downloadResources creates correct directory structure
+      ---
+      duration_ms: 0.27953
+      type: 'test'
+      ...
+    # Subtest: downloadResources creates resources.json with correct metadata
+        # Subtest: GITHUB_TOKEN not set
+        ok 1 - GITHUB_TOKEN not set # SKIP
+          ---
+          duration_ms: 0.059384
+          type: 'test'
+          ...
+        1..1
+    ok 8 - downloadResources creates resources.json with correct metadata
+      ---
+      duration_ms: 0.180058
+      type: 'test'
+      ...
+    # Subtest: downloadResources downloads resources with distance <= 1
+        # Subtest: GITHUB_TOKEN not set
+        ok 1 - GITHUB_TOKEN not set # SKIP
+          ---
+          duration_ms: 0.051843
+          type: 'test'
+          ...
+        1..1
+    ok 9 - downloadResources downloads resources with distance <= 1
+      ---
+      duration_ms: 0.190485
+      type: 'test'
+      ...
+    # Subtest: downloadResources creates issue.json with comments
+        # Subtest: GITHUB_TOKEN not set
+        ok 1 - GITHUB_TOKEN not set # SKIP
+          ---
+          duration_ms: 0.049746
+          type: 'test'
+          ...
+        1..1
+    ok 10 - downloadResources creates issue.json with comments
+      ---
+      duration_ms: 0.144518
+      type: 'test'
+      ...
+    1..10
+ok 23 - issue-tracker-github: github-provider
+  ---
+  duration_ms: 4.080727
+  type: 'suite'
+  ...
+# Subtest: issue-tracker-github: provider registry discovery
+    # Subtest: discovers github-provider from modules directory and registers it (with schema validation)
+    ok 1 - discovers github-provider from modules directory and registers it (with schema validation)
+      ---
+      duration_ms: 27.041841
+      type: 'test'
+      ...
+    1..1
+ok 24 - issue-tracker-github: provider registry discovery
+  ---
+  duration_ms: 27.103446
+  type: 'suite'
+  ...
+# Subtest: issue-tracker: smogcheck-provider
+    # Subtest: matches IssueTrackerProvider contract schema
+    ok 1 - matches IssueTrackerProvider contract schema
+      ---
+      duration_ms: 2.430823
+      type: 'test'
+      ...
+    # Subtest: fetchIssue returns issue that matches Issue schema
+    ok 2 - fetchIssue returns issue that matches Issue schema
+      ---
+      duration_ms: 0.499207
+      type: 'test'
+      ...
+    # Subtest: fetchIssue works with issue key
+    ok 3 - fetchIssue works with issue key
+      ---
+      duration_ms: 0.083292
+      type: 'test'
+      ...
+    # Subtest: fetchIssue works with URL
+    ok 4 - fetchIssue works with URL
+      ---
+      duration_ms: 0.278574
+      type: 'test'
+      ...
+    # Subtest: fetchIssue throws error for non-existent issue
+    ok 5 - fetchIssue throws error for non-existent issue
+      ---
+      duration_ms: 0.14529
+      type: 'test'
+      ...
+    # Subtest: fetchComments returns comments that match Comment schema
+    ok 6 - fetchComments returns comments that match Comment schema
+      ---
+      duration_ms: 0.364137
+      type: 'test'
+      ...
+    # Subtest: fetchComments includes reactions
+    ok 7 - fetchComments includes reactions
+      ---
+      duration_ms: 0.096428
+      type: 'test'
+      ...
+    # Subtest: fetchComments returns empty array for issue without comments
+    ok 8 - fetchComments returns empty array for issue without comments
+      ---
+      duration_ms: 0.076571
+      type: 'test'
+      ...
+    # Subtest: fetchPRs returns PR references that match PRReference schema
+    ok 9 - fetchPRs returns PR references that match PRReference schema
+      ---
+      duration_ms: 0.174426
+      type: 'test'
+      ...
+    # Subtest: fetchPRs returns empty array for issue without PRs
+    ok 10 - fetchPRs returns empty array for issue without PRs
+      ---
+      duration_ms: 0.149618
+      type: 'test'
+      ...
+    # Subtest: downloadResources creates correct directory structure
+    ok 11 - downloadResources creates correct directory structure
+      ---
+      duration_ms: 1.855027
+      type: 'test'
+      ...
+    # Subtest: downloadResources creates resources.json with correct metadata
+    ok 12 - downloadResources creates resources.json with correct metadata
+      ---
+      duration_ms: 0.849557
+      type: 'test'
+      ...
+    # Subtest: downloadResources downloads resources with distance <= 2
+    ok 13 - downloadResources downloads resources with distance <= 2
+      ---
+      duration_ms: 0.983454
+      type: 'test'
+      ...
+    # Subtest: downloadResources tracks resources with distance == 3 without downloading
+    ok 14 - downloadResources tracks resources with distance == 3 without downloading
+      ---
+      duration_ms: 0.848981
+      type: 'test'
+      ...
+    # Subtest: downloadResources creates issue.json with comments and PRs
+    ok 15 - downloadResources creates issue.json with comments and PRs
+      ---
+      duration_ms: 0.872624
+      type: 'test'
+      ...
+    # Subtest: downloadResources creates PR directories when PRs exist
+    ok 16 - downloadResources creates PR directories when PRs exist
+      ---
+      duration_ms: 0.914463
+      type: 'test'
+      ...
+    1..16
+ok 25 - issue-tracker: smogcheck-provider
+  ---
+  duration_ms: 11.563608
+  type: 'suite'
+  ...
+# Subtest: issue-tracker: provider registry discovery
+    # Subtest: discovers smogcheck-provider from modules directory and registers it (with schema validation)
+    ok 1 - discovers smogcheck-provider from modules directory and registers it (with schema validation)
+      ---
+      duration_ms: 29.418234
+      type: 'test'
+      ...
+    1..1
+ok 26 - issue-tracker: provider registry discovery
+  ---
+  duration_ms: 29.489147
+  type: 'suite'
+  ...
+# Subtest: mcp: API module
+    # Subtest: mcpRouter is defined and has procedures
+    ok 1 - mcpRouter is defined and has procedures
+      ---
+      duration_ms: 0.702796
+      type: 'test'
+      ...
+    # Subtest: mcpRouter.list procedure exists with correct schema
+    ok 2 - mcpRouter.list procedure exists with correct schema
+      ---
+      duration_ms: 0.195233
+      type: 'test'
+      ...
+    # Subtest: mcpRouter.call procedure exists with correct schema
+    ok 3 - mcpRouter.call procedure exists with correct schema
+      ---
+      duration_ms: 0.190714
+      type: 'test'
+      ...
+    # Subtest: mcp module is included in unified API
+    ok 4 - mcp module is included in unified API
+      ---
+      duration_ms: 21.101556
+      type: 'test'
+      ...
+    # Subtest: mcp.list can list servers when mcp.json exists
+    ok 5 - mcp.list can list servers when mcp.json exists
+      ---
+      duration_ms: 0.285935
+      type: 'test'
+      ...
+    # Subtest: npm run api lists mcp methods
+    ok 6 - npm run api lists mcp methods
+      ---
+      duration_ms: 0.222747
+      type: 'test'
+      ...
+    # Subtest: mcp.list can be called via API CLI
+    ok 7 - mcp.list can be called via API CLI
+      ---
+      duration_ms: 0.159417
+      type: 'test'
+      ...
+    # Subtest: mcp.call can be called via API CLI (help check)
+    ok 8 - mcp.call can be called via API CLI (help check)
+      ---
+      duration_ms: 0.149905
+      type: 'test'
+      ...
+    1..8
+ok 27 - mcp: API module
+  ---
+  duration_ms: 23.778122
+  type: 'suite'
+  ...
+# Subtest: messenger CLI exposes required inputs as options
+ok 28 - messenger CLI exposes required inputs as options
+  ---
+  duration_ms: 954.134898
+  type: 'test'
+  ...
+# Subtest: ci CLI positional still works (no duplicate required flags)
+ok 29 - ci CLI positional still works (no duplicate required flags)
+  ---
+  duration_ms: 446.945566
+  type: 'test'
+  ...
+# Subtest: messenger: telegram-provider
+    # Subtest: matches MessengerProvider contract schema
+    ok 1 - matches MessengerProvider contract schema
+      ---
+      duration_ms: 1.379705
+      type: 'test'
+      ...
+    # Subtest: listChats returns chats that match Chat schema
+    ok 2 - listChats returns chats that match Chat schema
+      ---
+      duration_ms: 1.267151
+      type: 'test'
+      ...
+    # Subtest: getChatHistory returns messages that match ChatMessage schema
+    ok 3 - getChatHistory returns messages that match ChatMessage schema
+      ---
+      duration_ms: 2.826852
+      type: 'test'
+      ...
+    # Subtest: downloadFile returns a descriptor that matches DownloadFileResult schema
+    ok 4 - downloadFile returns a descriptor that matches DownloadFileResult schema
+      ---
+      duration_ms: 0.771198
+      type: 'test'
+      ...
+    1..4
+ok 30 - messenger: telegram-provider
+  ---
+  duration_ms: 6.919901
+  type: 'suite'
+  ...
+# Subtest: messenger: yandex-messenger-provider
+    # Subtest: matches MessengerProvider contract schema
+    ok 1 - matches MessengerProvider contract schema
+      ---
+      duration_ms: 0.209161
+      type: 'test'
+      ...
+    # Subtest: listChats returns chats that match Chat schema
+    ok 2 - listChats returns chats that match Chat schema
+      ---
+      duration_ms: 0.497298
+      type: 'test'
+      ...
+    # Subtest: getChatHistory returns messages that match ChatMessage schema
+    ok 3 - getChatHistory returns messages that match ChatMessage schema
+      ---
+      duration_ms: 1.530957
+      type: 'test'
+      ...
+    # Subtest: downloadFile returns a descriptor that matches DownloadFileResult schema
+    ok 4 - downloadFile returns a descriptor that matches DownloadFileResult schema
+      ---
+      duration_ms: 0.609712
+      type: 'test'
+      ...
+    1..4
+ok 31 - messenger: yandex-messenger-provider
+  ---
+  duration_ms: 3.105643
+  type: 'suite'
+  ...
+# Subtest: messenger: provider registry discovery
+    # Subtest: discovers messenger providers from modules directory and registers them (with schema validation)
+    ok 1 - discovers messenger providers from modules directory and registers them (with schema validation)
+      ---
+      duration_ms: 28.617177
+      type: 'test'
+      ...
+    1..1
+ok 32 - messenger: provider registry discovery
+  ---
+  duration_ms: 28.705421
+  type: 'suite'
+  ...
+# Subtest: workspace-path resolver
+    # Subtest: parses ark:/ links as Arcadia links
+    ok 1 - parses ark:/ links as Arcadia links
+      ---
+      duration_ms: 0.543409
+      type: 'test'
+      ...
+    # Subtest: resolves ark:/ links using arc root (fallback to arc root)
+    ok 2 - resolves ark:/ links using arc root (fallback to arc root)
+      ---
+      duration_ms: 0.248773
+      type: 'test'
+      ...
+    # Subtest: resolves ark:/ links using arc root and strips arcadia/ prefix
+    ok 3 - resolves ark:/ links using arc root and strips arcadia/ prefix
+      ---
+      duration_ms: 0.118297
+      type: 'test'
+      ...
+    # Subtest: if arc root is unavailable, ark:/ falls back to projectRoot
+    ok 4 - if arc root is unavailable, ark:/ falls back to projectRoot
+      ---
+      duration_ms: 0.091115
+      type: 'test'
+      ...
+    1..4
+ok 33 - workspace-path resolver
+  ---
+  duration_ms: 1.627752
+  type: 'suite'
+  ...
+1..33
+# tests 122
+# suites 28
+# pass 114
+# fail 0
+# cancelled 0
+# skipped 8
+# todo 0
+# duration_ms 29012.138342

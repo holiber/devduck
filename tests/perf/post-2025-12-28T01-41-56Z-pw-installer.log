@@ -1,0 +1,82 @@
+
+Running 34 tests using 1 worker
+
+(node:17413) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:17413) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   1 tests/installer/install-project-scripts.pw.spec.ts:26:3 › Install Project Scripts › Install default scripts from project @smoke (10ms)
+  ✓   2 tests/installer/install-project-scripts.pw.spec.ts:75:3 › Install Project Scripts › Install additional scripts via importScripts @smoke (6ms)
+  ✓   3 tests/installer/install-project-scripts.pw.spec.ts:113:3 › Install Project Scripts › Remove scripts when project is removed from config @smoke (2ms)
+  ✓   4 tests/installer/install-project-scripts.pw.spec.ts:151:3 › Install Project Scripts › Handle missing project package.json gracefully @smoke (2ms)
+  ✓   5 tests/installer/install-project-scripts.pw.spec.ts:176:3 › Install Project Scripts › Verify scripts do not change current directory @smoke (3ms)
+Created shared workspace: /workspace/.cache/temp/install-steps-test-1766886145555
+[36m
+[Step 1] Checking environment variables...[0m
+[33m
+  ⚠ Missing required environment variables:[0m
+[33m    - TEST_VAR_1 (config) - Test variable 1[0m
+[36m
+  ℹ Please:[0m
+[36m    1. Switch to workspace folder: cd /workspace/.cache/temp/install-steps-test-1766886145555[0m
+[36m    2. Set missing variables in .env file or environment variables[0m
+[36m    3. Re-run installation[0m
+[33m  ⚠ Step 1 requires user input[0m
+[36m
+[Step 1] Checking environment variables...[0m
+[32m  ✓ All required environment variables are present[0m
+[32m  ✓ Step 1 completed[0m
+  ✓   6 tests/installer/install-steps.pw.spec.ts:29:3 › Installation Steps › Step 1: Check Environment Variables (43ms)
+[36m
+[Step 2] Downloading repositories...[0m
+[36m  ℹ No repositories to download[0m
+  ✓   7 tests/installer/install-steps.pw.spec.ts:59:3 › Installation Steps › Step 2: Download Repos @smoke (3ms)
+[36m
+[Step 3] Downloading projects...[0m
+[36m  ℹ No projects to download[0m
+  ✓   8 tests/installer/install-steps.pw.spec.ts:70:3 › Installation Steps › Step 3: Download Projects @smoke (3ms)
+[36m
+[Step 4] Checking environment variables again...[0m
+[32m  ✓ All required environment variables are present[0m
+[32m  ✓ Step 4 completed[0m
+  ✓   9 tests/installer/install-steps.pw.spec.ts:81:3 › Installation Steps › Step 4: Check Environment Again @smoke (7ms)
+[36m
+[Step 5] Setting up modules...[0m
+[36m  ℹ Executing module hooks...[0m
+[32m  ✓ Step 5 completed[0m
+  ✓  10 tests/installer/install-steps.pw.spec.ts:90:3 › Installation Steps › Step 5: Setup Modules (10ms)
+[36m
+[Step 6] Setting up projects...[0m
+[36m  ℹ No projects to setup[0m
+  ✓  11 tests/installer/install-steps.pw.spec.ts:102:3 › Installation Steps › Step 6: Setup Projects @smoke (3ms)
+[36m
+[Step 7] Verifying installation...[0m
+[36m  ℹ Verifying 0 check(s)...[0m
+[32m  ✓ All verifications passed (0/0 passed, 0 skipped)[0m
+[32m  ✓ Step 7 completed[0m
+Cleaned up shared workspace: /workspace/.cache/temp/install-steps-test-1766886145555
+  ✓  12 tests/installer/install-steps.pw.spec.ts:111:3 › Installation Steps › Step 7: Verify Installation (8ms)
+  ✓  13 tests/installer/installer-gui.pw.spec.ts:7:5 › Workspace Installer - GUI/Interactive Mode › Fresh Workspace Installation › GUI Installation - Fresh Workspace (358ms)
+  ✓  14 tests/installer/installer-gui.pw.spec.ts:51:5 › Workspace Installer - GUI/Interactive Mode › Existing Workspace Operations › Detect Existing Workspace (370ms)
+  ✓  15 tests/installer/installer-strictness.pw.spec.ts:5:1 › installer: hook load failure is fatal (422ms)
+  ✓  16 tests/installer/installer-strictness.pw.spec.ts:26:1 › installer: .env values are available to shell checks (fill-missing) (361ms)
+  ✓  17 tests/installer/installer-strictness.pw.spec.ts:54:1 › installer: checks without name do not print "Checking undefined" (359ms)
+  ✓  18 tests/installer/installer-strictness.pw.spec.ts:76:1 › installer summary: prints INSTALLATION FINISHED WITH ERRORS on failures (354ms)
+  ✓  19 tests/installer/installer-unattended.pw.spec.ts:7:5 › Workspace Installer - Unattended Mode › Fresh Workspace Installation › Unattended Installation from fixture - cursor-only (377ms)
+  ✓  20 tests/installer/installer-unattended.pw.spec.ts:37:5 › Workspace Installer - Unattended Mode › Fresh Workspace Installation › Unattended Installation - Fresh Workspace (345ms)
+  ✓  21 tests/installer/installer-unattended.pw.spec.ts:65:5 › Workspace Installer - Unattended Mode › Fresh Workspace Installation › Unattended Installation with Config File (356ms)
+  ✓  22 tests/installer/installer-unattended.pw.spec.ts:93:5 › Workspace Installer - Unattended Mode › Fresh Workspace Installation › Unattended Installation with workspace.config.json (local folder project src) (457ms)
+  ✓  23 tests/installer/installer-unattended.pw.spec.ts:157:5 › Workspace Installer - Unattended Mode › Fresh Workspace Installation › Unattended Installation with workspace.config.json seedFiles[] copies seed files/folders (382ms)
+  ✓  24 tests/installer/installer-unattended.pw.spec.ts:190:5 › Workspace Installer - Unattended Mode › Fresh Workspace Installation › Unattended Installation - Full Structure Verification (389ms)
+  ✓  25 tests/installer/installer-unattended.pw.spec.ts:229:5 › Workspace Installer - Unattended Mode › Existing Workspace Operations › Reinstall Existing Workspace - Unattended (756ms)
+  ✓  26 tests/installer/installer-unattended.pw.spec.ts:267:5 › Workspace Installer - Unattended Mode › Existing Workspace Operations › Add Modules to Existing Workspace (759ms)
+  ✓  27 tests/installer/installer-unattended.pw.spec.ts:302:5 › Workspace Installer - Unattended Mode › Existing Workspace Operations › Remove Modules from Existing Workspace (836ms)
+  ✓  28 tests/installer/installer-unattended.pw.spec.ts:334:5 › Workspace Installer - Unattended Mode › Existing Workspace Operations › Reinstallation Verification - Preserve Configuration (786ms)
+  ✓  29 tests/installer/installer-unattended.pw.spec.ts:375:5 › Workspace Installer - Unattended Mode › Existing Workspace Operations › Reinstallation - Module Hooks Re-executed (784ms)
+  ✓  30 tests/installer/installer-unattended.pw.spec.ts:414:5 › Workspace Installer - Unattended Mode › External Repository Installation › Installation with External Repository (889ms)
+  ✓  31 tests/installer/module-patterns.pw.spec.ts:10:3 › workspace modules patterns › modules: ["issue-*"] expands to issue-tracker and issue-tracker-github (5ms)
+  ✓  32 tests/installer/npx-new-workspace.pw.spec.ts:11:3 › devduck new (npx-friendly bootstrap) › clones DevDuck into devduck/src when not listed in projects (2.5s)
+  ✓  33 tests/installer/npx-new-workspace.pw.spec.ts:33:3 › devduck new (npx-friendly bootstrap) › resolves relative workspace path from INIT_CWD (npx cache cwd simulation) (2.5s)
+  ✓  34 tests/installer/workspace-modules-installation.pw.spec.ts:6:3 › Workspace Installer - Workspace-local modules/ › Installs module from workspace/modules when listed in config (411ms)
+
+  34 passed (15.8s)

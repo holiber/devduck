@@ -1,13 +1,7 @@
-#!/usr/bin/env node
+import { test, expect } from '@playwright/test';
+import path from 'node:path';
+import { promises as fs } from 'node:fs';
 
-/**
- * Tests for workspace installer in unattended mode
- */
-
-import { test, describe, before, after } from 'node:test';
-import assert from 'node:assert';
-import path from 'path';
-import { promises as fs } from 'fs';
 import {
   createTempWorkspace,
   createWorkspaceFromFixture,
@@ -20,8 +14,8 @@ import {
   checkInstallerResult
 } from './helpers.js';
 
-describe('Workspace Installer - Unattended Mode', () => {
-  describe('Fresh Workspace Installation', () => {
+test.describe('Workspace Installer - Unattended Mode', () => {
+  test.describe('Fresh Workspace Installation', () => {
     test('Unattended Installation from fixture - cursor-only', async () => {
       const tempWorkspace = await createWorkspaceFromFixture('cursor-only', {
         prefix: 'devduck-cursor-only-fixture-test-'
@@ -35,23 +29,23 @@ describe('Workspace Installer - Unattended Mode', () => {
 
         checkInstallerResult(result);
 
-        const installed = await waitForInstallation(tempWorkspace, 30000);
-        assert.ok(installed, 'Installation should complete');
+        const installed = await waitForInstallation(tempWorkspace, 30_000);
+        expect(installed, 'Installation should complete').toBeTruthy();
 
         const structure = await verifyWorkspaceStructure(tempWorkspace);
-        assert.ok(structure.workspaceConfigExists, 'workspace.config.json should exist');
-        assert.ok(structure.cursorDirExists, '.cursor directory should exist');
-        assert.ok(structure.mcpJsonExists, '.cursor/mcp.json should exist');
+        expect(structure.workspaceConfigExists, 'workspace.config.json should exist').toBeTruthy();
+        expect(structure.cursorDirExists, '.cursor directory should exist').toBeTruthy();
+        expect(structure.mcpJsonExists, '.cursor/mcp.json should exist').toBeTruthy();
 
         // Verify installed module paths were recorded in install-state.json and include cursor (+ always-included git).
         const statePath = path.join(tempWorkspace, '.cache', 'install-state.json');
         const stateRaw = await fs.readFile(statePath, 'utf8');
         const state = JSON.parse(stateRaw) as { installedModules?: Record<string, string> };
-        assert.ok(state.installedModules, 'install-state.json should include installedModules');
-        assert.ok(state.installedModules.cursor, 'cursor should be installed');
-        assert.ok(state.installedModules.git, 'git should be installed (always included)');
+        expect(state.installedModules, 'install-state.json should include installedModules').toBeTruthy();
+        expect(state.installedModules?.cursor, 'cursor should be installed').toBeTruthy();
+        expect(state.installedModules?.git, 'git should be installed (always included)').toBeTruthy();
 
-        assert.strictEqual(result.exitCode, 0, 'Installer should exit with code 0');
+        expect(result.exitCode, 'Installer should exit with code 0').toBe(0);
       } finally {
         await cleanupTempWorkspace(tempWorkspace);
       }
@@ -59,7 +53,7 @@ describe('Workspace Installer - Unattended Mode', () => {
 
     test('Unattended Installation - Fresh Workspace', async () => {
       const tempWorkspace = await createTempWorkspace();
-      
+
       try {
         const result = await runInstaller(tempWorkspace, {
           unattended: true,
@@ -71,22 +65,22 @@ describe('Workspace Installer - Unattended Mode', () => {
 
         checkInstallerResult(result);
 
-        const installed = await waitForInstallation(tempWorkspace, 30000);
-        assert.ok(installed, 'Installation should complete');
+        const installed = await waitForInstallation(tempWorkspace, 30_000);
+        expect(installed, 'Installation should complete').toBeTruthy();
 
         const hasPrompts = result.stdout.includes('?') || result.stderr.includes('?');
-        assert.ok(!hasPrompts, 'Unattended mode should not show prompts');
+        expect(hasPrompts, 'Unattended mode should not show prompts').toBeFalsy();
 
         const structure = await verifyWorkspaceStructure(tempWorkspace);
-        assert.ok(structure.workspaceConfigExists, 'workspace.config.json should exist');
+        expect(structure.workspaceConfigExists, 'workspace.config.json should exist').toBeTruthy();
         // Fresh/core-only install should not require Cursor integration artifacts.
 
         const configVerification = await verifyWorkspaceConfig(tempWorkspace, {
           modules: ['core']
         });
-        assert.ok(configVerification.valid, 'Config should be valid');
+        expect(configVerification.valid, 'Config should be valid').toBeTruthy();
 
-        assert.strictEqual(result.exitCode, 0, 'Installer should exit with code 0');
+        expect(result.exitCode, 'Installer should exit with code 0').toBe(0);
       } finally {
         await cleanupTempWorkspace(tempWorkspace);
       }
@@ -95,7 +89,7 @@ describe('Workspace Installer - Unattended Mode', () => {
     test('Unattended Installation with Config File', async () => {
       const tempWorkspace = await createTempWorkspace();
       const configPath = path.join(tempWorkspace, 'test-config.json');
-      
+
       try {
         const config = {
           aiAgent: 'cursor',
@@ -112,16 +106,16 @@ describe('Workspace Installer - Unattended Mode', () => {
 
         checkInstallerResult(result);
 
-        const installed = await waitForInstallation(tempWorkspace, 30000);
-        assert.ok(installed, 'Installation should complete');
+        const installed = await waitForInstallation(tempWorkspace, 30_000);
+        expect(installed, 'Installation should complete').toBeTruthy();
 
         const configVerification = await verifyWorkspaceConfig(tempWorkspace, {
           modules: ['core', 'vcs']
         });
-        assert.ok(configVerification.valid, 'Config should be valid');
-        assert.ok(configVerification.config.modules.includes('vcs'), 'vcs module should be installed');
+        expect(configVerification.valid, 'Config should be valid').toBeTruthy();
+        expect(configVerification.config.modules.includes('vcs'), 'vcs module should be installed').toBeTruthy();
 
-        assert.strictEqual(result.exitCode, 0, 'Installer should exit with code 0');
+        expect(result.exitCode, 'Installer should exit with code 0').toBe(0);
       } finally {
         await cleanupTempWorkspace(tempWorkspace);
       }
@@ -132,11 +126,11 @@ describe('Workspace Installer - Unattended Mode', () => {
       const providedWorkspaceConfigPath = path.join(tempWorkspace, 'provided-workspace.config.json');
       const localProjectsRoot = path.join(tempWorkspace, 'local-projects');
       const localProjectPath = path.join(localProjectsRoot, 'my-local-project');
-      
+
       try {
         await fs.mkdir(localProjectPath, { recursive: true });
         await fs.writeFile(path.join(localProjectPath, 'README.md'), '# local project\n', 'utf8');
-        
+
         const providedWorkspaceConfig = {
           workspaceVersion: '0.1.0',
           devduckPath: './devduck',
@@ -170,50 +164,39 @@ describe('Workspace Installer - Unattended Mode', () => {
           skipRepoInit: true,
           workspaceConfig: providedWorkspaceConfigPath
         });
-        
+
         checkInstallerResult(result);
-        
-        const installed = await waitForInstallation(tempWorkspace, 30000);
-        assert.ok(installed, 'Installation should complete');
+
+        const installed = await waitForInstallation(tempWorkspace, 30_000);
+        expect(installed, 'Installation should complete').toBeTruthy();
 
         // Ensure project check ran and succeeded.
-        // Check both stdout and stderr as output may go to either.
-        // Note: installer may include project context like "Checking NodeJS [my-local-project]...".
         const output = result.stdout + result.stderr;
-        assert.ok(
-          output.includes('Checking NodeJS'),
-          'Installer output should include NodeJS check'
-        );
-        assert.ok(
+        expect(output.includes('Checking NodeJS'), 'Installer output should include NodeJS check').toBeTruthy();
+        expect(
           output.includes('NodeJS (Node.js should be installed) - v') || output.includes('NodeJS - v'),
           'Installer output should include NodeJS version output'
-        );
+        ).toBeTruthy();
 
         // Ensure hello.js check ran, got installed, and succeeded
-        assert.ok(
-          output.includes('Checking HelloJS'),
-          'Installer output should include HelloJS check'
-        );
-        assert.ok(
-          output.includes('Re-checking HelloJS'),
-          'Installer output should show HelloJS was installed and re-checked'
-        );
-        assert.ok(
-          output.includes('HelloJS (hello.js should exist and contain hello world) - hello world (installed)') || output.includes('HelloJS - hello world'),
+        expect(output.includes('Checking HelloJS'), 'Installer output should include HelloJS check').toBeTruthy();
+        expect(output.includes('Re-checking HelloJS'), 'Installer output should show HelloJS was installed and re-checked').toBeTruthy();
+        expect(
+          output.includes('HelloJS (hello.js should exist and contain hello world) - hello world (installed)') ||
+            output.includes('HelloJS - hello world'),
           'Installer output should include HelloJS output after installation'
-        );
+        ).toBeTruthy();
 
-        // Ensure workspace.config.json exists (created from provided config)
         const structure = await verifyWorkspaceStructure(tempWorkspace);
-        assert.ok(structure.workspaceConfigExists, 'workspace.config.json should exist');
+        expect(structure.workspaceConfigExists, 'workspace.config.json should exist').toBeTruthy();
 
         // Verify symlink was created in projects/
         const symlinkPath = path.join(tempWorkspace, 'projects', 'my-local-project');
         const st = await fs.lstat(symlinkPath);
-        assert.ok(st.isSymbolicLink(), 'projects/my-local-project should be a symlink');
+        expect(st.isSymbolicLink(), 'projects/my-local-project should be a symlink').toBeTruthy();
         const linkTarget = await fs.readlink(symlinkPath);
         const resolvedTarget = path.resolve(path.dirname(symlinkPath), linkTarget);
-        assert.strictEqual(resolvedTarget, path.resolve(localProjectPath), 'symlink should point to the local project folder');
+        expect(resolvedTarget, 'symlink should point to the local project folder').toBe(path.resolve(localProjectPath));
       } finally {
         await cleanupTempWorkspace(tempWorkspace);
       }
@@ -240,16 +223,16 @@ describe('Workspace Installer - Unattended Mode', () => {
 
         checkInstallerResult(result);
 
-        const installed = await waitForInstallation(destWorkspace, 30000);
-        assert.ok(installed, 'Installation should complete');
+        const installed = await waitForInstallation(destWorkspace, 30_000);
+        expect(installed, 'Installation should complete').toBeTruthy();
 
         // Verify seed file copied
         const seedContent = await fs.readFile(path.join(destWorkspace, 'seed.txt'), 'utf8');
-        assert.strictEqual(seedContent, 'seed file\n', 'seed.txt should be copied into workspace root');
+        expect(seedContent, 'seed.txt should be copied into workspace root').toBe('seed file\n');
 
         // Verify seed directory copied recursively
         const nestedContent = await fs.readFile(path.join(destWorkspace, 'seed-dir', 'nested.txt'), 'utf8');
-        assert.strictEqual(nestedContent, 'nested\n', 'seed-dir should be copied into workspace root');
+        expect(nestedContent, 'seed-dir should be copied into workspace root').toBe('nested\n');
       } finally {
         await cleanupTempWorkspace(sourceWorkspace);
         await cleanupTempWorkspace(destWorkspace);
@@ -258,7 +241,7 @@ describe('Workspace Installer - Unattended Mode', () => {
 
     test('Unattended Installation - Full Structure Verification', async () => {
       const tempWorkspace = await createTempWorkspace();
-      
+
       try {
         const result = await runInstaller(tempWorkspace, {
           unattended: true,
@@ -270,17 +253,17 @@ describe('Workspace Installer - Unattended Mode', () => {
 
         checkInstallerResult(result);
 
-        const installed = await waitForInstallation(tempWorkspace, 30000);
-        assert.ok(installed, 'Installation should complete');
+        const installed = await waitForInstallation(tempWorkspace, 30_000);
+        expect(installed, 'Installation should complete').toBeTruthy();
 
         const structure = await verifyWorkspaceStructure(tempWorkspace);
-        assert.ok(structure.workspaceConfigExists, 'workspace.config.json should exist');
-        assert.ok(structure.cursorDirExists, '.cursor directory should exist');
-        assert.ok(structure.commandsDirExists, '.cursor/commands directory should exist');
-        assert.ok(structure.rulesDirExists, '.cursor/rules directory should exist');
-        assert.ok(structure.mcpJsonExists, '.cursor/mcp.json should exist');
-        assert.ok(structure.cacheDirExists, '.cache/devduck directory should exist');
-        assert.ok(structure.cursorignoreExists, '.cursorignore should exist');
+        expect(structure.workspaceConfigExists, 'workspace.config.json should exist').toBeTruthy();
+        expect(structure.cursorDirExists, '.cursor directory should exist').toBeTruthy();
+        expect(structure.commandsDirExists, '.cursor/commands directory should exist').toBeTruthy();
+        expect(structure.rulesDirExists, '.cursor/rules directory should exist').toBeTruthy();
+        expect(structure.mcpJsonExists, '.cursor/mcp.json should exist').toBeTruthy();
+        expect(structure.cacheDirExists, '.cache/devduck directory should exist').toBeTruthy();
+        expect(structure.cursorignoreExists, '.cursorignore should exist').toBeTruthy();
 
         if (structure.errors.length > 0) {
           throw new Error(`Structure verification failed: ${structure.errors.join(', ')}`);
@@ -289,24 +272,24 @@ describe('Workspace Installer - Unattended Mode', () => {
         const configVerification = await verifyWorkspaceConfig(tempWorkspace, {
           modules: ['core', 'cursor', 'plan', 'vcs']
         });
-        assert.ok(configVerification.valid, 'workspace.config.json should be valid');
-        assert.ok(configVerification.config, 'Config should be loaded');
+        expect(configVerification.valid, 'workspace.config.json should be valid').toBeTruthy();
+        expect(configVerification.config, 'Config should be loaded').toBeTruthy();
 
         const moduleVerification = await verifyModuleInstallation(tempWorkspace, ['core', 'cursor']);
-        assert.ok(moduleVerification.commandsFound > 0, 'Commands should be installed');
-        assert.ok(moduleVerification.rulesFound, 'Rules file should exist');
+        expect(moduleVerification.commandsFound, 'Commands should be installed').toBeGreaterThan(0);
+        expect(moduleVerification.rulesFound, 'Rules file should exist').toBeTruthy();
 
-        assert.strictEqual(result.exitCode, 0, 'Installer should exit with code 0');
+        expect(result.exitCode, 'Installer should exit with code 0').toBe(0);
       } finally {
         await cleanupTempWorkspace(tempWorkspace);
       }
     });
   });
 
-  describe('Existing Workspace Operations', () => {
+  test.describe('Existing Workspace Operations', () => {
     test('Reinstall Existing Workspace - Unattended', async () => {
       const tempWorkspace = await createTempWorkspace();
-      
+
       try {
         const initialResult = await runInstaller(tempWorkspace, {
           unattended: true,
@@ -318,10 +301,10 @@ describe('Workspace Installer - Unattended Mode', () => {
 
         checkInstallerResult(initialResult);
 
-        await waitForInstallation(tempWorkspace, 30000);
+        await waitForInstallation(tempWorkspace, 30_000);
 
         const initialConfig = await verifyWorkspaceConfig(tempWorkspace);
-        assert.ok(initialConfig.valid, 'Initial config should be valid');
+        expect(initialConfig.valid, 'Initial config should be valid').toBeTruthy();
 
         const reinstallResult = await runInstaller(tempWorkspace, {
           unattended: true,
@@ -333,22 +316,22 @@ describe('Workspace Installer - Unattended Mode', () => {
 
         checkInstallerResult(reinstallResult);
 
-        await waitForInstallation(tempWorkspace, 30000);
+        await waitForInstallation(tempWorkspace, 30_000);
 
         const afterReinstall = await verifyWorkspaceConfig(tempWorkspace, {
           modules: ['core', 'cursor', 'vcs']
         });
-        assert.ok(afterReinstall.valid, 'Config after reinstall should be valid');
-        assert.ok(afterReinstall.config.modules.includes('vcs'), 'vcs module should be added');
+        expect(afterReinstall.valid, 'Config after reinstall should be valid').toBeTruthy();
+        expect(afterReinstall.config.modules.includes('vcs'), 'vcs module should be added').toBeTruthy();
 
         const structure = await verifyWorkspaceStructure(tempWorkspace);
-        assert.ok(structure.workspaceConfigExists, 'workspace.config.json should still exist');
-        assert.ok(structure.cursorDirExists, '.cursor directory should still exist');
+        expect(structure.workspaceConfigExists, 'workspace.config.json should still exist').toBeTruthy();
+        expect(structure.cursorDirExists, '.cursor directory should still exist').toBeTruthy();
 
         const moduleVerification = await verifyModuleInstallation(tempWorkspace, ['core', 'cursor', 'vcs']);
-        assert.ok(moduleVerification.commandsFound > 0, 'Commands should be present');
+        expect(moduleVerification.commandsFound, 'Commands should be present').toBeGreaterThan(0);
 
-        assert.strictEqual(reinstallResult.exitCode, 0, 'Reinstall should exit with code 0');
+        expect(reinstallResult.exitCode, 'Reinstall should exit with code 0').toBe(0);
       } finally {
         await cleanupTempWorkspace(tempWorkspace);
       }
@@ -356,7 +339,7 @@ describe('Workspace Installer - Unattended Mode', () => {
 
     test('Add Modules to Existing Workspace', async () => {
       const tempWorkspace = await createTempWorkspace();
-      
+
       try {
         const initialResult = await runInstaller(tempWorkspace, {
           unattended: true,
@@ -368,12 +351,12 @@ describe('Workspace Installer - Unattended Mode', () => {
 
         checkInstallerResult(initialResult);
 
-        await waitForInstallation(tempWorkspace, 30000);
+        await waitForInstallation(tempWorkspace, 30_000);
 
         const initialConfig = await verifyWorkspaceConfig(tempWorkspace, {
           modules: ['core', 'cursor']
         });
-        assert.ok(initialConfig.valid, 'Initial config should be valid');
+        expect(initialConfig.valid, 'Initial config should be valid').toBeTruthy();
 
         const addResult = await runInstaller(tempWorkspace, {
           unattended: true,
@@ -385,15 +368,15 @@ describe('Workspace Installer - Unattended Mode', () => {
 
         checkInstallerResult(addResult);
 
-        await waitForInstallation(tempWorkspace, 30000);
+        await waitForInstallation(tempWorkspace, 30_000);
 
         const afterAdd = await verifyWorkspaceConfig(tempWorkspace);
-        assert.ok(afterAdd.config.modules.includes('dashboard'), 'dashboard module should be added');
-        assert.ok(afterAdd.config.modules.includes('core'), 'core module should still be present');
-        assert.ok(afterAdd.config.modules.includes('cursor'), 'cursor module should still be present');
+        expect(afterAdd.config.modules.includes('dashboard'), 'dashboard module should be added').toBeTruthy();
+        expect(afterAdd.config.modules.includes('core'), 'core module should still be present').toBeTruthy();
+        expect(afterAdd.config.modules.includes('cursor'), 'cursor module should still be present').toBeTruthy();
 
         const moduleVerification = await verifyModuleInstallation(tempWorkspace);
-        assert.ok(moduleVerification.commandsFound > 0, 'Commands should include dashboard commands');
+        expect(moduleVerification.commandsFound, 'Commands should include dashboard commands').toBeGreaterThan(0);
       } finally {
         await cleanupTempWorkspace(tempWorkspace);
       }
@@ -401,7 +384,7 @@ describe('Workspace Installer - Unattended Mode', () => {
 
     test('Remove Modules from Existing Workspace', async () => {
       const tempWorkspace = await createTempWorkspace();
-      
+
       try {
         const initialResult = await runInstaller(tempWorkspace, {
           unattended: true,
@@ -413,10 +396,10 @@ describe('Workspace Installer - Unattended Mode', () => {
 
         checkInstallerResult(initialResult);
 
-        await waitForInstallation(tempWorkspace, 30000);
+        await waitForInstallation(tempWorkspace, 30_000);
 
         const initialConfig = await verifyWorkspaceConfig(tempWorkspace);
-        assert.ok(initialConfig.config.modules.includes('dashboard'), 'dashboard should be initially installed');
+        expect(initialConfig.config.modules.includes('dashboard'), 'dashboard should be initially installed').toBeTruthy();
 
         const removeResult = await runInstaller(tempWorkspace, {
           unattended: true,
@@ -428,13 +411,13 @@ describe('Workspace Installer - Unattended Mode', () => {
 
         checkInstallerResult(removeResult);
 
-        await waitForInstallation(tempWorkspace, 30000);
+        await waitForInstallation(tempWorkspace, 30_000);
 
         const afterRemove = await verifyWorkspaceConfig(tempWorkspace);
-        assert.ok(!afterRemove.config.modules.includes('dashboard'), 'dashboard module should be removed');
-        assert.ok(afterRemove.config.modules.includes('core'), 'core module should still be present');
-        assert.ok(afterRemove.config.modules.includes('cursor'), 'cursor module should still be present');
-        assert.ok(afterRemove.config.modules.includes('vcs'), 'vcs module should still be present');
+        expect(afterRemove.config.modules.includes('dashboard'), 'dashboard module should be removed').toBeFalsy();
+        expect(afterRemove.config.modules.includes('core'), 'core module should still be present').toBeTruthy();
+        expect(afterRemove.config.modules.includes('cursor'), 'cursor module should still be present').toBeTruthy();
+        expect(afterRemove.config.modules.includes('vcs'), 'vcs module should still be present').toBeTruthy();
       } finally {
         await cleanupTempWorkspace(tempWorkspace);
       }
@@ -442,7 +425,7 @@ describe('Workspace Installer - Unattended Mode', () => {
 
     test('Reinstallation Verification - Preserve Configuration', async () => {
       const tempWorkspace = await createTempWorkspace();
-      
+
       try {
         const initialResult = await runInstaller(tempWorkspace, {
           unattended: true,
@@ -454,17 +437,13 @@ describe('Workspace Installer - Unattended Mode', () => {
 
         checkInstallerResult(initialResult);
 
-        await waitForInstallation(tempWorkspace, 30000);
+        await waitForInstallation(tempWorkspace, 30_000);
 
         const configPath = path.join(tempWorkspace, 'workspace.config.json');
         const initialConfigContent = await fs.readFile(configPath, 'utf8');
-        const initialConfig = JSON.parse(initialConfigContent);
+        const initialConfig = JSON.parse(initialConfigContent) as any;
 
-        initialConfig.moduleSettings = {
-          core: {
-            testSetting: 'testValue'
-          }
-        };
+        initialConfig.moduleSettings = { core: { testSetting: 'testValue' } };
         await fs.writeFile(configPath, JSON.stringify(initialConfig, null, 2), 'utf8');
 
         const reinstallResult = await runInstaller(tempWorkspace, {
@@ -477,20 +456,15 @@ describe('Workspace Installer - Unattended Mode', () => {
 
         checkInstallerResult(reinstallResult);
 
-        await waitForInstallation(tempWorkspace, 30000);
+        await waitForInstallation(tempWorkspace, 30_000);
 
         const afterReinstall = await verifyWorkspaceConfig(tempWorkspace);
-        assert.ok(afterReinstall.config.moduleSettings, 'moduleSettings should be preserved');
-        assert.ok(afterReinstall.config.moduleSettings.core, 'core module settings should be preserved');
-        assert.strictEqual(
-          afterReinstall.config.moduleSettings.core.testSetting,
-          'testValue',
-          'Custom setting should be preserved'
-        );
-
-        assert.ok(afterReinstall.config.modules.includes('core'), 'core should still be installed');
-        assert.ok(afterReinstall.config.modules.includes('cursor'), 'cursor should still be installed');
-        assert.ok(afterReinstall.config.modules.includes('plan'), 'plan should still be installed');
+        expect(afterReinstall.config.moduleSettings, 'moduleSettings should be preserved').toBeTruthy();
+        expect(afterReinstall.config.moduleSettings.core, 'core module settings should be preserved').toBeTruthy();
+        expect(afterReinstall.config.moduleSettings.core.testSetting, 'Custom setting should be preserved').toBe('testValue');
+        expect(afterReinstall.config.modules.includes('core'), 'core should still be installed').toBeTruthy();
+        expect(afterReinstall.config.modules.includes('cursor'), 'cursor should still be installed').toBeTruthy();
+        expect(afterReinstall.config.modules.includes('plan'), 'plan should still be installed').toBeTruthy();
       } finally {
         await cleanupTempWorkspace(tempWorkspace);
       }
@@ -498,7 +472,7 @@ describe('Workspace Installer - Unattended Mode', () => {
 
     test('Reinstallation - Module Hooks Re-executed', async () => {
       const tempWorkspace = await createTempWorkspace();
-      
+
       try {
         const initialResult = await runInstaller(tempWorkspace, {
           unattended: true,
@@ -510,13 +484,13 @@ describe('Workspace Installer - Unattended Mode', () => {
 
         checkInstallerResult(initialResult);
 
-        await waitForInstallation(tempWorkspace, 30000);
+        await waitForInstallation(tempWorkspace, 30_000);
 
         const cursorignorePath = path.join(tempWorkspace, '.cursorignore');
         let initialCursorignore = '';
         try {
           initialCursorignore = await fs.readFile(cursorignorePath, 'utf8');
-        } catch (e) {
+        } catch {
           throw new Error('.cursorignore should exist after initial installation');
         }
 
@@ -532,27 +506,23 @@ describe('Workspace Installer - Unattended Mode', () => {
 
         checkInstallerResult(reinstallResult);
 
-        await waitForInstallation(tempWorkspace, 30000);
+        await waitForInstallation(tempWorkspace, 30_000);
 
         const afterReinstall = await fs.readFile(cursorignorePath, 'utf8');
-        assert.notStrictEqual(
-          afterReinstall,
-          '# Modified content',
-          '.cursorignore should be regenerated by hooks'
-        );
-        assert.ok(afterReinstall.includes('.env'), '.cursorignore should contain default content');
+        expect(afterReinstall).not.toBe('# Modified content');
+        expect(afterReinstall.includes('.env'), '.cursorignore should contain default content').toBeTruthy();
+        expect(initialCursorignore.length >= 0).toBeTruthy();
       } finally {
         await cleanupTempWorkspace(tempWorkspace);
       }
     });
   });
 
-  describe('External Repository Installation', () => {
+  test.describe('External Repository Installation', () => {
     test('Installation with External Repository', async () => {
       const tempWorkspace = await createTempWorkspace();
-      
+
       try {
-        // Create config with external repository
         const configPath = path.join(tempWorkspace, 'test-config.json');
         const config = {
           aiAgent: 'cursor',
@@ -570,73 +540,58 @@ describe('Workspace Installer - Unattended Mode', () => {
 
         checkInstallerResult(result);
 
-        const installed = await waitForInstallation(tempWorkspace, 30000);
-        assert.ok(installed, 'Installation should complete');
+        const installed = await waitForInstallation(tempWorkspace, 30_000);
+        expect(installed, 'Installation should complete').toBeTruthy();
 
-        // Verify workspace.config.json includes the repo
         const configVerification = await verifyWorkspaceConfig(tempWorkspace);
-        assert.ok(configVerification.valid, 'Config should be valid');
-        assert.ok(configVerification.config.repos, 'Config should have repos field');
-        assert.ok(
+        expect(configVerification.valid, 'Config should be valid').toBeTruthy();
+        expect(configVerification.config.repos, 'Config should have repos field').toBeTruthy();
+        expect(
           configVerification.config.repos.includes('github.com/holiber/devduck-test-repo'),
           'Config should include devduck-test-repo in repos'
-        );
+        ).toBeTruthy();
 
         // Repos from workspace.config.json should be cloned under <workspace>/devduck/
-        // (not hidden under .cache/), so users can inspect/edit them easily.
         const expectedGitUrl = 'https://github.com/holiber/devduck-test-repo.git';
-        const expectedRepoName = expectedGitUrl
-          .replace(/\.git$/, '')
-          .replace(/[:\/]/g, '_');
+        const expectedRepoName = expectedGitUrl.replace(/\.git$/, '').replace(/[:\/]/g, '_');
         const repoRoot = path.join(tempWorkspace, 'devduck', expectedRepoName);
 
-        // Ensure the repo clone exists and contains the expected module.
         await fs.access(path.join(repoRoot, '.git'));
         await fs.access(path.join(repoRoot, 'modules'));
         await fs.access(path.join(repoRoot, 'modules', 'smogcheck', 'MODULE.md'));
 
-        // Verify installer recorded installed module paths in .cache/install-state.json
         const statePath = path.join(tempWorkspace, '.cache', 'install-state.json');
         const stateRaw = await fs.readFile(statePath, 'utf8');
         const state = JSON.parse(stateRaw) as { installedModules?: Record<string, string> };
-        assert.ok(state.installedModules, 'install-state.json should include installedModules');
-        assert.ok(
-          typeof state.installedModules.smogcheck === 'string' &&
+        expect(state.installedModules, 'install-state.json should include installedModules').toBeTruthy();
+        expect(
+          typeof state.installedModules?.smogcheck === 'string' &&
             state.installedModules.smogcheck.endsWith(path.join('modules', 'smogcheck')),
           'install-state.json should include smogcheck module path'
-        );
+        ).toBeTruthy();
 
-        // Verify smogchecked.txt file exists (created by smogcheck module hook)
         const smogcheckedPath = path.join(tempWorkspace, 'smogchecked.txt');
         try {
           await fs.access(smogcheckedPath);
           const smogcheckedContent = await fs.readFile(smogcheckedPath, 'utf8');
-          assert.ok(smogcheckedContent.includes('smogcheck'), 'smogchecked.txt should contain smogcheck');
-        } catch (e) {
+          expect(smogcheckedContent.includes('smogcheck'), 'smogchecked.txt should contain smogcheck').toBeTruthy();
+        } catch {
           throw new Error('smogchecked.txt file should exist in workspace root');
         }
 
-        // Verify smogcheck command is copied to .cursor/commands/
         const commandsDir = path.join(tempWorkspace, '.cursor', 'commands');
         const commandsFiles = await fs.readdir(commandsDir);
-        assert.ok(
-          commandsFiles.includes('smogcheck.md'),
-          'smogcheck.md command should be copied to .cursor/commands/'
-        );
+        expect(commandsFiles.includes('smogcheck.md'), 'smogcheck.md command should be copied to .cursor/commands/').toBeTruthy();
 
-        // Verify smogcheck rules are merged into .cursor/rules/
         const rulesPath = path.join(tempWorkspace, '.cursor', 'rules', 'devduck-rules.md');
         try {
           const rulesContent = await fs.readFile(rulesPath, 'utf8');
-          assert.ok(
-            rulesContent.includes('smogcheck'),
-            'devduck-rules.md should contain smogcheck rules'
-          );
-        } catch (e) {
+          expect(rulesContent.includes('smogcheck'), 'devduck-rules.md should contain smogcheck rules').toBeTruthy();
+        } catch {
           throw new Error('devduck-rules.md should exist and contain smogcheck rules');
         }
 
-        assert.strictEqual(result.exitCode, 0, 'Installer should exit with code 0');
+        expect(result.exitCode, 'Installer should exit with code 0').toBe(0);
       } finally {
         await cleanupTempWorkspace(tempWorkspace);
       }

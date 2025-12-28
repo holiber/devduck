@@ -1,0 +1,352 @@
+{
+  "kind": "baseline",
+  "timestampUtc": "2025-12-28T01-30-23Z",
+  "nodeVersion": "v24.12.0",
+  "npmVersion": "11.7.0",
+  "commands": {
+    "raw": "npm test",
+    "tap": "npx tsx --test --test-reporter=tap --test-concurrency=1 <all test files>"
+  },
+  "totals": {
+    "npmTestWallTimeMs": 33531,
+    "tapWallTimeMs": 29266
+  },
+  "artifacts": {
+    "rawLog": "tests/perf/baseline-2025-12-28T01-30-23Z-npm-test.log",
+    "tapLog": "tests/perf/baseline-2025-12-28T01-30-23Z-tap.log"
+  },
+  "timings": {
+    "countAll": 150,
+    "countInstaller": 45,
+    "fastestPercent": 20,
+    "smokeCount": 9,
+    "installerSmokeIds": [
+      "Installation Steps::Installation Steps › Step 6: Setup Projects › Step 6: Setup Projects",
+      "Install Project Scripts::Install Project Scripts › Handle missing project package.json gracefully › Handle missing project package.json gracefully",
+      "Install Project Scripts::Install Project Scripts › Verify scripts do not change current directory › Verify scripts do not change current directory",
+      "Install Project Scripts::Install Project Scripts › Remove scripts when project is removed from config › Remove scripts when project is removed from config",
+      "Install Project Scripts::Install Project Scripts › Install additional scripts via importScripts › Install additional scripts via importScripts",
+      "Installation Steps::Installation Steps › Step 3: Download Projects › Step 3: Download Projects",
+      "Install Project Scripts::Install Project Scripts › Install default scripts from project › Install default scripts from project",
+      "Installation Steps::Installation Steps › Step 2: Download Repos › Step 2: Download Repos",
+      "Installation Steps::Installation Steps › Step 4: Check Environment Again › Step 4: Check Environment Again"
+    ],
+    "installer": [
+      {
+        "id": "Install Project Scripts::Install Project Scripts › Install default scripts from project › Install default scripts from project",
+        "rootSuite": "Install Project Scripts",
+        "file": "Install Project Scripts",
+        "fullName": "Install Project Scripts › Install default scripts from project › Install default scripts from project",
+        "durationMs": 3.192898
+      },
+      {
+        "id": "Install Project Scripts::Install Project Scripts › Install additional scripts via importScripts › Install additional scripts via importScripts",
+        "rootSuite": "Install Project Scripts",
+        "file": "Install Project Scripts",
+        "fullName": "Install Project Scripts › Install additional scripts via importScripts › Install additional scripts via importScripts",
+        "durationMs": 2.027717
+      },
+      {
+        "id": "Install Project Scripts::Install Project Scripts › Remove scripts when project is removed from config › Remove scripts when project is removed from config",
+        "rootSuite": "Install Project Scripts",
+        "file": "Install Project Scripts",
+        "fullName": "Install Project Scripts › Remove scripts when project is removed from config › Remove scripts when project is removed from config",
+        "durationMs": 1.525211
+      },
+      {
+        "id": "Install Project Scripts::Install Project Scripts › Handle missing project package.json gracefully › Handle missing project package.json gracefully",
+        "rootSuite": "Install Project Scripts",
+        "file": "Install Project Scripts",
+        "fullName": "Install Project Scripts › Handle missing project package.json gracefully › Handle missing project package.json gracefully",
+        "durationMs": 1.003245
+      },
+      {
+        "id": "Install Project Scripts::Install Project Scripts › Verify scripts do not change current directory › Verify scripts do not change current directory",
+        "rootSuite": "Install Project Scripts",
+        "file": "Install Project Scripts",
+        "fullName": "Install Project Scripts › Verify scripts do not change current directory › Verify scripts do not change current directory",
+        "durationMs": 1.112952
+      },
+      {
+        "id": "Install Project Scripts::Install Project Scripts › Verify scripts do not change current directory › Install Project Scripts",
+        "rootSuite": "Install Project Scripts",
+        "file": "Install Project Scripts",
+        "fullName": "Install Project Scripts › Verify scripts do not change current directory › Install Project Scripts",
+        "durationMs": 14.704608
+      },
+      {
+        "id": "Installation Steps::Installation Steps › Step 1: Check Environment Variables › Step 1: Check Environment Variables",
+        "rootSuite": "Installation Steps",
+        "file": "Installation Steps",
+        "fullName": "Installation Steps › Step 1: Check Environment Variables › Step 1: Check Environment Variables",
+        "durationMs": 27.982774
+      },
+      {
+        "id": "Installation Steps::Installation Steps › Step 2: Download Repos › Step 2: Download Repos",
+        "rootSuite": "Installation Steps",
+        "file": "Installation Steps",
+        "fullName": "Installation Steps › Step 2: Download Repos › Step 2: Download Repos",
+        "durationMs": 4.792808
+      },
+      {
+        "id": "Installation Steps::Installation Steps › Step 3: Download Projects › Step 3: Download Projects",
+        "rootSuite": "Installation Steps",
+        "file": "Installation Steps",
+        "fullName": "Installation Steps › Step 3: Download Projects › Step 3: Download Projects",
+        "durationMs": 2.385645
+      },
+      {
+        "id": "Installation Steps::Installation Steps › Step 4: Check Environment Again › Step 4: Check Environment Again",
+        "rootSuite": "Installation Steps",
+        "file": "Installation Steps",
+        "fullName": "Installation Steps › Step 4: Check Environment Again › Step 4: Check Environment Again",
+        "durationMs": 5.68271
+      },
+      {
+        "id": "Installation Steps::Installation Steps › Step 5: Setup Modules › Step 5: Setup Modules",
+        "rootSuite": "Installation Steps",
+        "file": "Installation Steps",
+        "fullName": "Installation Steps › Step 5: Setup Modules › Step 5: Setup Modules",
+        "durationMs": 11.247577
+      },
+      {
+        "id": "Installation Steps::Installation Steps › Step 6: Setup Projects › Step 6: Setup Projects",
+        "rootSuite": "Installation Steps",
+        "file": "Installation Steps",
+        "fullName": "Installation Steps › Step 6: Setup Projects › Step 6: Setup Projects",
+        "durationMs": 0.91172
+      },
+      {
+        "id": "Installation Steps::Installation Steps › Step 7: Verify Installation › Step 7: Verify Installation",
+        "rootSuite": "Installation Steps",
+        "file": "Installation Steps",
+        "fullName": "Installation Steps › Step 7: Verify Installation › Step 7: Verify Installation",
+        "durationMs": 6.169745
+      },
+      {
+        "id": "Installation Steps::Installation Steps › Step 7: Verify Installation › Installation Steps",
+        "rootSuite": "Installation Steps",
+        "file": "Installation Steps",
+        "fullName": "Installation Steps › Step 7: Verify Installation › Installation Steps",
+        "durationMs": 64.636905
+      },
+      {
+        "id": "Workspace Installer - GUI/Interactive Mode::Workspace Installer - GUI/Interactive Mode › Fresh Workspace Installation › GUI Installation - Fresh Workspace › GUI Installation - Fresh Workspace",
+        "rootSuite": "Workspace Installer - GUI/Interactive Mode",
+        "file": "Workspace Installer - GUI/Interactive Mode",
+        "fullName": "Workspace Installer - GUI/Interactive Mode › Fresh Workspace Installation › GUI Installation - Fresh Workspace › GUI Installation - Fresh Workspace",
+        "durationMs": 363.501162
+      },
+      {
+        "id": "Workspace Installer - GUI/Interactive Mode::Workspace Installer - GUI/Interactive Mode › Fresh Workspace Installation › GUI Installation - Fresh Workspace › Fresh Workspace Installation",
+        "rootSuite": "Workspace Installer - GUI/Interactive Mode",
+        "file": "Workspace Installer - GUI/Interactive Mode",
+        "fullName": "Workspace Installer - GUI/Interactive Mode › Fresh Workspace Installation › GUI Installation - Fresh Workspace › Fresh Workspace Installation",
+        "durationMs": 364.03423
+      },
+      {
+        "id": "Workspace Installer - GUI/Interactive Mode::Workspace Installer - GUI/Interactive Mode › Existing Workspace Operations › Detect Existing Workspace › Detect Existing Workspace",
+        "rootSuite": "Workspace Installer - GUI/Interactive Mode",
+        "file": "Workspace Installer - GUI/Interactive Mode",
+        "fullName": "Workspace Installer - GUI/Interactive Mode › Existing Workspace Operations › Detect Existing Workspace › Detect Existing Workspace",
+        "durationMs": 382.363749
+      },
+      {
+        "id": "Workspace Installer - GUI/Interactive Mode::Workspace Installer - GUI/Interactive Mode › Existing Workspace Operations › Detect Existing Workspace › Existing Workspace Operations",
+        "rootSuite": "Workspace Installer - GUI/Interactive Mode",
+        "file": "Workspace Installer - GUI/Interactive Mode",
+        "fullName": "Workspace Installer - GUI/Interactive Mode › Existing Workspace Operations › Detect Existing Workspace › Existing Workspace Operations",
+        "durationMs": 386.562684
+      },
+      {
+        "id": "Workspace Installer - GUI/Interactive Mode::Workspace Installer - GUI/Interactive Mode › Existing Workspace Operations › Detect Existing Workspace › Workspace Installer - GUI/Interactive Mode",
+        "rootSuite": "Workspace Installer - GUI/Interactive Mode",
+        "file": "Workspace Installer - GUI/Interactive Mode",
+        "fullName": "Workspace Installer - GUI/Interactive Mode › Existing Workspace Operations › Detect Existing Workspace › Workspace Installer - GUI/Interactive Mode",
+        "durationMs": 750.93672
+      },
+      {
+        "id": "installer: hook load failure is fatal::installer: hook load failure is fatal › installer: hook load failure is fatal",
+        "rootSuite": "installer: hook load failure is fatal",
+        "file": "installer: hook load failure is fatal",
+        "fullName": "installer: hook load failure is fatal › installer: hook load failure is fatal",
+        "durationMs": 422.851103
+      },
+      {
+        "id": "installer: .env values are available to shell checks (fill-missing)::installer: .env values are available to shell checks (fill-missing) › installer: .env values are available to shell checks (fill-missing)",
+        "rootSuite": "installer: .env values are available to shell checks (fill-missing)",
+        "file": "installer: .env values are available to shell checks (fill-missing)",
+        "fullName": "installer: .env values are available to shell checks (fill-missing) › installer: .env values are available to shell checks (fill-missing)",
+        "durationMs": 355.913412
+      },
+      {
+        "id": "installer: checks without name do not print \"Checking undefined\"::installer: checks without name do not print \"Checking undefined\" › installer: checks without name do not print \"Checking undefined\"",
+        "rootSuite": "installer: checks without name do not print \"Checking undefined\"",
+        "file": "installer: checks without name do not print \"Checking undefined\"",
+        "fullName": "installer: checks without name do not print \"Checking undefined\" › installer: checks without name do not print \"Checking undefined\"",
+        "durationMs": 355.499375
+      },
+      {
+        "id": "Workspace Installer - Unattended Mode::Workspace Installer - Unattended Mode › Fresh Workspace Installation › Unattended Installation from fixture - cursor-only › Unattended Installation from fixture - cursor-only",
+        "rootSuite": "Workspace Installer - Unattended Mode",
+        "file": "Workspace Installer - Unattended Mode",
+        "fullName": "Workspace Installer - Unattended Mode › Fresh Workspace Installation › Unattended Installation from fixture - cursor-only › Unattended Installation from fixture - cursor-only",
+        "durationMs": 394.505983
+      },
+      {
+        "id": "Workspace Installer - Unattended Mode::Workspace Installer - Unattended Mode › Fresh Workspace Installation › Unattended Installation - Fresh Workspace › Unattended Installation - Fresh Workspace",
+        "rootSuite": "Workspace Installer - Unattended Mode",
+        "file": "Workspace Installer - Unattended Mode",
+        "fullName": "Workspace Installer - Unattended Mode › Fresh Workspace Installation › Unattended Installation - Fresh Workspace › Unattended Installation - Fresh Workspace",
+        "durationMs": 349.444609
+      },
+      {
+        "id": "Workspace Installer - Unattended Mode::Workspace Installer - Unattended Mode › Fresh Workspace Installation › Unattended Installation with Config File › Unattended Installation with Config File",
+        "rootSuite": "Workspace Installer - Unattended Mode",
+        "file": "Workspace Installer - Unattended Mode",
+        "fullName": "Workspace Installer - Unattended Mode › Fresh Workspace Installation › Unattended Installation with Config File › Unattended Installation with Config File",
+        "durationMs": 340.613053
+      },
+      {
+        "id": "Workspace Installer - Unattended Mode::Workspace Installer - Unattended Mode › Fresh Workspace Installation › Unattended Installation with workspace.config.json (local folder project src) › Unattended Installation with workspace.config.json (local folder project src)",
+        "rootSuite": "Workspace Installer - Unattended Mode",
+        "file": "Workspace Installer - Unattended Mode",
+        "fullName": "Workspace Installer - Unattended Mode › Fresh Workspace Installation › Unattended Installation with workspace.config.json (local folder project src) › Unattended Installation with workspace.config.json (local folder project src)",
+        "durationMs": 448.429096
+      },
+      {
+        "id": "Workspace Installer - Unattended Mode::Workspace Installer - Unattended Mode › Fresh Workspace Installation › Unattended Installation with workspace.config.json seedFiles[] copies seed files/folders › Unattended Installation with workspace.config.json seedFiles[] copies seed files/folders",
+        "rootSuite": "Workspace Installer - Unattended Mode",
+        "file": "Workspace Installer - Unattended Mode",
+        "fullName": "Workspace Installer - Unattended Mode › Fresh Workspace Installation › Unattended Installation with workspace.config.json seedFiles[] copies seed files/folders › Unattended Installation with workspace.config.json seedFiles[] copies seed files/folders",
+        "durationMs": 383.879422
+      },
+      {
+        "id": "Workspace Installer - Unattended Mode::Workspace Installer - Unattended Mode › Fresh Workspace Installation › Unattended Installation - Full Structure Verification › Unattended Installation - Full Structure Verification",
+        "rootSuite": "Workspace Installer - Unattended Mode",
+        "file": "Workspace Installer - Unattended Mode",
+        "fullName": "Workspace Installer - Unattended Mode › Fresh Workspace Installation › Unattended Installation - Full Structure Verification › Unattended Installation - Full Structure Verification",
+        "durationMs": 376.546007
+      },
+      {
+        "id": "Workspace Installer - Unattended Mode::Workspace Installer - Unattended Mode › Fresh Workspace Installation › Unattended Installation - Full Structure Verification › Fresh Workspace Installation",
+        "rootSuite": "Workspace Installer - Unattended Mode",
+        "file": "Workspace Installer - Unattended Mode",
+        "fullName": "Workspace Installer - Unattended Mode › Fresh Workspace Installation › Unattended Installation - Full Structure Verification › Fresh Workspace Installation",
+        "durationMs": 2294.227216
+      },
+      {
+        "id": "Workspace Installer - Unattended Mode::Workspace Installer - Unattended Mode › Existing Workspace Operations › Reinstall Existing Workspace - Unattended › Reinstall Existing Workspace - Unattended",
+        "rootSuite": "Workspace Installer - Unattended Mode",
+        "file": "Workspace Installer - Unattended Mode",
+        "fullName": "Workspace Installer - Unattended Mode › Existing Workspace Operations › Reinstall Existing Workspace - Unattended › Reinstall Existing Workspace - Unattended",
+        "durationMs": 739.458939
+      },
+      {
+        "id": "Workspace Installer - Unattended Mode::Workspace Installer - Unattended Mode › Existing Workspace Operations › Add Modules to Existing Workspace › Add Modules to Existing Workspace",
+        "rootSuite": "Workspace Installer - Unattended Mode",
+        "file": "Workspace Installer - Unattended Mode",
+        "fullName": "Workspace Installer - Unattended Mode › Existing Workspace Operations › Add Modules to Existing Workspace › Add Modules to Existing Workspace",
+        "durationMs": 738.782135
+      },
+      {
+        "id": "Workspace Installer - Unattended Mode::Workspace Installer - Unattended Mode › Existing Workspace Operations › Remove Modules from Existing Workspace › Remove Modules from Existing Workspace",
+        "rootSuite": "Workspace Installer - Unattended Mode",
+        "file": "Workspace Installer - Unattended Mode",
+        "fullName": "Workspace Installer - Unattended Mode › Existing Workspace Operations › Remove Modules from Existing Workspace › Remove Modules from Existing Workspace",
+        "durationMs": 745.684725
+      },
+      {
+        "id": "Workspace Installer - Unattended Mode::Workspace Installer - Unattended Mode › Existing Workspace Operations › Reinstallation Verification - Preserve Configuration › Reinstallation Verification - Preserve Configuration",
+        "rootSuite": "Workspace Installer - Unattended Mode",
+        "file": "Workspace Installer - Unattended Mode",
+        "fullName": "Workspace Installer - Unattended Mode › Existing Workspace Operations › Reinstallation Verification - Preserve Configuration › Reinstallation Verification - Preserve Configuration",
+        "durationMs": 767.190086
+      },
+      {
+        "id": "Workspace Installer - Unattended Mode::Workspace Installer - Unattended Mode › Existing Workspace Operations › Reinstallation - Module Hooks Re-executed › Reinstallation - Module Hooks Re-executed",
+        "rootSuite": "Workspace Installer - Unattended Mode",
+        "file": "Workspace Installer - Unattended Mode",
+        "fullName": "Workspace Installer - Unattended Mode › Existing Workspace Operations › Reinstallation - Module Hooks Re-executed › Reinstallation - Module Hooks Re-executed",
+        "durationMs": 759.194102
+      },
+      {
+        "id": "Workspace Installer - Unattended Mode::Workspace Installer - Unattended Mode › Existing Workspace Operations › Reinstallation - Module Hooks Re-executed › Existing Workspace Operations",
+        "rootSuite": "Workspace Installer - Unattended Mode",
+        "file": "Workspace Installer - Unattended Mode",
+        "fullName": "Workspace Installer - Unattended Mode › Existing Workspace Operations › Reinstallation - Module Hooks Re-executed › Existing Workspace Operations",
+        "durationMs": 3750.754766
+      },
+      {
+        "id": "Workspace Installer - Unattended Mode::Workspace Installer - Unattended Mode › External Repository Installation › Installation with External Repository › Installation with External Repository",
+        "rootSuite": "Workspace Installer - Unattended Mode",
+        "file": "Workspace Installer - Unattended Mode",
+        "fullName": "Workspace Installer - Unattended Mode › External Repository Installation › Installation with External Repository › Installation with External Repository",
+        "durationMs": 891.355092
+      },
+      {
+        "id": "Workspace Installer - Unattended Mode::Workspace Installer - Unattended Mode › External Repository Installation › Installation with External Repository › External Repository Installation",
+        "rootSuite": "Workspace Installer - Unattended Mode",
+        "file": "Workspace Installer - Unattended Mode",
+        "fullName": "Workspace Installer - Unattended Mode › External Repository Installation › Installation with External Repository › External Repository Installation",
+        "durationMs": 891.489763
+      },
+      {
+        "id": "Workspace Installer - Unattended Mode::Workspace Installer - Unattended Mode › External Repository Installation › Installation with External Repository › Workspace Installer - Unattended Mode",
+        "rootSuite": "Workspace Installer - Unattended Mode",
+        "file": "Workspace Installer - Unattended Mode",
+        "fullName": "Workspace Installer - Unattended Mode › External Repository Installation › Installation with External Repository › Workspace Installer - Unattended Mode",
+        "durationMs": 6936.839845
+      },
+      {
+        "id": "workspace modules patterns::workspace modules patterns › modules: [\"issue-*\"] expands to issue-tracker and issue-tracker-github › modules: [\"issue-*\"] expands to issue-tracker and issue-tracker-github",
+        "rootSuite": "workspace modules patterns",
+        "file": "workspace modules patterns",
+        "fullName": "workspace modules patterns › modules: [\"issue-*\"] expands to issue-tracker and issue-tracker-github › modules: [\"issue-*\"] expands to issue-tracker and issue-tracker-github",
+        "durationMs": 17.013376
+      },
+      {
+        "id": "workspace modules patterns::workspace modules patterns › modules: [\"issue-*\"] expands to issue-tracker and issue-tracker-github › workspace modules patterns",
+        "rootSuite": "workspace modules patterns",
+        "file": "workspace modules patterns",
+        "fullName": "workspace modules patterns › modules: [\"issue-*\"] expands to issue-tracker and issue-tracker-github › workspace modules patterns",
+        "durationMs": 17.615535
+      },
+      {
+        "id": "devduck new (npx-friendly bootstrap)::devduck new (npx-friendly bootstrap) › clones DevDuck into devduck/src when not listed in projects › clones DevDuck into devduck/src when not listed in projects",
+        "rootSuite": "devduck new (npx-friendly bootstrap)",
+        "file": "devduck new (npx-friendly bootstrap)",
+        "fullName": "devduck new (npx-friendly bootstrap) › clones DevDuck into devduck/src when not listed in projects › clones DevDuck into devduck/src when not listed in projects",
+        "durationMs": 2167.151811
+      },
+      {
+        "id": "devduck new (npx-friendly bootstrap)::devduck new (npx-friendly bootstrap) › resolves relative workspace path from INIT_CWD (npx cache cwd simulation) › resolves relative workspace path from INIT_CWD (npx cache cwd simulation)",
+        "rootSuite": "devduck new (npx-friendly bootstrap)",
+        "file": "devduck new (npx-friendly bootstrap)",
+        "fullName": "devduck new (npx-friendly bootstrap) › resolves relative workspace path from INIT_CWD (npx cache cwd simulation) › resolves relative workspace path from INIT_CWD (npx cache cwd simulation)",
+        "durationMs": 2375.001784
+      },
+      {
+        "id": "devduck new (npx-friendly bootstrap)::devduck new (npx-friendly bootstrap) › resolves relative workspace path from INIT_CWD (npx cache cwd simulation) › devduck new (npx-friendly bootstrap)",
+        "rootSuite": "devduck new (npx-friendly bootstrap)",
+        "file": "devduck new (npx-friendly bootstrap)",
+        "fullName": "devduck new (npx-friendly bootstrap) › resolves relative workspace path from INIT_CWD (npx cache cwd simulation) › devduck new (npx-friendly bootstrap)",
+        "durationMs": 4542.946389
+      },
+      {
+        "id": "Workspace Installer - Workspace-local modules/::Workspace Installer - Workspace-local modules/ › Installs module from workspace/modules when listed in config › Installs module from workspace/modules when listed in config",
+        "rootSuite": "Workspace Installer - Workspace-local modules/",
+        "file": "Workspace Installer - Workspace-local modules/",
+        "fullName": "Workspace Installer - Workspace-local modules/ › Installs module from workspace/modules when listed in config › Installs module from workspace/modules when listed in config",
+        "durationMs": 406.643019
+      },
+      {
+        "id": "Workspace Installer - Workspace-local modules/::Workspace Installer - Workspace-local modules/ › Installs module from workspace/modules when listed in config › Workspace Installer - Workspace-local modules/",
+        "rootSuite": "Workspace Installer - Workspace-local modules/",
+        "file": "Workspace Installer - Workspace-local modules/",
+        "fullName": "Workspace Installer - Workspace-local modules/ › Installs module from workspace/modules when listed in config › Workspace Installer - Workspace-local modules/",
+        "durationMs": 407.299668
+      }
+    ]
+  }
+}

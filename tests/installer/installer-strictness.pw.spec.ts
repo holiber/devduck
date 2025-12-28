@@ -1,13 +1,8 @@
-import test from 'node:test';
-import assert from 'node:assert/strict';
+import { test, expect } from '@playwright/test';
 import path from 'node:path';
 import { promises as fs } from 'node:fs';
-import { fileURLToPath } from 'node:url';
 
 import { createTempWorkspace, cleanupTempWorkspace, runInstaller } from './helpers.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 test('installer: hook load failure is fatal', async () => {
   const tempWorkspace = await createTempWorkspace('devduck-hook-fail-');
@@ -51,11 +46,8 @@ test('installer: hook load failure is fatal', async () => {
       skipRepoInit: true
     });
 
-    assert.notEqual(result.exitCode, 0, 'installer should fail when hooks.ts cannot be loaded');
-    assert.match(
-      result.stdout + result.stderr,
-      /Failed to load hooks from .*hooks\.ts/i
-    );
+    expect(result.exitCode, 'installer should fail when hooks.ts cannot be loaded').not.toBe(0);
+    expect(result.stdout + result.stderr).toMatch(/Failed to load hooks from .*hooks\.ts/i);
   } finally {
     await cleanupTempWorkspace(tempWorkspace);
   }
@@ -97,13 +89,13 @@ test('installer: .env values are available to shell checks (fill-missing)', asyn
       skipRepoInit: true
     });
 
-    assert.equal(result.exitCode, 0, `installer should succeed. stderr:\n${result.stderr}`);
+    expect(result.exitCode, `installer should succeed. stderr:\n${result.stderr}`).toBe(0);
   } finally {
     await cleanupTempWorkspace(tempWorkspace);
   }
 });
 
-test('installer: checks without name do not print \"Checking undefined\"', async () => {
+test('installer: checks without name do not print "Checking undefined"', async () => {
   const tempWorkspace = await createTempWorkspace('devduck-check-name-');
   try {
     await fs.writeFile(path.join(tempWorkspace, '.env'), 'SOME_TOKEN=ok\n', 'utf8');
@@ -121,9 +113,9 @@ test('installer: checks without name do not print \"Checking undefined\"', async
         'description: Module with a check missing name',
         'dependencies: [core]',
         'checks:',
-        '  - type: \"auth\"',
-        '    var: \"SOME_TOKEN\"',
-        '    description: \"Auth check without name\"',
+        '  - type: "auth"',
+        '    var: "SOME_TOKEN"',
+        '    description: "Auth check without name"',
         "    test: 'sh -c \"test -n \\\"$SOME_TOKEN\\\"\"'",
         '---',
         '',
@@ -139,9 +131,9 @@ test('installer: checks without name do not print \"Checking undefined\"', async
       skipRepoInit: true
     });
 
-    assert.equal(result.exitCode, 0, `installer should succeed. stderr:\n${result.stderr}`);
-    assert.doesNotMatch(result.stdout + result.stderr, /Checking undefined/i);
-    assert.match(result.stdout + result.stderr, /Checking SOME_TOKEN/i);
+    expect(result.exitCode, `installer should succeed. stderr:\n${result.stderr}`).toBe(0);
+    expect(result.stdout + result.stderr).not.toMatch(/Checking undefined/i);
+    expect(result.stdout + result.stderr).toMatch(/Checking SOME_TOKEN/i);
   } finally {
     await cleanupTempWorkspace(tempWorkspace);
   }
@@ -180,13 +172,12 @@ test('installer summary: prints INSTALLATION FINISHED WITH ERRORS on failures', 
       skipRepoInit: true
     });
 
-    assert.notEqual(result.exitCode, 0);
-    assert.match(result.stdout + result.stderr, /INSTALLATION FINISHED WITH ERRORS/);
-    assert.match(result.stdout + result.stderr, /Checks:\s+\d+\/\d+\s+passed/);
-    assert.match(result.stdout + result.stderr, /See log:\s+\.cache\/install\.log/);
+    expect(result.exitCode).not.toBe(0);
+    expect(result.stdout + result.stderr).toMatch(/INSTALLATION FINISHED WITH ERRORS/);
+    expect(result.stdout + result.stderr).toMatch(/Checks:\s+\d+\/\d+\s+passed/);
+    expect(result.stdout + result.stderr).toMatch(/See log:\s+\.cache\/install\.log/);
   } finally {
     await cleanupTempWorkspace(tempWorkspace);
   }
 });
-
 

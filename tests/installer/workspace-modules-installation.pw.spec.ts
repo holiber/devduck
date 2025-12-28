@@ -1,11 +1,4 @@
-#!/usr/bin/env node
-
-/**
- * Tests for installing modules from workspace-local modules/ directory
- */
-
-import { test, describe } from 'node:test';
-import assert from 'node:assert';
+import { test, expect } from '@playwright/test';
 import path from 'node:path';
 import { promises as fs } from 'node:fs';
 
@@ -17,7 +10,7 @@ import {
   checkInstallerResult
 } from './helpers.js';
 
-describe('Workspace Installer - Workspace-local modules/', () => {
+test.describe('Workspace Installer - Workspace-local modules/', () => {
   test('Installs module from workspace/modules when listed in config', async () => {
     const tempWorkspace = await createTempWorkspace();
     const configPath = path.join(tempWorkspace, 'test-config.json');
@@ -78,13 +71,13 @@ describe('Workspace Installer - Workspace-local modules/', () => {
 
       checkInstallerResult(result);
 
-      const installed = await waitForInstallation(tempWorkspace, 30000);
-      assert.ok(installed, 'Installation should complete');
+      const installed = await waitForInstallation(tempWorkspace, 30_000);
+      expect(installed, 'Installation should complete').toBeTruthy();
 
       // Verify the workspace-local module hook ran.
       const markerPath = path.join(tempWorkspace, 'localmod-installed.txt');
       const marker = await fs.readFile(markerPath, 'utf8');
-      assert.strictEqual(marker, 'ok\n', 'Workspace-local module post-install hook should create marker file');
+      expect(marker, 'Workspace-local module post-install hook should create marker file').toBe('ok\n');
     } finally {
       await cleanupTempWorkspace(tempWorkspace);
     }

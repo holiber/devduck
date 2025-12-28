@@ -1,0 +1,16 @@
+{
+  "kind": "smoke-freeze",
+  "source": "baseline-2025-12-28T01-30-23Z.json",
+  "fastestPercent": 20,
+  "ids": [
+    "Installation Steps::Installation Steps › Step 6: Setup Projects › Step 6: Setup Projects",
+    "Install Project Scripts::Install Project Scripts › Handle missing project package.json gracefully › Handle missing project package.json gracefully",
+    "Install Project Scripts::Install Project Scripts › Verify scripts do not change current directory › Verify scripts do not change current directory",
+    "Install Project Scripts::Install Project Scripts › Remove scripts when project is removed from config › Remove scripts when project is removed from config",
+    "Install Project Scripts::Install Project Scripts › Install additional scripts via importScripts › Install additional scripts via importScripts",
+    "Installation Steps::Installation Steps › Step 3: Download Projects › Step 3: Download Projects",
+    "Install Project Scripts::Install Project Scripts › Install default scripts from project › Install default scripts from project",
+    "Installation Steps::Installation Steps › Step 2: Download Repos › Step 2: Download Repos",
+    "Installation Steps::Installation Steps › Step 4: Check Environment Again › Step 4: Check Environment Again"
+  ]
+}

@@ -1,0 +1,21 @@
+
+Running 9 tests using 1 worker
+
+(node:18499) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:18499) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 tests/installer/install-project-scripts.pw.spec.ts:26:3 › Install Project Scripts › Install default scripts from project @smoke (11ms)
+  ✓  2 tests/installer/install-project-scripts.pw.spec.ts:75:3 › Install Project Scripts › Install additional scripts via importScripts @smoke (7ms)
+  ✓  3 tests/installer/install-project-scripts.pw.spec.ts:113:3 › Install Project Scripts › Remove scripts when project is removed from config @smoke (2ms)
+  ✓  4 tests/installer/install-project-scripts.pw.spec.ts:151:3 › Install Project Scripts › Handle missing project package.json gracefully @smoke (2ms)
+  ✓  5 tests/installer/install-project-scripts.pw.spec.ts:176:3 › Install Project Scripts › Verify scripts do not change current directory @smoke (3ms)
+Created shared workspace: /workspace/.cache/temp/install-steps-test-1766886162187
+  -  6 tests/installer/install-steps.pw.spec.ts:59:3 › Installation Steps › Step 2: Download Repos @smoke
+  -  7 tests/installer/install-steps.pw.spec.ts:70:3 › Installation Steps › Step 3: Download Projects @smoke
+  -  8 tests/installer/install-steps.pw.spec.ts:81:3 › Installation Steps › Step 4: Check Environment Again @smoke
+Cleaned up shared workspace: /workspace/.cache/temp/install-steps-test-1766886162187
+  -  9 tests/installer/install-steps.pw.spec.ts:102:3 › Installation Steps › Step 6: Setup Projects @smoke
+
+  4 skipped
+  5 passed (736ms)

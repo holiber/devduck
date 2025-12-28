@@ -1,0 +1,238 @@
+
+> devduck@0.2.0 test
+> tsx scripts/run-tests.ts
+
+Found 21 test files
+▶ ci: smogcheck-provider
+  ✔ matches CIProvider interface (0.588018ms)
+  ✔ fetchPR returns PR info that matches PRInfo schema (1.426942ms)
+  ✔ fetchPR throws error for non-existent PR (0.142938ms)
+  ✔ fetchPR works with branch name (0.271754ms)
+  ✔ fetchCheckStatus returns check statuses that match CheckStatus schema (0.604267ms)
+  ✔ fetchCheckStatus returns annotations for failed checks (0.129948ms)
+  ✔ fetchCheckStatus works with checkId (0.112103ms)
+  ✔ fetchCheckStatus works with branch name (0.094384ms)
+  ✔ fetchComments returns comments that match Comment schema (1.47845ms)
+  ✔ fetchComments includes reactions (0.245166ms)
+  ✔ fetchComments includes file location for file comments (0.10345ms)
+  ✔ fetchComments works with branch name (0.055546ms)
+✔ ci: smogcheck-provider (6.164438ms)
+▶ ci: provider registry discovery
+  ✔ discovers smogcheck-provider from modules directory and registers it (59.763083ms)
+✔ ci: provider registry discovery (59.835999ms)
+✔ launch dev starts background processes, runs smokecheck, captures browser console, and allows reuse (6559.133405ms)
+✔ workspace.config.json launch.dev starts processes, runs smokecheck, and supports smokecheck without args (4880.605531ms)
+✔ ProcessManager writes stdout/stderr logs (85.002249ms)
+✔ stop kills a process group (parent + child) (104.47178ms)
+▶ email: gmail-provider
+  ✔ matches EmailProvider interface (0.416715ms)
+✔ email: gmail-provider (0.924518ms)
+▶ email: provider registry discovery (gmail-provider)
+  ✔ discovers gmail-provider from modules directory and registers it (32.471214ms)
+✔ email: provider registry discovery (gmail-provider) (32.558073ms)
+▶ email: smogcheck-provider
+  ✔ matches EmailProvider interface (0.500615ms)
+  ✔ listUnreadMessages returns messages that match Message schema (1.608799ms)
+  ✔ getMessage returns a message by id (0.242833ms)
+  ✔ searchMessages supports filtering by from (0.149961ms)
+  ✔ searchMessages supports filtering by participant (to/cc/bcc/from) (0.134847ms)
+  ✔ searchMessages supports filtering by date range (0.136068ms)
+  ✔ downloadAttachment returns a Buffer for an existing attachment (0.186379ms)
+✔ email: smogcheck-provider (3.650568ms)
+▶ email: provider registry discovery
+  ✔ discovers smogcheck-provider from modules directory and registers it (31.947179ms)
+✔ email: provider registry discovery (32.053351ms)
+▶ install/mcp optional servers
+  ✔ marks optional URL-based server failure as non-blocking (12.5074ms)
+  ✔ marks optional command-based server failure as non-blocking (5.10211ms)
+✔ install/mcp optional servers (18.203028ms)
+▶ Install Project Scripts
+  ✔ Install default scripts from project (3.537299ms)
+  ✔ Install additional scripts via importScripts (1.495385ms)
+  ✔ Remove scripts when project is removed from config (1.29908ms)
+  ✔ Handle missing project package.json gracefully (1.118302ms)
+  ✔ Verify scripts do not change current directory (1.274533ms)
+✔ Install Project Scripts (14.639964ms)
+Created shared workspace: /workspace/.cache/temp/install-steps-test-1766885436983
+[36m
+[Step 1] Checking environment variables...[0m
+[33m
+  ⚠ Missing required environment variables:[0m
+[33m    - TEST_VAR_1 (config) - Test variable 1[0m
+[36m
+  ℹ Please:[0m
+[36m    1. Switch to workspace folder: cd /workspace/.cache/temp/install-steps-test-1766885436983[0m
+[36m    2. Set missing variables in .env file or environment variables[0m
+[36m    3. Re-run installation[0m
+[33m  ⚠ Step 1 requires user input[0m
+[36m
+[Step 1] Checking environment variables...[0m
+[32m  ✓ All required environment variables are present[0m
+[32m  ✓ Step 1 completed[0m
+▶ Installation Steps
+  ✔ Step 1: Check Environment Variables (27.515802ms)
+[36m
+[Step 2] Downloading repositories...[0m
+[36m  ℹ No repositories to download[0m
+  ✔ Step 2: Download Repos (4.353097ms)
+[36m
+[Step 3] Downloading projects...[0m
+[36m  ℹ No projects to download[0m
+[36m
+[Step 4] Checking environment variables again...[0m
+[32m  ✓ All required environment variables are present[0m
+[32m  ✓ Step 4 completed[0m
+[36m
+[Step 5] Setting up modules...[0m
+[36m  ℹ Executing module hooks...[0m
+[32m  ✓ Step 5 completed[0m
+[36m
+[Step 6] Setting up projects...[0m
+[36m  ℹ No projects to setup[0m
+[36m
+[Step 7] Verifying installation...[0m
+[36m  ℹ Verifying 0 check(s)...[0m
+[32m  ✓ All verifications passed (0/0 passed, 0 skipped)[0m
+[32m  ✓ Step 7 completed[0m
+  ✔ Step 3: Download Projects (1.914767ms)
+  ✔ Step 4: Check Environment Again (5.501287ms)
+  ✔ Step 5: Setup Modules (9.292513ms)
+  ✔ Step 6: Setup Projects (1.109484ms)
+  ✔ Step 7: Verify Installation (6.178959ms)
+Cleaned up shared workspace: /workspace/.cache/temp/install-steps-test-1766885436983
+✔ Installation Steps (61.026756ms)
+▶ Workspace Installer - GUI/Interactive Mode
+  ▶ Fresh Workspace Installation
+    ✔ GUI Installation - Fresh Workspace (441.309863ms)
+  ✔ Fresh Workspace Installation (441.78437ms)
+  ▶ Existing Workspace Operations
+    ✔ Detect Existing Workspace (385.774573ms)
+  ✔ Existing Workspace Operations (390.152736ms)
+✔ Workspace Installer - GUI/Interactive Mode (832.273097ms)
+✔ installer: hook load failure is fatal (436.318183ms)
+✔ installer: .env values are available to shell checks (fill-missing) (351.625664ms)
+✔ installer: checks without name do not print "Checking undefined" (353.937936ms)
+✔ installer summary: prints INSTALLATION FINISHED WITH ERRORS on failures (354.443371ms)
+▶ Workspace Installer - Unattended Mode
+  ▶ Fresh Workspace Installation
+    ✔ Unattended Installation from fixture - cursor-only (403.634783ms)
+    ✔ Unattended Installation - Fresh Workspace (363.470723ms)
+    ✔ Unattended Installation with Config File (367.630794ms)
+    ✔ Unattended Installation with workspace.config.json (local folder project src) (458.822461ms)
+    ✔ Unattended Installation with workspace.config.json seedFiles[] copies seed files/folders (384.244874ms)
+    ✔ Unattended Installation - Full Structure Verification (388.794266ms)
+  ✔ Fresh Workspace Installation (2367.450877ms)
+  ▶ Existing Workspace Operations
+    ✔ Reinstall Existing Workspace - Unattended (743.727603ms)
+    ✔ Add Modules to Existing Workspace (743.442074ms)
+    ✔ Remove Modules from Existing Workspace (747.543432ms)
+    ✔ Reinstallation Verification - Preserve Configuration (738.087019ms)
+    ✔ Reinstallation - Module Hooks Re-executed (763.6865ms)
+  ✔ Existing Workspace Operations (3736.936108ms)
+  ▶ External Repository Installation
+    ✔ Installation with External Repository (885.567841ms)
+  ✔ External Repository Installation (885.69995ms)
+✔ Workspace Installer - Unattended Mode (6990.47094ms)
+▶ workspace modules patterns
+  ✔ modules: ["issue-*"] expands to issue-tracker and issue-tracker-github (16.957225ms)
+✔ workspace modules patterns (17.588923ms)
+▶ devduck new (npx-friendly bootstrap)
+  ✔ clones DevDuck into devduck/src when not listed in projects (3769.083728ms)
+  ✔ resolves relative workspace path from INIT_CWD (npx cache cwd simulation) (2700.893494ms)
+✔ devduck new (npx-friendly bootstrap) (6470.772483ms)
+▶ Workspace Installer - Workspace-local modules/
+  ✔ Installs module from workspace/modules when listed in config (412.712296ms)
+✔ Workspace Installer - Workspace-local modules/ (413.323378ms)
+▶ issue-tracker-github: github-provider
+  ✔ matches IssueTrackerProvider contract schema (1.433009ms)
+  ✔ fetchIssue returns issue that matches Issue schema (0.152004ms)
+  ▶ fetchIssue works with URL
+    ﹣ GITHUB_TOKEN not set (0.07749ms) # SKIP
+  ✔ fetchIssue works with URL (0.266238ms)
+  ▶ fetchIssue throws error for non-existent issue
+    ﹣ GITHUB_TOKEN not set (0.430062ms) # SKIP
+  ✔ fetchIssue throws error for non-existent issue (0.579478ms)
+  ▶ fetchComments returns comments that match Comment schema
+    ﹣ GITHUB_TOKEN not set (0.092643ms) # SKIP
+  ✔ fetchComments returns comments that match Comment schema (0.315033ms)
+  ▶ fetchPRs returns PR references that match PRReference schema
+    ﹣ GITHUB_TOKEN not set (0.110931ms) # SKIP
+  ✔ fetchPRs returns PR references that match PRReference schema (0.297169ms)
+  ▶ downloadResources creates correct directory structure
+    ﹣ GITHUB_TOKEN not set (0.082348ms) # SKIP
+  ✔ downloadResources creates correct directory structure (0.232576ms)
+  ▶ downloadResources creates resources.json with correct metadata
+    ﹣ GITHUB_TOKEN not set (0.082743ms) # SKIP
+  ✔ downloadResources creates resources.json with correct metadata (0.238063ms)
+  ▶ downloadResources downloads resources with distance <= 1
+    ﹣ GITHUB_TOKEN not set (0.054961ms) # SKIP
+  ✔ downloadResources downloads resources with distance <= 1 (0.21515ms)
+  ▶ downloadResources creates issue.json with comments
+    ﹣ GITHUB_TOKEN not set (0.043096ms) # SKIP
+  ✔ downloadResources creates issue.json with comments (0.134978ms)
+✔ issue-tracker-github: github-provider (4.638628ms)
+▶ issue-tracker-github: provider registry discovery
+  ✔ discovers github-provider from modules directory and registers it (with schema validation) (26.231988ms)
+✔ issue-tracker-github: provider registry discovery (26.289195ms)
+▶ issue-tracker: smogcheck-provider
+  ✔ matches IssueTrackerProvider contract schema (2.464187ms)
+  ✔ fetchIssue returns issue that matches Issue schema (0.499052ms)
+  ✔ fetchIssue works with issue key (0.086865ms)
+  ✔ fetchIssue works with URL (0.154466ms)
+  ✔ fetchIssue throws error for non-existent issue (0.109298ms)
+  ✔ fetchComments returns comments that match Comment schema (0.374437ms)
+  ✔ fetchComments includes reactions (0.095414ms)
+  ✔ fetchComments returns empty array for issue without comments (0.073191ms)
+  ✔ fetchPRs returns PR references that match PRReference schema (0.188297ms)
+  ✔ fetchPRs returns empty array for issue without PRs (0.138389ms)
+  ✔ downloadResources creates correct directory structure (2.159999ms)
+  ✔ downloadResources creates resources.json with correct metadata (1.028266ms)
+  ✔ downloadResources downloads resources with distance <= 2 (1.017925ms)
+  ✔ downloadResources tracks resources with distance == 3 without downloading (0.863523ms)
+  ✔ downloadResources creates issue.json with comments and PRs (1.043148ms)
+  ✔ downloadResources creates PR directories when PRs exist (1.037943ms)
+✔ issue-tracker: smogcheck-provider (12.264113ms)
+▶ issue-tracker: provider registry discovery
+  ✔ discovers smogcheck-provider from modules directory and registers it (with schema validation) (28.813223ms)
+✔ issue-tracker: provider registry discovery (28.885146ms)
+▶ mcp: API module
+  ✔ mcpRouter is defined and has procedures (0.734919ms)
+  ✔ mcpRouter.list procedure exists with correct schema (0.20792ms)
+  ✔ mcpRouter.call procedure exists with correct schema (0.198429ms)
+  ✔ mcp module is included in unified API (23.800725ms)
+  ✔ mcp.list can list servers when mcp.json exists (0.227881ms)
+  ✔ npm run api lists mcp methods (0.160807ms)
+  ✔ mcp.list can be called via API CLI (0.147468ms)
+  ✔ mcp.call can be called via API CLI (help check) (0.173241ms)
+✔ mcp: API module (26.419935ms)
+✔ messenger CLI exposes required inputs as options (913.305752ms)
+✔ ci CLI positional still works (no duplicate required flags) (441.233658ms)
+▶ messenger: telegram-provider
+  ✔ matches MessengerProvider contract schema (1.385211ms)
+  ✔ listChats returns chats that match Chat schema (1.113942ms)
+  ✔ getChatHistory returns messages that match ChatMessage schema (2.258754ms)
+  ✔ downloadFile returns a descriptor that matches DownloadFileResult schema (0.681477ms)
+✔ messenger: telegram-provider (6.104258ms)
+▶ messenger: yandex-messenger-provider
+  ✔ matches MessengerProvider contract schema (0.204206ms)
+  ✔ listChats returns chats that match Chat schema (0.412776ms)
+  ✔ getChatHistory returns messages that match ChatMessage schema (1.101332ms)
+  ✔ downloadFile returns a descriptor that matches DownloadFileResult schema (0.495305ms)
+✔ messenger: yandex-messenger-provider (2.44082ms)
+▶ messenger: provider registry discovery
+  ✔ discovers messenger providers from modules directory and registers them (with schema validation) (25.522021ms)
+✔ messenger: provider registry discovery (25.608674ms)
+▶ workspace-path resolver
+  ✔ parses ark:/ links as Arcadia links (1.141241ms)
+  ✔ resolves ark:/ links using arc root (fallback to arc root) (0.265031ms)
+  ✔ resolves ark:/ links using arc root and strips arcadia/ prefix (0.122338ms)
+  ✔ if arc root is unavailable, ark:/ falls back to projectRoot (0.101579ms)
+✔ workspace-path resolver (2.259865ms)
+ℹ tests 122
+ℹ suites 28
+ℹ pass 114
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 8
+ℹ todo 0
+ℹ duration_ms 32959.667504

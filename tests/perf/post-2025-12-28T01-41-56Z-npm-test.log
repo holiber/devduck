@@ -1,0 +1,141 @@
+
+> devduck@0.2.0 test
+> tsx scripts/run-tests.ts
+
+Found 13 test files
+▶ ci: smogcheck-provider
+  ✔ matches CIProvider interface (0.557123ms)
+  ✔ fetchPR returns PR info that matches PRInfo schema (2.477069ms)
+  ✔ fetchPR throws error for non-existent PR (0.189803ms)
+  ✔ fetchPR works with branch name (0.284234ms)
+  ✔ fetchCheckStatus returns check statuses that match CheckStatus schema (0.369175ms)
+  ✔ fetchCheckStatus returns annotations for failed checks (0.10896ms)
+  ✔ fetchCheckStatus works with checkId (0.085087ms)
+  ✔ fetchCheckStatus works with branch name (0.069611ms)
+  ✔ fetchComments returns comments that match Comment schema (0.307018ms)
+  ✔ fetchComments includes reactions (0.204806ms)
+  ✔ fetchComments includes file location for file comments (0.093532ms)
+  ✔ fetchComments works with branch name (0.055559ms)
+✔ ci: smogcheck-provider (5.624894ms)
+▶ ci: provider registry discovery
+  ✔ discovers smogcheck-provider from modules directory and registers it (29.820251ms)
+✔ ci: provider registry discovery (29.889314ms)
+✔ launch dev starts background processes, runs smokecheck, captures browser console, and allows reuse (4912.99152ms)
+✔ workspace.config.json launch.dev starts processes, runs smokecheck, and supports smokecheck without args (4876.072742ms)
+✔ ProcessManager writes stdout/stderr logs (91.794061ms)
+✔ stop kills a process group (parent + child) (120.080691ms)
+▶ email: gmail-provider
+  ✔ matches EmailProvider interface (0.423591ms)
+✔ email: gmail-provider (0.932771ms)
+▶ email: provider registry discovery (gmail-provider)
+  ✔ discovers gmail-provider from modules directory and registers it (30.367206ms)
+✔ email: provider registry discovery (gmail-provider) (30.452925ms)
+▶ email: smogcheck-provider
+  ✔ matches EmailProvider interface (0.499007ms)
+  ✔ listUnreadMessages returns messages that match Message schema (1.632701ms)
+  ✔ getMessage returns a message by id (0.240299ms)
+  ✔ searchMessages supports filtering by from (0.154094ms)
+  ✔ searchMessages supports filtering by participant (to/cc/bcc/from) (0.149114ms)
+  ✔ searchMessages supports filtering by date range (0.130218ms)
+  ✔ downloadAttachment returns a Buffer for an existing attachment (0.190937ms)
+✔ email: smogcheck-provider (3.690994ms)
+▶ email: provider registry discovery
+  ✔ discovers smogcheck-provider from modules directory and registers it (29.233561ms)
+✔ email: provider registry discovery (29.339905ms)
+▶ install/mcp optional servers
+  ✔ marks optional URL-based server failure as non-blocking (12.629564ms)
+  ✔ marks optional command-based server failure as non-blocking (4.939742ms)
+✔ install/mcp optional servers (18.171014ms)
+▶ issue-tracker-github: github-provider
+  ✔ matches IssueTrackerProvider contract schema (1.459508ms)
+  ✔ fetchIssue returns issue that matches Issue schema (0.110143ms)
+  ▶ fetchIssue works with URL
+    ﹣ GITHUB_TOKEN not set (0.078814ms) # SKIP
+  ✔ fetchIssue works with URL (0.24223ms)
+  ▶ fetchIssue throws error for non-existent issue
+    ﹣ GITHUB_TOKEN not set (0.098241ms) # SKIP
+  ✔ fetchIssue throws error for non-existent issue (0.254852ms)
+  ▶ fetchComments returns comments that match Comment schema
+    ﹣ GITHUB_TOKEN not set (0.073228ms) # SKIP
+  ✔ fetchComments returns comments that match Comment schema (0.210784ms)
+  ▶ fetchPRs returns PR references that match PRReference schema
+    ﹣ GITHUB_TOKEN not set (0.108153ms) # SKIP
+  ✔ fetchPRs returns PR references that match PRReference schema (0.279521ms)
+  ▶ downloadResources creates correct directory structure
+    ﹣ GITHUB_TOKEN not set (0.124208ms) # SKIP
+  ✔ downloadResources creates correct directory structure (0.291014ms)
+  ▶ downloadResources creates resources.json with correct metadata
+    ﹣ GITHUB_TOKEN not set (0.062862ms) # SKIP
+  ✔ downloadResources creates resources.json with correct metadata (0.197595ms)
+  ▶ downloadResources downloads resources with distance <= 1
+    ﹣ GITHUB_TOKEN not set (0.047939ms) # SKIP
+  ✔ downloadResources downloads resources with distance <= 1 (0.169398ms)
+  ▶ downloadResources creates issue.json with comments
+    ﹣ GITHUB_TOKEN not set (0.053445ms) # SKIP
+  ✔ downloadResources creates issue.json with comments (0.378817ms)
+✔ issue-tracker-github: github-provider (4.292532ms)
+▶ issue-tracker-github: provider registry discovery
+  ✔ discovers github-provider from modules directory and registers it (with schema validation) (25.472056ms)
+✔ issue-tracker-github: provider registry discovery (25.53411ms)
+▶ issue-tracker: smogcheck-provider
+  ✔ matches IssueTrackerProvider contract schema (1.481878ms)
+  ✔ fetchIssue returns issue that matches Issue schema (0.481511ms)
+  ✔ fetchIssue works with issue key (0.084051ms)
+  ✔ fetchIssue works with URL (0.149301ms)
+  ✔ fetchIssue throws error for non-existent issue (0.173698ms)
+  ✔ fetchComments returns comments that match Comment schema (0.36564ms)
+  ✔ fetchComments includes reactions (0.103161ms)
+  ✔ fetchComments returns empty array for issue without comments (0.07896ms)
+  ✔ fetchPRs returns PR references that match PRReference schema (0.181119ms)
+  ✔ fetchPRs returns empty array for issue without PRs (0.140361ms)
+  ✔ downloadResources creates correct directory structure (1.866912ms)
+  ✔ downloadResources creates resources.json with correct metadata (0.855598ms)
+  ✔ downloadResources downloads resources with distance <= 2 (1.017989ms)
+  ✔ downloadResources tracks resources with distance == 3 without downloading (1.071684ms)
+  ✔ downloadResources creates issue.json with comments and PRs (0.871436ms)
+  ✔ downloadResources creates PR directories when PRs exist (1.001783ms)
+✔ issue-tracker: smogcheck-provider (10.892661ms)
+▶ issue-tracker: provider registry discovery
+  ✔ discovers smogcheck-provider from modules directory and registers it (with schema validation) (27.013499ms)
+✔ issue-tracker: provider registry discovery (27.095495ms)
+▶ mcp: API module
+  ✔ mcpRouter is defined and has procedures (0.720219ms)
+  ✔ mcpRouter.list procedure exists with correct schema (0.206033ms)
+  ✔ mcpRouter.call procedure exists with correct schema (0.291085ms)
+  ✔ mcp module is included in unified API (17.868351ms)
+  ✔ mcp.list can list servers when mcp.json exists (0.324767ms)
+  ✔ npm run api lists mcp methods (0.154683ms)
+  ✔ mcp.list can be called via API CLI (0.152466ms)
+  ✔ mcp.call can be called via API CLI (help check) (0.171208ms)
+✔ mcp: API module (20.781707ms)
+✔ messenger CLI exposes required inputs as options (866.755944ms)
+✔ ci CLI positional still works (no duplicate required flags) (426.520259ms)
+▶ messenger: telegram-provider
+  ✔ matches MessengerProvider contract schema (1.39588ms)
+  ✔ listChats returns chats that match Chat schema (1.18888ms)
+  ✔ getChatHistory returns messages that match ChatMessage schema (2.654327ms)
+  ✔ downloadFile returns a descriptor that matches DownloadFileResult schema (0.794459ms)
+✔ messenger: telegram-provider (6.685216ms)
+▶ messenger: yandex-messenger-provider
+  ✔ matches MessengerProvider contract schema (0.205711ms)
+  ✔ listChats returns chats that match Chat schema (0.481065ms)
+  ✔ getChatHistory returns messages that match ChatMessage schema (1.472547ms)
+  ✔ downloadFile returns a descriptor that matches DownloadFileResult schema (0.599938ms)
+✔ messenger: yandex-messenger-provider (2.993334ms)
+▶ messenger: provider registry discovery
+  ✔ discovers messenger providers from modules directory and registers them (with schema validation) (25.102327ms)
+✔ messenger: provider registry discovery (25.191643ms)
+▶ workspace-path resolver
+  ✔ parses ark:/ links as Arcadia links (0.53306ms)
+  ✔ resolves ark:/ links using arc root (fallback to arc root) (0.261611ms)
+  ✔ resolves ark:/ links using arc root and strips arcadia/ prefix (0.119598ms)
+  ✔ if arc root is unavailable, ark:/ falls back to projectRoot (0.094755ms)
+✔ workspace-path resolver (1.644501ms)
+ℹ tests 88
+ℹ suites 16
+ℹ pass 80
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 8
+ℹ todo 0
+ℹ duration_ms 13456.498641

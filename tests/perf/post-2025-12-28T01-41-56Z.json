@@ -1,0 +1,909 @@
+{
+  "kind": "post-migration",
+  "timestampUtc": "2025-12-28T01-41-56Z",
+  "baselineTimestampUtc": "2025-12-28T01-30-23Z",
+  "totals": {
+    "nodeNpmTestWallTimeMs": 13970,
+    "nodeTapWallTimeMs": 13646,
+    "playwrightInstallerWallTimeMs": 16529,
+    "playwrightSmokeWallTimeMs": 1507
+  },
+  "artifacts": {
+    "npmLog": "tests/perf/post-2025-12-28T01-41-56Z-npm-test.log",
+    "tapLog": "tests/perf/post-2025-12-28T01-41-56Z-tap.log",
+    "playwrightInstallerLog": "tests/perf/post-2025-12-28T01-41-56Z-pw-installer.log",
+    "playwrightSmokeLog": "tests/perf/post-2025-12-28T01-41-56Z-pw-smoke.log"
+  },
+  "timings": {
+    "nodeTap": [
+      {
+        "id": "ci: smogcheck-provider::ci: smogcheck-provider › matches CIProvider interface › matches CIProvider interface",
+        "rootSuite": "ci: smogcheck-provider",
+        "file": "ci: smogcheck-provider",
+        "fullName": "ci: smogcheck-provider › matches CIProvider interface › matches CIProvider interface",
+        "durationMs": 0.561646
+      },
+      {
+        "id": "ci: smogcheck-provider::ci: smogcheck-provider › fetchPR returns PR info that matches PRInfo schema › fetchPR returns PR info that matches PRInfo schema",
+        "rootSuite": "ci: smogcheck-provider",
+        "file": "ci: smogcheck-provider",
+        "fullName": "ci: smogcheck-provider › fetchPR returns PR info that matches PRInfo schema › fetchPR returns PR info that matches PRInfo schema",
+        "durationMs": 2.611365
+      },
+      {
+        "id": "ci: smogcheck-provider::ci: smogcheck-provider › fetchPR throws error for non-existent PR › fetchPR throws error for non-existent PR",
+        "rootSuite": "ci: smogcheck-provider",
+        "file": "ci: smogcheck-provider",
+        "fullName": "ci: smogcheck-provider › fetchPR throws error for non-existent PR › fetchPR throws error for non-existent PR",
+        "durationMs": 0.144138
+      },
+      {
+        "id": "ci: smogcheck-provider::ci: smogcheck-provider › fetchPR works with branch name › fetchPR works with branch name",
+        "rootSuite": "ci: smogcheck-provider",
+        "file": "ci: smogcheck-provider",
+        "fullName": "ci: smogcheck-provider › fetchPR works with branch name › fetchPR works with branch name",
+        "durationMs": 0.229042
+      },
+      {
+        "id": "ci: smogcheck-provider::ci: smogcheck-provider › fetchCheckStatus returns check statuses that match CheckStatus schema › fetchCheckStatus returns check statuses that match CheckStatus schema",
+        "rootSuite": "ci: smogcheck-provider",
+        "file": "ci: smogcheck-provider",
+        "fullName": "ci: smogcheck-provider › fetchCheckStatus returns check statuses that match CheckStatus schema › fetchCheckStatus returns check statuses that match CheckStatus schema",
+        "durationMs": 0.349316
+      },
+      {
+        "id": "ci: smogcheck-provider::ci: smogcheck-provider › fetchCheckStatus returns annotations for failed checks › fetchCheckStatus returns annotations for failed checks",
+        "rootSuite": "ci: smogcheck-provider",
+        "file": "ci: smogcheck-provider",
+        "fullName": "ci: smogcheck-provider › fetchCheckStatus returns annotations for failed checks › fetchCheckStatus returns annotations for failed checks",
+        "durationMs": 0.100759
+      },
+      {
+        "id": "ci: smogcheck-provider::ci: smogcheck-provider › fetchCheckStatus works with checkId › fetchCheckStatus works with checkId",
+        "rootSuite": "ci: smogcheck-provider",
+        "file": "ci: smogcheck-provider",
+        "fullName": "ci: smogcheck-provider › fetchCheckStatus works with checkId › fetchCheckStatus works with checkId",
+        "durationMs": 0.086262
+      },
+      {
+        "id": "ci: smogcheck-provider::ci: smogcheck-provider › fetchCheckStatus works with branch name › fetchCheckStatus works with branch name",
+        "rootSuite": "ci: smogcheck-provider",
+        "file": "ci: smogcheck-provider",
+        "fullName": "ci: smogcheck-provider › fetchCheckStatus works with branch name › fetchCheckStatus works with branch name",
+        "durationMs": 0.084016
+      },
+      {
+        "id": "ci: smogcheck-provider::ci: smogcheck-provider › fetchComments returns comments that match Comment schema › fetchComments returns comments that match Comment schema",
+        "rootSuite": "ci: smogcheck-provider",
+        "file": "ci: smogcheck-provider",
+        "fullName": "ci: smogcheck-provider › fetchComments returns comments that match Comment schema › fetchComments returns comments that match Comment schema",
+        "durationMs": 0.306655
+      },
+      {
+        "id": "ci: smogcheck-provider::ci: smogcheck-provider › fetchComments includes reactions › fetchComments includes reactions",
+        "rootSuite": "ci: smogcheck-provider",
+        "file": "ci: smogcheck-provider",
+        "fullName": "ci: smogcheck-provider › fetchComments includes reactions › fetchComments includes reactions",
+        "durationMs": 0.157447
+      },
+      {
+        "id": "ci: smogcheck-provider::ci: smogcheck-provider › fetchComments includes file location for file comments › fetchComments includes file location for file comments",
+        "rootSuite": "ci: smogcheck-provider",
+        "file": "ci: smogcheck-provider",
+        "fullName": "ci: smogcheck-provider › fetchComments includes file location for file comments › fetchComments includes file location for file comments",
+        "durationMs": 0.089358
+      },
+      {
+        "id": "ci: smogcheck-provider::ci: smogcheck-provider › fetchComments works with branch name › fetchComments works with branch name",
+        "rootSuite": "ci: smogcheck-provider",
+        "file": "ci: smogcheck-provider",
+        "fullName": "ci: smogcheck-provider › fetchComments works with branch name › fetchComments works with branch name",
+        "durationMs": 0.069304
+      },
+      {
+        "id": "ci: smogcheck-provider::ci: smogcheck-provider › fetchComments works with branch name › ci: smogcheck-provider",
+        "rootSuite": "ci: smogcheck-provider",
+        "file": "ci: smogcheck-provider",
+        "fullName": "ci: smogcheck-provider › fetchComments works with branch name › ci: smogcheck-provider",
+        "durationMs": 5.640076
+      },
+      {
+        "id": "ci: provider registry discovery::ci: provider registry discovery › discovers smogcheck-provider from modules directory and registers it › discovers smogcheck-provider from modules directory and registers it",
+        "rootSuite": "ci: provider registry discovery",
+        "file": "ci: provider registry discovery",
+        "fullName": "ci: provider registry discovery › discovers smogcheck-provider from modules directory and registers it › discovers smogcheck-provider from modules directory and registers it",
+        "durationMs": 29.443548
+      },
+      {
+        "id": "ci: provider registry discovery::ci: provider registry discovery › discovers smogcheck-provider from modules directory and registers it › ci: provider registry discovery",
+        "rootSuite": "ci: provider registry discovery",
+        "file": "ci: provider registry discovery",
+        "fullName": "ci: provider registry discovery › discovers smogcheck-provider from modules directory and registers it › ci: provider registry discovery",
+        "durationMs": 29.526397
+      },
+      {
+        "id": "launch dev starts background processes, runs smokecheck, captures browser console, and allows reuse::launch dev starts background processes, runs smokecheck, captures browser console, and allows reuse › launch dev starts background processes, runs smokecheck, captures browser console, and allows reuse",
+        "rootSuite": "launch dev starts background processes, runs smokecheck, captures browser console, and allows reuse",
+        "file": "launch dev starts background processes, runs smokecheck, captures browser console, and allows reuse",
+        "fullName": "launch dev starts background processes, runs smokecheck, captures browser console, and allows reuse › launch dev starts background processes, runs smokecheck, captures browser console, and allows reuse",
+        "durationMs": 4903.887126
+      },
+      {
+        "id": "workspace.config.json launch.dev starts processes, runs smokecheck, and supports smokecheck without args::workspace.config.json launch.dev starts processes, runs smokecheck, and supports smokecheck without args › workspace.config.json launch.dev starts processes, runs smokecheck, and supports smokecheck without args",
+        "rootSuite": "workspace.config.json launch.dev starts processes, runs smokecheck, and supports smokecheck without args",
+        "file": "workspace.config.json launch.dev starts processes, runs smokecheck, and supports smokecheck without args",
+        "fullName": "workspace.config.json launch.dev starts processes, runs smokecheck, and supports smokecheck without args › workspace.config.json launch.dev starts processes, runs smokecheck, and supports smokecheck without args",
+        "durationMs": 4819.444565
+      },
+      {
+        "id": "ProcessManager writes stdout/stderr logs::ProcessManager writes stdout/stderr logs › ProcessManager writes stdout/stderr logs",
+        "rootSuite": "ProcessManager writes stdout/stderr logs",
+        "file": "ProcessManager writes stdout/stderr logs",
+        "fullName": "ProcessManager writes stdout/stderr logs › ProcessManager writes stdout/stderr logs",
+        "durationMs": 92.54006
+      },
+      {
+        "id": "stop kills a process group (parent + child)::stop kills a process group (parent + child) › stop kills a process group (parent + child)",
+        "rootSuite": "stop kills a process group (parent + child)",
+        "file": "stop kills a process group (parent + child)",
+        "fullName": "stop kills a process group (parent + child) › stop kills a process group (parent + child)",
+        "durationMs": 117.509368
+      },
+      {
+        "id": "email: gmail-provider::email: gmail-provider › matches EmailProvider interface › matches EmailProvider interface",
+        "rootSuite": "email: gmail-provider",
+        "file": "email: gmail-provider",
+        "fullName": "email: gmail-provider › matches EmailProvider interface › matches EmailProvider interface",
+        "durationMs": 0.417002
+      },
+      {
+        "id": "email: gmail-provider::email: gmail-provider › matches EmailProvider interface › email: gmail-provider",
+        "rootSuite": "email: gmail-provider",
+        "file": "email: gmail-provider",
+        "fullName": "email: gmail-provider › matches EmailProvider interface › email: gmail-provider",
+        "durationMs": 0.943484
+      },
+      {
+        "id": "email: provider registry discovery (gmail-provider)::email: provider registry discovery (gmail-provider) › discovers gmail-provider from modules directory and registers it › discovers gmail-provider from modules directory and registers it",
+        "rootSuite": "email: provider registry discovery (gmail-provider)",
+        "file": "email: provider registry discovery (gmail-provider)",
+        "fullName": "email: provider registry discovery (gmail-provider) › discovers gmail-provider from modules directory and registers it › discovers gmail-provider from modules directory and registers it",
+        "durationMs": 32.387937
+      },
+      {
+        "id": "email: provider registry discovery (gmail-provider)::email: provider registry discovery (gmail-provider) › discovers gmail-provider from modules directory and registers it › email: provider registry discovery (gmail-provider)",
+        "rootSuite": "email: provider registry discovery (gmail-provider)",
+        "file": "email: provider registry discovery (gmail-provider)",
+        "fullName": "email: provider registry discovery (gmail-provider) › discovers gmail-provider from modules directory and registers it › email: provider registry discovery (gmail-provider)",
+        "durationMs": 32.47521
+      },
+      {
+        "id": "email: smogcheck-provider::email: smogcheck-provider › matches EmailProvider interface › matches EmailProvider interface",
+        "rootSuite": "email: smogcheck-provider",
+        "file": "email: smogcheck-provider",
+        "fullName": "email: smogcheck-provider › matches EmailProvider interface › matches EmailProvider interface",
+        "durationMs": 0.489218
+      },
+      {
+        "id": "email: smogcheck-provider::email: smogcheck-provider › listUnreadMessages returns messages that match Message schema › listUnreadMessages returns messages that match Message schema",
+        "rootSuite": "email: smogcheck-provider",
+        "file": "email: smogcheck-provider",
+        "fullName": "email: smogcheck-provider › listUnreadMessages returns messages that match Message schema › listUnreadMessages returns messages that match Message schema",
+        "durationMs": 1.599058
+      },
+      {
+        "id": "email: smogcheck-provider::email: smogcheck-provider › getMessage returns a message by id › getMessage returns a message by id",
+        "rootSuite": "email: smogcheck-provider",
+        "file": "email: smogcheck-provider",
+        "fullName": "email: smogcheck-provider › getMessage returns a message by id › getMessage returns a message by id",
+        "durationMs": 0.247837
+      },
+      {
+        "id": "email: smogcheck-provider::email: smogcheck-provider › searchMessages supports filtering by from › searchMessages supports filtering by from",
+        "rootSuite": "email: smogcheck-provider",
+        "file": "email: smogcheck-provider",
+        "fullName": "email: smogcheck-provider › searchMessages supports filtering by from › searchMessages supports filtering by from",
+        "durationMs": 0.157886
+      },
+      {
+        "id": "email: smogcheck-provider::email: smogcheck-provider › searchMessages supports filtering by participant (to/cc/bcc/from) › searchMessages supports filtering by participant (to/cc/bcc/from)",
+        "rootSuite": "email: smogcheck-provider",
+        "file": "email: smogcheck-provider",
+        "fullName": "email: smogcheck-provider › searchMessages supports filtering by participant (to/cc/bcc/from) › searchMessages supports filtering by participant (to/cc/bcc/from)",
+        "durationMs": 0.136447
+      },
+      {
+        "id": "email: smogcheck-provider::email: smogcheck-provider › searchMessages supports filtering by date range › searchMessages supports filtering by date range",
+        "rootSuite": "email: smogcheck-provider",
+        "file": "email: smogcheck-provider",
+        "fullName": "email: smogcheck-provider › searchMessages supports filtering by date range › searchMessages supports filtering by date range",
+        "durationMs": 0.111208
+      },
+      {
+        "id": "email: smogcheck-provider::email: smogcheck-provider › downloadAttachment returns a Buffer for an existing attachment › downloadAttachment returns a Buffer for an existing attachment",
+        "rootSuite": "email: smogcheck-provider",
+        "file": "email: smogcheck-provider",
+        "fullName": "email: smogcheck-provider › downloadAttachment returns a Buffer for an existing attachment › downloadAttachment returns a Buffer for an existing attachment",
+        "durationMs": 0.223663
+      },
+      {
+        "id": "email: smogcheck-provider::email: smogcheck-provider › downloadAttachment returns a Buffer for an existing attachment › email: smogcheck-provider",
+        "rootSuite": "email: smogcheck-provider",
+        "file": "email: smogcheck-provider",
+        "fullName": "email: smogcheck-provider › downloadAttachment returns a Buffer for an existing attachment › email: smogcheck-provider",
+        "durationMs": 3.688386
+      },
+      {
+        "id": "email: provider registry discovery::email: provider registry discovery › discovers smogcheck-provider from modules directory and registers it › discovers smogcheck-provider from modules directory and registers it",
+        "rootSuite": "email: provider registry discovery",
+        "file": "email: provider registry discovery",
+        "fullName": "email: provider registry discovery › discovers smogcheck-provider from modules directory and registers it › discovers smogcheck-provider from modules directory and registers it",
+        "durationMs": 30.513716
+      },
+      {
+        "id": "email: provider registry discovery::email: provider registry discovery › discovers smogcheck-provider from modules directory and registers it › email: provider registry discovery",
+        "rootSuite": "email: provider registry discovery",
+        "file": "email: provider registry discovery",
+        "fullName": "email: provider registry discovery › discovers smogcheck-provider from modules directory and registers it › email: provider registry discovery",
+        "durationMs": 30.629996
+      },
+      {
+        "id": "install/mcp optional servers::install/mcp optional servers › marks optional URL-based server failure as non-blocking › marks optional URL-based server failure as non-blocking",
+        "rootSuite": "install/mcp optional servers",
+        "file": "install/mcp optional servers",
+        "fullName": "install/mcp optional servers › marks optional URL-based server failure as non-blocking › marks optional URL-based server failure as non-blocking",
+        "durationMs": 12.2338
+      },
+      {
+        "id": "install/mcp optional servers::install/mcp optional servers › marks optional command-based server failure as non-blocking › marks optional command-based server failure as non-blocking",
+        "rootSuite": "install/mcp optional servers",
+        "file": "install/mcp optional servers",
+        "fullName": "install/mcp optional servers › marks optional command-based server failure as non-blocking › marks optional command-based server failure as non-blocking",
+        "durationMs": 5.057462
+      },
+      {
+        "id": "install/mcp optional servers::install/mcp optional servers › marks optional command-based server failure as non-blocking › install/mcp optional servers",
+        "rootSuite": "install/mcp optional servers",
+        "file": "install/mcp optional servers",
+        "fullName": "install/mcp optional servers › marks optional command-based server failure as non-blocking › install/mcp optional servers",
+        "durationMs": 17.891114
+      },
+      {
+        "id": "issue-tracker-github: github-provider::issue-tracker-github: github-provider › matches IssueTrackerProvider contract schema › matches IssueTrackerProvider contract schema",
+        "rootSuite": "issue-tracker-github: github-provider",
+        "file": "issue-tracker-github: github-provider",
+        "fullName": "issue-tracker-github: github-provider › matches IssueTrackerProvider contract schema › matches IssueTrackerProvider contract schema",
+        "durationMs": 1.457282
+      },
+      {
+        "id": "issue-tracker-github: github-provider::issue-tracker-github: github-provider › fetchIssue returns issue that matches Issue schema › fetchIssue returns issue that matches Issue schema",
+        "rootSuite": "issue-tracker-github: github-provider",
+        "file": "issue-tracker-github: github-provider",
+        "fullName": "issue-tracker-github: github-provider › fetchIssue returns issue that matches Issue schema › fetchIssue returns issue that matches Issue schema",
+        "durationMs": 0.107375
+      },
+      {
+        "id": "issue-tracker-github: github-provider::issue-tracker-github: github-provider › fetchIssue works with URL › GITHUB_TOKEN not set › GITHUB_TOKEN not set # SKIP",
+        "rootSuite": "issue-tracker-github: github-provider",
+        "file": "issue-tracker-github: github-provider",
+        "fullName": "issue-tracker-github: github-provider › fetchIssue works with URL › GITHUB_TOKEN not set › GITHUB_TOKEN not set # SKIP",
+        "durationMs": 0.072335
+      },
+      {
+        "id": "issue-tracker-github: github-provider::issue-tracker-github: github-provider › fetchIssue works with URL › GITHUB_TOKEN not set › fetchIssue works with URL",
+        "rootSuite": "issue-tracker-github: github-provider",
+        "file": "issue-tracker-github: github-provider",
+        "fullName": "issue-tracker-github: github-provider › fetchIssue works with URL › GITHUB_TOKEN not set › fetchIssue works with URL",
+        "durationMs": 0.248349
+      },
+      {
+        "id": "issue-tracker-github: github-provider::issue-tracker-github: github-provider › fetchIssue throws error for non-existent issue › GITHUB_TOKEN not set › GITHUB_TOKEN not set # SKIP",
+        "rootSuite": "issue-tracker-github: github-provider",
+        "file": "issue-tracker-github: github-provider",
+        "fullName": "issue-tracker-github: github-provider › fetchIssue throws error for non-existent issue › GITHUB_TOKEN not set › GITHUB_TOKEN not set # SKIP",
+        "durationMs": 0.090745
+      },
+      {
+        "id": "issue-tracker-github: github-provider::issue-tracker-github: github-provider › fetchIssue throws error for non-existent issue › GITHUB_TOKEN not set › fetchIssue throws error for non-existent issue",
+        "rootSuite": "issue-tracker-github: github-provider",
+        "file": "issue-tracker-github: github-provider",
+        "fullName": "issue-tracker-github: github-provider › fetchIssue throws error for non-existent issue › GITHUB_TOKEN not set › fetchIssue throws error for non-existent issue",
+        "durationMs": 0.224359
+      },
+      {
+        "id": "issue-tracker-github: github-provider::issue-tracker-github: github-provider › fetchComments returns comments that match Comment schema › GITHUB_TOKEN not set › GITHUB_TOKEN not set # SKIP",
+        "rootSuite": "issue-tracker-github: github-provider",
+        "file": "issue-tracker-github: github-provider",
+        "fullName": "issue-tracker-github: github-provider › fetchComments returns comments that match Comment schema › GITHUB_TOKEN not set › GITHUB_TOKEN not set # SKIP",
+        "durationMs": 0.072622
+      },
+      {
+        "id": "issue-tracker-github: github-provider::issue-tracker-github: github-provider › fetchComments returns comments that match Comment schema › GITHUB_TOKEN not set › fetchComments returns comments that match Comment schema",
+        "rootSuite": "issue-tracker-github: github-provider",
+        "file": "issue-tracker-github: github-provider",
+        "fullName": "issue-tracker-github: github-provider › fetchComments returns comments that match Comment schema › GITHUB_TOKEN not set › fetchComments returns comments that match Comment schema",
+        "durationMs": 0.2001
+      },
+      {
+        "id": "issue-tracker-github: github-provider::issue-tracker-github: github-provider › fetchPRs returns PR references that match PRReference schema › GITHUB_TOKEN not set › GITHUB_TOKEN not set # SKIP",
+        "rootSuite": "issue-tracker-github: github-provider",
+        "file": "issue-tracker-github: github-provider",
+        "fullName": "issue-tracker-github: github-provider › fetchPRs returns PR references that match PRReference schema › GITHUB_TOKEN not set › GITHUB_TOKEN not set # SKIP",
+        "durationMs": 0.099976
+      },
+      {
+        "id": "issue-tracker-github: github-provider::issue-tracker-github: github-provider › fetchPRs returns PR references that match PRReference schema › GITHUB_TOKEN not set › fetchPRs returns PR references that match PRReference schema",
+        "rootSuite": "issue-tracker-github: github-provider",
+        "file": "issue-tracker-github: github-provider",
+        "fullName": "issue-tracker-github: github-provider › fetchPRs returns PR references that match PRReference schema › GITHUB_TOKEN not set › fetchPRs returns PR references that match PRReference schema",
+        "durationMs": 0.293808
+      },
+      {
+        "id": "issue-tracker-github: github-provider::issue-tracker-github: github-provider › downloadResources creates correct directory structure › GITHUB_TOKEN not set › GITHUB_TOKEN not set # SKIP",
+        "rootSuite": "issue-tracker-github: github-provider",
+        "file": "issue-tracker-github: github-provider",
+        "fullName": "issue-tracker-github: github-provider › downloadResources creates correct directory structure › GITHUB_TOKEN not set › GITHUB_TOKEN not set # SKIP",
+        "durationMs": 0.088802
+      },
+      {
+        "id": "issue-tracker-github: github-provider::issue-tracker-github: github-provider › downloadResources creates correct directory structure › GITHUB_TOKEN not set › downloadResources creates correct directory structure",
+        "rootSuite": "issue-tracker-github: github-provider",
+        "file": "issue-tracker-github: github-provider",
+        "fullName": "issue-tracker-github: github-provider › downloadResources creates correct directory structure › GITHUB_TOKEN not set › downloadResources creates correct directory structure",
+        "durationMs": 0.258439
+      },
+      {
+        "id": "issue-tracker-github: github-provider::issue-tracker-github: github-provider › downloadResources creates resources.json with correct metadata › GITHUB_TOKEN not set › GITHUB_TOKEN not set # SKIP",
+        "rootSuite": "issue-tracker-github: github-provider",
+        "file": "issue-tracker-github: github-provider",
+        "fullName": "issue-tracker-github: github-provider › downloadResources creates resources.json with correct metadata › GITHUB_TOKEN not set › GITHUB_TOKEN not set # SKIP",
+        "durationMs": 0.063196
+      },
+      {
+        "id": "issue-tracker-github: github-provider::issue-tracker-github: github-provider › downloadResources creates resources.json with correct metadata › GITHUB_TOKEN not set › downloadResources creates resources.json with correct metadata",
+        "rootSuite": "issue-tracker-github: github-provider",
+        "file": "issue-tracker-github: github-provider",
+        "fullName": "issue-tracker-github: github-provider › downloadResources creates resources.json with correct metadata › GITHUB_TOKEN not set › downloadResources creates resources.json with correct metadata",
+        "durationMs": 0.202948
+      },
+      {
+        "id": "issue-tracker-github: github-provider::issue-tracker-github: github-provider › downloadResources downloads resources with distance <= 1 › GITHUB_TOKEN not set › GITHUB_TOKEN not set # SKIP",
+        "rootSuite": "issue-tracker-github: github-provider",
+        "file": "issue-tracker-github: github-provider",
+        "fullName": "issue-tracker-github: github-provider › downloadResources downloads resources with distance <= 1 › GITHUB_TOKEN not set › GITHUB_TOKEN not set # SKIP",
+        "durationMs": 0.052629
+      },
+      {
+        "id": "issue-tracker-github: github-provider::issue-tracker-github: github-provider › downloadResources downloads resources with distance <= 1 › GITHUB_TOKEN not set › downloadResources downloads resources with distance <= 1",
+        "rootSuite": "issue-tracker-github: github-provider",
+        "file": "issue-tracker-github: github-provider",
+        "fullName": "issue-tracker-github: github-provider › downloadResources downloads resources with distance <= 1 › GITHUB_TOKEN not set › downloadResources downloads resources with distance <= 1",
+        "durationMs": 0.173731
+      },
+      {
+        "id": "issue-tracker-github: github-provider::issue-tracker-github: github-provider › downloadResources creates issue.json with comments › GITHUB_TOKEN not set › GITHUB_TOKEN not set # SKIP",
+        "rootSuite": "issue-tracker-github: github-provider",
+        "file": "issue-tracker-github: github-provider",
+        "fullName": "issue-tracker-github: github-provider › downloadResources creates issue.json with comments › GITHUB_TOKEN not set › GITHUB_TOKEN not set # SKIP",
+        "durationMs": 0.057028
+      },
+      {
+        "id": "issue-tracker-github: github-provider::issue-tracker-github: github-provider › downloadResources creates issue.json with comments › GITHUB_TOKEN not set › downloadResources creates issue.json with comments",
+        "rootSuite": "issue-tracker-github: github-provider",
+        "file": "issue-tracker-github: github-provider",
+        "fullName": "issue-tracker-github: github-provider › downloadResources creates issue.json with comments › GITHUB_TOKEN not set › downloadResources creates issue.json with comments",
+        "durationMs": 0.162379
+      },
+      {
+        "id": "issue-tracker-github: github-provider::issue-tracker-github: github-provider › downloadResources creates issue.json with comments › GITHUB_TOKEN not set › issue-tracker-github: github-provider",
+        "rootSuite": "issue-tracker-github: github-provider",
+        "file": "issue-tracker-github: github-provider",
+        "fullName": "issue-tracker-github: github-provider › downloadResources creates issue.json with comments › GITHUB_TOKEN not set › issue-tracker-github: github-provider",
+        "durationMs": 4.005515
+      },
+      {
+        "id": "issue-tracker-github: provider registry discovery::issue-tracker-github: provider registry discovery › discovers github-provider from modules directory and registers it (with schema validation) › discovers github-provider from modules directory and registers it (with schema validation)",
+        "rootSuite": "issue-tracker-github: provider registry discovery",
+        "file": "issue-tracker-github: provider registry discovery",
+        "fullName": "issue-tracker-github: provider registry discovery › discovers github-provider from modules directory and registers it (with schema validation) › discovers github-provider from modules directory and registers it (with schema validation)",
+        "durationMs": 26.221142
+      },
+      {
+        "id": "issue-tracker-github: provider registry discovery::issue-tracker-github: provider registry discovery › discovers github-provider from modules directory and registers it (with schema validation) › issue-tracker-github: provider registry discovery",
+        "rootSuite": "issue-tracker-github: provider registry discovery",
+        "file": "issue-tracker-github: provider registry discovery",
+        "fullName": "issue-tracker-github: provider registry discovery › discovers github-provider from modules directory and registers it (with schema validation) › issue-tracker-github: provider registry discovery",
+        "durationMs": 26.280568
+      },
+      {
+        "id": "issue-tracker: smogcheck-provider::issue-tracker: smogcheck-provider › matches IssueTrackerProvider contract schema › matches IssueTrackerProvider contract schema",
+        "rootSuite": "issue-tracker: smogcheck-provider",
+        "file": "issue-tracker: smogcheck-provider",
+        "fullName": "issue-tracker: smogcheck-provider › matches IssueTrackerProvider contract schema › matches IssueTrackerProvider contract schema",
+        "durationMs": 1.487566
+      },
+      {
+        "id": "issue-tracker: smogcheck-provider::issue-tracker: smogcheck-provider › fetchIssue returns issue that matches Issue schema › fetchIssue returns issue that matches Issue schema",
+        "rootSuite": "issue-tracker: smogcheck-provider",
+        "file": "issue-tracker: smogcheck-provider",
+        "fullName": "issue-tracker: smogcheck-provider › fetchIssue returns issue that matches Issue schema › fetchIssue returns issue that matches Issue schema",
+        "durationMs": 0.472259
+      },
+      {
+        "id": "issue-tracker: smogcheck-provider::issue-tracker: smogcheck-provider › fetchIssue works with issue key › fetchIssue works with issue key",
+        "rootSuite": "issue-tracker: smogcheck-provider",
+        "file": "issue-tracker: smogcheck-provider",
+        "fullName": "issue-tracker: smogcheck-provider › fetchIssue works with issue key › fetchIssue works with issue key",
+        "durationMs": 0.085356
+      },
+      {
+        "id": "issue-tracker: smogcheck-provider::issue-tracker: smogcheck-provider › fetchIssue works with URL › fetchIssue works with URL",
+        "rootSuite": "issue-tracker: smogcheck-provider",
+        "file": "issue-tracker: smogcheck-provider",
+        "fullName": "issue-tracker: smogcheck-provider › fetchIssue works with URL › fetchIssue works with URL",
+        "durationMs": 0.138953
+      },
+      {
+        "id": "issue-tracker: smogcheck-provider::issue-tracker: smogcheck-provider › fetchIssue throws error for non-existent issue › fetchIssue throws error for non-existent issue",
+        "rootSuite": "issue-tracker: smogcheck-provider",
+        "file": "issue-tracker: smogcheck-provider",
+        "fullName": "issue-tracker: smogcheck-provider › fetchIssue throws error for non-existent issue › fetchIssue throws error for non-existent issue",
+        "durationMs": 0.104272
+      },
+      {
+        "id": "issue-tracker: smogcheck-provider::issue-tracker: smogcheck-provider › fetchComments returns comments that match Comment schema › fetchComments returns comments that match Comment schema",
+        "rootSuite": "issue-tracker: smogcheck-provider",
+        "file": "issue-tracker: smogcheck-provider",
+        "fullName": "issue-tracker: smogcheck-provider › fetchComments returns comments that match Comment schema › fetchComments returns comments that match Comment schema",
+        "durationMs": 0.363041
+      },
+      {
+        "id": "issue-tracker: smogcheck-provider::issue-tracker: smogcheck-provider › fetchComments includes reactions › fetchComments includes reactions",
+        "rootSuite": "issue-tracker: smogcheck-provider",
+        "file": "issue-tracker: smogcheck-provider",
+        "fullName": "issue-tracker: smogcheck-provider › fetchComments includes reactions › fetchComments includes reactions",
+        "durationMs": 0.102622
+      },
+      {
+        "id": "issue-tracker: smogcheck-provider::issue-tracker: smogcheck-provider › fetchComments returns empty array for issue without comments › fetchComments returns empty array for issue without comments",
+        "rootSuite": "issue-tracker: smogcheck-provider",
+        "file": "issue-tracker: smogcheck-provider",
+        "fullName": "issue-tracker: smogcheck-provider › fetchComments returns empty array for issue without comments › fetchComments returns empty array for issue without comments",
+        "durationMs": 0.078435
+      },
+      {
+        "id": "issue-tracker: smogcheck-provider::issue-tracker: smogcheck-provider › fetchPRs returns PR references that match PRReference schema › fetchPRs returns PR references that match PRReference schema",
+        "rootSuite": "issue-tracker: smogcheck-provider",
+        "file": "issue-tracker: smogcheck-provider",
+        "fullName": "issue-tracker: smogcheck-provider › fetchPRs returns PR references that match PRReference schema › fetchPRs returns PR references that match PRReference schema",
+        "durationMs": 0.172713
+      },
+      {
+        "id": "issue-tracker: smogcheck-provider::issue-tracker: smogcheck-provider › fetchPRs returns empty array for issue without PRs › fetchPRs returns empty array for issue without PRs",
+        "rootSuite": "issue-tracker: smogcheck-provider",
+        "file": "issue-tracker: smogcheck-provider",
+        "fullName": "issue-tracker: smogcheck-provider › fetchPRs returns empty array for issue without PRs › fetchPRs returns empty array for issue without PRs",
+        "durationMs": 0.123333
+      },
+      {
+        "id": "issue-tracker: smogcheck-provider::issue-tracker: smogcheck-provider › downloadResources creates correct directory structure › downloadResources creates correct directory structure",
+        "rootSuite": "issue-tracker: smogcheck-provider",
+        "file": "issue-tracker: smogcheck-provider",
+        "fullName": "issue-tracker: smogcheck-provider › downloadResources creates correct directory structure › downloadResources creates correct directory structure",
+        "durationMs": 2.287174
+      },
+      {
+        "id": "issue-tracker: smogcheck-provider::issue-tracker: smogcheck-provider › downloadResources creates resources.json with correct metadata › downloadResources creates resources.json with correct metadata",
+        "rootSuite": "issue-tracker: smogcheck-provider",
+        "file": "issue-tracker: smogcheck-provider",
+        "fullName": "issue-tracker: smogcheck-provider › downloadResources creates resources.json with correct metadata › downloadResources creates resources.json with correct metadata",
+        "durationMs": 1.223299
+      },
+      {
+        "id": "issue-tracker: smogcheck-provider::issue-tracker: smogcheck-provider › downloadResources downloads resources with distance <= 2 › downloadResources downloads resources with distance <= 2",
+        "rootSuite": "issue-tracker: smogcheck-provider",
+        "file": "issue-tracker: smogcheck-provider",
+        "fullName": "issue-tracker: smogcheck-provider › downloadResources downloads resources with distance <= 2 › downloadResources downloads resources with distance <= 2",
+        "durationMs": 0.87508
+      },
+      {
+        "id": "issue-tracker: smogcheck-provider::issue-tracker: smogcheck-provider › downloadResources tracks resources with distance == 3 without downloading › downloadResources tracks resources with distance == 3 without downloading",
+        "rootSuite": "issue-tracker: smogcheck-provider",
+        "file": "issue-tracker: smogcheck-provider",
+        "fullName": "issue-tracker: smogcheck-provider › downloadResources tracks resources with distance == 3 without downloading › downloadResources tracks resources with distance == 3 without downloading",
+        "durationMs": 0.91324
+      },
+      {
+        "id": "issue-tracker: smogcheck-provider::issue-tracker: smogcheck-provider › downloadResources creates issue.json with comments and PRs › downloadResources creates issue.json with comments and PRs",
+        "rootSuite": "issue-tracker: smogcheck-provider",
+        "file": "issue-tracker: smogcheck-provider",
+        "fullName": "issue-tracker: smogcheck-provider › downloadResources creates issue.json with comments and PRs › downloadResources creates issue.json with comments and PRs",
+        "durationMs": 1.086977
+      },
+      {
+        "id": "issue-tracker: smogcheck-provider::issue-tracker: smogcheck-provider › downloadResources creates PR directories when PRs exist › downloadResources creates PR directories when PRs exist",
+        "rootSuite": "issue-tracker: smogcheck-provider",
+        "file": "issue-tracker: smogcheck-provider",
+        "fullName": "issue-tracker: smogcheck-provider › downloadResources creates PR directories when PRs exist › downloadResources creates PR directories when PRs exist",
+        "durationMs": 0.899639
+      },
+      {
+        "id": "issue-tracker: smogcheck-provider::issue-tracker: smogcheck-provider › downloadResources creates PR directories when PRs exist › issue-tracker: smogcheck-provider",
+        "rootSuite": "issue-tracker: smogcheck-provider",
+        "file": "issue-tracker: smogcheck-provider",
+        "fullName": "issue-tracker: smogcheck-provider › downloadResources creates PR directories when PRs exist › issue-tracker: smogcheck-provider",
+        "durationMs": 11.355321
+      },
+      {
+        "id": "issue-tracker: provider registry discovery::issue-tracker: provider registry discovery › discovers smogcheck-provider from modules directory and registers it (with schema validation) › discovers smogcheck-provider from modules directory and registers it (with schema validation)",
+        "rootSuite": "issue-tracker: provider registry discovery",
+        "file": "issue-tracker: provider registry discovery",
+        "fullName": "issue-tracker: provider registry discovery › discovers smogcheck-provider from modules directory and registers it (with schema validation) › discovers smogcheck-provider from modules directory and registers it (with schema validation)",
+        "durationMs": 28.502539
+      },
+      {
+        "id": "issue-tracker: provider registry discovery::issue-tracker: provider registry discovery › discovers smogcheck-provider from modules directory and registers it (with schema validation) › issue-tracker: provider registry discovery",
+        "rootSuite": "issue-tracker: provider registry discovery",
+        "file": "issue-tracker: provider registry discovery",
+        "fullName": "issue-tracker: provider registry discovery › discovers smogcheck-provider from modules directory and registers it (with schema validation) › issue-tracker: provider registry discovery",
+        "durationMs": 28.575438
+      },
+      {
+        "id": "mcp: API module::mcp: API module › mcpRouter is defined and has procedures › mcpRouter is defined and has procedures",
+        "rootSuite": "mcp: API module",
+        "file": "mcp: API module",
+        "fullName": "mcp: API module › mcpRouter is defined and has procedures › mcpRouter is defined and has procedures",
+        "durationMs": 0.704058
+      },
+      {
+        "id": "mcp: API module::mcp: API module › mcpRouter.list procedure exists with correct schema › mcpRouter.list procedure exists with correct schema",
+        "rootSuite": "mcp: API module",
+        "file": "mcp: API module",
+        "fullName": "mcp: API module › mcpRouter.list procedure exists with correct schema › mcpRouter.list procedure exists with correct schema",
+        "durationMs": 0.197867
+      },
+      {
+        "id": "mcp: API module::mcp: API module › mcpRouter.call procedure exists with correct schema › mcpRouter.call procedure exists with correct schema",
+        "rootSuite": "mcp: API module",
+        "file": "mcp: API module",
+        "fullName": "mcp: API module › mcpRouter.call procedure exists with correct schema › mcpRouter.call procedure exists with correct schema",
+        "durationMs": 0.191729
+      },
+      {
+        "id": "mcp: API module::mcp: API module › mcp module is included in unified API › mcp module is included in unified API",
+        "rootSuite": "mcp: API module",
+        "file": "mcp: API module",
+        "fullName": "mcp: API module › mcp module is included in unified API › mcp module is included in unified API",
+        "durationMs": 17.582726
+      },
+      {
+        "id": "mcp: API module::mcp: API module › mcp.list can list servers when mcp.json exists › mcp.list can list servers when mcp.json exists",
+        "rootSuite": "mcp: API module",
+        "file": "mcp: API module",
+        "fullName": "mcp: API module › mcp.list can list servers when mcp.json exists › mcp.list can list servers when mcp.json exists",
+        "durationMs": 0.221422
+      },
+      {
+        "id": "mcp: API module::mcp: API module › npm run api lists mcp methods › npm run api lists mcp methods",
+        "rootSuite": "mcp: API module",
+        "file": "mcp: API module",
+        "fullName": "mcp: API module › npm run api lists mcp methods › npm run api lists mcp methods",
+        "durationMs": 0.164998
+      },
+      {
+        "id": "mcp: API module::mcp: API module › mcp.list can be called via API CLI › mcp.list can be called via API CLI",
+        "rootSuite": "mcp: API module",
+        "file": "mcp: API module",
+        "fullName": "mcp: API module › mcp.list can be called via API CLI › mcp.list can be called via API CLI",
+        "durationMs": 0.149787
+      },
+      {
+        "id": "mcp: API module::mcp: API module › mcp.call can be called via API CLI (help check) › mcp.call can be called via API CLI (help check)",
+        "rootSuite": "mcp: API module",
+        "file": "mcp: API module",
+        "fullName": "mcp: API module › mcp.call can be called via API CLI (help check) › mcp.call can be called via API CLI (help check)",
+        "durationMs": 0.600707
+      },
+      {
+        "id": "mcp: API module::mcp: API module › mcp.call can be called via API CLI (help check) › mcp: API module",
+        "rootSuite": "mcp: API module",
+        "file": "mcp: API module",
+        "fullName": "mcp: API module › mcp.call can be called via API CLI (help check) › mcp: API module",
+        "durationMs": 20.59363
+      },
+      {
+        "id": "messenger CLI exposes required inputs as options::messenger CLI exposes required inputs as options › messenger CLI exposes required inputs as options",
+        "rootSuite": "messenger CLI exposes required inputs as options",
+        "file": "messenger CLI exposes required inputs as options",
+        "fullName": "messenger CLI exposes required inputs as options › messenger CLI exposes required inputs as options",
+        "durationMs": 852.301755
+      },
+      {
+        "id": "ci CLI positional still works (no duplicate required flags)::ci CLI positional still works (no duplicate required flags) › ci CLI positional still works (no duplicate required flags)",
+        "rootSuite": "ci CLI positional still works (no duplicate required flags)",
+        "file": "ci CLI positional still works (no duplicate required flags)",
+        "fullName": "ci CLI positional still works (no duplicate required flags) › ci CLI positional still works (no duplicate required flags)",
+        "durationMs": 424.080741
+      },
+      {
+        "id": "messenger: telegram-provider::messenger: telegram-provider › matches MessengerProvider contract schema › matches MessengerProvider contract schema",
+        "rootSuite": "messenger: telegram-provider",
+        "file": "messenger: telegram-provider",
+        "fullName": "messenger: telegram-provider › matches MessengerProvider contract schema › matches MessengerProvider contract schema",
+        "durationMs": 1.343323
+      },
+      {
+        "id": "messenger: telegram-provider::messenger: telegram-provider › listChats returns chats that match Chat schema › listChats returns chats that match Chat schema",
+        "rootSuite": "messenger: telegram-provider",
+        "file": "messenger: telegram-provider",
+        "fullName": "messenger: telegram-provider › listChats returns chats that match Chat schema › listChats returns chats that match Chat schema",
+        "durationMs": 1.23456
+      },
+      {
+        "id": "messenger: telegram-provider::messenger: telegram-provider › getChatHistory returns messages that match ChatMessage schema › getChatHistory returns messages that match ChatMessage schema",
+        "rootSuite": "messenger: telegram-provider",
+        "file": "messenger: telegram-provider",
+        "fullName": "messenger: telegram-provider › getChatHistory returns messages that match ChatMessage schema › getChatHistory returns messages that match ChatMessage schema",
+        "durationMs": 2.870364
+      },
+      {
+        "id": "messenger: telegram-provider::messenger: telegram-provider › downloadFile returns a descriptor that matches DownloadFileResult schema › downloadFile returns a descriptor that matches DownloadFileResult schema",
+        "rootSuite": "messenger: telegram-provider",
+        "file": "messenger: telegram-provider",
+        "fullName": "messenger: telegram-provider › downloadFile returns a descriptor that matches DownloadFileResult schema › downloadFile returns a descriptor that matches DownloadFileResult schema",
+        "durationMs": 0.860447
+      },
+      {
+        "id": "messenger: telegram-provider::messenger: telegram-provider › downloadFile returns a descriptor that matches DownloadFileResult schema › messenger: telegram-provider",
+        "rootSuite": "messenger: telegram-provider",
+        "file": "messenger: telegram-provider",
+        "fullName": "messenger: telegram-provider › downloadFile returns a descriptor that matches DownloadFileResult schema › messenger: telegram-provider",
+        "durationMs": 6.964277
+      },
+      {
+        "id": "messenger: yandex-messenger-provider::messenger: yandex-messenger-provider › matches MessengerProvider contract schema › matches MessengerProvider contract schema",
+        "rootSuite": "messenger: yandex-messenger-provider",
+        "file": "messenger: yandex-messenger-provider",
+        "fullName": "messenger: yandex-messenger-provider › matches MessengerProvider contract schema › matches MessengerProvider contract schema",
+        "durationMs": 0.212443
+      },
+      {
+        "id": "messenger: yandex-messenger-provider::messenger: yandex-messenger-provider › listChats returns chats that match Chat schema › listChats returns chats that match Chat schema",
+        "rootSuite": "messenger: yandex-messenger-provider",
+        "file": "messenger: yandex-messenger-provider",
+        "fullName": "messenger: yandex-messenger-provider › listChats returns chats that match Chat schema › listChats returns chats that match Chat schema",
+        "durationMs": 0.503363
+      },
+      {
+        "id": "messenger: yandex-messenger-provider::messenger: yandex-messenger-provider › getChatHistory returns messages that match ChatMessage schema › getChatHistory returns messages that match ChatMessage schema",
+        "rootSuite": "messenger: yandex-messenger-provider",
+        "file": "messenger: yandex-messenger-provider",
+        "fullName": "messenger: yandex-messenger-provider › getChatHistory returns messages that match ChatMessage schema › getChatHistory returns messages that match ChatMessage schema",
+        "durationMs": 1.639075
+      },
+      {
+        "id": "messenger: yandex-messenger-provider::messenger: yandex-messenger-provider › downloadFile returns a descriptor that matches DownloadFileResult schema › downloadFile returns a descriptor that matches DownloadFileResult schema",
+        "rootSuite": "messenger: yandex-messenger-provider",
+        "file": "messenger: yandex-messenger-provider",
+        "fullName": "messenger: yandex-messenger-provider › downloadFile returns a descriptor that matches DownloadFileResult schema › downloadFile returns a descriptor that matches DownloadFileResult schema",
+        "durationMs": 0.591158
+      },
+      {
+        "id": "messenger: yandex-messenger-provider::messenger: yandex-messenger-provider › downloadFile returns a descriptor that matches DownloadFileResult schema › messenger: yandex-messenger-provider",
+        "rootSuite": "messenger: yandex-messenger-provider",
+        "file": "messenger: yandex-messenger-provider",
+        "fullName": "messenger: yandex-messenger-provider › downloadFile returns a descriptor that matches DownloadFileResult schema › messenger: yandex-messenger-provider",
+        "durationMs": 3.236011
+      },
+      {
+        "id": "messenger: provider registry discovery::messenger: provider registry discovery › discovers messenger providers from modules directory and registers them (with schema validation) › discovers messenger providers from modules directory and registers them (with schema validation)",
+        "rootSuite": "messenger: provider registry discovery",
+        "file": "messenger: provider registry discovery",
+        "fullName": "messenger: provider registry discovery › discovers messenger providers from modules directory and registers them (with schema validation) › discovers messenger providers from modules directory and registers them (with schema validation)",
+        "durationMs": 23.326309
+      },
+      {
+        "id": "messenger: provider registry discovery::messenger: provider registry discovery › discovers messenger providers from modules directory and registers them (with schema validation) › messenger: provider registry discovery",
+        "rootSuite": "messenger: provider registry discovery",
+        "file": "messenger: provider registry discovery",
+        "fullName": "messenger: provider registry discovery › discovers messenger providers from modules directory and registers them (with schema validation) › messenger: provider registry discovery",
+        "durationMs": 23.41168
+      },
+      {
+        "id": "workspace-path resolver::workspace-path resolver › parses ark:/ links as Arcadia links › parses ark:/ links as Arcadia links",
+        "rootSuite": "workspace-path resolver",
+        "file": "workspace-path resolver",
+        "fullName": "workspace-path resolver › parses ark:/ links as Arcadia links › parses ark:/ links as Arcadia links",
+        "durationMs": 0.517167
+      },
+      {
+        "id": "workspace-path resolver::workspace-path resolver › resolves ark:/ links using arc root (fallback to arc root) › resolves ark:/ links using arc root (fallback to arc root)",
+        "rootSuite": "workspace-path resolver",
+        "file": "workspace-path resolver",
+        "fullName": "workspace-path resolver › resolves ark:/ links using arc root (fallback to arc root) › resolves ark:/ links using arc root (fallback to arc root)",
+        "durationMs": 0.246379
+      },
+      {
+        "id": "workspace-path resolver::workspace-path resolver › resolves ark:/ links using arc root and strips arcadia/ prefix › resolves ark:/ links using arc root and strips arcadia/ prefix",
+        "rootSuite": "workspace-path resolver",
+        "file": "workspace-path resolver",
+        "fullName": "workspace-path resolver › resolves ark:/ links using arc root and strips arcadia/ prefix › resolves ark:/ links using arc root and strips arcadia/ prefix",
+        "durationMs": 0.114353
+      },
+      {
+        "id": "workspace-path resolver::workspace-path resolver › if arc root is unavailable, ark:/ falls back to projectRoot › if arc root is unavailable, ark:/ falls back to projectRoot",
+        "rootSuite": "workspace-path resolver",
+        "file": "workspace-path resolver",
+        "fullName": "workspace-path resolver › if arc root is unavailable, ark:/ falls back to projectRoot › if arc root is unavailable, ark:/ falls back to projectRoot",
+        "durationMs": 0.096784
+      },
+      {
+        "id": "workspace-path resolver::workspace-path resolver › if arc root is unavailable, ark:/ falls back to projectRoot › workspace-path resolver",
+        "rootSuite": "workspace-path resolver",
+        "file": "workspace-path resolver",
+        "fullName": "workspace-path resolver › if arc root is unavailable, ark:/ falls back to projectRoot › workspace-path resolver",
+        "durationMs": 1.581374
+      }
+    ],
+    "playwrightInstaller": [
+      {
+        "id": "tests/installer/install-project-scripts.pw.spec.ts:26:3 › Install Project Scripts › Install default scripts from project @smoke",
+        "durationMs": 10
+      },
+      {
+        "id": "tests/installer/install-project-scripts.pw.spec.ts:75:3 › Install Project Scripts › Install additional scripts via importScripts @smoke",
+        "durationMs": 6
+      },
+      {
+        "id": "tests/installer/install-project-scripts.pw.spec.ts:113:3 › Install Project Scripts › Remove scripts when project is removed from config @smoke",
+        "durationMs": 2
+      },
+      {
+        "id": "tests/installer/install-project-scripts.pw.spec.ts:151:3 › Install Project Scripts › Handle missing project package.json gracefully @smoke",
+        "durationMs": 2
+      },
+      {
+        "id": "tests/installer/install-project-scripts.pw.spec.ts:176:3 › Install Project Scripts › Verify scripts do not change current directory @smoke",
+        "durationMs": 3
+      },
+      {
+        "id": "tests/installer/install-steps.pw.spec.ts:29:3 › Installation Steps › Step 1: Check Environment Variables",
+        "durationMs": 43
+      },
+      {
+        "id": "tests/installer/install-steps.pw.spec.ts:59:3 › Installation Steps › Step 2: Download Repos @smoke",
+        "durationMs": 3
+      },
+      {
+        "id": "tests/installer/install-steps.pw.spec.ts:70:3 › Installation Steps › Step 3: Download Projects @smoke",
+        "durationMs": 3
+      },
+      {
+        "id": "tests/installer/install-steps.pw.spec.ts:81:3 › Installation Steps › Step 4: Check Environment Again @smoke",
+        "durationMs": 7
+      },
+      {
+        "id": "tests/installer/install-steps.pw.spec.ts:90:3 › Installation Steps › Step 5: Setup Modules",
+        "durationMs": 10
+      },
+      {
+        "id": "tests/installer/install-steps.pw.spec.ts:102:3 › Installation Steps › Step 6: Setup Projects @smoke",
+        "durationMs": 3
+      },
+      {
+        "id": "tests/installer/install-steps.pw.spec.ts:111:3 › Installation Steps › Step 7: Verify Installation",
+        "durationMs": 8
+      },
+      {
+        "id": "tests/installer/installer-gui.pw.spec.ts:7:5 › Workspace Installer - GUI/Interactive Mode › Fresh Workspace Installation › GUI Installation - Fresh Workspace",
+        "durationMs": 358
+      },
+      {
+        "id": "tests/installer/installer-gui.pw.spec.ts:51:5 › Workspace Installer - GUI/Interactive Mode › Existing Workspace Operations › Detect Existing Workspace",
+        "durationMs": 370
+      },
+      {
+        "id": "tests/installer/installer-strictness.pw.spec.ts:5:1 › installer: hook load failure is fatal",
+        "durationMs": 422
+      },
+      {
+        "id": "tests/installer/installer-strictness.pw.spec.ts:26:1 › installer: .env values are available to shell checks (fill-missing)",
+        "durationMs": 361
+      },
+      {
+        "id": "tests/installer/installer-strictness.pw.spec.ts:54:1 › installer: checks without name do not print \"Checking undefined\"",
+        "durationMs": 359
+      },
+      {
+        "id": "tests/installer/installer-strictness.pw.spec.ts:76:1 › installer summary: prints INSTALLATION FINISHED WITH ERRORS on failures",
+        "durationMs": 354
+      },
+      {
+        "id": "tests/installer/installer-unattended.pw.spec.ts:7:5 › Workspace Installer - Unattended Mode › Fresh Workspace Installation › Unattended Installation from fixture - cursor-only",
+        "durationMs": 377
+      },
+      {
+        "id": "tests/installer/installer-unattended.pw.spec.ts:37:5 › Workspace Installer - Unattended Mode › Fresh Workspace Installation › Unattended Installation - Fresh Workspace",
+        "durationMs": 345
+      },
+      {
+        "id": "tests/installer/installer-unattended.pw.spec.ts:65:5 › Workspace Installer - Unattended Mode › Fresh Workspace Installation › Unattended Installation with Config File",
+        "durationMs": 356
+      },
+      {
+        "id": "tests/installer/installer-unattended.pw.spec.ts:93:5 › Workspace Installer - Unattended Mode › Fresh Workspace Installation › Unattended Installation with workspace.config.json (local folder project src)",
+        "durationMs": 457
+      },
+      {
+        "id": "tests/installer/installer-unattended.pw.spec.ts:157:5 › Workspace Installer - Unattended Mode › Fresh Workspace Installation › Unattended Installation with workspace.config.json seedFiles[] copies seed files/folders",
+        "durationMs": 382
+      },
+      {
+        "id": "tests/installer/installer-unattended.pw.spec.ts:190:5 › Workspace Installer - Unattended Mode › Fresh Workspace Installation › Unattended Installation - Full Structure Verification",
+        "durationMs": 389
+      },
+      {
+        "id": "tests/installer/installer-unattended.pw.spec.ts:229:5 › Workspace Installer - Unattended Mode › Existing Workspace Operations › Reinstall Existing Workspace - Unattended",
+        "durationMs": 756
+      },
+      {
+        "id": "tests/installer/installer-unattended.pw.spec.ts:267:5 › Workspace Installer - Unattended Mode › Existing Workspace Operations › Add Modules to Existing Workspace",
+        "durationMs": 759
+      },
+      {
+        "id": "tests/installer/installer-unattended.pw.spec.ts:302:5 › Workspace Installer - Unattended Mode › Existing Workspace Operations › Remove Modules from Existing Workspace",
+        "durationMs": 836
+      },
+      {
+        "id": "tests/installer/installer-unattended.pw.spec.ts:334:5 › Workspace Installer - Unattended Mode › Existing Workspace Operations › Reinstallation Verification - Preserve Configuration",
+        "durationMs": 786
+      },
+      {
+        "id": "tests/installer/installer-unattended.pw.spec.ts:375:5 › Workspace Installer - Unattended Mode › Existing Workspace Operations › Reinstallation - Module Hooks Re-executed",
+        "durationMs": 784
+      },
+      {
+        "id": "tests/installer/installer-unattended.pw.spec.ts:414:5 › Workspace Installer - Unattended Mode › External Repository Installation › Installation with External Repository",
+        "durationMs": 889
+      },
+      {
+        "id": "tests/installer/module-patterns.pw.spec.ts:10:3 › workspace modules patterns › modules: [\"issue-*\"] expands to issue-tracker and issue-tracker-github",
+        "durationMs": 5
+      },
+      {
+        "id": "tests/installer/npx-new-workspace.pw.spec.ts:11:3 › devduck new (npx-friendly bootstrap) › clones DevDuck into devduck/src when not listed in projects",
+        "durationMs": 2500
+      },
+      {
+        "id": "tests/installer/npx-new-workspace.pw.spec.ts:33:3 › devduck new (npx-friendly bootstrap) › resolves relative workspace path from INIT_CWD (npx cache cwd simulation)",
+        "durationMs": 2500
+      },
+      {
+        "id": "tests/installer/workspace-modules-installation.pw.spec.ts:6:3 › Workspace Installer - Workspace-local modules/ › Installs module from workspace/modules when listed in config",
+        "durationMs": 411
+      }
+    ],
+    "playwrightSmoke": [
+      {
+        "id": "tests/installer/install-project-scripts.pw.spec.ts:26:3 › Install Project Scripts › Install default scripts from project @smoke",
+        "durationMs": 11
+      },
+      {
+        "id": "tests/installer/install-project-scripts.pw.spec.ts:75:3 › Install Project Scripts › Install additional scripts via importScripts @smoke",
+        "durationMs": 7
+      },
+      {
+        "id": "tests/installer/install-project-scripts.pw.spec.ts:113:3 › Install Project Scripts › Remove scripts when project is removed from config @smoke",
+        "durationMs": 2
+      },
+      {
+        "id": "tests/installer/install-project-scripts.pw.spec.ts:151:3 › Install Project Scripts › Handle missing project package.json gracefully @smoke",
+        "durationMs": 2
+      },
+      {
+        "id": "tests/installer/install-project-scripts.pw.spec.ts:176:3 › Install Project Scripts › Verify scripts do not change current directory @smoke",
+        "durationMs": 3
+      }
+    ]
+  }
+}
