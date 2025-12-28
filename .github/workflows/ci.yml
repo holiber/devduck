@@ -1,31 +1,179 @@
-name: CI
+name: CI & Metrics Dashboard
 
 on:
+  pull_request:
+    types: [opened, synchronize, reopened]
   push:
     branches: [ main ]
-  pull_request:
-    branches: [ main ]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: ci-metrics-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   test:
     runs-on: ubuntu-latest
-    
-    strategy:
-      matrix:
-        node-version: [24.x]
-    
+
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ matrix.node-version }}
-        cache: 'npm'
-    
-    - name: Install dependencies
-      run: npm ci
-    
-    - name: Run tests
-      run: npm test
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Prepare artifact folders
+        run: mkdir -p .cache/{logs,metrics,ai_logs,playwright,tmp}
+
+      # Unit tests (run ONCE per workflow)
+      - name: Run unit tests (timed)
+        run: node scripts/ci/run-and-record.mjs --name npm_test --cmd "npm test" --log .cache/logs/npm-test.log --out .cache/metrics/test-commands.json
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      # E2E tests (installer suite). Keep artifacts for failures.
+      - name: Run Playwright installer suite (timed)
+        run: node scripts/ci/run-and-record.mjs --name pw_installer --cmd "npx playwright test -c tests/installer/playwright.config.ts --reporter=list --trace=retain-on-failure --video=retain-on-failure --screenshot=only-on-failure" --log .cache/logs/pw-installer.log --out .cache/metrics/test-commands.json
+
+      # Optional smoke suite (only makes sense when BASE_URL is provided).
+      - name: Run Playwright smoke suite (timed)
+        if: ${{ env.BASE_URL != '' }}
+        run: node scripts/ci/run-and-record.mjs --name pw_smoke --cmd "npx playwright test -c tests/smoke/playwright.config.ts --reporter=list --trace=retain-on-failure --video=retain-on-failure --screenshot=only-on-failure" --log .cache/logs/pw-smoke.log --out .cache/metrics/test-commands.json
+
+      - name: Collect Playwright artifacts into .cache
+        if: always()
+        run: |
+          mkdir -p .cache/playwright
+          cp -r test-results .cache/playwright/ 2>/dev/null || true
+          cp -r playwright-report .cache/playwright/ 2>/dev/null || true
+          cp -r blob-report .cache/playwright/ 2>/dev/null || true
+
+      - name: Upload test artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-artifacts
+          path: |
+            .cache/logs
+            .cache/metrics/test-commands.json
+            .cache/playwright
+          retention-days: 14
+
+  metrics:
+    runs-on: ubuntu-latest
+    needs: test
+    if: always()
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Download test artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: test-artifacts
+          path: .cache
+
+      - name: Checkout gh-pages (baseline + history)
+        id: ghpages
+        continue-on-error: true
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: gh-pages
+          fetch-depth: 1
+
+      - name: Load baseline/history from gh-pages (if present)
+        run: |
+          mkdir -p .cache/metrics
+          if [ -f "gh-pages/metrics/baseline.json" ]; then cp "gh-pages/metrics/baseline.json" ".cache/metrics/baseline.json"; else echo '{}' > ".cache/metrics/baseline.json"; fi
+          if [ -f "gh-pages/metrics/history.json" ]; then cp "gh-pages/metrics/history.json" ".cache/metrics/history.json"; else echo '[]' > ".cache/metrics/history.json"; fi
+          cp ".cache/metrics/baseline.json" ".cache/metrics/compare-baseline.json"
+
+      - name: Collect current metrics (no tests)
+        run: node scripts/ci/collect-metrics.mjs
+        env:
+          # Optional: plug in your project-specific commands later:
+          # BUILD_COMMAND: npm run build
+          # BUILD_OUTPUT_DIR: dist
+          # DEV_COMMAND: npm run dev
+          # DEV_READY_REGEX: "listening|ready|started"
+          # DEV_TIMEOUT_MS: "8000"
+
+      - name: Compare with baseline
+        run: node scripts/ci/compare-metrics.mjs --dir .cache/metrics --baseline .cache/metrics/compare-baseline.json
+
+      - name: Render PR comment
+        if: github.event_name == 'pull_request'
+        run: node scripts/ci/render-pr-comment-dashboard.mjs --dir .cache/metrics --out .cache/metrics/pr-comment.md
+
+      - name: Find existing PR metrics comment
+        if: github.event_name == 'pull_request'
+        id: find_comment
+        uses: peter-evans/find-comment@v3
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body-includes: "<!-- devduck-metrics-comment -->"
+
+      - name: Update PR metrics comment (if exists)
+        if: github.event_name == 'pull_request' && steps.find_comment.outputs.comment-id != ''
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          comment-id: ${{ steps.find_comment.outputs.comment-id }}
+          body-path: .cache/metrics/pr-comment.md
+          edit-mode: replace
+
+      - name: Create PR metrics comment (if missing)
+        if: github.event_name == 'pull_request' && steps.find_comment.outputs.comment-id == ''
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body-path: .cache/metrics/pr-comment.md
+
+      - name: Update history (main only)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: node scripts/ci/update-history.mjs --dir .cache/metrics --limit 200
+
+      - name: Update baseline (main only)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: cp .cache/metrics/current.json .cache/metrics/baseline.json
+
+      - name: Generate HTML dashboard (always)
+        run: node scripts/ci/generate-metrics-report.mjs --metrics-dir .cache/metrics --out-dir .cache/metrics-pages
+
+      - name: Upload metrics + artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-metrics-artifacts
+          path: |
+            .cache/metrics
+            .cache/logs
+            .cache/playwright
+            .cache/ai_logs
+            .cache/metrics-pages
+          retention-days: 14
+
+      - name: Deploy dashboard to GitHub Pages (main only)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: .cache/metrics-pages
 
