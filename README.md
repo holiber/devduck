@@ -71,6 +71,49 @@ tsx ./devduck/src/scripts/devduck-cli.ts sync
 npx --yes -p @go-task/cli task install
 ```
 
+## CI Metrics and Artifacts
+
+DevDuck includes a comprehensive CI metrics and artifacts collection system that automatically tracks performance and quality metrics for every Pull Request.
+
+### Features
+
+- **📊 Automatic Metrics Collection**: Build time, test time, bundle size, code changes
+- **🎭 Playwright Integration**: Screenshots and videos for failed E2E tests
+- **🤖 AI Agent Logging**: Track AI interactions during development
+- **📈 Trend Visualization**: Compare metrics across PRs and detect regressions
+- **💬 PR Comments**: Automatic summary comments on every PR
+
+### Quick Start
+
+The CI system runs automatically on every PR. To use it locally:
+
+```bash
+# Collect metrics
+npm run ci:metrics
+
+# Compare with baseline
+npm run ci:compare .cache/metrics/metrics.json baseline.json
+
+# Visualize trends
+npm run ci:visualize
+
+# Log AI agent actions
+npm run ci:ai-log simple-log "cursor-ai" "Task completed"
+```
+
+### Documentation
+
+For detailed information, see:
+- [CI Metrics Documentation](docs/CI_METRICS.md) - Complete guide
+- [CI Scripts README](scripts/ci/README.md) - Script usage and API
+
+### Workflows
+
+- **pr-metrics.yml**: Runs on every PR, collects metrics and artifacts
+- **ci.yml**: Basic CI tests on push and PR
+
+All artifacts (logs, screenshots, videos, AI logs) are automatically uploaded and available for 30 days.
+
 ## Commands
 
 ### `/install` — Setup Environment

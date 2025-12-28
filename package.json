@@ -16,7 +16,11 @@
     "test": "tsx scripts/run-tests.ts",
     "test:pw": "playwright test -c tests/installer/playwright.config.ts",
     "test:installer:pw": "playwright test -c tests/installer/playwright.config.ts",
-    "test:smoke": "playwright test -c tests/installer/playwright.config.ts --grep @smoke"
+    "test:smoke": "playwright test -c tests/installer/playwright.config.ts --grep @smoke",
+    "ci:metrics": "tsx scripts/ci/collect-metrics.ts",
+    "ci:compare": "tsx scripts/ci/compare-metrics.ts",
+    "ci:visualize": "tsx scripts/ci/visualize-metrics.ts",
+    "ci:ai-log": "tsx scripts/ci/ai-logger.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.25.1",
