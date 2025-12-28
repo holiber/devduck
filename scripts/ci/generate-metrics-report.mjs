@@ -75,7 +75,8 @@ async function main() {
   const outBytes = current?.sizes?.build_output_dir?.bytes;
   const unitTests = current?.tests?.unit;
   const e2eInstaller = current?.tests?.e2e_installer;
-  const repoCodeLines = current?.code?.totalLines;
+  const scriptCodeLines = current?.code?.scriptCodeLines;
+  const totalTextLines = current?.code?.totalTextLines;
   const hugeScripts = current?.code?.hugeScripts;
   const flakyTests = current?.tests?.flaky?.count;
 
@@ -145,9 +146,14 @@ async function main() {
           <td class="${clsForDelta(diff?.deltas?.build_output_bytes)}">${fmtBytes(diff?.deltas?.build_output_bytes)}</td>
         </tr>
         <tr>
-          <td>🧾 Repo code lines</td>
-          <td>${fmtInt(repoCodeLines)}</td>
-          <td class="${clsForDelta(diff?.deltas?.repo_code_lines)}">${fmtInt(diff?.deltas?.repo_code_lines)}</td>
+          <td>🧾 Script code lines</td>
+          <td>${fmtInt(scriptCodeLines)}</td>
+          <td class="${clsForDelta(diff?.deltas?.script_code_lines)}">${fmtInt(diff?.deltas?.script_code_lines)}</td>
+        </tr>
+        <tr>
+          <td>📚 Total text lines</td>
+          <td>${fmtInt(totalTextLines)}</td>
+          <td class="${clsForDelta(diff?.deltas?.total_text_lines)}">${fmtInt(diff?.deltas?.total_text_lines)}</td>
         </tr>
         <tr>
           <td>📜 Huge scripts (&gt;1000 LOC)</td>

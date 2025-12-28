@@ -112,6 +112,16 @@ function isTsOrJsScriptExt(ext) {
   return isCodeExt(ext);
 }
 
+function isLikelyTextBuffer(buf) {
+  // Simple binary guard: treat NUL bytes as binary.
+  // (Not perfect, but good enough for configs/docs/code in a repo.)
+  if (!buf || buf.length === 0) return true;
+  for (let i = 0; i < buf.length; i++) {
+    if (buf[i] === 0) return false;
+  }
+  return true;
+}
+
 function parsePlaywrightFlakyTestIds(raw) {
   const text = stripAnsi(raw);
   const lines = text.split(/\r?\n/gu);
@@ -124,29 +134,36 @@ function parsePlaywrightFlakyTestIds(raw) {
   return ids;
 }
 
-async function computeRepoCodeMetrics() {
+async function computeRepoLineMetrics() {
   const files = listGitFilesOrEmpty();
-  let totalCodeLines = 0;
+  let scriptCodeLines = 0;
+  let totalTextLines = 0;
   let hugeScripts = 0;
 
   for (const file of files) {
     // Note: CI checks out gh-pages into a sibling folder; keep repo-only metrics.
     if (file.startsWith('gh-pages/')) continue;
     const ext = path.extname(file).toLowerCase();
-    if (!isCodeExt(ext)) continue;
 
-    let raw;
+    let buf;
     try {
-      raw = await fsp.readFile(file, 'utf8');
+      buf = await fsp.readFile(file);
     } catch {
       continue;
     }
-    const lines = countLines(raw);
-    totalCodeLines += lines;
-    if (isTsOrJsScriptExt(ext) && lines > 1000) hugeScripts += 1;
+
+    if (!isLikelyTextBuffer(buf)) continue;
+    const text = buf.toString('utf8');
+    const lines = countLines(text);
+    totalTextLines += lines;
+
+    if (isTsOrJsScriptExt(ext)) {
+      scriptCodeLines += lines;
+      if (lines > 1000) hugeScripts += 1;
+    }
   }
 
-  return { totalCodeLines, hugeScripts };
+  return { scriptCodeLines, totalTextLines, hugeScripts };
 }
 
 function parseNodeTestSummary(raw) {
@@ -329,8 +346,8 @@ async function main() {
 
   // Repo code metrics (best-effort, based on git-tracked files).
   try {
-    const { totalCodeLines, hugeScripts } = await computeRepoCodeMetrics();
-    metrics.code = { totalLines: totalCodeLines, hugeScripts };
+    const { scriptCodeLines, totalTextLines, hugeScripts } = await computeRepoLineMetrics();
+    metrics.code = { scriptCodeLines, totalTextLines, hugeScripts };
   } catch {
     metrics.notes.push('Failed to compute repo code metrics.');
   }
@@ -471,8 +488,10 @@ async function main() {
   // eslint-disable-next-line no-console
   console.log(
     '[metrics] code:',
-    'totalLines',
-    metrics.code?.totalLines ?? 'n/a',
+    'scriptCodeLines',
+    metrics.code?.scriptCodeLines ?? 'n/a',
+    '; totalTextLines',
+    metrics.code?.totalTextLines ?? 'n/a',
     '; hugeScripts(>1000 LOC)',
     metrics.code?.hugeScripts ?? 'n/a',
     '; flakyTests',
