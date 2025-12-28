@@ -9,8 +9,8 @@ import YAML from 'yaml';
 import { readWorkspaceConfigFromRoot, writeWorkspaceConfigFile } from './lib/workspace-config.js';
 
 type WorkspaceConfigLike = {
-  workspaceVersion?: string;
-  devduckPath?: string;
+  version?: string | number;
+  devduck_path?: string;
   modules?: string[];
   moduleSettings?: Record<string, unknown>;
   repos?: string[];
@@ -246,8 +246,8 @@ function ensureDevduckInWorkspace(params: {
     }
   }
 
-  if (!config.devduckPath) {
-    config.devduckPath = './devduck/src';
+  if (!config.devduck_path) {
+    config.devduck_path = './devduck/src';
   }
 
   return config;
@@ -255,8 +255,8 @@ function ensureDevduckInWorkspace(params: {
 
 function buildDefaultWorkspaceConfig(): WorkspaceConfigLike {
   return {
-    workspaceVersion: '0.1.0',
-    devduckPath: './devduck/src',
+    version: '0.1.0',
+    devduck_path: './devduck/src',
     modules: ['core', 'cursor'],
     moduleSettings: {},
     repos: [],
@@ -288,8 +288,8 @@ async function main(argv = process.argv): Promise<void> {
         }
 
         const devduckPathRel =
-          typeof config.devduckPath === 'string' && config.devduckPath.trim().length > 0
-            ? config.devduckPath.trim()
+          typeof config.devduck_path === 'string' && config.devduck_path.trim().length > 0
+            ? config.devduck_path.trim()
             : './devduck/src';
 
         const cacheDir = path.join(workspaceRoot, '.cache');

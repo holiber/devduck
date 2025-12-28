@@ -132,10 +132,14 @@ export default {
       
       for (const [serverName, serverConfig] of Object.entries(mcpServers)) {
         const config = serverConfig as Record<string, unknown>;
-        const isOptional = config.optional === true;
+        const mcpSettings = config.mcpSettings as Record<string, unknown> | undefined;
+        const isOptional =
+          config.optional === true ||
+          mcpSettings?.optional === true ||
+          // Devtools MCP is frequently absent in non-Arcadia environments; treat it as optional by default.
+          serverName === 'devtools-mcp';
         
         // Check for command in both direct config and nested mcpSettings
-        const mcpSettings = config.mcpSettings as Record<string, unknown> | undefined;
         const command = (config.command || mcpSettings?.command) as string | undefined;
         const args = (Array.isArray(config.args) ? config.args : Array.isArray(mcpSettings?.args) ? mcpSettings.args : []) as string[];
         const hasUrl = config.url || mcpSettings?.url;

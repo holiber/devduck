@@ -239,8 +239,8 @@ export function createHookContext(
   } else {
     // Try to find devduck relative to workspace config
     const configPath = getWorkspaceConfigFilePath(workspaceRoot);
-    const config = readWorkspaceConfigFile<{ devduckPath?: string }>(configPath);
-    const devduckPath = config?.devduckPath;
+    const config = readWorkspaceConfigFile<{ devduck_path?: string }>(configPath);
+    const devduckPath = config?.devduck_path;
     if (devduckPath) {
       const resolvedDevduck = path.resolve(workspaceRoot, devduckPath);
       if (fs.existsSync(resolvedDevduck)) devduckRoot = resolvedDevduck;

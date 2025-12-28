@@ -139,8 +139,8 @@ describe('Workspace Installer - Unattended Mode', () => {
         await fs.writeFile(path.join(localProjectPath, 'README.md'), '# local project\n', 'utf8');
         
         const providedWorkspaceConfig = {
-          workspaceVersion: '0.1.0',
-          devduckPath: './devduck',
+          version: '0.1.0',
+          devduck_path: './devduck',
           modules: ['core', 'cursor'],
           projects: [
             {

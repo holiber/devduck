@@ -85,7 +85,7 @@ test(
       path.join(tmp, 'workspace.config.yml'),
       YAML.stringify(
         {
-          workspaceVersion: '0.1.0',
+          version: '0.1.0',
           launch: {
             dev: {
               baseURL,

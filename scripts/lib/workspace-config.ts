@@ -7,16 +7,7 @@ export const WORKSPACE_CONFIG_BASENAMES = [
   'workspace.config.yaml'
 ] as const;
 
-const LEGACY_JSON_BASENAME = ['workspace.config.', 'json'].join('');
-
 export function findWorkspaceConfigFile(workspaceRoot: string): string | null {
-  const legacy = path.join(workspaceRoot, LEGACY_JSON_BASENAME);
-  if (fs.existsSync(legacy)) {
-    throw new Error(
-      `Legacy workspace config format is not supported. Convert/rename your workspace config to "workspace.config.yml".`
-    );
-  }
-
   const matches: string[] = [];
   for (const name of WORKSPACE_CONFIG_BASENAMES) {
     const p = path.join(workspaceRoot, name);
@@ -39,11 +30,7 @@ export function getWorkspaceConfigFilePath(workspaceRoot: string): string {
 }
 
 /**
- * Normalize YAML keys into the shape used across the codebase.
- *
- * Supported mappings:
- * - devduck_path -> devduckPath
- * - version -> workspaceVersion (string)
+ * Ensure minimal defaults for workspace config.
  */
 export function normalizeWorkspaceConfig(raw: unknown): Record<string, unknown> | null {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
@@ -51,23 +38,8 @@ export function normalizeWorkspaceConfig(raw: unknown): Record<string, unknown> 
   const obj = raw as Record<string, unknown>;
   const normalized: Record<string, unknown> = { ...obj };
 
-  if (typeof normalized.devduckPath !== 'string' && typeof normalized.devduck_path === 'string') {
-    normalized.devduckPath = normalized.devduck_path;
-    // Avoid writing/propagating duplicates.
-    delete normalized.devduck_path;
-  }
-
-  // version -> workspaceVersion (preserve meaning; do not silently overwrite valid input)
-  if (normalized.workspaceVersion === undefined && normalized.version !== undefined) {
-    normalized.workspaceVersion = String(normalized.version);
-  }
-  if (typeof normalized.workspaceVersion === 'number') {
-    normalized.workspaceVersion = String(normalized.workspaceVersion);
-  }
-
-  // Keep installer expectations stable only if no version was provided at all.
-  if (normalized.workspaceVersion === undefined) {
-    normalized.workspaceVersion = '0.1.0';
+  if (normalized.version === undefined) {
+    normalized.version = '0.1.0';
   }
 
   return normalized;
@@ -75,11 +47,7 @@ export function normalizeWorkspaceConfig(raw: unknown): Record<string, unknown> 
 
 export function readWorkspaceConfigFile<T = Record<string, unknown>>(filePath: string): T | null {
   const ext = path.extname(filePath).toLowerCase();
-  if (ext === '.json') {
-    throw new Error(
-      `Legacy workspace config format is not supported. Convert/rename your workspace config to "workspace.config.yml".`
-    );
-  }
+  if (ext === '.json') return null;
 
   if (!fs.existsSync(filePath)) {
     return null;
@@ -101,11 +69,7 @@ export function readWorkspaceConfigFromRoot<T = Record<string, unknown>>(
 export function writeWorkspaceConfigFile(filePath: string, data: unknown): void {
   fs.mkdirSync(path.dirname(filePath), { recursive: true });
   const ext = path.extname(filePath).toLowerCase();
-  if (ext === '.json') {
-    throw new Error(
-      `Legacy workspace config format is not supported. Write to "workspace.config.yml" instead.`
-    );
-  }
+  if (ext === '.json') return;
   const normalized = normalizeWorkspaceConfig(data) ?? (data as Record<string, unknown>);
   const out = YAML.stringify(normalized);
   fs.writeFileSync(filePath, out.endsWith('\n') ? out : out + '\n', 'utf8');
