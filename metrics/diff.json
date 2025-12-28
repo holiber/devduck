@@ -1,14 +1,14 @@
 {
   "meta": {
-    "comparedAt": "2025-12-28T10:53:34.607Z",
-    "currentSha": "8fab5b1cf3e1cfc8c52c8418e1b15a2afa9a91e6",
-    "baselineSha": "96b1c5df37b923a18d4ded9a62ba1d268c7a9fd2"
+    "comparedAt": "2025-12-28T11:00:47.416Z",
+    "currentSha": "94442657f68fda73fb32e38c9532b26bb6d14459",
+    "baselineSha": "8fab5b1cf3e1cfc8c52c8418e1b15a2afa9a91e6"
   },
   "deltas": {
-    "npm_pack_bytes": 3302,
-    "script_code_lines": 34108,
-    "total_text_lines": 43475,
-    "huge_scripts": 3,
+    "npm_pack_bytes": 706,
+    "script_code_lines": 17,
+    "total_text_lines": 17,
+    "huge_scripts": 0,
     "flaky_tests": 0
   }
 }
