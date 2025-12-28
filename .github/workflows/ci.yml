@@ -114,13 +114,12 @@ jobs:
 
       - name: Collect current metrics (no tests)
         run: node scripts/ci/collect-metrics.mjs
-        env:
-          # Optional: plug in your project-specific commands later:
-          # BUILD_COMMAND: npm run build
-          # BUILD_OUTPUT_DIR: dist
-          # DEV_COMMAND: npm run dev
-          # DEV_READY_REGEX: "listening|ready|started"
-          # DEV_TIMEOUT_MS: "8000"
+        # Optional: plug in your project-specific commands later via workflow env:
+        # - BUILD_COMMAND (e.g. "npm run build")
+        # - BUILD_OUTPUT_DIR (e.g. "dist")
+        # - DEV_COMMAND (e.g. "npm run dev")
+        # - DEV_READY_REGEX (e.g. "listening|ready|started")
+        # - DEV_TIMEOUT_MS (e.g. "8000")
 
       - name: Compare with baseline
         run: node scripts/ci/compare-metrics.mjs --dir .cache/metrics --baseline .cache/metrics/compare-baseline.json
