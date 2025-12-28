@@ -1,11 +1,11 @@
-import test from 'node:test';
+import { test } from '@playwright/test';
 import assert from 'node:assert/strict';
 import fs from 'fs';
 import path from 'path';
 import { spawnSync } from 'child_process';
 
-import { getDevduckServicePaths } from '../../scripts/devduck-service/src/paths.js';
-import { isPidAlive } from '../../scripts/devduck-service/src/pids.js';
+import { getDevduckServicePaths } from '../../scripts/devduck-service/src/paths.ts';
+import { isPidAlive } from '../../scripts/devduck-service/src/pids.ts';
 
 function runLaunch(args: string[], opts?: { timeoutMs?: number }) {
   return spawnSync('npx', ['tsx', 'scripts/devduck-service/src/cli.ts', ...args], {

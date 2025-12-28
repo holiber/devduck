@@ -1,23 +1,23 @@
-import { describe, test, beforeEach } from 'node:test';
+import { test } from '@playwright/test';
 import assert from 'node:assert';
 import path from 'node:path';
 
-import provider from '../../modules/ci/providers/smogcheck-provider/index.js';
+import provider from '../../modules/ci/providers/smogcheck-provider/index.ts';
 import {
   PRInfoSchema,
   CheckStatusSchema,
   CommentSchema,
   type CIProvider
-} from '../../modules/ci/schemas/contract.js';
+} from '../../modules/ci/schemas/contract.ts';
 
 import {
   clearProvidersForTests,
   discoverProvidersFromModules,
   getProvider,
   getProvidersByType
-} from '../../scripts/lib/provider-registry.js';
+} from '../../scripts/lib/provider-registry.ts';
 
-describe('ci: smogcheck-provider', () => {
+test.describe('ci: smogcheck-provider', () => {
   test('matches CIProvider interface', () => {
     const p = provider as CIProvider;
     assert.ok(p.name);
@@ -133,8 +133,8 @@ describe('ci: smogcheck-provider', () => {
   });
 });
 
-describe('ci: provider registry discovery', () => {
-  beforeEach(() => {
+test.describe('ci: provider registry discovery', () => {
+  test.beforeEach(() => {
     clearProvidersForTests();
   });
 

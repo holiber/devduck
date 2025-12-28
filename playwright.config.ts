@@ -9,7 +9,6 @@ import { defineConfig } from '@playwright/test';
  */
 export default defineConfig({
   testDir: './tests',
-  testMatch: ['**/installer/**/*.pw.spec.ts'],
 
   // Installer tests touch filesystem/processes; keep them deterministic.
   fullyParallel: false,
@@ -25,7 +24,14 @@ export default defineConfig({
 
   projects: [
     {
-      name: 'installer'
+      name: 'installer',
+      testMatch: ['installer/**/*.pw.spec.ts']
+    },
+    {
+      // Non-installer suites (ported from node:test).
+      name: 'unit',
+      testMatch: ['**/*.pw.spec.ts'],
+      testIgnore: ['installer/**']
     }
   ]
 });

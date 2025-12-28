@@ -1,4 +1,4 @@
-import { describe, test, beforeEach, afterEach } from 'node:test';
+import { test } from '@playwright/test';
 import assert from 'node:assert';
 import path from 'node:path';
 import { fileURLToPath } from 'url';
@@ -12,23 +12,23 @@ function pathToFileURL(filePath: string): URL {
   return new URL(`file://${normalized}`);
 }
 
-import { mcpRouter } from '../../scripts/lib/api/mcp.js';
-import { getUnifiedAPI } from '../../scripts/lib/api.js';
-import { findWorkspaceRoot } from '../../scripts/lib/workspace-root.js';
+import { mcpRouter } from '../../scripts/lib/api/mcp.ts';
+import { getUnifiedAPI } from '../../scripts/lib/api.ts';
+import { findWorkspaceRoot } from '../../scripts/lib/workspace-root.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-describe('mcp: API module', () => {
+test.describe('mcp: API module', () => {
   let originalCwd: string;
   let testWorkspaceRoot: string | null;
 
-  beforeEach(() => {
+  test.beforeEach(() => {
     originalCwd = process.cwd();
     testWorkspaceRoot = findWorkspaceRoot(process.cwd());
   });
 
-  afterEach(() => {
+  test.afterEach(() => {
     process.chdir(originalCwd);
   });
 
@@ -88,7 +88,7 @@ describe('mcp: API module', () => {
       // Try to import mcp module directly to see if there's an import error
       try {
         // Use relative path from test file to module
-        const mcpApiPath = path.resolve(__dirname, '../../scripts/lib/api/mcp.js');
+        const mcpApiPath = path.resolve(__dirname, '../../scripts/lib/api/mcp.ts');
         
         if (fs.existsSync(mcpApiPath)) {
           const mcpModule = await import(pathToFileURL(mcpApiPath).href);

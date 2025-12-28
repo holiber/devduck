@@ -1,14 +1,12 @@
-import { describe, test } from 'node:test';
-import assert from 'node:assert';
+import { test, expect } from '@playwright/test';
 import http from 'node:http';
 
-import { checkMcpServer } from '../../scripts/install/mcp.js';
+import { checkMcpServer } from '../../scripts/install/mcp.ts';
 
 const silent = { log: () => {}, print: () => {} };
 
-describe('install/mcp optional servers', () => {
+test.describe('install/mcp optional servers', () => {
   test('marks optional URL-based server failure as non-blocking', async () => {
-    // Create a fast 404 responder to simulate an unreachable MCP endpoint.
     const server = http.createServer((_req, res) => {
       res.statusCode = 404;
       res.end('not found');
@@ -32,9 +30,9 @@ describe('install/mcp optional servers', () => {
         silent
       );
 
-      assert.strictEqual(result.optional, true);
-      assert.strictEqual(result.working, false);
-      assert.ok(result.error?.includes('404'));
+      expect(result.optional).toBe(true);
+      expect(result.working).toBe(false);
+      expect(result.error ?? '').toContain('404');
     } finally {
       server.close();
     }
@@ -47,9 +45,9 @@ describe('install/mcp optional servers', () => {
       silent
     );
 
-    assert.strictEqual(result.optional, true);
-    assert.strictEqual(result.working, false);
-    assert.ok(result.error?.toLowerCase().includes('command'));
+    expect(result.optional).toBe(true);
+    expect(result.working).toBe(false);
+    expect((result.error ?? '').toLowerCase()).toContain('command');
   });
 });
 

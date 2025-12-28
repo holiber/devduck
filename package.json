@@ -13,7 +13,7 @@
     "postinstall": "npx playwright install chromium",
     "devduck:service": "tsx scripts/devduck-service/src/service.ts",
     "devduck:launch": "tsx scripts/devduck-service/src/cli.ts",
-    "test": "tsx scripts/run-tests.ts",
+    "test": "npm run test:pw",
     "test:pw": "playwright test -c playwright.config.ts --pass-with-no-tests",
     "test:installer:pw": "playwright test -c playwright.config.ts --project installer --pass-with-no-tests",
     "test:smoke": "playwright test -c playwright.config.ts --project installer --grep @smoke --pass-with-no-tests"

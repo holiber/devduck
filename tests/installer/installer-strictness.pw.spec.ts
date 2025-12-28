@@ -94,7 +94,10 @@ test.describe('installer strictness / UX', () => {
       const result = await runInstaller(tempWorkspace, {
         unattended: true,
         modules: ['core'],
-        skipRepoInit: true
+        skipRepoInit: true,
+        // Ensure the child process does not inherit ARCADIA_ROOT from the parent environment,
+        // so the installer's fill-missing-from-.env behavior is tested deterministically.
+        env: { ARCADIA_ROOT: '' }
       });
 
       expect(result.exitCode, `installer should succeed. stderr:\n${result.stderr}`).toBe(0);

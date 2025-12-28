@@ -1,17 +1,15 @@
-#!/usr/bin/env node
-
-import { test, describe } from 'node:test';
-import assert from 'node:assert';
+import { test, expect } from '@playwright/test';
 import path from 'node:path';
-import { resolveWorkspaceRoot, _internal } from '../scripts/lib/workspace-path.js';
 
-describe('workspace-path resolver', () => {
+import { resolveWorkspaceRoot, _internal } from '../scripts/lib/workspace-path.ts';
+
+test.describe('workspace-path resolver', () => {
   test('parses ark:/ links as Arcadia links', () => {
     const url = _internal.tryParseUrl('ark:/some/path/file.txt');
-    assert.ok(url, 'should parse as URL');
-    assert.strictEqual(url.protocol, 'ark:');
-    assert.strictEqual(_internal.isLikelyArcadiaUrl(url), true);
-    assert.strictEqual(_internal.parseArkSubpath(url), 'some/path/file.txt');
+    expect(url, 'should parse as URL').toBeTruthy();
+    expect(url?.protocol).toBe('ark:');
+    expect(_internal.isLikelyArcadiaUrl(url!)).toBe(true);
+    expect(_internal.parseArkSubpath(url!)).toBe('some/path/file.txt');
   });
 
   test('resolves ark:/ links using arc root (fallback to arc root)', () => {
@@ -23,7 +21,7 @@ describe('workspace-path resolver', () => {
       findWorkspaceRoot: () => null
     });
 
-    assert.strictEqual(res, path.resolve('/arcadia-root'));
+    expect(res).toBe(path.resolve('/arcadia-root'));
   });
 
   test('resolves ark:/ links using arc root and strips arcadia/ prefix', () => {
@@ -35,7 +33,7 @@ describe('workspace-path resolver', () => {
       findWorkspaceRoot: () => null
     });
 
-    assert.strictEqual(res, path.resolve('/arcadia-root'));
+    expect(res).toBe(path.resolve('/arcadia-root'));
   });
 
   test('if arc root is unavailable, ark:/ falls back to projectRoot', () => {
@@ -47,7 +45,7 @@ describe('workspace-path resolver', () => {
       findWorkspaceRoot: () => null
     });
 
-    assert.strictEqual(res, path.resolve('/project'));
+    expect(res).toBe(path.resolve('/project'));
   });
 });
 

@@ -1,18 +1,18 @@
-import { describe, test, beforeEach, afterEach } from 'node:test';
+import { test } from '@playwright/test';
 import assert from 'node:assert';
 import path from 'node:path';
 import fs from 'fs';
 import { config } from 'dotenv';
-import { findWorkspaceRoot } from '../../scripts/lib/workspace-root.js';
+import { findWorkspaceRoot } from '../../scripts/lib/workspace-root.ts';
 
-import provider from '../../modules/issue-tracker-github/providers/github-provider/index.js';
+import provider from '../../modules/issue-tracker-github/providers/github-provider/index.ts';
 import {
   IssueTrackerProviderSchema,
   IssueSchema,
   CommentSchema,
   PRReferenceSchema,
   DownloadResourcesResultSchema
-} from '../../modules/issue-tracker/schemas/contract.js';
+} from '../../modules/issue-tracker/schemas/contract.ts';
 
 import {
   clearProvidersForTests,
@@ -20,14 +20,13 @@ import {
   getProvider,
   getProvidersByType,
   setProviderTypeSchema
-} from '../../scripts/lib/provider-registry.js';
-import { findWorkspaceRoot } from '../../scripts/lib/workspace-root.js';
+} from '../../scripts/lib/provider-registry.ts';
 import {
   getIssueCacheDir,
   getResourcesJsonPath,
   getIssueResourcesDir,
   readResourcesJson
-} from '../../modules/issue-tracker/scripts/resources.js';
+} from '../../modules/issue-tracker/scripts/resources.ts';
 
 // Test issue: https://github.com/holiber/devduck/issues/20
 const TEST_ISSUE_ID = 'holiber/devduck#20';
@@ -44,7 +43,7 @@ function hasGitHubToken(): boolean {
   return Boolean(process.env.GITHUB_TOKEN && process.env.GITHUB_TOKEN.trim());
 }
 
-describe('issue-tracker-github: github-provider', () => {
+test.describe('issue-tracker-github: github-provider', () => {
   test('matches IssueTrackerProvider contract schema', () => {
     const res = IssueTrackerProviderSchema.safeParse(provider);
     assert.ok(res.success, res.success ? '' : res.error.message);
@@ -58,9 +57,7 @@ describe('issue-tracker-github: github-provider', () => {
   });
 
   test('fetchIssue returns issue that matches Issue schema', async () => {
-    if (!hasGitHubToken()) {
-      return; // Skip test if token not set
-    }
+    test.skip(!hasGitHubToken(), 'GITHUB_TOKEN not set');
 
     const issue = await provider.fetchIssue({ issueId: TEST_ISSUE_ID });
     const parsed = IssueSchema.safeParse(issue);
@@ -73,10 +70,7 @@ describe('issue-tracker-github: github-provider', () => {
   });
 
   test('fetchIssue works with URL', async () => {
-    if (!hasGitHubToken()) {
-      test.skip('GITHUB_TOKEN not set');
-      return;
-    }
+    test.skip(!hasGitHubToken(), 'GITHUB_TOKEN not set');
 
     const issue = await provider.fetchIssue({ url: TEST_ISSUE_URL });
     assert.ok(issue.id);
@@ -85,10 +79,7 @@ describe('issue-tracker-github: github-provider', () => {
   });
 
   test('fetchIssue throws error for non-existent issue', async () => {
-    if (!hasGitHubToken()) {
-      test.skip('GITHUB_TOKEN not set');
-      return;
-    }
+    test.skip(!hasGitHubToken(), 'GITHUB_TOKEN not set');
 
     try {
       await provider.fetchIssue({ issueId: 'holiber/devduck#999999' });
@@ -100,10 +91,7 @@ describe('issue-tracker-github: github-provider', () => {
   });
 
   test('fetchComments returns comments that match Comment schema', async () => {
-    if (!hasGitHubToken()) {
-      test.skip('GITHUB_TOKEN not set');
-      return;
-    }
+    test.skip(!hasGitHubToken(), 'GITHUB_TOKEN not set');
 
     const comments = await provider.fetchComments({ issueId: TEST_ISSUE_ID });
     assert.ok(Array.isArray(comments));
@@ -119,10 +107,7 @@ describe('issue-tracker-github: github-provider', () => {
   });
 
   test('fetchPRs returns PR references that match PRReference schema', async () => {
-    if (!hasGitHubToken()) {
-      test.skip('GITHUB_TOKEN not set');
-      return;
-    }
+    test.skip(!hasGitHubToken(), 'GITHUB_TOKEN not set');
 
     const prs = await provider.fetchPRs({ issueId: TEST_ISSUE_ID });
     assert.ok(Array.isArray(prs));
@@ -136,10 +121,7 @@ describe('issue-tracker-github: github-provider', () => {
   });
 
   test('downloadResources creates correct directory structure', async () => {
-    if (!hasGitHubToken()) {
-      test.skip('GITHUB_TOKEN not set');
-      return;
-    }
+    test.skip(!hasGitHubToken(), 'GITHUB_TOKEN not set');
 
     const workspaceRoot = findWorkspaceRoot(process.cwd()) || process.cwd();
 
@@ -171,10 +153,7 @@ describe('issue-tracker-github: github-provider', () => {
   });
 
   test('downloadResources creates resources.json with correct metadata', async () => {
-    if (!hasGitHubToken()) {
-      test.skip('GITHUB_TOKEN not set');
-      return;
-    }
+    test.skip(!hasGitHubToken(), 'GITHUB_TOKEN not set');
 
     const workspaceRoot = findWorkspaceRoot(process.cwd()) || process.cwd();
 
@@ -203,10 +182,7 @@ describe('issue-tracker-github: github-provider', () => {
   });
 
   test('downloadResources downloads resources with distance <= 1', async () => {
-    if (!hasGitHubToken()) {
-      test.skip('GITHUB_TOKEN not set');
-      return;
-    }
+    test.skip(!hasGitHubToken(), 'GITHUB_TOKEN not set');
 
     const workspaceRoot = findWorkspaceRoot(process.cwd()) || process.cwd();
 
@@ -237,10 +213,7 @@ describe('issue-tracker-github: github-provider', () => {
   });
 
   test('downloadResources creates issue.json with comments', async () => {
-    if (!hasGitHubToken()) {
-      test.skip('GITHUB_TOKEN not set');
-      return;
-    }
+    test.skip(!hasGitHubToken(), 'GITHUB_TOKEN not set');
 
     const workspaceRoot = findWorkspaceRoot(process.cwd()) || process.cwd();
 
@@ -263,8 +236,8 @@ describe('issue-tracker-github: github-provider', () => {
   });
 });
 
-describe('issue-tracker-github: provider registry discovery', () => {
-  beforeEach(() => {
+test.describe('issue-tracker-github: provider registry discovery', () => {
+  test.beforeEach(() => {
     clearProvidersForTests();
   });
 

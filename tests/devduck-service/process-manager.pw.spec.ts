@@ -1,11 +1,11 @@
-import test from 'node:test';
+import { test } from '@playwright/test';
 import assert from 'node:assert/strict';
 import fs from 'fs';
 import path from 'path';
 
-import { getDevduckServicePaths } from '../../scripts/devduck-service/src/paths.js';
-import { ProcessManager } from '../../scripts/devduck-service/src/process/ProcessManager.js';
-import { isPidAlive } from '../../scripts/devduck-service/src/pids.js';
+import { getDevduckServicePaths } from '../../scripts/devduck-service/src/paths.ts';
+import { ProcessManager } from '../../scripts/devduck-service/src/process/ProcessManager.ts';
+import { isPidAlive } from '../../scripts/devduck-service/src/pids.ts';
 
 function rmCache(rootDir: string) {
   fs.rmSync(rootDir, { recursive: true, force: true });

@@ -1,20 +1,20 @@
-import { describe, test, beforeEach } from 'node:test';
+import { test } from '@playwright/test';
 import assert from 'node:assert';
 import path from 'node:path';
 
-import provider from '../../modules/email/providers/smogcheck-provider/index.js';
+import provider from '../../modules/email/providers/smogcheck-provider/index.ts';
 import {
   AttachmentSchema,
   MessageSchema,
   type EmailProvider
-} from '../../modules/email/schemas/contract.js';
+} from '../../modules/email/schemas/contract.ts';
 
 import {
   clearProvidersForTests,
   discoverProvidersFromModules,
   getProvider,
   getProvidersByType
-} from '../../scripts/lib/provider-registry.js';
+} from '../../scripts/lib/provider-registry.ts';
 
 function toIsoDaysAgo(days: number): string {
   const d = new Date();
@@ -22,7 +22,7 @@ function toIsoDaysAgo(days: number): string {
   return d.toISOString();
 }
 
-describe('email: smogcheck-provider', () => {
+test.describe('email: smogcheck-provider', () => {
   test('matches EmailProvider interface', () => {
     const p = provider as EmailProvider;
     assert.ok(p.name);
@@ -75,7 +75,12 @@ describe('email: smogcheck-provider', () => {
         const to = (m.to || []).map((x) => x.email);
         const cc = (m.cc || []).map((x) => x.email);
         const bcc = (m.bcc || []).map((x) => x.email);
-        return m.from.email === 'user@example.com' || to.includes('user@example.com') || cc.includes('user@example.com') || bcc.includes('user@example.com');
+        return (
+          m.from.email === 'user@example.com' ||
+          to.includes('user@example.com') ||
+          cc.includes('user@example.com') ||
+          bcc.includes('user@example.com')
+        );
       })
     );
   });
@@ -104,8 +109,8 @@ describe('email: smogcheck-provider', () => {
   });
 });
 
-describe('email: provider registry discovery', () => {
-  beforeEach(() => {
+test.describe('email: provider registry discovery', () => {
+  test.beforeEach(() => {
     clearProvidersForTests();
   });
 

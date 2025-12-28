@@ -1,17 +1,17 @@
-import { describe, test, beforeEach } from 'node:test';
+import { test } from '@playwright/test';
 import assert from 'node:assert';
 import path from 'node:path';
 
-import provider from '../../modules/email-gmail/providers/gmail-provider/index.js';
-import type { EmailProvider } from '../../modules/email/schemas/contract.js';
+import provider from '../../modules/email-gmail/providers/gmail-provider/index.ts';
+import type { EmailProvider } from '../../modules/email/schemas/contract.ts';
 
 import {
   clearProvidersForTests,
   discoverProvidersFromModules,
   getProvider
-} from '../../scripts/lib/provider-registry.js';
+} from '../../scripts/lib/provider-registry.ts';
 
-describe('email: gmail-provider', () => {
+test.describe('email: gmail-provider', () => {
   test('matches EmailProvider interface', () => {
     const p = provider as EmailProvider;
     assert.ok(p.name);
@@ -28,8 +28,8 @@ describe('email: gmail-provider', () => {
   });
 });
 
-describe('email: provider registry discovery (gmail-provider)', () => {
-  beforeEach(() => {
+test.describe('email: provider registry discovery (gmail-provider)', () => {
+  test.beforeEach(() => {
     clearProvidersForTests();
   });
 

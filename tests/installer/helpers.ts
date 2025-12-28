@@ -28,6 +28,11 @@ interface RunInstallerOptions {
   modules?: string | string[];
   skipRepoInit?: boolean;
   inputs?: string[];
+  /**
+   * Extra environment overrides for the spawned installer process.
+   * Use empty string to intentionally clear a variable (so .env fill-missing can apply).
+   */
+  env?: NodeJS.ProcessEnv;
 }
 
 interface InstallerResult {
@@ -174,6 +179,7 @@ export async function runInstaller(workspacePath: string, options: RunInstallerO
       cwd: PROJECT_ROOT,
       env: {
         ...process.env,
+        ...(options.env ?? {}),
         NODE_ENV: 'test',
         ...(needsCursor
           ? {

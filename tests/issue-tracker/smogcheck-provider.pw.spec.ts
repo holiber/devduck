@@ -1,16 +1,16 @@
-import { describe, test, beforeEach, afterEach } from 'node:test';
+import { test } from '@playwright/test';
 import assert from 'node:assert';
 import path from 'node:path';
 import fs from 'fs';
 
-import provider from '../../modules/issue-tracker/providers/smogcheck-provider/index.js';
+import provider from '../../modules/issue-tracker/providers/smogcheck-provider/index.ts';
 import {
   IssueTrackerProviderSchema,
   IssueSchema,
   CommentSchema,
   PRReferenceSchema,
   DownloadResourcesResultSchema
-} from '../../modules/issue-tracker/schemas/contract.js';
+} from '../../modules/issue-tracker/schemas/contract.ts';
 
 import {
   clearProvidersForTests,
@@ -18,16 +18,16 @@ import {
   getProvider,
   getProvidersByType,
   setProviderTypeSchema
-} from '../../scripts/lib/provider-registry.js';
-import { findWorkspaceRoot } from '../../scripts/lib/workspace-root.js';
+} from '../../scripts/lib/provider-registry.ts';
+import { findWorkspaceRoot } from '../../scripts/lib/workspace-root.ts';
 import {
   getIssueCacheDir,
   getResourcesJsonPath,
   getIssueResourcesDir,
   readResourcesJson
-} from '../../modules/issue-tracker/scripts/resources.js';
+} from '../../modules/issue-tracker/scripts/resources.ts';
 
-describe('issue-tracker: smogcheck-provider', () => {
+test.describe('issue-tracker: smogcheck-provider', () => {
   test('matches IssueTrackerProvider contract schema', () => {
     const res = IssueTrackerProviderSchema.safeParse(provider);
     assert.ok(res.success, res.success ? '' : res.error.message);
@@ -298,8 +298,8 @@ describe('issue-tracker: smogcheck-provider', () => {
   });
 });
 
-describe('issue-tracker: provider registry discovery', () => {
-  beforeEach(() => {
+test.describe('issue-tracker: provider registry discovery', () => {
+  test.beforeEach(() => {
     clearProvidersForTests();
   });
 
