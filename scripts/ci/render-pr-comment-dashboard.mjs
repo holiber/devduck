@@ -68,6 +68,14 @@ function runUrl() {
   return `${server}/${repo}/actions/runs/${runId}`;
 }
 
+function defaultPagesDashboardUrl() {
+  const repo = process.env.GITHUB_REPOSITORY; // "owner/name"
+  if (!repo || !repo.includes('/')) return undefined;
+  const [owner, name] = repo.split('/');
+  if (!owner || !name) return undefined;
+  return `https://${owner}.github.io/${name}/metrics/`;
+}
+
 async function main() {
   const dir = readArg('--dir') ?? '.cache/metrics';
   const outPath = readArg('--out') ?? path.join(dir, 'pr-comment.md');
@@ -79,9 +87,8 @@ async function main() {
   const deltas = diff?.deltas ?? {};
   const url = runUrl();
 
-  const dashboardUrl =
-    process.env.METRICS_DASHBOARD_URL ??
-    'https://holiber.github.io/devduck/metrics/';
+  const dashboardUrl = process.env.METRICS_DASHBOARD_URL ?? defaultPagesDashboardUrl();
+  const isPullRequest = process.env.GITHUB_EVENT_NAME === 'pull_request';
 
   const lines = [];
   lines.push('### 🧠 CI Metrics Dashboard');
@@ -111,8 +118,18 @@ async function main() {
     )} | — |`
   );
   lines.push('');
-  lines.push(`- **Dashboard (history + charts)**: ${dashboardUrl}`);
-  lines.push('- **Artifacts**: logs + Playwright screenshots/video/trace/report + raw metrics JSON are attached to this workflow run.');
+  if (dashboardUrl) {
+    if (isPullRequest) {
+      lines.push(`- **Dashboard (GitHub Pages)**: ${dashboardUrl} (published after merge to \`main\`)`);
+    } else {
+      lines.push(`- **Dashboard (history + charts)**: ${dashboardUrl}`);
+    }
+  }
+  if (url) {
+    lines.push(`- **Artifacts**: available on the workflow run page (download \`ci-metrics-artifacts\`).`);
+  } else {
+    lines.push('- **Artifacts**: logs + Playwright screenshots/video/trace/report + raw metrics JSON are attached to this workflow run.');
+  }
   lines.push('');
   lines.push('<!-- devduck-metrics-comment -->');
   lines.push('');
