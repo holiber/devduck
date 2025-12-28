@@ -1,0 +1,769 @@
+{
+  "timestamp": "2025-12-28T01:27:33.545Z",
+  "totalDuration": 32432.170047,
+  "testCount": 117,
+  "installerTests": [
+    {
+      "file": "install-project-scripts.test.ts",
+      "test": "Install additional scripts via importScripts",
+      "duration": 1
+    },
+    {
+      "file": "install-project-scripts.test.ts",
+      "test": "Remove scripts when project is removed from config",
+      "duration": 1
+    },
+    {
+      "file": "install-project-scripts.test.ts",
+      "test": "Handle missing project package.json gracefully",
+      "duration": 1
+    },
+    {
+      "file": "install-project-scripts.test.ts",
+      "test": "Verify scripts do not change current directory",
+      "duration": 1
+    },
+    {
+      "file": "install-steps.test.ts",
+      "test": "Step 3: Download Projects",
+      "duration": 2
+    },
+    {
+      "file": "install-steps.test.ts",
+      "test": "Step 6: Setup Projects",
+      "duration": 2
+    },
+    {
+      "file": "install-project-scripts.test.ts",
+      "test": "Install default scripts from project",
+      "duration": 3
+    },
+    {
+      "file": "install-steps.test.ts",
+      "test": "Step 2: Download Repos",
+      "duration": 4
+    },
+    {
+      "file": "install-steps.test.ts",
+      "test": "Step 7: Verify Installation",
+      "duration": 7
+    },
+    {
+      "file": "install-steps.test.ts",
+      "test": "Step 4: Check Environment Again",
+      "duration": 9
+    },
+    {
+      "file": "install-steps.test.ts",
+      "test": "Step 5: Setup Modules",
+      "duration": 10
+    },
+    {
+      "file": "module-patterns.test.ts",
+      "test": "modules: [\"issue-*\"] expands to issue-tracker and issue-tracker-github",
+      "duration": 16
+    },
+    {
+      "file": "install-steps.test.ts",
+      "test": "Step 1: Check Environment Variables",
+      "duration": 29
+    },
+    {
+      "file": "installer-unattended.test.ts",
+      "test": "Unattended Installation - Fresh Workspace",
+      "duration": 305
+    },
+    {
+      "file": "installer-unattended.test.ts",
+      "test": "Unattended Installation with Config File",
+      "duration": 315
+    },
+    {
+      "file": "installer-gui.test.ts",
+      "test": "GUI Installation - Fresh Workspace",
+      "duration": 337
+    },
+    {
+      "file": "installer-gui.test.ts",
+      "test": "Fresh Workspace Installation",
+      "duration": 337
+    },
+    {
+      "file": "installer-unattended.test.ts",
+      "test": "Unattended Installation with workspace.config.json seedFiles[] copies seed files/folders",
+      "duration": 346
+    },
+    {
+      "file": "installer-unattended.test.ts",
+      "test": "Unattended Installation - Full Structure Verification",
+      "duration": 349
+    },
+    {
+      "file": "installer-gui.test.ts",
+      "test": "Detect Existing Workspace",
+      "duration": 350
+    },
+    {
+      "file": "installer-gui.test.ts",
+      "test": "Existing Workspace Operations",
+      "duration": 354
+    },
+    {
+      "file": "installer-unattended.test.ts",
+      "test": "Unattended Installation from fixture - cursor-only",
+      "duration": 365
+    },
+    {
+      "file": "workspace-modules-installation.test.ts",
+      "test": "Installs module from workspace/modules when listed in config",
+      "duration": 377
+    },
+    {
+      "file": "installer-unattended.test.ts",
+      "test": "Unattended Installation with workspace.config.json (local folder project src)",
+      "duration": 421
+    },
+    {
+      "file": "installer-unattended.test.ts",
+      "test": "Reinstall Existing Workspace - Unattended",
+      "duration": 684
+    },
+    {
+      "file": "installer-unattended.test.ts",
+      "test": "Reinstallation Verification - Preserve Configuration",
+      "duration": 684
+    },
+    {
+      "file": "installer-unattended.test.ts",
+      "test": "Remove Modules from Existing Workspace",
+      "duration": 685
+    },
+    {
+      "file": "installer-unattended.test.ts",
+      "test": "Add Modules to Existing Workspace",
+      "duration": 687
+    },
+    {
+      "file": "installer-unattended.test.ts",
+      "test": "Reinstallation - Module Hooks Re-executed",
+      "duration": 695
+    },
+    {
+      "file": "installer-unattended.test.ts",
+      "test": "Installation with External Repository",
+      "duration": 854
+    },
+    {
+      "file": "installer-unattended.test.ts",
+      "test": "External Repository Installation",
+      "duration": 854
+    },
+    {
+      "file": "installer-unattended.test.ts",
+      "test": "Fresh Workspace Installation",
+      "duration": 2101
+    },
+    {
+      "file": "npx-new-workspace.test.ts",
+      "test": "clones DevDuck into devduck/src when not listed in projects",
+      "duration": 2122
+    },
+    {
+      "file": "npx-new-workspace.test.ts",
+      "test": "resolves relative workspace path from INIT_CWD (npx cache cwd simulation)",
+      "duration": 2291
+    },
+    {
+      "file": "installer-unattended.test.ts",
+      "test": "Existing Workspace Operations",
+      "duration": 3435
+    }
+  ],
+  "allTests": [
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "fetchPR throws error for non-existent PR",
+      "duration": 0
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "fetchPR works with branch name",
+      "duration": 0
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "fetchCheckStatus returns check statuses that match CheckStatus schema",
+      "duration": 0
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "fetchCheckStatus returns annotations for failed checks",
+      "duration": 0
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "fetchCheckStatus works with checkId",
+      "duration": 0
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "fetchCheckStatus works with branch name",
+      "duration": 0
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "fetchComments returns comments that match Comment schema",
+      "duration": 0
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "fetchComments includes reactions",
+      "duration": 0
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "fetchComments includes file location for file comments",
+      "duration": 0
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "fetchComments works with branch name",
+      "duration": 0
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "matches EmailProvider interface",
+      "duration": 0
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "getMessage returns a message by id",
+      "duration": 0
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "searchMessages supports filtering by from",
+      "duration": 0
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "searchMessages supports filtering by participant (to/cc/bcc/from)",
+      "duration": 0
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "searchMessages supports filtering by date range",
+      "duration": 0
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "downloadAttachment returns a Buffer for an existing attachment",
+      "duration": 0
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "fetchIssue returns issue that matches Issue schema",
+      "duration": 0
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "GITHUB_TOKEN not set # SKIP",
+      "duration": 0
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "GITHUB_TOKEN not set # SKIP",
+      "duration": 0
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "fetchIssue throws error for non-existent issue",
+      "duration": 0
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "GITHUB_TOKEN not set # SKIP",
+      "duration": 0
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "fetchComments returns comments that match Comment schema",
+      "duration": 0
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "GITHUB_TOKEN not set # SKIP",
+      "duration": 0
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "fetchPRs returns PR references that match PRReference schema",
+      "duration": 0
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "GITHUB_TOKEN not set # SKIP",
+      "duration": 0
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "downloadResources creates correct directory structure",
+      "duration": 0
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "GITHUB_TOKEN not set # SKIP",
+      "duration": 0
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "downloadResources creates resources.json with correct metadata",
+      "duration": 0
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "GITHUB_TOKEN not set # SKIP",
+      "duration": 0
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "downloadResources downloads resources with distance <= 1",
+      "duration": 0
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "GITHUB_TOKEN not set # SKIP",
+      "duration": 0
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "downloadResources creates issue.json with comments",
+      "duration": 0
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "fetchIssue works with issue key",
+      "duration": 0
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "fetchIssue works with URL",
+      "duration": 0
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "fetchIssue throws error for non-existent issue",
+      "duration": 0
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "fetchComments includes reactions",
+      "duration": 0
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "fetchComments returns empty array for issue without comments",
+      "duration": 0
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "fetchPRs returns PR references that match PRReference schema",
+      "duration": 0
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "fetchPRs returns empty array for issue without PRs",
+      "duration": 0
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "mcpRouter.list procedure exists with correct schema",
+      "duration": 0
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "mcpRouter.call procedure exists with correct schema",
+      "duration": 0
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "mcp.list can list servers when mcp.json exists",
+      "duration": 0
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "npm run api lists mcp methods",
+      "duration": 0
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "mcp.list can be called via API CLI",
+      "duration": 0
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "mcp.call can be called via API CLI (help check)",
+      "duration": 0
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "matches MessengerProvider contract schema",
+      "duration": 0
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "resolves ark:/ links using arc root (fallback to arc root)",
+      "duration": 0
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "resolves ark:/ links using arc root and strips arcadia/ prefix",
+      "duration": 0
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "if arc root is unavailable, ark:/ falls back to projectRoot",
+      "duration": 0
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "matches CIProvider interface",
+      "duration": 1
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "matches EmailProvider interface",
+      "duration": 1
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "Step 6: Setup Projects",
+      "duration": 1
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "fetchIssue works with URL",
+      "duration": 1
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "fetchIssue returns issue that matches Issue schema",
+      "duration": 1
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "fetchComments returns comments that match Comment schema",
+      "duration": 1
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "downloadResources creates resources.json with correct metadata",
+      "duration": 1
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "downloadResources downloads resources with distance <= 2",
+      "duration": 1
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "downloadResources tracks resources with distance == 3 without downloading",
+      "duration": 1
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "downloadResources creates issue.json with comments and PRs",
+      "duration": 1
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "downloadResources creates PR directories when PRs exist",
+      "duration": 1
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "mcpRouter is defined and has procedures",
+      "duration": 1
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "listChats returns chats that match Chat schema",
+      "duration": 1
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "downloadFile returns a descriptor that matches DownloadFileResult schema",
+      "duration": 1
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "listChats returns chats that match Chat schema",
+      "duration": 1
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "downloadFile returns a descriptor that matches DownloadFileResult schema",
+      "duration": 1
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "parses ark:/ links as Arcadia links",
+      "duration": 1
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "fetchPR returns PR info that matches PRInfo schema",
+      "duration": 2
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "listUnreadMessages returns messages that match Message schema",
+      "duration": 2
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "Handle missing project package.json gracefully",
+      "duration": 2
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "Verify scripts do not change current directory",
+      "duration": 2
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "Step 2: Download Repos",
+      "duration": 2
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "Step 3: Download Projects",
+      "duration": 2
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "matches IssueTrackerProvider contract schema",
+      "duration": 2
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "matches IssueTrackerProvider contract schema",
+      "duration": 2
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "downloadResources creates correct directory structure",
+      "duration": 2
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "matches MessengerProvider contract schema",
+      "duration": 2
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "getChatHistory returns messages that match ChatMessage schema",
+      "duration": 2
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "getChatHistory returns messages that match ChatMessage schema",
+      "duration": 2
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "Install additional scripts via importScripts",
+      "duration": 3
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "Remove scripts when project is removed from config",
+      "duration": 3
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "Install default scripts from project",
+      "duration": 5
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "Step 7: Verify Installation",
+      "duration": 7
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "marks optional command-based server failure as non-blocking",
+      "duration": 8
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "Step 4: Check Environment Again",
+      "duration": 9
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "Step 5: Setup Modules",
+      "duration": 10
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "modules: [\"issue-*\"] expands to issue-tracker and issue-tracker-github",
+      "duration": 16
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "marks optional URL-based server failure as non-blocking",
+      "duration": 19
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "mcp module is included in unified API",
+      "duration": 25
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "discovers messenger providers from modules directory and registers them (with schema validation)",
+      "duration": 28
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "discovers gmail-provider from modules directory and registers it",
+      "duration": 29
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "discovers smogcheck-provider from modules directory and registers it",
+      "duration": 30
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "Step 1: Check Environment Variables",
+      "duration": 30
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "discovers github-provider from modules directory and registers it (with schema validation)",
+      "duration": 32
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "discovers smogcheck-provider from modules directory and registers it (with schema validation)",
+      "duration": 34
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "discovers smogcheck-provider from modules directory and registers it",
+      "duration": 62
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "Unattended Installation with Config File",
+      "duration": 315
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "Unattended Installation - Fresh Workspace",
+      "duration": 316
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "Unattended Installation - Full Structure Verification",
+      "duration": 341
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "Unattended Installation with workspace.config.json seedFiles[] copies seed files/folders",
+      "duration": 345
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "Unattended Installation from fixture - cursor-only",
+      "duration": 360
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "Detect Existing Workspace",
+      "duration": 368
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "Existing Workspace Operations",
+      "duration": 373
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "Installs module from workspace/modules when listed in config",
+      "duration": 373
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "GUI Installation - Fresh Workspace",
+      "duration": 389
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "Fresh Workspace Installation",
+      "duration": 390
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "Unattended Installation with workspace.config.json (local folder project src)",
+      "duration": 415
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "Reinstall Existing Workspace - Unattended",
+      "duration": 679
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "Add Modules to Existing Workspace",
+      "duration": 686
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "Reinstallation - Module Hooks Re-executed",
+      "duration": 692
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "Remove Modules from Existing Workspace",
+      "duration": 693
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "Reinstallation Verification - Preserve Configuration",
+      "duration": 693
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "Installation with External Repository",
+      "duration": 842
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "External Repository Installation",
+      "duration": 842
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "Fresh Workspace Installation",
+      "duration": 2092
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "resolves relative workspace path from INIT_CWD (npx cache cwd simulation)",
+      "duration": 2284
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "Existing Workspace Operations",
+      "duration": 3442
+    },
+    {
+      "file": "smogcheck-provider.test.ts",
+      "test": "clones DevDuck into devduck/src when not listed in projects",
+      "duration": 3918
+    }
+  ]
+}
