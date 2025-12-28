@@ -60,6 +60,17 @@ function fmtDeltaInt(n) {
   return `${sign}${fmtInt(n)}`;
 }
 
+function fmtPct(p) {
+  if (p == null || !Number.isFinite(p)) return 'n/a';
+  return `${p.toFixed(2)}%`;
+}
+
+function fmtDeltaPct(p) {
+  if (p == null || !Number.isFinite(p)) return 'n/a';
+  const sign = p > 0 ? '+' : '';
+  return `${sign}${fmtPct(p)}`;
+}
+
 function runUrl() {
   const repo = process.env.GITHUB_REPOSITORY;
   const runId = process.env.GITHUB_RUN_ID;
@@ -109,6 +120,9 @@ async function main() {
   lines.push(`| 📚 Total text lines | ${fmtInt(current?.code?.totalTextLines)} | ${fmtDeltaInt(deltas.total_text_lines)} |`);
   lines.push(`| 📜 Huge scripts (>1000 LOC) | ${fmtInt(current?.code?.hugeScripts)} | ${fmtDeltaInt(deltas.huge_scripts)} |`);
   lines.push(`| 🎲 Flaky tests (retried) | ${fmtInt(current?.tests?.flaky?.count)} | ${fmtDeltaInt(deltas.flaky_tests)} |`);
+  lines.push(`| 🧪 Coverage (lines) | ${fmtPct(current?.quality?.coverage?.linesPct)} | ${fmtDeltaPct(deltas.coverage_lines_pct)} |`);
+  lines.push(`| 🐢 Slow tests (>20s) | ${fmtInt(current?.quality?.slowTests?.count)} | ${fmtDeltaInt(deltas.slow_tests_over_20s)} |`);
+  lines.push(`| 🧬 Duplication (copy/paste) | ${fmtPct(current?.quality?.duplication?.duplicatedPct)} | ${fmtDeltaPct(deltas.duplication_pct)} |`);
   lines.push(
     `| 🧪 Unit tests | ${current?.tests?.unit?.total ?? 'n/a'} tests / ${fmtMs(current?.tests?.unit?.reportedDurationMs ?? current?.tests?.unit?.durationMs)} | — |`
   );

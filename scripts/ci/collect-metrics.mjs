@@ -21,6 +21,7 @@ const CACHE_ROOT = '.cache';
 const METRICS_DIR = path.join(CACHE_ROOT, 'metrics');
 const LOGS_DIR = path.join(CACHE_ROOT, 'logs');
 const AI_LOGS_DIR = path.join(CACHE_ROOT, 'ai_logs');
+const COVERAGE_DIR = path.join(CACHE_ROOT, 'coverage');
 
 function nowIso() {
   return new Date().toISOString();
@@ -132,6 +133,203 @@ function parsePlaywrightFlakyTestIds(raw) {
     if (normalized) ids.add(normalized);
   }
   return ids;
+}
+
+function buildFullTitle(pathParts) {
+  const parts = Array.isArray(pathParts) ? pathParts.filter(Boolean).map((x) => String(x).trim()).filter(Boolean) : [];
+  return parts.join(' > ');
+}
+
+function parseNodeTestCases(raw) {
+  // Best-effort parser matching `scripts/perf/node-test-parse.ts`.
+  const text = stripAnsi(raw);
+  const lines = text.split(/\r?\n/gu);
+
+  const SUITE_START_RE = /^(\s*)▶\s+(.*)$/u;
+  const RESULT_RE = /^(\s*)([✔✖﹣])\s+(.*?)\s+\(([\d.]+)ms\)(.*)$/u;
+
+  /** @type {Array<{title:string, indent:number}>} */
+  const suites = [];
+  /** @type {Array<{fullTitle:string, title:string, suitePath:string[], status:'passed'|'failed'|'skipped', durationMs:number}>} */
+  const testCases = [];
+
+  for (const line of lines) {
+    const suiteMatch = line.match(SUITE_START_RE);
+    if (suiteMatch) {
+      const indent = suiteMatch[1].length;
+      const title = suiteMatch[2].trim();
+
+      while (suites.length > 0 && indent < suites[suites.length - 1].indent) suites.pop();
+      suites.push({ title, indent });
+      continue;
+    }
+
+    const resultMatch = line.match(RESULT_RE);
+    if (resultMatch) {
+      const indent = resultMatch[1].length;
+      const symbol = resultMatch[2];
+      const title = resultMatch[3].trim();
+      const durationMs = Number.parseFloat(resultMatch[4]);
+      const tail = resultMatch[5] ?? '';
+
+      // Suite summary lines repeat the suite title at suite indent.
+      if (suites.length > 0) {
+        const top = suites[suites.length - 1];
+        if (indent === top.indent && title === top.title) {
+          suites.pop();
+          continue;
+        }
+      }
+
+      /** @type {'passed'|'failed'|'skipped'} */
+      const status = tail.includes('# SKIP') || symbol === '﹣' ? 'skipped' : symbol === '✔' ? 'passed' : 'failed';
+      const suitePath = suites.map((s) => s.title);
+      const fullTitle = buildFullTitle([...suitePath, title]);
+
+      testCases.push({
+        fullTitle,
+        title,
+        suitePath,
+        status,
+        durationMs: Number.isFinite(durationMs) ? durationMs : 0
+      });
+      continue;
+    }
+  }
+
+  return testCases;
+}
+
+function extractSlowTests(testCases, thresholdMs, limit = 10) {
+  const executed = (Array.isArray(testCases) ? testCases : []).filter((t) => t && t.status !== 'skipped');
+  const slow = executed.filter((t) => typeof t.durationMs === 'number' && Number.isFinite(t.durationMs) && t.durationMs > thresholdMs);
+  slow.sort((a, b) => (b.durationMs ?? 0) - (a.durationMs ?? 0));
+  return {
+    thresholdMs,
+    count: slow.length,
+    top: slow.slice(0, limit).map((t) => ({ name: t.fullTitle ?? t.title ?? 'test', durationMs: t.durationMs }))
+  };
+}
+
+function collectPlaywrightTestsFromJson(report) {
+  /** @type {Array<{fullTitle:string, durationMs:number, status:string}>} */
+  const out = [];
+  const rootSuites = Array.isArray(report?.suites) ? report.suites : [];
+
+  function walkSuite(suite, suitePath) {
+    const title = suite?.title ? String(suite.title) : '';
+    const nextPath = title ? [...suitePath, title] : suitePath;
+
+    const specs = Array.isArray(suite?.specs) ? suite.specs : [];
+    for (const spec of specs) {
+      const specTitle = spec?.title ? String(spec.title) : '';
+      const tests = Array.isArray(spec?.tests) ? spec.tests : [];
+      for (const test of tests) {
+        const testTitle = test?.title ? String(test.title) : specTitle || 'test';
+        const results = Array.isArray(test?.results) ? test.results : [];
+        const durations = results.map((r) => Number(r?.duration)).filter((n) => Number.isFinite(n));
+        const durationMs = durations.length > 0 ? Math.max(...durations) : 0;
+        const status = (results[results.length - 1]?.status ?? test?.status ?? 'unknown') + '';
+        const fullTitle = buildFullTitle([...nextPath, specTitle, testTitle]);
+        out.push({ fullTitle, durationMs, status });
+      }
+    }
+
+    const childSuites = Array.isArray(suite?.suites) ? suite.suites : [];
+    for (const child of childSuites) walkSuite(child, nextPath);
+  }
+
+  for (const s of rootSuites) walkSuite(s, []);
+  return out;
+}
+
+async function readCoverageSummary() {
+  // Produced by: `c8 --reporter=json-summary --report-dir .cache/coverage ...`
+  const p = path.join(COVERAGE_DIR, 'coverage-summary.json');
+  if (!(await pathExists(p))) return undefined;
+  try {
+    const raw = await fsp.readFile(p, 'utf8');
+    const data = JSON.parse(raw);
+    const total = data?.total ?? data?.['total'] ?? undefined;
+    const lines = total?.lines?.pct;
+    const statements = total?.statements?.pct;
+    const branches = total?.branches?.pct;
+    const functions = total?.functions?.pct;
+    const pct = (x) => (typeof x === 'number' && Number.isFinite(x) ? x : undefined);
+    return {
+      linesPct: pct(lines),
+      statementsPct: pct(statements),
+      branchesPct: pct(branches),
+      functionsPct: pct(functions)
+    };
+  } catch {
+    return undefined;
+  }
+}
+
+function readPlaywrightJsonReportOrUndefined(filePath) {
+  try {
+    if (!fs.existsSync(filePath)) return undefined;
+    return JSON.parse(fs.readFileSync(filePath, 'utf8'));
+  } catch {
+    return undefined;
+  }
+}
+
+async function runJscpdAndReadSummary() {
+  // Best-effort duplication metric.
+  const outDir = path.join(METRICS_DIR, 'jscpd');
+  await mkdirp(outDir);
+
+  const cmdParts = [
+    'npx',
+    'jscpd',
+    '--silent',
+    '--reporters',
+    'json',
+    '--output',
+    `"${outDir}"`,
+    '--pattern',
+    '"**/*.{ts,tsx,js,jsx,mjs,cjs,cts,mts}"',
+    '--ignore',
+    '"**/node_modules/**"',
+    '--ignore',
+    '"**/.cache/**"',
+    '--ignore',
+    '"**/gh-pages/**"',
+    '--ignore',
+    '"**/projects/**"',
+    '--ignore',
+    '"**/dist/**"'
+  ];
+  const command = cmdParts.join(' ');
+  await runCommandToLog({ name: 'jscpd', command, logPath: path.join(LOGS_DIR, 'jscpd.log'), timeoutMs: 60_000 });
+
+  const candidates = [
+    path.join(outDir, 'jscpd-report.json'),
+    path.join(outDir, 'report.json'),
+    path.join(outDir, 'jscpd.json')
+  ];
+  let report;
+  for (const c of candidates) {
+    if (await pathExists(c)) {
+      report = tryReadJsonFileSync(c);
+      if (report) break;
+    }
+  }
+  if (!report) return undefined;
+
+  const s = report?.statistics ?? report?.statistic ?? report?.stats ?? undefined;
+  const total = s?.total ?? s;
+  const pct = typeof total?.percentage === 'number' ? total.percentage : typeof total?.percent === 'number' ? total.percent : undefined;
+  const duplicatedLines = typeof total?.duplicatedLines === 'number' ? total.duplicatedLines : undefined;
+  const lines = typeof total?.lines === 'number' ? total.lines : typeof total?.totalLines === 'number' ? total.totalLines : undefined;
+
+  return {
+    duplicatedPct: typeof pct === 'number' && Number.isFinite(pct) ? pct : undefined,
+    duplicatedLines: typeof duplicatedLines === 'number' && Number.isFinite(duplicatedLines) ? duplicatedLines : undefined,
+    totalLines: typeof lines === 'number' && Number.isFinite(lines) ? lines : undefined
+  };
 }
 
 async function computeRepoLineMetrics() {
@@ -341,6 +539,7 @@ async function main() {
     sizes: {},
     tests: {},
     code: {},
+    quality: {},
     notes: []
   };
 
@@ -363,6 +562,14 @@ async function main() {
         exitCode: metrics.commands?.npm_test?.exitCode
       };
     }
+  } catch {
+    // ignore
+  }
+
+  // Coverage metric (best-effort).
+  try {
+    const cov = await readCoverageSummary();
+    if (cov) metrics.quality.coverage = cov;
   } catch {
     // ignore
   }
@@ -409,6 +616,64 @@ async function main() {
         exitCode: metrics.commands?.pw_smoke?.exitCode
       };
     }
+  } catch {
+    // ignore
+  }
+
+  // Slow tests metric (>20s) from available logs/reports (best-effort).
+  try {
+    const thresholdMs = 20_000;
+    const pieces = [];
+
+    const unitLogPath = path.join(LOGS_DIR, 'npm-test.log');
+    if (await pathExists(unitLogPath)) {
+      const raw = await fsp.readFile(unitLogPath, 'utf8');
+      const cases = parseNodeTestCases(raw);
+      pieces.push({ name: 'unit', ...extractSlowTests(cases, thresholdMs, 10) });
+    }
+
+    const pwInstallerJsonPath = path.join(METRICS_DIR, 'pw-installer-report.json');
+    const pwInstallerReport = readPlaywrightJsonReportOrUndefined(pwInstallerJsonPath);
+    if (pwInstallerReport) {
+      const cases = collectPlaywrightTestsFromJson(pwInstallerReport).map((t) => ({ ...t, status: String(t.status || '').toLowerCase() }));
+      const normalized = cases.map((t) => ({
+        fullTitle: t.fullTitle,
+        title: t.fullTitle,
+        suitePath: [],
+        status: t.status.includes('skipped') ? 'skipped' : 'passed',
+        durationMs: t.durationMs
+      }));
+      pieces.push({ name: 'pw_installer', ...extractSlowTests(normalized, thresholdMs, 10) });
+    }
+
+    const pwSmokeJsonPath = path.join(METRICS_DIR, 'pw-smoke-report.json');
+    const pwSmokeReport = readPlaywrightJsonReportOrUndefined(pwSmokeJsonPath);
+    if (pwSmokeReport) {
+      const cases = collectPlaywrightTestsFromJson(pwSmokeReport).map((t) => ({ ...t, status: String(t.status || '').toLowerCase() }));
+      const normalized = cases.map((t) => ({
+        fullTitle: t.fullTitle,
+        title: t.fullTitle,
+        suitePath: [],
+        status: t.status.includes('skipped') ? 'skipped' : 'passed',
+        durationMs: t.durationMs
+      }));
+      pieces.push({ name: 'pw_smoke', ...extractSlowTests(normalized, thresholdMs, 10) });
+    }
+
+    const totalCount = pieces.reduce((acc, p) => acc + (p?.count ?? 0), 0);
+    metrics.quality.slowTests = {
+      thresholdMs,
+      count: totalCount,
+      bySuite: Object.fromEntries(pieces.map((p) => [p.name, { count: p.count, top: p.top }])),
+    };
+  } catch {
+    // ignore
+  }
+
+  // Duplication metric (best-effort).
+  try {
+    const dup = await runJscpdAndReadSummary();
+    if (dup) metrics.quality.duplication = dup;
   } catch {
     // ignore
   }
@@ -496,6 +761,16 @@ async function main() {
     metrics.code?.hugeScripts ?? 'n/a',
     '; flakyTests',
     metrics.tests?.flaky?.count ?? 'n/a'
+  );
+  // eslint-disable-next-line no-console
+  console.log(
+    '[metrics] quality:',
+    'coverage(lines%)',
+    metrics.quality?.coverage?.linesPct ?? 'n/a',
+    '; slowTests(>20s)',
+    metrics.quality?.slowTests?.count ?? 'n/a',
+    '; duplication(%)',
+    metrics.quality?.duplication?.duplicatedPct ?? 'n/a'
   );
 }
 

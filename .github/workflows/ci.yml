@@ -42,19 +42,19 @@ jobs:
 
       # Unit tests (run once, but don't stop artifact/metrics collection)
       - name: Run unit tests (timed)
-        run: node scripts/ci/run-and-record.mjs --name npm_test --allow-failure 1 --cmd "npm run test:unit" --log .cache/logs/npm-test.log --out .cache/metrics/test-commands.json
+        run: node scripts/ci/run-and-record.mjs --name npm_test --allow-failure 1 --cmd "npx c8 --reporter=json-summary --report-dir .cache/coverage npm run test:unit" --log .cache/logs/npm-test.log --out .cache/metrics/test-commands.json
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
       # E2E tests (installer suite). Keep artifacts for failures.
       - name: Run Playwright installer suite (timed)
-        run: node scripts/ci/run-and-record.mjs --name pw_installer --allow-failure 1 --cmd "npx playwright test -c tests/installer/playwright.config.ts --reporter=list" --log .cache/logs/pw-installer.log --out .cache/metrics/test-commands.json
+        run: node scripts/ci/run-and-record.mjs --name pw_installer --allow-failure 1 --cmd "npx playwright test -c tests/installer/playwright.config.ts" --log .cache/logs/pw-installer.log --out .cache/metrics/test-commands.json
 
       # Optional smoke suite (only makes sense when BASE_URL is provided).
       - name: Run Playwright smoke suite (timed)
         if: ${{ env.BASE_URL }}
-        run: node scripts/ci/run-and-record.mjs --name pw_smoke --allow-failure 1 --cmd "npx playwright test -c tests/smoke/playwright.config.ts --reporter=list" --log .cache/logs/pw-smoke.log --out .cache/metrics/test-commands.json
+        run: node scripts/ci/run-and-record.mjs --name pw_smoke --allow-failure 1 --cmd "npx playwright test -c tests/smoke/playwright.config.ts" --log .cache/logs/pw-smoke.log --out .cache/metrics/test-commands.json
 
       - name: Collect Playwright artifacts into .cache
         if: ${{ always() }}
@@ -143,6 +143,7 @@ jobs:
             .cache/metrics
             .cache/logs
             .cache/playwright
+            .cache/coverage
             .cache/ai_logs
             .cache/metrics-pages
           retention-days: 14

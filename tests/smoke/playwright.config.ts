@@ -8,6 +8,12 @@ export default defineConfig({
   testDir,
   timeout: 30_000,
   retries: 0,
+  reporter: process.env.CI
+    ? [
+        ['list'],
+        ['json', { outputFile: '.cache/metrics/pw-smoke-report.json' }]
+      ]
+    : 'list',
   use: {
     baseURL: process.env.BASE_URL,
     headless: true,

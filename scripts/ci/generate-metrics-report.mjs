@@ -49,9 +49,20 @@ function fmtInt(n) {
   return new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(n);
 }
 
+function fmtPct(p) {
+  if (p == null || !Number.isFinite(p)) return 'n/a';
+  return `${p.toFixed(2)}%`;
+}
+
 function clsForDelta(n) {
   if (n == null || !Number.isFinite(n) || n === 0) return '';
   return n > 0 ? 'pos' : 'neg';
+}
+
+function clsForDeltaInverted(n) {
+  // For metrics where "higher is better" (e.g. coverage).
+  if (n == null || !Number.isFinite(n) || n === 0) return '';
+  return n > 0 ? 'neg' : 'pos';
 }
 
 async function writeFileEnsuringDir(filePath, content) {
@@ -79,6 +90,9 @@ async function main() {
   const totalTextLines = current?.code?.totalTextLines;
   const hugeScripts = current?.code?.hugeScripts;
   const flakyTests = current?.tests?.flaky?.count;
+  const coverageLinesPct = current?.quality?.coverage?.linesPct;
+  const slowTestsOver20s = current?.quality?.slowTests?.count;
+  const duplicationPct = current?.quality?.duplication?.duplicatedPct;
 
   const html = `<!DOCTYPE html>
 <html lang="en">
@@ -164,6 +178,21 @@ async function main() {
           <td>🎲 Flaky tests (retried)</td>
           <td>${fmtInt(flakyTests)}</td>
           <td class="${clsForDelta(diff?.deltas?.flaky_tests)}">${fmtInt(diff?.deltas?.flaky_tests)}</td>
+        </tr>
+        <tr>
+          <td>🧪 Coverage (lines)</td>
+          <td>${fmtPct(coverageLinesPct)}</td>
+          <td class="${clsForDeltaInverted(diff?.deltas?.coverage_lines_pct)}">${fmtPct(diff?.deltas?.coverage_lines_pct)}</td>
+        </tr>
+        <tr>
+          <td>🐢 Slow tests (&gt;20s)</td>
+          <td>${fmtInt(slowTestsOver20s)}</td>
+          <td class="${clsForDelta(diff?.deltas?.slow_tests_over_20s)}">${fmtInt(diff?.deltas?.slow_tests_over_20s)}</td>
+        </tr>
+        <tr>
+          <td>🧬 Duplication (copy/paste)</td>
+          <td>${fmtPct(duplicationPct)}</td>
+          <td class="${clsForDelta(diff?.deltas?.duplication_pct)}">${fmtPct(diff?.deltas?.duplication_pct)}</td>
         </tr>
       </tbody>
     </table>
