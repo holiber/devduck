@@ -47,7 +47,7 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
-      # E2E tests (installer suite). Keep artifacts for failures.
+      # E2E tests (installer suite). Artifacts are collected into .cache.
       - name: Run Playwright installer suite (timed)
         run: node scripts/ci/run-and-record.mjs --name pw_installer --allow-failure 1 --cmd "npx playwright test -c tests/installer/playwright.config.ts" --log .cache/logs/pw-installer.log --out .cache/metrics/test-commands.json
 

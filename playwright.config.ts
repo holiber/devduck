@@ -22,6 +22,14 @@ export default defineConfig({
 
   reporter: process.env.CI ? [['github'], ['list']] : [['list']],
 
+  // Always keep artifacts (screenshots/videos) so new/updated Playwright tests
+  // reliably provide debugging context, even when they pass.
+  use: {
+    trace: 'retain-on-failure',
+    screenshot: 'on',
+    video: 'on'
+  },
+
   projects: [
     {
       name: 'installer',

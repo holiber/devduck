@@ -18,10 +18,12 @@ export default defineConfig({
       ]
     : 'list',
   use: {
-    // Keep CI artifacts for failures; see CI uploading `.cache/playwright/`.
+    // Always keep artifacts (screenshots/videos) so new/updated tests
+    // reliably provide debugging context, even when they pass.
+    // CI uploads `.cache/playwright/` (copied from `test-results/`).
     trace: 'retain-on-failure',
-    screenshot: 'only-on-failure',
-    video: 'retain-on-failure'
+    screenshot: 'on',
+    video: 'on'
   }
 });
 

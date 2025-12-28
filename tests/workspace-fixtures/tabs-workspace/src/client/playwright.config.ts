@@ -7,7 +7,10 @@ export default defineConfig({
   timeout: 60_000,
   use: {
     baseURL,
-    viewport: { width: 900, height: 600 }
+    viewport: { width: 900, height: 600 },
+    trace: 'retain-on-failure',
+    screenshot: 'on',
+    video: 'on'
   }
 });
 

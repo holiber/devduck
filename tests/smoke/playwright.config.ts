@@ -18,8 +18,10 @@ export default defineConfig({
     baseURL: process.env.BASE_URL,
     headless: true,
     trace: 'retain-on-failure',
-    screenshot: 'only-on-failure',
-    video: 'retain-on-failure'
+    // Always keep artifacts (screenshots/videos) so new/updated tests
+    // reliably provide debugging context, even when they pass.
+    screenshot: 'on',
+    video: 'on'
   }
 });
 
