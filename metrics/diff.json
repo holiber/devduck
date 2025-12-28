@@ -1,9 +1,14 @@
 {
   "meta": {
-    "comparedAt": "2025-12-28T10:10:06.234Z",
-    "currentSha": "96b1c5df37b923a18d4ded9a62ba1d268c7a9fd2"
+    "comparedAt": "2025-12-28T10:53:34.607Z",
+    "currentSha": "8fab5b1cf3e1cfc8c52c8418e1b15a2afa9a91e6",
+    "baselineSha": "96b1c5df37b923a18d4ded9a62ba1d268c7a9fd2"
   },
   "deltas": {
-    "npm_pack_bytes": 2941806
+    "npm_pack_bytes": 3302,
+    "script_code_lines": 34108,
+    "total_text_lines": 43475,
+    "huge_scripts": 3,
+    "flaky_tests": 0
   }
 }
