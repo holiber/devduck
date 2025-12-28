@@ -31,7 +31,6 @@ jobs:
         with:
           node-version: 24
           cache: npm
-          cache-dependency-path: package-lock.json
 
       # Create artifact folders BEFORE any potentially failing steps
       - name: Prepare artifact folders
@@ -57,7 +56,7 @@ jobs:
         run: node scripts/ci/run-and-record.mjs --name pw_smoke --cmd "npx playwright test -c tests/smoke/playwright.config.ts --reporter=list --trace=retain-on-failure --video=retain-on-failure --screenshot=only-on-failure" --log .cache/logs/pw-smoke.log --out .cache/metrics/test-commands.json
 
       - name: Collect Playwright artifacts into .cache
-        if: always()
+        if: ${{ always() }}
         run: |
           mkdir -p .cache/playwright
           cp -r test-results .cache/playwright/ 2>/dev/null || true
@@ -65,7 +64,7 @@ jobs:
           cp -r blob-report .cache/playwright/ 2>/dev/null || true
 
       - name: Upload test artifacts
-        if: always()
+        if: ${{ always() }}
         uses: actions/upload-artifact@v4
         with:
           name: test-artifacts
@@ -90,7 +89,6 @@ jobs:
         with:
           node-version: 24
           cache: npm
-          cache-dependency-path: package-lock.json
 
       - name: Download test artifacts
         uses: actions/download-artifact@v4
@@ -166,7 +164,7 @@ jobs:
         run: node scripts/ci/generate-metrics-report.mjs --metrics-dir .cache/metrics --out-dir .cache/metrics-pages
 
       - name: Upload metrics + artifacts
-        if: always()
+        if: ${{ always() }}
         uses: actions/upload-artifact@v4
         with:
           name: ci-metrics-artifacts
