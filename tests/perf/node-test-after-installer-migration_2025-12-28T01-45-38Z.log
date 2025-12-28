@@ -1,0 +1,614 @@
+=== ENV ===
+pwd: /Users/alex-nazarov/arcadia/junk/alex-nazarov/devduck-dev-workspace/projects/devduck
+os: Darwin 172.28.168.77-red.dhcp.yndx.net 24.6.0 Darwin Kernel Version 24.6.0: Mon Aug 11 21:16:31 PDT 2025; root:xnu-11417.140.69.701.11~1/RELEASE_ARM64_T6030 arm64 arm Darwin
+node: v22.21.1
+npm: 10.9.4
+
+=== TEST OUTPUT (npm test) ===
+
+> devduck@0.2.0 test
+> tsx scripts/run-tests.ts
+
+Found 13 test files
+TAP version 13
+# Subtest: ci: smogcheck-provider
+    # Subtest: matches CIProvider interface
+    ok 1 - matches CIProvider interface
+      ---
+      duration_ms: 0.433208
+      type: 'test'
+      ...
+    # Subtest: fetchPR returns PR info that matches PRInfo schema
+    ok 2 - fetchPR returns PR info that matches PRInfo schema
+      ---
+      duration_ms: 1.119125
+      type: 'test'
+      ...
+    # Subtest: fetchPR throws error for non-existent PR
+    ok 3 - fetchPR throws error for non-existent PR
+      ---
+      duration_ms: 0.066167
+      type: 'test'
+      ...
+    # Subtest: fetchPR works with branch name
+    ok 4 - fetchPR works with branch name
+      ---
+      duration_ms: 0.114292
+      type: 'test'
+      ...
+    # Subtest: fetchCheckStatus returns check statuses that match CheckStatus schema
+    ok 5 - fetchCheckStatus returns check statuses that match CheckStatus schema
+      ---
+      duration_ms: 0.201709
+      type: 'test'
+      ...
+    # Subtest: fetchCheckStatus returns annotations for failed checks
+    ok 6 - fetchCheckStatus returns annotations for failed checks
+      ---
+      duration_ms: 0.04575
+      type: 'test'
+      ...
+    # Subtest: fetchCheckStatus works with checkId
+    ok 7 - fetchCheckStatus works with checkId
+      ---
+      duration_ms: 0.0465
+      type: 'test'
+      ...
+    # Subtest: fetchCheckStatus works with branch name
+    ok 8 - fetchCheckStatus works with branch name
+      ---
+      duration_ms: 0.075625
+      type: 'test'
+      ...
+    # Subtest: fetchComments returns comments that match Comment schema
+    ok 9 - fetchComments returns comments that match Comment schema
+      ---
+      duration_ms: 0.239875
+      type: 'test'
+      ...
+    # Subtest: fetchComments includes reactions
+    ok 10 - fetchComments includes reactions
+      ---
+      duration_ms: 0.196125
+      type: 'test'
+      ...
+    # Subtest: fetchComments includes file location for file comments
+    ok 11 - fetchComments includes file location for file comments
+      ---
+      duration_ms: 0.044333
+      type: 'test'
+      ...
+    # Subtest: fetchComments works with branch name
+    ok 12 - fetchComments works with branch name
+      ---
+      duration_ms: 0.031417
+      type: 'test'
+      ...
+    1..12
+ok 1 - ci: smogcheck-provider
+  ---
+  duration_ms: 3.223375
+  type: 'suite'
+  ...
+# Subtest: ci: provider registry discovery
+    # Subtest: discovers smogcheck-provider from modules directory and registers it
+    ok 1 - discovers smogcheck-provider from modules directory and registers it
+      ---
+      duration_ms: 41.77075
+      type: 'test'
+      ...
+    1..1
+ok 2 - ci: provider registry discovery
+  ---
+  duration_ms: 41.853583
+  type: 'suite'
+  ...
+# Subtest: launch dev starts background processes, runs smokecheck, captures browser console, and allows reuse
+ok 3 - launch dev starts background processes, runs smokecheck, captures browser console, and allows reuse
+  ---
+  duration_ms: 7348.305833
+  type: 'test'
+  ...
+# Subtest: workspace.config.json launch.dev starts processes, runs smokecheck, and supports smokecheck without args
+ok 4 - workspace.config.json launch.dev starts processes, runs smokecheck, and supports smokecheck without args
+  ---
+  duration_ms: 5691.2385
+  type: 'test'
+  ...
+# Subtest: ProcessManager writes stdout/stderr logs
+ok 5 - ProcessManager writes stdout/stderr logs
+  ---
+  duration_ms: 138.956625
+  type: 'test'
+  ...
+# Subtest: stop kills a process group (parent + child)
+ok 6 - stop kills a process group (parent + child)
+  ---
+  duration_ms: 163.414833
+  type: 'test'
+  ...
+# Subtest: email: gmail-provider
+    # Subtest: matches EmailProvider interface
+    ok 1 - matches EmailProvider interface
+      ---
+      duration_ms: 0.261708
+      type: 'test'
+      ...
+    1..1
+ok 7 - email: gmail-provider
+  ---
+  duration_ms: 0.635125
+  type: 'suite'
+  ...
+# Subtest: email: provider registry discovery (gmail-provider)
+    # Subtest: discovers gmail-provider from modules directory and registers it
+    ok 1 - discovers gmail-provider from modules directory and registers it
+      ---
+      duration_ms: 22.954292
+      type: 'test'
+      ...
+    1..1
+ok 8 - email: provider registry discovery (gmail-provider)
+  ---
+  duration_ms: 23.04425
+  type: 'suite'
+  ...
+# Subtest: email: smogcheck-provider
+    # Subtest: matches EmailProvider interface
+    ok 1 - matches EmailProvider interface
+      ---
+      duration_ms: 0.345916
+      type: 'test'
+      ...
+    # Subtest: listUnreadMessages returns messages that match Message schema
+    ok 2 - listUnreadMessages returns messages that match Message schema
+      ---
+      duration_ms: 1.355167
+      type: 'test'
+      ...
+    # Subtest: getMessage returns a message by id
+    ok 3 - getMessage returns a message by id
+      ---
+      duration_ms: 0.112459
+      type: 'test'
+      ...
+    # Subtest: searchMessages supports filtering by from
+    ok 4 - searchMessages supports filtering by from
+      ---
+      duration_ms: 0.091875
+      type: 'test'
+      ...
+    # Subtest: searchMessages supports filtering by participant (to/cc/bcc/from)
+    ok 5 - searchMessages supports filtering by participant (to/cc/bcc/from)
+      ---
+      duration_ms: 0.065042
+      type: 'test'
+      ...
+    # Subtest: searchMessages supports filtering by date range
+    ok 6 - searchMessages supports filtering by date range
+      ---
+      duration_ms: 0.06275
+      type: 'test'
+      ...
+    # Subtest: downloadAttachment returns a Buffer for an existing attachment
+    ok 7 - downloadAttachment returns a Buffer for an existing attachment
+      ---
+      duration_ms: 0.19725
+      type: 'test'
+      ...
+    1..7
+ok 9 - email: smogcheck-provider
+  ---
+  duration_ms: 2.670792
+  type: 'suite'
+  ...
+# Subtest: email: provider registry discovery
+    # Subtest: discovers smogcheck-provider from modules directory and registers it
+    ok 1 - discovers smogcheck-provider from modules directory and registers it
+      ---
+      duration_ms: 35.810125
+      type: 'test'
+      ...
+    1..1
+ok 10 - email: provider registry discovery
+  ---
+  duration_ms: 36.122208
+  type: 'suite'
+  ...
+# Subtest: install/mcp optional servers
+    # Subtest: marks optional URL-based server failure as non-blocking
+    ok 1 - marks optional URL-based server failure as non-blocking
+      ---
+      duration_ms: 8.670209
+      type: 'test'
+      ...
+    # Subtest: marks optional command-based server failure as non-blocking
+    ok 2 - marks optional command-based server failure as non-blocking
+      ---
+      duration_ms: 10.457417
+      type: 'test'
+      ...
+    1..2
+ok 11 - install/mcp optional servers
+  ---
+  duration_ms: 19.522667
+  type: 'suite'
+  ...
+# Subtest: issue-tracker-github: github-provider
+    # Subtest: matches IssueTrackerProvider contract schema
+    ok 1 - matches IssueTrackerProvider contract schema
+      ---
+      duration_ms: 1.400625
+      type: 'test'
+      ...
+    # Subtest: fetchIssue returns issue that matches Issue schema
+    ok 2 - fetchIssue returns issue that matches Issue schema
+      ---
+      duration_ms: 424.493292
+      type: 'test'
+      ...
+    # Subtest: fetchIssue works with URL
+    ok 3 - fetchIssue works with URL
+      ---
+      duration_ms: 226.21825
+      type: 'test'
+      ...
+    # Subtest: fetchIssue throws error for non-existent issue
+    ok 4 - fetchIssue throws error for non-existent issue
+      ---
+      duration_ms: 195.457292
+      type: 'test'
+      ...
+    # Subtest: fetchComments returns comments that match Comment schema
+    ok 5 - fetchComments returns comments that match Comment schema
+      ---
+      duration_ms: 211.741375
+      type: 'test'
+      ...
+    # Subtest: fetchPRs returns PR references that match PRReference schema
+    ok 6 - fetchPRs returns PR references that match PRReference schema
+      ---
+      duration_ms: 1493.123583
+      type: 'test'
+      ...
+    # Subtest: downloadResources creates correct directory structure
+    ok 7 - downloadResources creates correct directory structure
+      ---
+      duration_ms: 4301.708917
+      type: 'test'
+      ...
+    # Subtest: downloadResources creates resources.json with correct metadata
+    ok 8 - downloadResources creates resources.json with correct metadata
+      ---
+      duration_ms: 3136.217542
+      type: 'test'
+      ...
+    # Subtest: downloadResources downloads resources with distance <= 1
+    ok 9 - downloadResources downloads resources with distance <= 1
+      ---
+      duration_ms: 3095.674458
+      type: 'test'
+      ...
+    # Subtest: downloadResources creates issue.json with comments
+    ok 10 - downloadResources creates issue.json with comments
+      ---
+      duration_ms: 3036.821167
+      type: 'test'
+      ...
+    1..10
+ok 12 - issue-tracker-github: github-provider
+  ---
+  duration_ms: 16124.753334
+  type: 'suite'
+  ...
+# Subtest: issue-tracker-github: provider registry discovery
+    # Subtest: discovers github-provider from modules directory and registers it (with schema validation)
+    ok 1 - discovers github-provider from modules directory and registers it (with schema validation)
+      ---
+      duration_ms: 52.893959
+      type: 'test'
+      ...
+    1..1
+ok 13 - issue-tracker-github: provider registry discovery
+  ---
+  duration_ms: 53.097875
+  type: 'suite'
+  ...
+# Subtest: issue-tracker: smogcheck-provider
+    # Subtest: matches IssueTrackerProvider contract schema
+    ok 1 - matches IssueTrackerProvider contract schema
+      ---
+      duration_ms: 1.297791
+      type: 'test'
+      ...
+    # Subtest: fetchIssue returns issue that matches Issue schema
+    ok 2 - fetchIssue returns issue that matches Issue schema
+      ---
+      duration_ms: 0.334417
+      type: 'test'
+      ...
+    # Subtest: fetchIssue works with issue key
+    ok 3 - fetchIssue works with issue key
+      ---
+      duration_ms: 0.047167
+      type: 'test'
+      ...
+    # Subtest: fetchIssue works with URL
+    ok 4 - fetchIssue works with URL
+      ---
+      duration_ms: 0.131708
+      type: 'test'
+      ...
+    # Subtest: fetchIssue throws error for non-existent issue
+    ok 5 - fetchIssue throws error for non-existent issue
+      ---
+      duration_ms: 0.052666
+      type: 'test'
+      ...
+    # Subtest: fetchComments returns comments that match Comment schema
+    ok 6 - fetchComments returns comments that match Comment schema
+      ---
+      duration_ms: 0.277583
+      type: 'test'
+      ...
+    # Subtest: fetchComments includes reactions
+    ok 7 - fetchComments includes reactions
+      ---
+      duration_ms: 0.06275
+      type: 'test'
+      ...
+    # Subtest: fetchComments returns empty array for issue without comments
+    ok 8 - fetchComments returns empty array for issue without comments
+      ---
+      duration_ms: 0.082792
+      type: 'test'
+      ...
+    # Subtest: fetchPRs returns PR references that match PRReference schema
+    ok 9 - fetchPRs returns PR references that match PRReference schema
+      ---
+      duration_ms: 0.192
+      type: 'test'
+      ...
+    # Subtest: fetchPRs returns empty array for issue without PRs
+    ok 10 - fetchPRs returns empty array for issue without PRs
+      ---
+      duration_ms: 0.205625
+      type: 'test'
+      ...
+    # Subtest: downloadResources creates correct directory structure
+    ok 11 - downloadResources creates correct directory structure
+      ---
+      duration_ms: 17.55375
+      type: 'test'
+      ...
+    # Subtest: downloadResources creates resources.json with correct metadata
+    ok 12 - downloadResources creates resources.json with correct metadata
+      ---
+      duration_ms: 8.852
+      type: 'test'
+      ...
+    # Subtest: downloadResources downloads resources with distance <= 2
+    ok 13 - downloadResources downloads resources with distance <= 2
+      ---
+      duration_ms: 7.234959
+      type: 'test'
+      ...
+    # Subtest: downloadResources tracks resources with distance == 3 without downloading
+    ok 14 - downloadResources tracks resources with distance == 3 without downloading
+      ---
+      duration_ms: 4.133
+      type: 'test'
+      ...
+    # Subtest: downloadResources creates issue.json with comments and PRs
+    ok 15 - downloadResources creates issue.json with comments and PRs
+      ---
+      duration_ms: 4.338166
+      type: 'test'
+      ...
+    # Subtest: downloadResources creates PR directories when PRs exist
+    ok 16 - downloadResources creates PR directories when PRs exist
+      ---
+      duration_ms: 5.338917
+      type: 'test'
+      ...
+    1..16
+ok 14 - issue-tracker: smogcheck-provider
+  ---
+  duration_ms: 50.789166
+  type: 'suite'
+  ...
+# Subtest: issue-tracker: provider registry discovery
+    # Subtest: discovers smogcheck-provider from modules directory and registers it (with schema validation)
+    ok 1 - discovers smogcheck-provider from modules directory and registers it (with schema validation)
+      ---
+      duration_ms: 27.219833
+      type: 'test'
+      ...
+    1..1
+ok 15 - issue-tracker: provider registry discovery
+  ---
+  duration_ms: 27.306125
+  type: 'suite'
+  ...
+# Subtest: mcp: API module
+    # Subtest: mcpRouter is defined and has procedures
+    ok 1 - mcpRouter is defined and has procedures
+      ---
+      duration_ms: 0.644
+      type: 'test'
+      ...
+    # Subtest: mcpRouter.list procedure exists with correct schema
+    ok 2 - mcpRouter.list procedure exists with correct schema
+      ---
+      duration_ms: 0.4225
+      type: 'test'
+      ...
+    # Subtest: mcpRouter.call procedure exists with correct schema
+    ok 3 - mcpRouter.call procedure exists with correct schema
+      ---
+      duration_ms: 0.456625
+      type: 'test'
+      ...
+    # Subtest: mcp module is included in unified API
+    ok 4 - mcp module is included in unified API
+      ---
+      duration_ms: 26.385459
+      type: 'test'
+      ...
+    # Subtest: mcp.list can list servers when mcp.json exists
+    ok 5 - mcp.list can list servers when mcp.json exists
+      ---
+      duration_ms: 1.638416
+      type: 'test'
+      ...
+    # Subtest: npm run api lists mcp methods
+    ok 6 - npm run api lists mcp methods
+      ---
+      duration_ms: 682.311625
+      type: 'test'
+      ...
+    # Subtest: mcp.list can be called via API CLI
+    ok 7 - mcp.list can be called via API CLI
+      ---
+      duration_ms: 734.008416
+      type: 'test'
+      ...
+    # Subtest: mcp.call can be called via API CLI (help check)
+    ok 8 - mcp.call can be called via API CLI (help check)
+      ---
+      duration_ms: 2167.472334
+      type: 'test'
+      ...
+    1..8
+ok 16 - mcp: API module
+  ---
+  duration_ms: 3613.951333
+  type: 'suite'
+  ...
+# Subtest: messenger CLI exposes required inputs as options
+ok 17 - messenger CLI exposes required inputs as options
+  ---
+  duration_ms: 1048.538916
+  type: 'test'
+  ...
+# Subtest: ci CLI positional still works (no duplicate required flags)
+ok 18 - ci CLI positional still works (no duplicate required flags)
+  ---
+  duration_ms: 525.383916
+  type: 'test'
+  ...
+# Subtest: messenger: telegram-provider
+    # Subtest: matches MessengerProvider contract schema
+    ok 1 - matches MessengerProvider contract schema
+      ---
+      duration_ms: 1.1495
+      type: 'test'
+      ...
+    # Subtest: listChats returns chats that match Chat schema
+    ok 2 - listChats returns chats that match Chat schema
+      ---
+      duration_ms: 5.766625
+      type: 'test'
+      ...
+    # Subtest: getChatHistory returns messages that match ChatMessage schema
+    ok 3 - getChatHistory returns messages that match ChatMessage schema
+      ---
+      duration_ms: 18.613
+      type: 'test'
+      ...
+    # Subtest: downloadFile returns a descriptor that matches DownloadFileResult schema
+    ok 4 - downloadFile returns a descriptor that matches DownloadFileResult schema
+      ---
+      duration_ms: 4.141584
+      type: 'test'
+      ...
+    1..4
+ok 19 - messenger: telegram-provider
+  ---
+  duration_ms: 30.076
+  type: 'suite'
+  ...
+# Subtest: messenger: yandex-messenger-provider
+    # Subtest: matches MessengerProvider contract schema
+    ok 1 - matches MessengerProvider contract schema
+      ---
+      duration_ms: 0.216875
+      type: 'test'
+      ...
+    # Subtest: listChats returns chats that match Chat schema
+    ok 2 - listChats returns chats that match Chat schema
+      ---
+      duration_ms: 2.619709
+      type: 'test'
+      ...
+    # Subtest: getChatHistory returns messages that match ChatMessage schema
+    ok 3 - getChatHistory returns messages that match ChatMessage schema
+      ---
+      duration_ms: 9.841167
+      type: 'test'
+      ...
+    # Subtest: downloadFile returns a descriptor that matches DownloadFileResult schema
+    ok 4 - downloadFile returns a descriptor that matches DownloadFileResult schema
+      ---
+      duration_ms: 2.640167
+      type: 'test'
+      ...
+    1..4
+ok 20 - messenger: yandex-messenger-provider
+  ---
+  duration_ms: 15.593417
+  type: 'suite'
+  ...
+# Subtest: messenger: provider registry discovery
+    # Subtest: discovers messenger providers from modules directory and registers them (with schema validation)
+    ok 1 - discovers messenger providers from modules directory and registers them (with schema validation)
+      ---
+      duration_ms: 28.853708
+      type: 'test'
+      ...
+    1..1
+ok 21 - messenger: provider registry discovery
+  ---
+  duration_ms: 28.972458
+  type: 'suite'
+  ...
+# Subtest: workspace-path resolver
+    # Subtest: parses ark:/ links as Arcadia links
+    ok 1 - parses ark:/ links as Arcadia links
+      ---
+      duration_ms: 0.369042
+      type: 'test'
+      ...
+    # Subtest: resolves ark:/ links using arc root (fallback to arc root)
+    ok 2 - resolves ark:/ links using arc root (fallback to arc root)
+      ---
+      duration_ms: 0.152041
+      type: 'test'
+      ...
+    # Subtest: resolves ark:/ links using arc root and strips arcadia/ prefix
+    ok 3 - resolves ark:/ links using arc root and strips arcadia/ prefix
+      ---
+      duration_ms: 0.060875
+      type: 'test'
+      ...
+    # Subtest: if arc root is unavailable, ark:/ falls back to projectRoot
+    ok 4 - if arc root is unavailable, ark:/ falls back to projectRoot
+      ---
+      duration_ms: 0.102042
+      type: 'test'
+      ...
+    1..4
+ok 22 - workspace-path resolver
+  ---
+  duration_ms: 1.116292
+  type: 'suite'
+  ...
+1..22
+# tests 80
+# suites 16
+# pass 80
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 36843.666792

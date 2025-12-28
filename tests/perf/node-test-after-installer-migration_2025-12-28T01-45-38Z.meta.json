@@ -1,0 +1,212 @@
+{
+  "runner": "node:test via tsx --test (npm test -> scripts/run-tests.ts)",
+  "wallTimeMs": 36843.666792,
+  "parsed": {
+    "testCount": 80,
+    "fastest": [
+      {
+        "name": "ci: smogcheck-provider > fetchComments works with branch name",
+        "ms": 0.031417,
+        "type": "test"
+      },
+      {
+        "name": "ci: smogcheck-provider > fetchComments includes file location for file comments",
+        "ms": 0.044333,
+        "type": "test"
+      },
+      {
+        "name": "ci: smogcheck-provider > fetchCheckStatus returns annotations for failed checks",
+        "ms": 0.04575,
+        "type": "test"
+      },
+      {
+        "name": "ci: smogcheck-provider > fetchCheckStatus works with checkId",
+        "ms": 0.0465,
+        "type": "test"
+      },
+      {
+        "name": "issue-tracker: smogcheck-provider > fetchIssue works with issue key",
+        "ms": 0.047167,
+        "type": "test"
+      },
+      {
+        "name": "issue-tracker: smogcheck-provider > fetchIssue throws error for non-existent issue",
+        "ms": 0.052666,
+        "type": "test"
+      },
+      {
+        "name": "workspace-path resolver > resolves ark:/ links using arc root and strips arcadia/ prefix",
+        "ms": 0.060875,
+        "type": "test"
+      },
+      {
+        "name": "email: smogcheck-provider > searchMessages supports filtering by date range",
+        "ms": 0.06275,
+        "type": "test"
+      },
+      {
+        "name": "issue-tracker: smogcheck-provider > fetchComments includes reactions",
+        "ms": 0.06275,
+        "type": "test"
+      },
+      {
+        "name": "email: smogcheck-provider > searchMessages supports filtering by participant (to/cc/bcc/from)",
+        "ms": 0.065042,
+        "type": "test"
+      },
+      {
+        "name": "ci: smogcheck-provider > fetchPR throws error for non-existent PR",
+        "ms": 0.066167,
+        "type": "test"
+      },
+      {
+        "name": "ci: smogcheck-provider > fetchCheckStatus works with branch name",
+        "ms": 0.075625,
+        "type": "test"
+      },
+      {
+        "name": "issue-tracker: smogcheck-provider > fetchComments returns empty array for issue without comments",
+        "ms": 0.082792,
+        "type": "test"
+      },
+      {
+        "name": "email: smogcheck-provider > searchMessages supports filtering by from",
+        "ms": 0.091875,
+        "type": "test"
+      },
+      {
+        "name": "workspace-path resolver > if arc root is unavailable, ark:/ falls back to projectRoot",
+        "ms": 0.102042,
+        "type": "test"
+      },
+      {
+        "name": "email: smogcheck-provider > getMessage returns a message by id",
+        "ms": 0.112459,
+        "type": "test"
+      },
+      {
+        "name": "ci: smogcheck-provider > fetchPR works with branch name",
+        "ms": 0.114292,
+        "type": "test"
+      },
+      {
+        "name": "issue-tracker: smogcheck-provider > fetchIssue works with URL",
+        "ms": 0.131708,
+        "type": "test"
+      },
+      {
+        "name": "workspace-path resolver > resolves ark:/ links using arc root (fallback to arc root)",
+        "ms": 0.152041,
+        "type": "test"
+      },
+      {
+        "name": "issue-tracker: smogcheck-provider > fetchPRs returns PR references that match PRReference schema",
+        "ms": 0.192,
+        "type": "test"
+      }
+    ],
+    "slowest": [
+      {
+        "name": "launch dev starts background processes, runs smokecheck, captures browser console, and allows reuse",
+        "ms": 7348.305833,
+        "type": "test"
+      },
+      {
+        "name": "workspace.config.json launch.dev starts processes, runs smokecheck, and supports smokecheck without args",
+        "ms": 5691.2385,
+        "type": "test"
+      },
+      {
+        "name": "issue-tracker-github: github-provider > downloadResources creates correct directory structure",
+        "ms": 4301.708917,
+        "type": "test"
+      },
+      {
+        "name": "issue-tracker-github: github-provider > downloadResources creates resources.json with correct metadata",
+        "ms": 3136.217542,
+        "type": "test"
+      },
+      {
+        "name": "issue-tracker-github: github-provider > downloadResources downloads resources with distance <= 1",
+        "ms": 3095.674458,
+        "type": "test"
+      },
+      {
+        "name": "issue-tracker-github: github-provider > downloadResources creates issue.json with comments",
+        "ms": 3036.821167,
+        "type": "test"
+      },
+      {
+        "name": "mcp: API module > mcp.call can be called via API CLI (help check)",
+        "ms": 2167.472334,
+        "type": "test"
+      },
+      {
+        "name": "issue-tracker-github: github-provider > fetchPRs returns PR references that match PRReference schema",
+        "ms": 1493.123583,
+        "type": "test"
+      },
+      {
+        "name": "messenger CLI exposes required inputs as options",
+        "ms": 1048.538916,
+        "type": "test"
+      },
+      {
+        "name": "mcp: API module > mcp.list can be called via API CLI",
+        "ms": 734.008416,
+        "type": "test"
+      },
+      {
+        "name": "mcp: API module > npm run api lists mcp methods",
+        "ms": 682.311625,
+        "type": "test"
+      },
+      {
+        "name": "ci CLI positional still works (no duplicate required flags)",
+        "ms": 525.383916,
+        "type": "test"
+      },
+      {
+        "name": "issue-tracker-github: github-provider > fetchIssue returns issue that matches Issue schema",
+        "ms": 424.493292,
+        "type": "test"
+      },
+      {
+        "name": "issue-tracker-github: github-provider > fetchIssue works with URL",
+        "ms": 226.21825,
+        "type": "test"
+      },
+      {
+        "name": "issue-tracker-github: github-provider > fetchComments returns comments that match Comment schema",
+        "ms": 211.741375,
+        "type": "test"
+      },
+      {
+        "name": "issue-tracker-github: github-provider > fetchIssue throws error for non-existent issue",
+        "ms": 195.457292,
+        "type": "test"
+      },
+      {
+        "name": "stop kills a process group (parent + child)",
+        "ms": 163.414833,
+        "type": "test"
+      },
+      {
+        "name": "ProcessManager writes stdout/stderr logs",
+        "ms": 138.956625,
+        "type": "test"
+      },
+      {
+        "name": "issue-tracker-github: provider registry discovery > discovers github-provider from modules directory and registers it (with schema validation)",
+        "ms": 52.893959,
+        "type": "test"
+      },
+      {
+        "name": "ci: provider registry discovery > discovers smogcheck-provider from modules directory and registers it",
+        "ms": 41.77075,
+        "type": "test"
+      }
+    ]
+  },
+  "rawLogPath": "tests/perf/node-test-after-installer-migration_2025-12-28T01-45-38Z.log"
+}
