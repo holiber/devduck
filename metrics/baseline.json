@@ -1,0 +1,62 @@
+{
+  "meta": {
+    "collectedAt": "2025-12-28T10:10:05.419Z",
+    "repository": "holiber/devduck",
+    "eventName": "push",
+    "sha": "96b1c5df37b923a18d4ded9a62ba1d268c7a9fd2",
+    "ref": "refs/heads/main",
+    "runId": "20552267525",
+    "runAttempt": "1",
+    "node": "v24.12.0"
+  },
+  "commands": {
+    "npm_test": {
+      "name": "npm_test",
+      "command": "npm run test:unit",
+      "exitCode": 0,
+      "durationMs": 23365,
+      "collectedAt": "2025-12-28T10:08:53.398Z"
+    },
+    "pw_installer": {
+      "name": "pw_installer",
+      "command": "npx playwright test -c tests/installer/playwright.config.ts --reporter=list",
+      "exitCode": 0,
+      "durationMs": 28624,
+      "collectedAt": "2025-12-28T10:09:37.726Z"
+    },
+    "npm_pack": {
+      "name": "npm-pack",
+      "command": "npm pack --silent",
+      "exitCode": 0,
+      "durationMs": 770
+    }
+  },
+  "sizes": {
+    "npm_pack": {
+      "bytes": 2941806
+    }
+  },
+  "tests": {
+    "unit": {
+      "total": 91,
+      "suites": 16,
+      "passed": 83,
+      "failed": 0,
+      "skipped": 8,
+      "reportedDurationMs": 22574.235809,
+      "durationMs": 23365,
+      "exitCode": 0
+    },
+    "e2e_installer": {
+      "total": 34,
+      "passed": 34,
+      "reportedDurationMs": 27500,
+      "durationMs": 28624,
+      "exitCode": 0
+    }
+  },
+  "notes": [
+    "BUILD_COMMAND not set; build metric skipped.",
+    "DEV_COMMAND not set; dev startup metric skipped."
+  ]
+}
