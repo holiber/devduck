@@ -1,0 +1,219 @@
+name: PR Metrics & Artifacts
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+# Allow one concurrent run per PR, cancel previous runs
+concurrency:
+  group: pr-metrics-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  metrics:
+    name: Collect Metrics & Artifacts
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for proper diff
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Create .cache structure
+        run: mkdir -p .cache/{logs,metrics,ai_logs,playwright,tmp}
+
+      - name: Collect PR metrics
+        id: metrics
+        run: |
+          # Run metrics collector (skip tests here, run separately)
+          npx tsx scripts/metrics/collect-metrics.ts --skip-tests --skip-dev
+
+          # Add PR delta info to metrics
+          if command -v jq &> /dev/null; then
+            jq ". + { 
+              additions: ${{ github.event.pull_request.additions }}, 
+              deletions: ${{ github.event.pull_request.deletions }},
+              prNumber: ${{ github.event.pull_request.number }},
+              prTitle: \"${{ github.event.pull_request.title }}\"
+            }" .cache/metrics/metrics.json > .cache/metrics/tmp.json && mv .cache/metrics/tmp.json .cache/metrics/metrics.json
+          fi
+
+          # Output metrics for use in other steps
+          echo "build_time=$(jq -r '.buildTimeSec // "n/a"' .cache/metrics/metrics.json)" >> $GITHUB_OUTPUT
+          echo "bundle_size=$(jq -r '.bundleSizeBytes // 0' .cache/metrics/metrics.json)" >> $GITHUB_OUTPUT
+
+      - name: Run unit tests
+        id: unit_tests
+        continue-on-error: true
+        run: |
+          npm test 2>&1 | tee .cache/logs/test.log
+          echo "exit_code=$?" >> $GITHUB_OUTPUT
+
+      - name: Run Playwright E2E tests
+        id: playwright
+        continue-on-error: true
+        run: |
+          # Install Playwright browsers
+          npx playwright install --with-deps chromium
+
+          # Run tests with detailed reporting
+          npx playwright test \
+            -c tests/installer/playwright.config.ts \
+            --reporter=list,html \
+            2>&1 | tee .cache/logs/playwright.log
+
+          echo "exit_code=$?" >> $GITHUB_OUTPUT
+
+      - name: Collect Playwright artifacts
+        if: always()
+        run: |
+          # Copy test results (screenshots, videos, traces)
+          cp -r test-results .cache/playwright/ 2>/dev/null || true
+          cp -r playwright-report .cache/playwright/ 2>/dev/null || true
+
+          # Create summary of failed tests
+          if [ -d "test-results" ]; then
+            echo "# Failed E2E Tests" > .cache/playwright/failed-tests-summary.md
+            find test-results -name "*.png" -o -name "*.webm" | while read f; do
+              echo "- $(basename $f)" >> .cache/playwright/failed-tests-summary.md
+            done
+          fi
+
+      - name: Scan for AI agent logs
+        if: always()
+        run: |
+          # Scan for any AI logs that might exist
+          npx tsx scripts/metrics/ai-logger.ts --scan || true
+
+          # Create a placeholder log for this CI run using environment variables
+          AI_LOG_AGENT="github-ci" \
+          AI_LOG_SUMMARY="PR #${{ github.event.pull_request.number }}: ${{ github.event.pull_request.title }}" \
+          npx tsx scripts/metrics/ai-logger.ts
+
+      - name: Generate final metrics summary
+        if: always()
+        run: |
+          # Update metrics with test results
+          cat > .cache/metrics/summary.json << EOF
+          {
+            "pr": {
+              "number": ${{ github.event.pull_request.number }},
+              "title": "${{ github.event.pull_request.title }}",
+              "additions": ${{ github.event.pull_request.additions }},
+              "deletions": ${{ github.event.pull_request.deletions }}
+            },
+            "metrics": {
+              "buildTimeSec": ${{ steps.metrics.outputs.build_time || 'null' }},
+              "bundleSizeBytes": ${{ steps.metrics.outputs.bundle_size || 0 }}
+            },
+            "tests": {
+              "unitTestsPassed": ${{ steps.unit_tests.outputs.exit_code == 0 }},
+              "e2eTestsPassed": ${{ steps.playwright.outputs.exit_code == 0 }}
+            },
+            "timestamp": "$(date -Iseconds)",
+            "commit": "${{ github.sha }}"
+          }
+          EOF
+
+      - name: Upload all artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr-metrics-${{ github.event.pull_request.number }}
+          path: |
+            .cache/logs
+            .cache/metrics
+            .cache/ai_logs
+            .cache/playwright
+          retention-days: 30
+
+  comment:
+    name: Post PR Comment
+    runs-on: ubuntu-latest
+    needs: metrics
+    if: always()
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download metrics
+        uses: actions/download-artifact@v4
+        with:
+          name: pr-metrics-${{ github.event.pull_request.number }}
+          path: .cache
+
+      - name: Read metrics
+        id: read_metrics
+        run: |
+          if [ -f ".cache/metrics/metrics.json" ]; then
+            echo "build_time=$(jq -r '.buildTimeSec // "n/a"' .cache/metrics/metrics.json)" >> $GITHUB_OUTPUT
+            echo "bundle_size=$(jq -r '.bundleSizeBytes // 0' .cache/metrics/metrics.json)" >> $GITHUB_OUTPUT
+          else
+            echo "build_time=n/a" >> $GITHUB_OUTPUT
+            echo "bundle_size=0" >> $GITHUB_OUTPUT
+          fi
+
+          # Count Playwright artifacts
+          if [ -d ".cache/playwright/test-results" ]; then
+            echo "screenshots=$(find .cache/playwright/test-results -name '*.png' 2>/dev/null | wc -l)" >> $GITHUB_OUTPUT
+            echo "videos=$(find .cache/playwright/test-results -name '*.webm' 2>/dev/null | wc -l)" >> $GITHUB_OUTPUT
+          else
+            echo "screenshots=0" >> $GITHUB_OUTPUT
+            echo "videos=0" >> $GITHUB_OUTPUT
+          fi
+
+          # Count AI logs
+          if [ -d ".cache/ai_logs" ]; then
+            echo "ai_logs=$(ls .cache/ai_logs/*.json 2>/dev/null | wc -l)" >> $GITHUB_OUTPUT
+          else
+            echo "ai_logs=0" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Format bundle size
+        id: format
+        run: |
+          bytes=${{ steps.read_metrics.outputs.bundle_size }}
+          if [ "$bytes" -gt 1048576 ]; then
+            echo "bundle_size_formatted=$(echo "scale=2; $bytes / 1048576" | bc)MB" >> $GITHUB_OUTPUT
+          elif [ "$bytes" -gt 1024 ]; then
+            echo "bundle_size_formatted=$(echo "scale=2; $bytes / 1024" | bc)KB" >> $GITHUB_OUTPUT
+          else
+            echo "bundle_size_formatted=${bytes}B" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Post or update PR comment
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            ## 📊 PR Metrics Summary
+
+            | Metric | Value |
+            |--------|-------|
+            | **Δ Code** | +${{ github.event.pull_request.additions }} / -${{ github.event.pull_request.deletions }} |
+            | **Build time** | ${{ steps.read_metrics.outputs.build_time }}s |
+            | **Bundle size** | ${{ steps.format.outputs.bundle_size_formatted }} |
+
+            ### 📦 Artifacts
+            - 📸 Screenshots: ${{ steps.read_metrics.outputs.screenshots }}
+            - 🎬 Videos: ${{ steps.read_metrics.outputs.videos }}
+            - 🤖 AI Logs: ${{ steps.read_metrics.outputs.ai_logs }}
+            - 📋 Build & Test Logs
+
+            > 🔗 [View all artifacts](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+
+            ---
+            <sub>Generated by PR Metrics workflow • Commit: ${{ github.sha }}</sub>
+          reactions: eyes
