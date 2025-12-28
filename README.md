@@ -11,7 +11,7 @@ Explain the problem, and the duck will write code, close tickets, and ship chang
 
 ## Documentation
 
-- **Workspace & modules (RU)**: `docs/workspace-and-modules.ru.md`
+- **Workspace & modules**: `docs/workspace-and-modules.md`
 - **Architecture (EN)**: `docs/ARCHITECTURE.md`
 
 ## Quick Start
