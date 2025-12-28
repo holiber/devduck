@@ -11,7 +11,6 @@ import { findWorkspaceRoot } from '../workspace-root.js';
 import { readJSON } from '../config.js';
 import path from 'path';
 import fs from 'fs';
-import { testMcpServer } from '../../install/mcp-test.js';
 
 /**
  * MCP provider interface (no actual provider needed, just for consistency)
@@ -43,8 +42,196 @@ const MCPServerInfoSchema = z.object({
  */
 const MCPToolInfoSchema = z.object({
   name: z.string(),
-  description: z.string().optional()
+  description: z.string().optional(),
+  // MCP canonical tools/list returns JSON schema under inputSchema
+  inputSchema: z.unknown().optional()
 });
+
+type McpServerConfig = {
+  command?: string;
+  args?: string[];
+  env?: Record<string, string>;
+};
+
+function expandValue(v: string): string {
+  let out = String(v || '');
+
+  // Expand ~ to home directory
+  if (out.startsWith('~/')) {
+    out = out.replace('~/', (process.env.HOME || process.env.USERPROFILE || '~') + '/');
+  }
+
+  // Expand $$VAR$$ and $VAR
+  out = out.replace(/\$\$([A-Za-z_][A-Za-z0-9_]*)\$\$/g, (match, varName) => process.env[varName] || match);
+  out = out.replace(/\$([A-Za-z_][A-Za-z0-9_]*)/g, (match, varName) => process.env[varName] || match);
+
+  return out;
+}
+
+function expandCommandAndArgs(serverConfig: McpServerConfig): { command: string; args: string[]; env: Record<string, string> } {
+  // IMPORTANT: `command` is a single executable path/name (Cursor format). Do NOT split it.
+  const command = expandValue(String(serverConfig.command || '').trim());
+  const args = (serverConfig.args || []).map((a) => expandValue(String(a)));
+  const env = { ...process.env, ...(serverConfig.env || {}) } as Record<string, string>;
+  return { command, args, env };
+}
+
+function tailLines(lines: string[], maxLines: number): string {
+  if (lines.length <= maxLines) return lines.join('\n');
+  return lines.slice(-maxLines).join('\n');
+}
+
+async function spawnMcpClient(serverName: string, serverConfig: McpServerConfig, timeoutMs: number): Promise<{
+  request: (method: string, params?: Record<string, unknown>, requestTimeoutMs?: number) => Promise<any>;
+  close: () => void;
+}> {
+  const { spawn } = await import('child_process');
+
+  const { command, args, env } = expandCommandAndArgs(serverConfig);
+  if (!command) {
+    throw new Error(`MCP server "${serverName}" is missing command`);
+  }
+
+  const proc = spawn(command, args, { stdio: ['pipe', 'pipe', 'pipe'], env });
+  if (!proc.stdin || !proc.stdout || !proc.stderr) {
+    proc.kill();
+    throw new Error(`Failed to create stdio for MCP server "${serverName}"`);
+  }
+
+  let closed = false;
+  let requestId = 1;
+
+  const pending = new Map<number, { resolve: (v: any) => void; reject: (e: Error) => void; timer?: NodeJS.Timeout }>();
+  const stderrLines: string[] = [];
+  const maxStderrLines = 50;
+
+  const rejectAll = (err: Error) => {
+    for (const [id, p] of pending.entries()) {
+      if (p.timer) clearTimeout(p.timer);
+      p.reject(err);
+      pending.delete(id);
+    }
+  };
+
+  const close = () => {
+    if (closed) return;
+    closed = true;
+    rejectAll(
+      new Error(
+        `MCP server "${serverName}" closed.\n` +
+          (stderrLines.length ? `stderr (last ${Math.min(maxStderrLines, stderrLines.length)} lines):\n${tailLines(stderrLines, maxStderrLines)}` : '')
+      )
+    );
+    try {
+      proc.kill();
+    } catch {
+      // ignore
+    }
+    proc.removeAllListeners();
+    proc.stdout.removeAllListeners();
+    proc.stderr.removeAllListeners();
+    proc.stdin.removeAllListeners();
+  };
+
+  proc.on('error', (e) => {
+    rejectAll(new Error(`Failed to start MCP server "${serverName}": ${(e as Error)?.message || String(e)}`));
+    close();
+  });
+  proc.on('exit', (code, signal) => {
+    const msg = `MCP server "${serverName}" exited (code=${code ?? 'null'}, signal=${signal ?? 'null'}).`;
+    rejectAll(
+      new Error(
+        msg +
+          (stderrLines.length ? `\nstderr (last ${Math.min(maxStderrLines, stderrLines.length)} lines):\n${tailLines(stderrLines, maxStderrLines)}` : '')
+      )
+    );
+    close();
+  });
+
+  proc.stderr.on('data', (data: Buffer) => {
+    const text = data.toString();
+    for (const line of text.split('\n')) {
+      const trimmed = line.replace(/\r$/, '');
+      if (!trimmed) continue;
+      stderrLines.push(trimmed);
+      if (stderrLines.length > maxStderrLines) stderrLines.shift();
+    }
+  });
+
+  let stdoutBuf = '';
+  const onStdoutData = (data: Buffer) => {
+    stdoutBuf += data.toString();
+    let idx: number;
+    while ((idx = stdoutBuf.indexOf('\n')) >= 0) {
+      const line = stdoutBuf.slice(0, idx).trim();
+      stdoutBuf = stdoutBuf.slice(idx + 1);
+      if (!line) continue;
+      try {
+        const msg = JSON.parse(line) as { id?: number; result?: unknown; error?: any };
+        if (typeof msg.id === 'number' && pending.has(msg.id)) {
+          const p = pending.get(msg.id)!;
+          if (p.timer) clearTimeout(p.timer);
+          pending.delete(msg.id);
+          if ((msg as any).error) {
+            p.reject(new Error((msg as any).error?.message || JSON.stringify((msg as any).error)));
+          } else {
+            p.resolve((msg as any).result);
+          }
+        }
+      } catch {
+        // ignore non-JSON lines
+      }
+    }
+  };
+  proc.stdout.on('data', onStdoutData);
+
+  const request = (method: string, params?: Record<string, unknown>, requestTimeoutMs?: number) => {
+    if (closed) {
+      return Promise.reject(new Error(`MCP server "${serverName}" is closed`));
+    }
+    const id = requestId++;
+    const payload: Record<string, unknown> = { jsonrpc: '2.0', id, method };
+    if (params !== undefined) payload.params = params;
+
+    const effectiveTimeout = typeof requestTimeoutMs === 'number' ? requestTimeoutMs : timeoutMs;
+
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        pending.delete(id);
+        try {
+          proc.kill();
+        } catch {
+          // ignore
+        }
+        reject(
+          new Error(
+            `Timeout waiting for MCP response (server="${serverName}", method="${method}", id=${id}).\n` +
+              (stderrLines.length
+                ? `stderr (last ${Math.min(maxStderrLines, stderrLines.length)} lines):\n${tailLines(stderrLines, maxStderrLines)}`
+                : '')
+          )
+        );
+      }, effectiveTimeout);
+
+      pending.set(id, { resolve, reject, timer });
+      proc.stdin.write(JSON.stringify(payload) + '\n');
+    });
+  };
+
+  // Initialize protocol
+  await request(
+    'initialize',
+    {
+      protocolVersion: '2024-11-05',
+      capabilities: {},
+      clientInfo: { name: 'devduck-mcp', version: '1.0.0' }
+    },
+    timeoutMs
+  );
+  proc.stdin.write(JSON.stringify({ jsonrpc: '2.0', method: 'notifications/initialized' }) + '\n');
+
+  return { request, close };
+}
 
 /**
  * Call MCP tool/method with parameters
@@ -53,150 +240,37 @@ async function callMcpTool(
   serverName: string,
   toolName: string,
   params: Record<string, unknown>,
-  serverConfig: { command?: string; args?: string[] }
+  serverConfig: McpServerConfig
 ): Promise<unknown> {
-  const { spawn, ChildProcess } = await import('child_process');
-  const { Readable } = await import('stream');
-  
-  let mcpProcess: ChildProcess | null = null;
-  let requestId = 1;
-  const timeout = 30000;
-  
+  const client = await spawnMcpClient(serverName, serverConfig, 30_000);
   try {
-    // Spawn MCP server process (similar to testMcpServer)
-    const commandParts = (serverConfig.command || '').split(/\s+/);
-    let command = commandParts[0];
-    
-    // Expand ~ to home directory
-    if (command.startsWith('~/')) {
-      command = command.replace('~/', (process.env.HOME || process.env.USERPROFILE || '~') + '/');
-    }
-    
-    // Expand variables
-    command = command.replace(/\$\$([A-Za-z_][A-Za-z0-9_]*)\$\$/g, (match, varName) => {
-      return process.env[varName] || match;
-    });
-    command = command.replace(/\$([A-Za-z_][A-Za-z0-9_]*)/g, (match, varName) => {
-      return process.env[varName] || match;
-    });
-    
-    const commandArgs = [...commandParts.slice(1), ...(serverConfig.args || [])].map(arg => {
-      let expanded = arg;
-      if (expanded.startsWith('~/')) {
-        expanded = expanded.replace('~/', (process.env.HOME || process.env.USERPROFILE || '~') + '/');
-      }
-      expanded = expanded.replace(/\$\$([A-Za-z_][A-Za-z0-9_]*)\$\$/g, (match, varName) => {
-        return process.env[varName] || match;
-      });
-      expanded = expanded.replace(/\$([A-Za-z_][A-Za-z0-9_]*)/g, (match, varName) => {
-        return process.env[varName] || match;
-      });
-      return expanded;
-    });
-    
-    mcpProcess = spawn(command, commandArgs, {
-      stdio: ['pipe', 'pipe', 'pipe'],
-      env: { ...process.env }
-    });
-    
-    if (!mcpProcess.stdout || !mcpProcess.stdin) {
-      throw new Error('Failed to create process stdio streams');
-    }
-    
-    const timeoutId = setTimeout(() => {
-      if (mcpProcess) {
-        mcpProcess.kill();
-        mcpProcess = null;
-      }
-    }, timeout);
-    
-    let stdoutBuffer = '';
-    mcpProcess.stdout.on('data', (data: Buffer) => {
-      stdoutBuffer += data.toString();
-    });
-    
-    // Wait for response helper
-    const waitForResponse = (stream: Readable, timeoutMs: number): Promise<string> => {
-      return new Promise((resolve, reject) => {
-        const timeout = setTimeout(() => {
-          reject(new Error('Timeout waiting for response'));
-        }, timeoutMs);
-        
-        const checkBuffer = () => {
-          const lines = stdoutBuffer.split('\n');
-          for (let i = 0; i < lines.length; i++) {
-            const line = lines[i].trim();
-            if (line) {
-              try {
-                const parsed = JSON.parse(line);
-                if (parsed.id === requestId) {
-                  clearTimeout(timeout);
-                  stdoutBuffer = lines.slice(i + 1).join('\n');
-                  resolve(line);
-                  return;
-                }
-              } catch {
-                // Not JSON, continue
-              }
-            }
-          }
-          setTimeout(checkBuffer, 10);
-        };
-        
-        checkBuffer();
-      });
-    };
-    
-    // Initialize MCP connection
-    const initRequest = {
-      jsonrpc: '2.0',
-      id: requestId++,
-      method: 'initialize',
-      params: {
-        protocolVersion: '2024-11-05',
-        capabilities: {},
-        clientInfo: {
-          name: 'devduck-mcp-caller',
-          version: '1.0.0'
-        }
-      }
-    };
-    
-    mcpProcess.stdin.write(JSON.stringify(initRequest) + '\n');
-    await waitForResponse(mcpProcess.stdout, timeout);
-    
-    // Send initialized notification
-    mcpProcess.stdin.write(JSON.stringify({
-      jsonrpc: '2.0',
-      method: 'notifications/initialized'
-    }) + '\n');
-    
-    // Call the tool
-    const callRequest = {
-      jsonrpc: '2.0',
-      id: requestId++,
-      method: 'tools/call',
-      params: {
-        name: toolName,
-        arguments: params
-      }
-    };
-    
-    mcpProcess.stdin.write(JSON.stringify(callRequest) + '\n');
-    const response = await waitForResponse(mcpProcess.stdout, timeout);
-    
-    clearTimeout(timeoutId);
-    
-    const responseData = JSON.parse(response);
-    if (responseData.error) {
-      throw new Error(`MCP error: ${responseData.error.message || JSON.stringify(responseData.error)}`);
-    }
-    
-    return responseData.result;
+    return await client.request('tools/call', { name: toolName, arguments: params }, 60_000);
   } finally {
-    if (mcpProcess) {
-      mcpProcess.kill();
-    }
+    client.close();
+  }
+}
+
+async function listMcpToolsDetailed(
+  serverName: string,
+  serverConfig: McpServerConfig,
+  timeoutMs = 10_000
+): Promise<Array<{ name: string; description?: string; inputSchema?: unknown }>> {
+  const client = await spawnMcpClient(serverName, serverConfig, timeoutMs);
+  try {
+    const res = await client.request('tools/list', {}, timeoutMs);
+    const tools = (res && typeof res === 'object' && 'tools' in (res as any) ? (res as any).tools : null) as
+      | Array<{ name?: unknown; description?: unknown; inputSchema?: unknown }>
+      | null;
+    if (!Array.isArray(tools)) return [];
+    return tools
+      .filter((t) => t && typeof t === 'object' && typeof t.name === 'string')
+      .map((t) => ({
+        name: String(t.name),
+        description: typeof t.description === 'string' ? t.description : undefined,
+        inputSchema: t.inputSchema
+      }));
+  } finally {
+    client.close();
   }
 }
 
@@ -262,34 +336,14 @@ export const mcpRouter = t.router({
       // Check if serverName is provided (for listing tools)
       if (input.serverName) {
         const serverName = input.serverName;
-        const serverConfig = servers[serverName] as { command?: string; args?: string[] } | undefined;
+        const serverConfig = servers[serverName] as McpServerConfig | undefined;
         
         if (!serverConfig) {
           throw new Error(`MCP server "${serverName}" not found`);
         }
 
-        // Get tools from MCP server
-        try {
-          const result = await testMcpServer(serverName, {
-            command: serverConfig.command || '',
-            args: serverConfig.args || []
-          }, {
-            timeout: 10000,
-            log: () => {} // Silent logging
-          });
-
-          if (result.success && result.methods) {
-            return result.methods.map(name => ({
-              name,
-              description: undefined
-            }));
-          }
-
-          return [];
-        } catch (error) {
-          const err = error as Error;
-          throw new Error(`Failed to get tools from MCP server "${serverName}": ${err.message}`);
-        }
+        const tools = await listMcpToolsDetailed(serverName, serverConfig, 10_000);
+        return tools;
       }
 
       // List all servers (without sensitive config data)
@@ -366,88 +420,19 @@ export const mcpRouter = t.router({
       }
 
       const servers = mcpConfig.mcpServers;
-      const serverConfig = servers[input.serverName] as { command?: string; args?: string[] } | undefined;
+      const serverConfig = servers[input.serverName] as McpServerConfig | undefined;
       if (!serverConfig) {
         throw new Error(`MCP server "${input.serverName}" not found`);
       }
 
       try {
-        const result = await testMcpServer(input.serverName, {
-          command: serverConfig.command || '',
-          args: serverConfig.args || []
-        }, {
-          timeout: 10000,
-          log: () => {} // Silent logging
-        });
-
-        if (result.success && result.methods) {
-          return result.methods.includes(input.toolName);
-        }
+        const tools = await listMcpToolsDetailed(input.serverName, serverConfig, 10_000);
+        return tools.some((t) => t.name === input.toolName);
       } catch {
         // ignore and return false
       }
 
       return false;
-    })
-  ,
-
-  listTools: t.procedure
-    .input(z.object({ serverName: z.string() }))
-    .output(z.array(MCPToolInfoSchema))
-    .meta({
-      title: 'List tools for a specific MCP server',
-      description: 'Return tools exposed by the given MCP server from .cursor/mcp.json',
-      idempotent: true,
-      timeoutMs: 30_000
-    })
-    .handler(async ({ input }) => {
-      const workspaceRoot = findWorkspaceRoot(process.cwd());
-      if (!workspaceRoot) {
-        throw new Error('Workspace root not found');
-      }
-
-      const mcpJsonPath = path.join(workspaceRoot, '.cursor', 'mcp.json');
-      if (!fs.existsSync(mcpJsonPath)) {
-        throw new Error('MCP configuration not found');
-      }
-
-      const mcpConfig = readJSON<{ mcpServers?: Record<string, unknown> }>(mcpJsonPath);
-      if (!mcpConfig || !mcpConfig.mcpServers) {
-        throw new Error('No MCP servers configured');
-      }
-
-      const servers = mcpConfig.mcpServers;
-      const serverConfig = servers[input.serverName] as { command?: string; args?: string[] } | undefined;
-
-      if (!serverConfig) {
-        throw new Error(`MCP server "${input.serverName}" not found`);
-      }
-
-      try {
-        const result = await testMcpServer(
-          input.serverName,
-          {
-            command: serverConfig.command || '',
-            args: serverConfig.args || []
-          },
-          {
-            timeout: 10000,
-            log: () => {} // silent
-          }
-        );
-
-        if (result.success && result.methods) {
-          return result.methods.map((name) => ({
-            name,
-            description: undefined
-          }));
-        }
-
-        return [];
-      } catch (error) {
-        const err = error as Error;
-        throw new Error(`Failed to list tools for "${input.serverName}": ${err.message}`);
-      }
     })
 });
 
