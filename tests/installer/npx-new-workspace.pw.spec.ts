@@ -31,7 +31,7 @@ test.describe('devduck new (npx-friendly bootstrap)', () => {
 
       const cfgPath = path.join(workspaceRoot, 'workspace.config.yml');
       const cfg = await readYaml(cfgPath);
-      assert.strictEqual(cfg.devduckPath, './devduck/src', 'devduckPath should point to local devduck/src');
+      assert.strictEqual(cfg.devduck_path, './devduck/src', 'devduck_path should point to local devduck/src');
 
       const clonedPackageJson = path.join(workspaceRoot, 'devduck', 'src', 'package.json');
       const stat = await fs.stat(clonedPackageJson);
@@ -64,7 +64,7 @@ test.describe('devduck new (npx-friendly bootstrap)', () => {
 
       const cfgPath = path.join(workspaceRoot, 'workspace.config.yml');
       const cfg = await readYaml(cfgPath);
-      assert.strictEqual(cfg.devduckPath, './devduck/src', 'devduckPath should point to local devduck/src');
+      assert.strictEqual(cfg.devduck_path, './devduck/src', 'devduck_path should point to local devduck/src');
 
       const clonedPackageJson = path.join(workspaceRoot, 'devduck', 'src', 'package.json');
       const stat = await fs.stat(clonedPackageJson);

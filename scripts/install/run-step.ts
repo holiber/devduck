@@ -21,6 +21,25 @@ const STEP_IDS: InstallStepId[] = [
   'verify-installation'
 ];
 
+const STEP_DESCRIPTIONS: Record<InstallStepId, string> = {
+  'check-env': 'Verify required environment variables',
+  'download-repos': 'Download external module repositories',
+  'download-projects': 'Clone/link workspace projects',
+  'check-env-again': 'Re-check environment variables',
+  'setup-modules': 'Setup all DevDuck modules',
+  'setup-projects': 'Setup all workspace projects',
+  'verify-installation': 'Verify installation correctness'
+};
+
+function printStepBanner(stepId: InstallStepId): void {
+  const idx = STEP_IDS.indexOf(stepId);
+  const n = idx >= 0 ? idx + 1 : 0;
+  const total = STEP_IDS.length;
+  const desc = STEP_DESCRIPTIONS[stepId] || stepId;
+  // eslint-disable-next-line no-console
+  console.log(`\n==> Step ${n}/${total}: ${desc}`);
+}
+
 function ensureCacheDir(workspaceRoot: string): string {
   const cacheDir = path.join(workspaceRoot, '.cache');
   if (!fs.existsSync(cacheDir)) fs.mkdirSync(cacheDir, { recursive: true });
@@ -73,6 +92,12 @@ async function main(argv = process.argv): Promise<void> {
     throw new Error(`Unknown stepId: ${stepIdRaw}. Expected one of: ${STEP_IDS.join(', ')}`);
   }
   const stepId = stepIdRaw as InstallStepId;
+
+  // Avoid duplicate banners: Taskfile install prints our banner here,
+  // and step implementations have their own "[Step N]" console headers.
+  // Keep step headers for direct/legacy runs, but suppress them for this launcher.
+  if (process.env.DEVDUCK_SUPPRESS_STEP_HEADER !== '1') process.env.DEVDUCK_SUPPRESS_STEP_HEADER = '1';
+  printStepBanner(stepId);
 
   const invocationCwd = process.env.INIT_CWD ? path.resolve(process.env.INIT_CWD) : process.cwd();
   const workspaceRoot =

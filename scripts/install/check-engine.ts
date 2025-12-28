@@ -59,6 +59,15 @@ export function createCheckEngine(params: {
         merged[k] = v;
       }
     }
+    // Ensure common bin paths exist even in non-login shells (Cursor/CI/etc).
+    const pathParts = String(merged.PATH || '')
+      .split(path.delimiter)
+      .filter(Boolean);
+    const defaults = ['/opt/homebrew/bin', '/opt/homebrew/sbin', '/usr/local/bin', '/usr/local/sbin'];
+    for (const p of defaults) {
+      if (!pathParts.includes(p)) pathParts.push(p);
+    }
+    merged.PATH = pathParts.join(path.delimiter);
     return merged;
   }
 

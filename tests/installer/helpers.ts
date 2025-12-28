@@ -423,8 +423,8 @@ export async function verifyWorkspaceConfig(workspacePath: string, expectedConfi
     const config = results.config;
 
     // Verify required fields
-    if (!config.workspaceVersion) {
-      results.errors.push('workspaceVersion missing');
+    if (!config.version) {
+      results.errors.push('version missing');
     }
     if (!config.modules || !Array.isArray(config.modules)) {
       results.errors.push('modules missing or invalid');
@@ -440,8 +440,8 @@ export async function verifyWorkspaceConfig(workspacePath: string, expectedConfi
       }
     }
 
-    if (expectedConfig.devduckPath && config.devduckPath !== expectedConfig.devduckPath) {
-      results.errors.push(`devduckPath mismatch: expected ${expectedConfig.devduckPath}, got ${config.devduckPath}`);
+    if (expectedConfig.devduck_path && config.devduck_path !== expectedConfig.devduck_path) {
+      results.errors.push(`devduck_path mismatch: expected ${expectedConfig.devduck_path}, got ${config.devduck_path}`);
     }
 
     results.valid = results.errors.length === 0;
@@ -534,8 +534,8 @@ export async function waitForInstallation(workspacePath: string, timeout = 30000
  */
 export async function createMockWorkspace(workspacePath: string, config: Record<string, unknown> = {}): Promise<void> {
   const defaultConfig = {
-    workspaceVersion: '0.1.0',
-    devduckPath: './devduck',
+    version: '0.1.0',
+    devduck_path: './devduck',
     modules: ['core', 'cursor'],
     moduleSettings: {}
   };

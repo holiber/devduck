@@ -14,6 +14,7 @@ import { URL } from 'url';
 import { readEnvFile } from '../lib/env.js';
 import { replaceVariables, replaceVariablesInObject } from '../lib/config.js';
 import { print, symbols, executeCommand, executeInteractiveCommand, requiresSudo } from '../utils.js';
+import { writeEnvFile } from './env.js';
 import { getCheckDisplayName } from './types.js';
 import type { CheckItem, CheckResult } from './types.js';
 import type {
@@ -30,6 +31,16 @@ function mergeEnvFillMissing(base: NodeJS.ProcessEnv, fromDotEnv: Record<string,
       merged[k] = v;
     }
   }
+  // Some environments (IDE task runners, non-login shells) may miss common bin paths,
+  // which breaks checks that rely on system-installed tools (e.g. `arc`, `brew`).
+  const pathParts = String(merged.PATH || '')
+    .split(path.delimiter)
+    .filter(Boolean);
+  const defaults = ['/opt/homebrew/bin', '/opt/homebrew/sbin', '/usr/local/bin', '/usr/local/sbin'];
+  for (const p of defaults) {
+    if (!pathParts.includes(p)) pathParts.push(p);
+  }
+  merged.PATH = pathParts.join(path.delimiter);
   return merged;
 }
 
@@ -399,6 +410,27 @@ async function installSoftware(
         if (log) {
           log(`  Installation SUCCESS - Output: ${result.output || '(interactive)'}`);
         }
+
+        // If this install command derives a required variable (common for auth checks),
+        // persist it to .env and process.env so the subsequent re-check can succeed.
+        const itemVar = (item as { var?: string }).var;
+        if (item.type === 'auth' && itemVar) {
+          const lastLine =
+            (result.output || '')
+              .split('\n')
+              .map((l) => l.trim())
+              .filter(Boolean)
+              .pop() || '';
+          if (lastLine) {
+            const nextEnv = readEnvFile(envFile);
+            nextEnv[itemVar] = lastLine;
+            writeEnvFile(envFile, nextEnv);
+            process.env[itemVar] = lastLine;
+            print(`  ${symbols.success} Set ${itemVar} from install output`, 'green');
+            if (log) log(`Derived ${itemVar} from install output: ${lastLine}`);
+          }
+        }
+
         return true;
       } else {
         print(`  ${symbols.error} Installation failed: ${result.error || 'Command failed'}`, 'red');
@@ -648,7 +680,13 @@ export function createCheckCommandFunction(
             const returnValue = result.output || result.error || 'failed';
             errorLabel = `the ${itemVar} exist but "${testWithVars}" returned ${returnValue}`;
           } else if (item.type === 'auth' && itemVar) {
-            errorLabel = `${itemVar} check failed`;
+            const tail =
+              (result.output || result.error || '')
+                .trim()
+                .split('\n')
+                .pop()
+                ?.trim() || '';
+            errorLabel = tail ? `${itemVar} check failed: ${tail}` : `${itemVar} check failed`;
           } else if (item.type === 'test') {
             const httpCode = extractHttpCode(result.output);
             if (httpCode) {

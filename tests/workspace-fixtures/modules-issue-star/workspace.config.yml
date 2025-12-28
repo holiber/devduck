@@ -1,5 +1,5 @@
-workspaceVersion: "0.1.0"
-devduckPath: "./devduck"
+version: "0.1.0"
+devduck_path: "./devduck"
 modules:
   - "issue-*"
 moduleSettings: {}
