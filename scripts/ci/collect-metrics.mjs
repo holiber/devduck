@@ -69,6 +69,77 @@ function tryReadJsonFileSync(p) {
   }
 }
 
+function stripAnsi(s) {
+  // Basic ANSI escape stripping (colors, cursor moves).
+  return String(s).replace(/\x1b\[[0-9;]*[A-Za-z]/gu, '');
+}
+
+function parseNodeTestSummary(raw) {
+  const text = stripAnsi(raw);
+  const out = {};
+
+  const mTests = text.match(/^\s*(?:ℹ|#)\s*tests\s+(\d+)\s*$/mu);
+  if (mTests) out.total = Number.parseInt(mTests[1], 10);
+
+  const mSuites = text.match(/^\s*(?:ℹ|#)\s*suites\s+(\d+)\s*$/mu);
+  if (mSuites) out.suites = Number.parseInt(mSuites[1], 10);
+
+  const mPass = text.match(/^\s*(?:ℹ|#)\s*pass\s+(\d+)\s*$/mu);
+  if (mPass) out.passed = Number.parseInt(mPass[1], 10);
+
+  const mFail = text.match(/^\s*(?:ℹ|#)\s*fail\s+(\d+)\s*$/mu);
+  if (mFail) out.failed = Number.parseInt(mFail[1], 10);
+
+  const mSkipped = text.match(/^\s*(?:ℹ|#)\s*skipped\s+(\d+)\s*$/mu);
+  if (mSkipped) out.skipped = Number.parseInt(mSkipped[1], 10);
+
+  // Prefer the last duration_ms line.
+  const durations = [...text.matchAll(/^\s*(?:ℹ|#)\s*duration_ms\s+([\d.]+)\s*$/gmu)];
+  if (durations.length > 0) {
+    const last = durations[durations.length - 1][1];
+    out.reportedDurationMs = Number.parseFloat(last);
+  }
+
+  return out;
+}
+
+function parsePlaywrightSummary(raw) {
+  const text = stripAnsi(raw);
+  const out = {};
+
+  const mRunning = text.match(/Running\s+(\d+)\s+tests\b/iu);
+  if (mRunning) out.total = Number.parseInt(mRunning[1], 10);
+
+  // Prefer the final summary line(s):
+  // - "34 passed (23.3s)"
+  // - "3 failed"
+  // - "31 passed (1.4m)"
+  const summaryLines = [
+    ...text.matchAll(/^\s*(\d+)\s+passed\s+\(([\d.]+)\s*(ms|s|m)\)\s*$/gmu)
+  ];
+  if (summaryLines.length > 0) {
+    const last = summaryLines[summaryLines.length - 1];
+    out.passed = Number.parseInt(last[1], 10);
+    const n = Number.parseFloat(last[2]);
+    const unit = last[3];
+    if (Number.isFinite(n)) out.reportedDurationMs = unit === 'ms' ? n : unit === 's' ? n * 1000 : n * 60_000;
+  }
+
+  const failedLines = [...text.matchAll(/^\s*(\d+)\s+failed\b.*$/gmu)];
+  if (failedLines.length > 0) {
+    const last = failedLines[failedLines.length - 1];
+    out.failed = Number.parseInt(last[1], 10);
+  }
+
+  const skippedLines = [...text.matchAll(/^\s*(\d+)\s+skipped\b.*$/gmu)];
+  if (skippedLines.length > 0) {
+    const last = skippedLines[skippedLines.length - 1];
+    out.skipped = Number.parseInt(last[1], 10);
+  }
+
+  return out;
+}
+
 function readGithubEvent() {
   const eventPath = process.env.GITHUB_EVENT_PATH;
   if (!eventPath) return undefined;
@@ -176,8 +247,52 @@ async function main() {
       ...(testCommands ?? {})
     },
     sizes: {},
+    tests: {},
     notes: []
   };
+
+  // Test stats (best-effort): counts + durations from logs + wall-clock from test-commands.json.
+  try {
+    const unitLogPath = path.join(LOGS_DIR, 'npm-test.log');
+    if (await pathExists(unitLogPath)) {
+      const raw = await fsp.readFile(unitLogPath, 'utf8');
+      metrics.tests.unit = {
+        ...parseNodeTestSummary(raw),
+        durationMs: metrics.commands?.npm_test?.durationMs,
+        exitCode: metrics.commands?.npm_test?.exitCode
+      };
+    }
+  } catch {
+    // ignore
+  }
+
+  try {
+    const pwInstallerLogPath = path.join(LOGS_DIR, 'pw-installer.log');
+    if (await pathExists(pwInstallerLogPath)) {
+      const raw = await fsp.readFile(pwInstallerLogPath, 'utf8');
+      metrics.tests.e2e_installer = {
+        ...parsePlaywrightSummary(raw),
+        durationMs: metrics.commands?.pw_installer?.durationMs,
+        exitCode: metrics.commands?.pw_installer?.exitCode
+      };
+    }
+  } catch {
+    // ignore
+  }
+
+  try {
+    const pwSmokeLogPath = path.join(LOGS_DIR, 'pw-smoke.log');
+    if (await pathExists(pwSmokeLogPath)) {
+      const raw = await fsp.readFile(pwSmokeLogPath, 'utf8');
+      metrics.tests.e2e_smoke = {
+        ...parsePlaywrightSummary(raw),
+        durationMs: metrics.commands?.pw_smoke?.durationMs,
+        exitCode: metrics.commands?.pw_smoke?.exitCode
+      };
+    }
+  } catch {
+    // ignore
+  }
 
   // Optional build metric (no tests here).
   if (process.env.BUILD_COMMAND) {
@@ -241,6 +356,16 @@ async function main() {
   console.log('[metrics] build:', buildMs ?? 'n/a', 'ms; devReady:', devReadyMs ?? 'n/a', 'ms');
   // eslint-disable-next-line no-console
   console.log('[metrics] npm_pack:', packBytes ?? 'n/a', 'bytes; dist:', distBytes ?? 'n/a', 'bytes; build_out:', outBytes ?? 'n/a', 'bytes');
+  // eslint-disable-next-line no-console
+  console.log(
+    '[metrics] tests:',
+    'unit',
+    metrics.tests?.unit?.total ?? 'n/a',
+    `(${metrics.tests?.unit?.reportedDurationMs ?? metrics.tests?.unit?.durationMs ?? 'n/a'}ms);`,
+    'e2e',
+    metrics.tests?.e2e_installer?.total ?? 'n/a',
+    `(${metrics.tests?.e2e_installer?.reportedDurationMs ?? metrics.tests?.e2e_installer?.durationMs ?? 'n/a'}ms)`
+  );
 }
 
 main().catch(async (err) => {

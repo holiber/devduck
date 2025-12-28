@@ -68,6 +68,8 @@ async function main() {
   const packBytes = current?.sizes?.npm_pack?.bytes;
   const distBytes = current?.sizes?.dist?.bytes;
   const outBytes = current?.sizes?.build_output_dir?.bytes;
+  const unitTests = current?.tests?.unit;
+  const e2eInstaller = current?.tests?.e2e_installer;
 
   const html = `<!DOCTYPE html>
 <html lang="en">
@@ -113,6 +115,16 @@ async function main() {
           <td>📦 Package size (npm pack)</td>
           <td>${fmtBytes(packBytes)}</td>
           <td class="${clsForDelta(diff?.deltas?.npm_pack_bytes)}">${fmtBytes(diff?.deltas?.npm_pack_bytes)}</td>
+        </tr>
+        <tr>
+          <td>🧪 Unit tests</td>
+          <td>${unitTests?.total ?? 'n/a'} tests / ${fmtMs(unitTests?.reportedDurationMs ?? unitTests?.durationMs)}</td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>🧪 E2E (installer)</td>
+          <td>${e2eInstaller?.total ?? 'n/a'} tests / ${fmtMs(e2eInstaller?.reportedDurationMs ?? e2eInstaller?.durationMs)}</td>
+          <td></td>
         </tr>
         <tr>
           <td>🗂 dist size</td>

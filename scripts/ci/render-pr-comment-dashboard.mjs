@@ -88,6 +88,14 @@ async function main() {
   lines.push(`| Dev ready | ${fmtMs(current?.commands?.dev_start?.readyAtMs)} | ${fmtDeltaMs(deltas.dev_ready_ms)} |`);
   lines.push(`| npm pack size | ${fmtBytes(current?.sizes?.npm_pack?.bytes)} | ${fmtDeltaBytes(deltas.npm_pack_bytes)} |`);
   lines.push(`| dist size | ${fmtBytes(current?.sizes?.dist?.bytes)} | ${fmtDeltaBytes(deltas.dist_bytes)} |`);
+  lines.push(
+    `| Unit tests | ${current?.tests?.unit?.total ?? 'n/a'} tests / ${fmtMs(current?.tests?.unit?.reportedDurationMs ?? current?.tests?.unit?.durationMs)} | — |`
+  );
+  lines.push(
+    `| E2E (installer) | ${current?.tests?.e2e_installer?.total ?? 'n/a'} tests / ${fmtMs(
+      current?.tests?.e2e_installer?.reportedDurationMs ?? current?.tests?.e2e_installer?.durationMs
+    )} | — |`
+  );
   lines.push('');
   lines.push(`- **Dashboard (history + charts)**: ${dashboardUrl}`);
   lines.push('- **Artifacts**: logs + Playwright screenshots/video/trace/report + raw metrics JSON are attached to this workflow run.');
