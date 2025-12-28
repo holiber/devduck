@@ -4,6 +4,7 @@ import yargs from 'yargs/yargs';
 import { hideBin } from 'yargs/helpers';
 
 import { resolveWorkspaceRoot } from '../lib/workspace-path.js';
+import { getWorkspaceConfigFilePath } from '../lib/workspace-config.js';
 import { createInstallLogger, type InstallLogger } from './logger.js';
 
 export type InstallCliFlags = {
@@ -34,10 +35,10 @@ function findWorkspaceRoot(startPath: string): string | null {
   let depth = 0;
 
   while (depth < maxDepth) {
-    const configPath = path.join(current, 'workspace.config.json');
-    if (fs.existsSync(configPath)) {
-      return current;
-    }
+    const json = path.join(current, 'workspace.config.json');
+    const yml = path.join(current, 'workspace.config.yml');
+    const yaml = path.join(current, 'workspace.config.yaml');
+    if (fs.existsSync(json) || fs.existsSync(yml) || fs.existsSync(yaml)) return current;
 
     const parent = path.dirname(current);
     if (parent === current) {
@@ -130,7 +131,7 @@ export function createInstallRuntime(argv: string[], projectRoot: string): {
   const paths: InstallPaths = {
     projectRoot,
     workspaceRoot,
-    configFile: path.join(workspaceRoot, 'workspace.config.json'),
+    configFile: getWorkspaceConfigFilePath(workspaceRoot),
     cacheDir,
     logFile,
     envFile: path.join(workspaceRoot, '.env'),

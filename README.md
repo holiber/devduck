@@ -18,7 +18,7 @@ npx --yes github:holiber/devduck new ./my-devduck-workspace
 ```
 
 This will:
-- create `./my-devduck-workspace/workspace.config.json`
+- create `./my-devduck-workspace/workspace.config.json` (DevDuck also supports `workspace.config.yml` / `workspace.config.yaml`)
 - clone DevDuck into `./my-devduck-workspace/devduck/src` (unless DevDuck is already listed in `projects[]`)
 
 ### Create a new workspace from an existing `workspace.config.json`
@@ -58,6 +58,18 @@ The installation script will:
 - Check and install required tools
 - Configure MCP servers
 - Verify everything works
+
+### Taskfile-based installation (optional)
+
+If you prefer a declarative Taskfile workflow (CursorCloud-friendly):
+
+```bash
+# Generate Taskfile runtime from workspace config
+tsx ./devduck/src/scripts/devduck-cli.ts sync
+
+# Run installation via go-task
+npx task install
+```
 
 ## Commands
 

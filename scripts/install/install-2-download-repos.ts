@@ -8,7 +8,7 @@
 
 import path from 'path';
 import fs from 'fs';
-import { readJSON } from '../lib/config.js';
+import { readWorkspaceConfigFromRoot } from '../lib/workspace-config.js';
 import { print, symbols } from '../utils.js';
 import { loadModulesFromRepo, getDevduckVersion } from '../lib/repo-modules.js';
 import { markStepCompleted, type RepoResult } from './install-state.js';
@@ -31,16 +31,15 @@ export async function runStep2DownloadRepos(
     log(`[Step 2] Starting repository download`);
   }
   
-  const configFile = path.join(workspaceRoot, 'workspace.config.json');
-  const config = readJSON<WorkspaceConfig>(configFile);
+  const { config, configFile } = readWorkspaceConfigFromRoot<WorkspaceConfig>(workspaceRoot);
   
   if (!config) {
-    print(`  ${symbols.error} Cannot read workspace.config.json`, 'red');
+    print(`  ${symbols.error} Cannot read workspace config (${path.basename(configFile)})`, 'red');
     if (log) {
-      log(`[Step 2] ERROR: Cannot read workspace.config.json`);
+      log(`[Step 2] ERROR: Cannot read workspace config (${configFile})`);
     }
     const result: DownloadReposStepResult = { repos: [] };
-    markStepCompleted(workspaceRoot, 'download-repos', result, 'Cannot read workspace.config.json');
+    markStepCompleted(workspaceRoot, 'download-repos', result, `Cannot read ${path.basename(configFile)}`);
     return result;
   }
   

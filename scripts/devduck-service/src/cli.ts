@@ -8,6 +8,7 @@ import fs from 'fs';
 import { createRequire } from 'module';
 import { getDevduckServicePaths } from './paths.js';
 import { createDevduckServiceClient } from './ipc/ipc-client.js';
+import { getWorkspaceConfigFilePath, readWorkspaceConfigFile } from '../../lib/workspace-config.js';
 
 const require = createRequire(import.meta.url);
 const tsxImportPath: string = require.resolve('tsx');
@@ -160,10 +161,9 @@ type LaunchDev = { baseURL?: string; processes?: LaunchProcess[]; smokecheck?: L
 
 function tryReadLaunchDevFromWorkspaceConfig(cwd: string): LaunchDev | null {
   try {
-    const configPath = path.join(cwd, 'workspace.config.json');
+    const configPath = getWorkspaceConfigFilePath(cwd);
     if (!fs.existsSync(configPath)) return null;
-    const raw = fs.readFileSync(configPath, 'utf8');
-    const parsed = JSON.parse(raw) as { launch?: { dev?: LaunchDev } };
+    const parsed = readWorkspaceConfigFile<{ launch?: { dev?: LaunchDev } }>(configPath);
     const dev = parsed?.launch?.dev;
     if (!dev || typeof dev !== 'object') return null;
     return dev;
@@ -401,7 +401,7 @@ async function cmdSmokecheckFromConfig(client: ReturnType<typeof createDevduckSe
 
   const launchDev = tryReadLaunchDevFromWorkspaceConfig(process.cwd());
   const smoke = launchDev?.smokecheck;
-  if (!smoke) throw new Error('No launch.dev.smokecheck in workspace.config.json');
+  if (!smoke) throw new Error('No launch.dev.smokecheck in workspace config');
 
   if ('testFile' in smoke) {
     const result = await client.playwright.runSmokecheck.mutate({

@@ -12,6 +12,7 @@ import https from 'https';
 import http from 'http';
 import { URL } from 'url';
 import { readJSON, writeJSON, replaceVariablesInObject } from '../lib/config.js';
+import { getWorkspaceConfigFilePath, readWorkspaceConfigFile } from '../lib/workspace-config.js';
 import { readEnvFile } from '../lib/env.js';
 import { executeCommand } from '../utils.js';
 
@@ -442,16 +443,16 @@ export function generateMcpJson(
 ): Record<string, Record<string, unknown>> | null {
   const { log = () => {}, print = () => {}, symbols = { info: 'ℹ', success: '✓', warning: '⚠', error: '✗' }, moduleChecks = [] } = options;
   
-  const configFile = path.join(workspaceRoot, 'workspace.config.json');
+  const configFile = getWorkspaceConfigFilePath(workspaceRoot);
   const envFile = path.join(workspaceRoot, '.env');
   const cursorDir = path.join(workspaceRoot, '.cursor');
   const mcpFile = path.join(cursorDir, 'mcp.json');
   
   print(`\n${symbols.info} Generating .cursor/mcp.json...`, 'cyan');
-  log(`Generating mcp.json from workspace.config.json and module checks`);
+  log(`Generating mcp.json from ${path.basename(configFile)} and module checks`);
   
-  // Read workspace.config.json
-  const config = readJSON(configFile);
+  // Read workspace config (json/yaml)
+  const config = readWorkspaceConfigFile<Record<string, unknown>>(configFile);
   if (!config) {
     print(`  ${symbols.warning} Cannot read ${configFile}, skipping MCP generation`, 'yellow');
     log(`WARNING: Cannot read configuration file: ${configFile}`);

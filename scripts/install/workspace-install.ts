@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
-import { readJSON, writeJSON } from '../lib/config.js';
+import { readJSON } from '../lib/config.js';
+import { readWorkspaceConfigFile, writeWorkspaceConfigFile } from '../lib/workspace-config.js';
 import type { WorkspaceConfig } from '../schemas/workspace-config.zod.js';
 import { setupEnvFile } from './env.js';
 import { generateMcpJson } from './mcp.js';
@@ -46,7 +47,7 @@ export async function installWorkspace(params: {
     fs.mkdirSync(workspaceRoot, { recursive: true });
   }
 
-  let config = readJSON(configFilePath);
+  let config = readWorkspaceConfigFile<Record<string, unknown>>(configFilePath);
   if (!config) {
     const modules = installModules ? installModules.split(',').map((m) => m.trim()) : ['core', 'cursor'];
 
@@ -69,7 +70,7 @@ export async function installWorkspace(params: {
     };
 
     if (workspaceConfigPath && fs.existsSync(workspaceConfigPath)) {
-      const providedWorkspaceConfig = readJSON(workspaceConfigPath);
+      const providedWorkspaceConfig = readWorkspaceConfigFile<Record<string, unknown>>(workspaceConfigPath);
       if (providedWorkspaceConfig) {
         config = { ...(config as Record<string, unknown>), ...(providedWorkspaceConfig as Record<string, unknown>) };
         if ((providedWorkspaceConfig as { modules?: unknown }).modules) {
@@ -92,7 +93,7 @@ export async function installWorkspace(params: {
     }
 
     if (configFilePathOverride && fs.existsSync(configFilePathOverride)) {
-      const providedConfig = readJSON(configFilePathOverride);
+      const providedConfig = readWorkspaceConfigFile<Record<string, unknown>>(configFilePathOverride);
       if (providedConfig) {
         config = { ...(config as Record<string, unknown>), ...(providedConfig as Record<string, unknown>) };
         if ((providedConfig as { modules?: unknown }).modules) {
@@ -101,7 +102,7 @@ export async function installWorkspace(params: {
       }
     }
 
-    writeJSON(configFilePath, config);
+    writeWorkspaceConfigFile(configFilePath, config);
     print(`\n${symbols.success} Created workspace.config.json`, 'green');
     log(
       `Created workspace.config.json with modules: ${
@@ -116,7 +117,7 @@ export async function installWorkspace(params: {
     if (installModules) {
       const modules = installModules.split(',').map((m) => m.trim());
       (config as { modules: string[] }).modules = modules;
-      writeJSON(configFilePath, config);
+      writeWorkspaceConfigFile(configFilePath, config);
       print(`\n${symbols.info} Updated workspace.config.json with modules: ${modules.join(', ')}`, 'cyan');
       log(`Updated workspace.config.json with modules: ${modules.join(', ')}`);
     }
@@ -129,7 +130,7 @@ export async function installWorkspace(params: {
     symbols
   });
 
-  const latestConfig = readJSON(configFilePath) || config;
+  const latestConfig = readWorkspaceConfigFile<Record<string, unknown>>(configFilePath) || config;
 
   let moduleChecks: Array<{ name?: string; mcpSettings?: Record<string, unknown> }> = [];
   try {

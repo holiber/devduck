@@ -7,7 +7,7 @@
  */
 
 import path from 'path';
-import { readJSON } from '../lib/config.js';
+import { readWorkspaceConfigFromRoot } from '../lib/workspace-config.js';
 import { print, symbols } from '../utils.js';
 import { loadModulesForChecks, loadProjectsForChecks, createCheckFunctions } from './install-common.js';
 import {
@@ -40,16 +40,15 @@ export async function runStep7VerifyInstallation(
     log(`[Step 7] Starting installation verification`);
   }
   
-  const configFile = path.join(workspaceRoot, 'workspace.config.json');
-  const config = readJSON<WorkspaceConfig>(configFile);
+  const { config, configFile } = readWorkspaceConfigFromRoot<WorkspaceConfig>(workspaceRoot);
   
   if (!config) {
-    print(`  ${symbols.error} Cannot read workspace.config.json`, 'red');
+    print(`  ${symbols.error} Cannot read workspace config (${path.basename(configFile)})`, 'red');
     if (log) {
-      log(`[Step 7] ERROR: Cannot read workspace.config.json`);
+      log(`[Step 7] ERROR: Cannot read workspace config (${configFile})`);
     }
     const result: VerifyInstallationStepResult = { results: [] };
-    markStepCompleted(workspaceRoot, 'verify-installation', result, 'Cannot read workspace.config.json');
+    markStepCompleted(workspaceRoot, 'verify-installation', result, `Cannot read ${path.basename(configFile)}`);
     return result;
   }
   
