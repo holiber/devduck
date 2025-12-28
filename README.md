@@ -9,6 +9,11 @@ KrYa!
 Devduck is rubber duck debugging — automated.
 Explain the problem, and the duck will write code, close tickets, and ship changes.
 
+## Documentation
+
+- **Workspace & modules**: `docs/workspace-and-modules.md`
+- **Architecture (EN)**: `docs/ARCHITECTURE.md`
+
 ## Quick Start
 
 ### Create a new workspace (npx)
