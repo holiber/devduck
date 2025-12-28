@@ -1,0 +1,327 @@
+{
+  "meta": {
+    "inputFile": "/workspace/projects/devduck/tests/perf/2025-12-28T011222Z/installer-only.raw.txt"
+  },
+  "totals": {
+    "tests": 34,
+    "suites": 12,
+    "pass": 34,
+    "fail": 0,
+    "skipped": 0,
+    "durationMsReported": 16476.225277
+  },
+  "testCases": [
+    {
+      "fullTitle": "Install Project Scripts > Install default scripts from project",
+      "title": "Install default scripts from project",
+      "suitePath": [
+        "Install Project Scripts"
+      ],
+      "status": "passed",
+      "durationMs": 3.181241
+    },
+    {
+      "fullTitle": "Install Project Scripts > Install additional scripts via importScripts",
+      "title": "Install additional scripts via importScripts",
+      "suitePath": [
+        "Install Project Scripts"
+      ],
+      "status": "passed",
+      "durationMs": 2.389417
+    },
+    {
+      "fullTitle": "Install Project Scripts > Remove scripts when project is removed from config",
+      "title": "Remove scripts when project is removed from config",
+      "suitePath": [
+        "Install Project Scripts"
+      ],
+      "status": "passed",
+      "durationMs": 1.477297
+    },
+    {
+      "fullTitle": "Install Project Scripts > Handle missing project package.json gracefully",
+      "title": "Handle missing project package.json gracefully",
+      "suitePath": [
+        "Install Project Scripts"
+      ],
+      "status": "passed",
+      "durationMs": 1.419179
+    },
+    {
+      "fullTitle": "Install Project Scripts > Verify scripts do not change current directory",
+      "title": "Verify scripts do not change current directory",
+      "suitePath": [
+        "Install Project Scripts"
+      ],
+      "status": "passed",
+      "durationMs": 3.905549
+    },
+    {
+      "fullTitle": "Installation Steps > Step 1: Check Environment Variables",
+      "title": "Step 1: Check Environment Variables",
+      "suitePath": [
+        "Installation Steps"
+      ],
+      "status": "passed",
+      "durationMs": 30.161905
+    },
+    {
+      "fullTitle": "Installation Steps > Step 2: Download Repos",
+      "title": "Step 2: Download Repos",
+      "suitePath": [
+        "Installation Steps"
+      ],
+      "status": "passed",
+      "durationMs": 5.159838
+    },
+    {
+      "fullTitle": "Installation Steps > Step 3: Download Projects",
+      "title": "Step 3: Download Projects",
+      "suitePath": [
+        "Installation Steps"
+      ],
+      "status": "passed",
+      "durationMs": 1.852041
+    },
+    {
+      "fullTitle": "Installation Steps > Step 4: Check Environment Again",
+      "title": "Step 4: Check Environment Again",
+      "suitePath": [
+        "Installation Steps"
+      ],
+      "status": "passed",
+      "durationMs": 6.492024
+    },
+    {
+      "fullTitle": "Installation Steps > Step 5: Setup Modules",
+      "title": "Step 5: Setup Modules",
+      "suitePath": [
+        "Installation Steps"
+      ],
+      "status": "passed",
+      "durationMs": 11.527968
+    },
+    {
+      "fullTitle": "Installation Steps > Step 6: Setup Projects",
+      "title": "Step 6: Setup Projects",
+      "suitePath": [
+        "Installation Steps"
+      ],
+      "status": "passed",
+      "durationMs": 1.256322
+    },
+    {
+      "fullTitle": "Installation Steps > Step 7: Verify Installation",
+      "title": "Step 7: Verify Installation",
+      "suitePath": [
+        "Installation Steps"
+      ],
+      "status": "passed",
+      "durationMs": 6.605155
+    },
+    {
+      "fullTitle": "Workspace Installer - GUI/Interactive Mode > Fresh Workspace Installation > GUI Installation - Fresh Workspace",
+      "title": "GUI Installation - Fresh Workspace",
+      "suitePath": [
+        "Workspace Installer - GUI/Interactive Mode",
+        "Fresh Workspace Installation"
+      ],
+      "status": "passed",
+      "durationMs": 390.283568
+    },
+    {
+      "fullTitle": "Workspace Installer - GUI/Interactive Mode > Existing Workspace Operations > Detect Existing Workspace",
+      "title": "Detect Existing Workspace",
+      "suitePath": [
+        "Workspace Installer - GUI/Interactive Mode",
+        "Existing Workspace Operations"
+      ],
+      "status": "passed",
+      "durationMs": 408.251597
+    },
+    {
+      "fullTitle": "installer: hook load failure is fatal",
+      "title": "installer: hook load failure is fatal",
+      "suitePath": [],
+      "status": "passed",
+      "durationMs": 465.00869
+    },
+    {
+      "fullTitle": "installer: .env values are available to shell checks (fill-missing)",
+      "title": "installer: .env values are available to shell checks (fill-missing)",
+      "suitePath": [],
+      "status": "passed",
+      "durationMs": 367.156966
+    },
+    {
+      "fullTitle": "installer: checks without name do not print \"Checking undefined\"",
+      "title": "installer: checks without name do not print \"Checking undefined\"",
+      "suitePath": [],
+      "status": "passed",
+      "durationMs": 383.784522
+    },
+    {
+      "fullTitle": "installer summary: prints INSTALLATION FINISHED WITH ERRORS on failures",
+      "title": "installer summary: prints INSTALLATION FINISHED WITH ERRORS on failures",
+      "suitePath": [],
+      "status": "passed",
+      "durationMs": 368.363198
+    },
+    {
+      "fullTitle": "Workspace Installer - Unattended Mode > Fresh Workspace Installation > Unattended Installation from fixture - cursor-only",
+      "title": "Unattended Installation from fixture - cursor-only",
+      "suitePath": [
+        "Workspace Installer - Unattended Mode",
+        "Fresh Workspace Installation"
+      ],
+      "status": "passed",
+      "durationMs": 409.048783
+    },
+    {
+      "fullTitle": "Workspace Installer - Unattended Mode > Fresh Workspace Installation > Unattended Installation - Fresh Workspace",
+      "title": "Unattended Installation - Fresh Workspace",
+      "suitePath": [
+        "Workspace Installer - Unattended Mode",
+        "Fresh Workspace Installation"
+      ],
+      "status": "passed",
+      "durationMs": 367.768309
+    },
+    {
+      "fullTitle": "Workspace Installer - Unattended Mode > Fresh Workspace Installation > Unattended Installation with Config File",
+      "title": "Unattended Installation with Config File",
+      "suitePath": [
+        "Workspace Installer - Unattended Mode",
+        "Fresh Workspace Installation"
+      ],
+      "status": "passed",
+      "durationMs": 377.898214
+    },
+    {
+      "fullTitle": "Workspace Installer - Unattended Mode > Fresh Workspace Installation > Unattended Installation with workspace.config.json (local folder project src)",
+      "title": "Unattended Installation with workspace.config.json (local folder project src)",
+      "suitePath": [
+        "Workspace Installer - Unattended Mode",
+        "Fresh Workspace Installation"
+      ],
+      "status": "passed",
+      "durationMs": 480.728222
+    },
+    {
+      "fullTitle": "Workspace Installer - Unattended Mode > Fresh Workspace Installation > Unattended Installation with workspace.config.json seedFiles[] copies seed files/folders",
+      "title": "Unattended Installation with workspace.config.json seedFiles[] copies seed files/folders",
+      "suitePath": [
+        "Workspace Installer - Unattended Mode",
+        "Fresh Workspace Installation"
+      ],
+      "status": "passed",
+      "durationMs": 408.767169
+    },
+    {
+      "fullTitle": "Workspace Installer - Unattended Mode > Fresh Workspace Installation > Unattended Installation - Full Structure Verification",
+      "title": "Unattended Installation - Full Structure Verification",
+      "suitePath": [
+        "Workspace Installer - Unattended Mode",
+        "Fresh Workspace Installation"
+      ],
+      "status": "passed",
+      "durationMs": 404.680334
+    },
+    {
+      "fullTitle": "Workspace Installer - Unattended Mode > Existing Workspace Operations > Reinstall Existing Workspace - Unattended",
+      "title": "Reinstall Existing Workspace - Unattended",
+      "suitePath": [
+        "Workspace Installer - Unattended Mode",
+        "Existing Workspace Operations"
+      ],
+      "status": "passed",
+      "durationMs": 794.755715
+    },
+    {
+      "fullTitle": "Workspace Installer - Unattended Mode > Existing Workspace Operations > Add Modules to Existing Workspace",
+      "title": "Add Modules to Existing Workspace",
+      "suitePath": [
+        "Workspace Installer - Unattended Mode",
+        "Existing Workspace Operations"
+      ],
+      "status": "passed",
+      "durationMs": 792.099712
+    },
+    {
+      "fullTitle": "Workspace Installer - Unattended Mode > Existing Workspace Operations > Remove Modules from Existing Workspace",
+      "title": "Remove Modules from Existing Workspace",
+      "suitePath": [
+        "Workspace Installer - Unattended Mode",
+        "Existing Workspace Operations"
+      ],
+      "status": "passed",
+      "durationMs": 778.748394
+    },
+    {
+      "fullTitle": "Workspace Installer - Unattended Mode > Existing Workspace Operations > Reinstallation Verification - Preserve Configuration",
+      "title": "Reinstallation Verification - Preserve Configuration",
+      "suitePath": [
+        "Workspace Installer - Unattended Mode",
+        "Existing Workspace Operations"
+      ],
+      "status": "passed",
+      "durationMs": 785.06446
+    },
+    {
+      "fullTitle": "Workspace Installer - Unattended Mode > Existing Workspace Operations > Reinstallation - Module Hooks Re-executed",
+      "title": "Reinstallation - Module Hooks Re-executed",
+      "suitePath": [
+        "Workspace Installer - Unattended Mode",
+        "Existing Workspace Operations"
+      ],
+      "status": "passed",
+      "durationMs": 796.391517
+    },
+    {
+      "fullTitle": "Workspace Installer - Unattended Mode > External Repository Installation > Installation with External Repository",
+      "title": "Installation with External Repository",
+      "suitePath": [
+        "Workspace Installer - Unattended Mode",
+        "External Repository Installation"
+      ],
+      "status": "passed",
+      "durationMs": 898.374065
+    },
+    {
+      "fullTitle": "workspace modules patterns > modules: [\"issue-*\"] expands to issue-tracker and issue-tracker-github",
+      "title": "modules: [\"issue-*\"] expands to issue-tracker and issue-tracker-github",
+      "suitePath": [
+        "workspace modules patterns"
+      ],
+      "status": "passed",
+      "durationMs": 16.890876
+    },
+    {
+      "fullTitle": "devduck new (npx-friendly bootstrap) > clones DevDuck into devduck/src when not listed in projects",
+      "title": "clones DevDuck into devduck/src when not listed in projects",
+      "suitePath": [
+        "devduck new (npx-friendly bootstrap)"
+      ],
+      "status": "passed",
+      "durationMs": 2423.19314
+    },
+    {
+      "fullTitle": "devduck new (npx-friendly bootstrap) > resolves relative workspace path from INIT_CWD (npx cache cwd simulation)",
+      "title": "resolves relative workspace path from INIT_CWD (npx cache cwd simulation)",
+      "suitePath": [
+        "devduck new (npx-friendly bootstrap)"
+      ],
+      "status": "passed",
+      "durationMs": 2507.712226
+    },
+    {
+      "fullTitle": "Workspace Installer - Workspace-local modules/ > Installs module from workspace/modules when listed in config",
+      "title": "Installs module from workspace/modules when listed in config",
+      "suitePath": [
+        "Workspace Installer - Workspace-local modules/"
+      ],
+      "status": "passed",
+      "durationMs": 433.455129
+    }
+  ]
+}

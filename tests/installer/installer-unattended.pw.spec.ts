@@ -1,13 +1,11 @@
-#!/usr/bin/env node
-
 /**
  * Tests for workspace installer in unattended mode
  */
 
-import { test, describe, before, after } from 'node:test';
+import { test } from '@playwright/test';
 import assert from 'node:assert';
-import path from 'path';
-import { promises as fs } from 'fs';
+import path from 'node:path';
+import { promises as fs } from 'node:fs';
 import {
   createTempWorkspace,
   createWorkspaceFromFixture,
@@ -19,6 +17,8 @@ import {
   waitForInstallation,
   checkInstallerResult
 } from './helpers.js';
+
+const { describe, beforeAll: before, afterAll: after } = test;
 
 describe('Workspace Installer - Unattended Mode', () => {
   describe('Fresh Workspace Installation', () => {

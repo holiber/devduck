@@ -1,55 +1,43 @@
-#!/usr/bin/env node
-
-/**
- * Tests for install-project-scripts functionality
- */
-
-import { test, describe, before, after } from 'node:test';
+import { test } from '@playwright/test';
 import assert from 'node:assert';
-import path from 'path';
-import { promises as fs } from 'fs';
+import path from 'node:path';
+import { promises as fs } from 'node:fs';
+
 import { installProjectScripts } from '../../scripts/install/install-project-scripts.js';
 import { createWorkspaceFromFixture, cleanupTempWorkspace } from './helpers.js';
 
-/**
- * Read JSON file
- */
-async function readJSON(filePath) {
+async function readJSON(filePath: string): Promise<any> {
   try {
     const content = await fs.readFile(filePath, 'utf8');
     return JSON.parse(content);
-  } catch (error) {
+  } catch {
     return null;
   }
 }
 
-describe('Install Project Scripts', () => {
-  let tempWorkspace;
+test.describe('Install Project Scripts', () => {
+  let tempWorkspace: string;
 
-  before(async () => {
+  test.beforeAll(async () => {
     tempWorkspace = await createWorkspaceFromFixture('empty', {
       prefix: 'devduck-scripts-test-'
     });
   });
 
-  after(async () => {
+  test.afterAll(async () => {
     if (tempWorkspace) {
       await cleanupTempWorkspace(tempWorkspace);
     }
   });
 
-  test('Install default scripts from project', async () => {
+  test('Install default scripts from project @smoke', async () => {
     // Create workspace package.json
     const workspacePackageJson = {
       name: 'test-workspace',
       version: '1.0.0',
       scripts: {}
     };
-    await fs.writeFile(
-      path.join(tempWorkspace, 'package.json'),
-      JSON.stringify(workspacePackageJson, null, 2),
-      'utf8'
-    );
+    await fs.writeFile(path.join(tempWorkspace, 'package.json'), JSON.stringify(workspacePackageJson, null, 2), 'utf8');
 
     // Create project directory and package.json
     const projectName = 'test-project';
@@ -70,11 +58,7 @@ describe('Install Project Scripts', () => {
         custom: 'echo custom'
       }
     };
-    await fs.writeFile(
-      path.join(projectDir, 'package.json'),
-      JSON.stringify(projectPackageJson, null, 2),
-      'utf8'
-    );
+    await fs.writeFile(path.join(projectDir, 'package.json'), JSON.stringify(projectPackageJson, null, 2), 'utf8');
 
     // Create config
     const config = {
@@ -85,8 +69,8 @@ describe('Install Project Scripts', () => {
       ]
     };
 
-    const logMessages = [];
-    const log = (msg) => logMessages.push(msg);
+    const logMessages: string[] = [];
+    const log = (msg: string) => logMessages.push(msg);
 
     // Install scripts
     installProjectScripts(tempWorkspace, config.projects, config, log);
@@ -114,18 +98,14 @@ describe('Install Project Scripts', () => {
     );
   });
 
-  test('Install additional scripts via importScripts', async () => {
+  test('Install additional scripts via importScripts @smoke', async () => {
     // Create workspace package.json
     const workspacePackageJson = {
       name: 'test-workspace',
       version: '1.0.0',
       scripts: {}
     };
-    await fs.writeFile(
-      path.join(tempWorkspace, 'package.json'),
-      JSON.stringify(workspacePackageJson, null, 2),
-      'utf8'
-    );
+    await fs.writeFile(path.join(tempWorkspace, 'package.json'), JSON.stringify(workspacePackageJson, null, 2), 'utf8');
 
     // Create project
     const projectName = 'test-project-2';
@@ -143,11 +123,7 @@ describe('Install Project Scripts', () => {
         custom: 'echo custom'
       }
     };
-    await fs.writeFile(
-      path.join(projectDir, 'package.json'),
-      JSON.stringify(projectPackageJson, null, 2),
-      'utf8'
-    );
+    await fs.writeFile(path.join(projectDir, 'package.json'), JSON.stringify(projectPackageJson, null, 2), 'utf8');
 
     // Create config with importScripts
     const config = {
@@ -176,7 +152,7 @@ describe('Install Project Scripts', () => {
     assert.ok(!updatedWorkspacePackageJson.scripts[`${projectName}:custom`], 'custom script should not be installed');
   });
 
-  test('Remove scripts when project is removed from config', async () => {
+  test('Remove scripts when project is removed from config @smoke', async () => {
     // Create workspace package.json with existing project scripts
     const workspacePackageJson = {
       name: 'test-workspace',
@@ -187,11 +163,7 @@ describe('Install Project Scripts', () => {
         'other-script': 'echo other'
       }
     };
-    await fs.writeFile(
-      path.join(tempWorkspace, 'package.json'),
-      JSON.stringify(workspacePackageJson, null, 2),
-      'utf8'
-    );
+    await fs.writeFile(path.join(tempWorkspace, 'package.json'), JSON.stringify(workspacePackageJson, null, 2), 'utf8');
 
     // Create new project
     const projectName = 'new-project';
@@ -206,11 +178,7 @@ describe('Install Project Scripts', () => {
         test: 'jest'
       }
     };
-    await fs.writeFile(
-      path.join(projectDir, 'package.json'),
-      JSON.stringify(projectPackageJson, null, 2),
-      'utf8'
-    );
+    await fs.writeFile(path.join(projectDir, 'package.json'), JSON.stringify(projectPackageJson, null, 2), 'utf8');
 
     // Create config with only new project (old-project removed)
     const config = {
@@ -238,18 +206,14 @@ describe('Install Project Scripts', () => {
     assert.ok(updatedWorkspacePackageJson.scripts['other-script'], 'other-script should be preserved');
   });
 
-  test('Handle missing project package.json gracefully', async () => {
+  test('Handle missing project package.json gracefully @smoke', async () => {
     // Create workspace package.json
     const workspacePackageJson = {
       name: 'test-workspace',
       version: '1.0.0',
       scripts: {}
     };
-    await fs.writeFile(
-      path.join(tempWorkspace, 'package.json'),
-      JSON.stringify(workspacePackageJson, null, 2),
-      'utf8'
-    );
+    await fs.writeFile(path.join(tempWorkspace, 'package.json'), JSON.stringify(workspacePackageJson, null, 2), 'utf8');
 
     // Create project directory but no package.json
     const projectName = 'missing-package-project';
@@ -266,8 +230,8 @@ describe('Install Project Scripts', () => {
       ]
     };
 
-    const logMessages = [];
-    const log = (msg) => logMessages.push(msg);
+    const logMessages: string[] = [];
+    const log = (msg: string) => logMessages.push(msg);
 
     // Install scripts (should not crash)
     installProjectScripts(tempWorkspace, config.projects, config, log);
@@ -278,18 +242,14 @@ describe('Install Project Scripts', () => {
     assert.strictEqual(Object.keys(updatedWorkspacePackageJson.scripts || {}).length, 0, 'No scripts should be added');
   });
 
-  test('Verify scripts do not change current directory', async () => {
+  test('Verify scripts do not change current directory @smoke', async () => {
     // Create workspace package.json
     const workspacePackageJson = {
       name: 'test-workspace',
       version: '1.0.0',
       scripts: {}
     };
-    await fs.writeFile(
-      path.join(tempWorkspace, 'package.json'),
-      JSON.stringify(workspacePackageJson, null, 2),
-      'utf8'
-    );
+    await fs.writeFile(path.join(tempWorkspace, 'package.json'), JSON.stringify(workspacePackageJson, null, 2), 'utf8');
 
     // Create project
     const projectName = 'cd-test-project';
@@ -304,11 +264,7 @@ describe('Install Project Scripts', () => {
         test: 'jest'
       }
     };
-    await fs.writeFile(
-      path.join(projectDir, 'package.json'),
-      JSON.stringify(projectPackageJson, null, 2),
-      'utf8'
-    );
+    await fs.writeFile(path.join(projectDir, 'package.json'), JSON.stringify(projectPackageJson, null, 2), 'utf8');
 
     // Create config
     const config = {

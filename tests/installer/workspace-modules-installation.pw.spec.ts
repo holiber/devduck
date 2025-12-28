@@ -1,10 +1,4 @@
-#!/usr/bin/env node
-
-/**
- * Tests for installing modules from workspace-local modules/ directory
- */
-
-import { test, describe } from 'node:test';
+import { test } from '@playwright/test';
 import assert from 'node:assert';
 import path from 'node:path';
 import { promises as fs } from 'node:fs';
@@ -17,7 +11,7 @@ import {
   checkInstallerResult
 } from './helpers.js';
 
-describe('Workspace Installer - Workspace-local modules/', () => {
+test.describe('Workspace Installer - Workspace-local modules/', () => {
   test('Installs module from workspace/modules when listed in config', async () => {
     const tempWorkspace = await createTempWorkspace();
     const configPath = path.join(tempWorkspace, 'test-config.json');

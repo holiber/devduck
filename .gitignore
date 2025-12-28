@@ -29,5 +29,14 @@ playwright-report/
 blob-report/
 
 # Projects (workspace-specific, not part of devduck repo)
-projects/
+#
+# Default: ignore all workspace projects.
+# Exception: allow committing perf snapshots for installer test migration.
+projects/*
+!projects/devduck/
+projects/devduck/*
+!projects/devduck/tests/
+projects/devduck/tests/*
+!projects/devduck/tests/perf/
+!projects/devduck/tests/perf/**
 
