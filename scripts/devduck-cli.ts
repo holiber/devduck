@@ -5,6 +5,8 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import yargs from 'yargs/yargs';
 import { hideBin } from 'yargs/helpers';
+import YAML from 'yaml';
+import { readWorkspaceConfigFromRoot, writeWorkspaceConfigFile } from './lib/workspace-config.js';
 
 type WorkspaceConfigLike = {
   workspaceVersion?: string;
@@ -18,19 +20,21 @@ type WorkspaceConfigLike = {
   [k: string]: unknown;
 };
 
-function readJsonIfExists<T>(p: string): T | null {
+type GeneratedTaskfile = {
+  version: string;
+  output?: string;
+  vars?: Record<string, string>;
+  tasks: Record<string, unknown>;
+};
+
+function readYamlIfExists<T>(p: string): T | null {
   try {
     if (!fs.existsSync(p)) return null;
     const raw = fs.readFileSync(p, 'utf8');
-    return JSON.parse(raw) as T;
+    return YAML.parse(raw) as T;
   } catch {
     return null;
   }
-}
-
-function writeJson(p: string, obj: unknown): void {
-  fs.mkdirSync(path.dirname(p), { recursive: true });
-  fs.writeFileSync(p, JSON.stringify(obj, null, 2) + '\n', 'utf8');
 }
 
 function ensureWorkspacePackageJson(workspaceRoot: string): void {
@@ -48,6 +52,8 @@ function ensureWorkspacePackageJson(workspaceRoot: string): void {
       install: 'tsx ./devduck/src/scripts/install.ts --workspace-path . --unattended'
     },
     dependencies: {
+      // Taskfile runner (go-task) to support `npx task install`
+      '@go-task/cli': '^3.46.4',
       // Needed by DevDuck installer/runtime (imported from devduck/src/scripts/*)
       '@modelcontextprotocol/sdk': '^1.25.1',
       'compare-versions': '^6.1.1',
@@ -59,7 +65,8 @@ function ensureWorkspacePackageJson(workspaceRoot: string): void {
     }
   };
 
-  writeJson(pkgPath, pkg);
+  fs.mkdirSync(path.dirname(pkgPath), { recursive: true });
+  fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n', 'utf8');
 }
 
 function runNpmInstall(workspaceRoot: string): void {
@@ -77,6 +84,66 @@ function runNpmInstall(workspaceRoot: string): void {
     const details = (res.stderr || res.stdout || '').toString().trim();
     throw new Error(`npm install failed (exit ${res.status ?? 'unknown'}). ${details}`);
   }
+}
+
+function ensureWorkspaceTaskfile(workspaceRoot: string, devduckPathRel: string): void {
+  const taskfilePath = path.join(workspaceRoot, 'Taskfile.yml');
+  if (fs.existsSync(taskfilePath)) return;
+
+  // Keep this file tiny and stable: it delegates to DevDuck's default taskfile.
+  const includePath = path.posix.join(devduckPathRel.replace(/\\/g, '/'), 'defaults', 'install.taskfile.yml');
+  const content =
+    `version: '3'\n` +
+    `output: interleaved\n\n` +
+    `includes:\n` +
+    `  devduck:\n` +
+    `    taskfile: ${includePath}\n\n` +
+    `tasks:\n` +
+    `  sync:\n` +
+    `    desc: "Generate .cache/taskfile.generated.yml from workspace config"\n` +
+    `    cmds:\n` +
+    `      - task: devduck:sync\n\n` +
+    `  install:\n` +
+    `    desc: "Run full installation sequence (Steps 1–7)"\n` +
+    `    cmds:\n` +
+    `      - task: devduck:install\n`;
+
+  fs.writeFileSync(taskfilePath, content, 'utf8');
+}
+
+function buildGeneratedTaskfile(devduckPathRel: string): GeneratedTaskfile {
+  const stepCmd = (stepId: string) =>
+    `tsx {{.DEVDUCK_ROOT}}/scripts/install/run-step.ts ${stepId} --workspace-root {{.WORKSPACE_ROOT}} --project-root {{.DEVDUCK_ROOT}} --unattended`;
+
+  return {
+    version: '3',
+    output: 'interleaved',
+    vars: {
+      DEVDUCK_ROOT: devduckPathRel,
+      WORKSPACE_ROOT: '{{ default "." .WORKSPACE_ROOT }}'
+    },
+    tasks: {
+      install: {
+        desc: 'Run full installation sequence (Steps 1–7)',
+        cmds: [
+          { task: 'install:1-check-env' },
+          { task: 'install:2-download-repos' },
+          { task: 'install:3-download-projects' },
+          { task: 'install:4-check-env-again' },
+          { task: 'install:5-setup-modules' },
+          { task: 'install:6-setup-projects' },
+          { task: 'install:7-verify-installation' }
+        ]
+      },
+      'install:1-check-env': { desc: 'Verify required environment variables', cmds: [stepCmd('check-env')] },
+      'install:2-download-repos': { desc: 'Download external module repositories', cmds: [stepCmd('download-repos')] },
+      'install:3-download-projects': { desc: 'Clone/link workspace projects', cmds: [stepCmd('download-projects')] },
+      'install:4-check-env-again': { desc: 'Re-check environment variables', cmds: [stepCmd('check-env-again')] },
+      'install:5-setup-modules': { desc: 'Setup all DevDuck modules', cmds: [stepCmd('setup-modules')] },
+      'install:6-setup-projects': { desc: 'Setup all workspace projects', cmds: [stepCmd('setup-projects')] },
+      'install:7-verify-installation': { desc: 'Verify installation correctness', cmds: [stepCmd('verify-installation')] }
+    }
+  };
 }
 
 function isDevduckProjectSrc(src: string): boolean {
@@ -203,6 +270,43 @@ async function main(argv = process.argv): Promise<void> {
   const y = yargs(hideBin(argv))
     .scriptName('devduck')
     .command(
+      'sync [workspacePath]',
+      'Generate .cache/taskfile.generated.yml (Taskfile runtime) for a workspace',
+      (yy) =>
+        yy.positional('workspacePath', {
+          type: 'string',
+          describe: 'Workspace root directory (defaults to current directory)',
+          default: '.'
+        }),
+      (args) => {
+        const invocationCwd = process.env.INIT_CWD ? path.resolve(process.env.INIT_CWD) : process.cwd();
+        const workspaceRoot = path.resolve(invocationCwd, String(args.workspacePath || '.'));
+
+        const { config, configFile } = readWorkspaceConfigFromRoot<WorkspaceConfigLike>(workspaceRoot);
+        if (!config) {
+          throw new Error(`Cannot read workspace config: ${configFile}`);
+        }
+
+        const devduckPathRel =
+          typeof config.devduckPath === 'string' && config.devduckPath.trim().length > 0
+            ? config.devduckPath.trim()
+            : './devduck/src';
+
+        const cacheDir = path.join(workspaceRoot, '.cache');
+        fs.mkdirSync(cacheDir, { recursive: true });
+
+        const generated = buildGeneratedTaskfile(devduckPathRel);
+        const generatedPath = path.join(cacheDir, 'taskfile.generated.yml');
+        const out = YAML.stringify(generated);
+        fs.writeFileSync(generatedPath, out.endsWith('\n') ? out : out + '\n', 'utf8');
+
+        ensureWorkspaceTaskfile(workspaceRoot, devduckPathRel);
+
+        // eslint-disable-next-line no-console
+        console.log(`Generated ${path.relative(workspaceRoot, generatedPath)} from ${path.basename(configFile)}`);
+      }
+    )
+    .command(
       'new <workspacePath>',
       'Create a new DevDuck workspace',
       (yy) =>
@@ -214,7 +318,7 @@ async function main(argv = process.argv): Promise<void> {
           })
           .option('workspace-config', {
             type: 'string',
-            describe: 'Path to a template workspace.config.json to start from'
+            describe: 'Path to a template workspace.config.yml to start from'
           })
           .option('devduck-repo', {
             type: 'string',
@@ -239,12 +343,12 @@ async function main(argv = process.argv): Promise<void> {
         const workspaceRoot = path.resolve(invocationCwd, String(args.workspacePath));
         fs.mkdirSync(workspaceRoot, { recursive: true });
 
-        const configPath = path.join(workspaceRoot, 'workspace.config.json');
+        const configPath = path.join(workspaceRoot, 'workspace.config.yml');
         const templatePath = args['workspace-config']
           ? path.resolve(invocationCwd, String(args['workspace-config']))
           : null;
 
-        const templateCfg = templatePath ? readJsonIfExists<WorkspaceConfigLike>(templatePath) : null;
+        const templateCfg = templatePath ? readYamlIfExists<WorkspaceConfigLike>(templatePath) : null;
         const config: WorkspaceConfigLike = {
           ...buildDefaultWorkspaceConfig(),
           ...(templateCfg || {})
@@ -260,7 +364,7 @@ async function main(argv = process.argv): Promise<void> {
             : undefined
         });
 
-        writeJson(configPath, config);
+        writeWorkspaceConfigFile(configPath, config);
 
         // Create workspace package.json and install dependencies.
         // `npm install` will automatically run the workspace "install" script, which bootstraps the workspace.

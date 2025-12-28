@@ -12,6 +12,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { createRequire } from 'module';
+import { getWorkspaceConfigFilePath, readWorkspaceConfigFile } from '../lib/workspace-config.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -237,19 +238,12 @@ export function createHookContext(
     devduckRoot = workspaceDevduck;
   } else {
     // Try to find devduck relative to workspace config
-    const configPath = path.join(workspaceRoot, 'workspace.config.json');
-    if (fs.existsSync(configPath)) {
-      try {
-        const config = JSON.parse(fs.readFileSync(configPath, 'utf8')) as { devduckPath?: string };
-        if (config.devduckPath) {
-          const resolvedDevduck = path.resolve(workspaceRoot, config.devduckPath);
-          if (fs.existsSync(resolvedDevduck)) {
-            devduckRoot = resolvedDevduck;
-          }
-        }
-      } catch {
-        // Ignore config parsing errors
-      }
+    const configPath = getWorkspaceConfigFilePath(workspaceRoot);
+    const config = readWorkspaceConfigFile<{ devduckPath?: string }>(configPath);
+    const devduckPath = config?.devduckPath;
+    if (devduckPath) {
+      const resolvedDevduck = path.resolve(workspaceRoot, devduckPath);
+      if (fs.existsSync(resolvedDevduck)) devduckRoot = resolvedDevduck;
     }
   }
   

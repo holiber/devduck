@@ -70,8 +70,8 @@ Cleaned up shared workspace: /workspace/.cache/temp/install-steps-test-176688440
     ✔ Unattended Installation from fixture - cursor-only (409.048783ms)
     ✔ Unattended Installation - Fresh Workspace (367.768309ms)
     ✔ Unattended Installation with Config File (377.898214ms)
-    ✔ Unattended Installation with workspace.config.json (local folder project src) (480.728222ms)
-    ✔ Unattended Installation with workspace.config.json seedFiles[] copies seed files/folders (408.767169ms)
+    ✔ Unattended Installation with workspace config template (local folder project src) (480.728222ms)
+    ✔ Unattended Installation with workspace config template seedFiles[] copies seed files/folders (408.767169ms)
     ✔ Unattended Installation - Full Structure Verification (404.680334ms)
   ✔ Fresh Workspace Installation (2449.824464ms)
   ▶ Existing Workspace Operations

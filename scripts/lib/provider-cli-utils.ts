@@ -4,7 +4,7 @@
  * Utilities for automatically generating CLI commands from provider contracts
  */
 
-import type { z } from 'zod';
+import { z } from 'zod';
 import type { Argv, CommandModule } from 'yargs';
 
 export interface ToolDefinition<TProvider = unknown, TInput = unknown, TOutput = unknown> {
@@ -51,39 +51,52 @@ export function extractYargsOptionsFromSchema(schema: z.ZodObject<any>): {
   const options: Record<string, { type: string; describe: string; default?: unknown }> = {};
   const positionals: Array<{ name: string; describe: string; optional?: boolean }> = [];
 
+  // Deterministic ordering: avoid relying on insertion order of schema shape.
+  const keys = Object.keys(shape).sort((a, b) => a.localeCompare(b));
+
   // Collect all required and optional fields
   const requiredFields: Array<{ name: string; field: z.ZodTypeAny }> = [];
   const optionalFields: Array<{ name: string; field: z.ZodTypeAny }> = [];
 
-  for (const [key, field] of Object.entries(shape)) {
-    const zodField = field as z.ZodTypeAny;
-    const def = zodField._def;
-
-    // Check if field is optional or has default
-    const isOptional = def.typeName === 'ZodOptional' || def.typeName === 'ZodDefault';
-    
-    if (isOptional) {
-      optionalFields.push({ name: key, field: zodField });
-    } else {
-      // Required field - will be positional
-      requiredFields.push({ name: key, field: zodField });
+  const unwrap = (field: z.ZodTypeAny): { inner: z.ZodTypeAny; isOptional: boolean; isDefault: boolean } => {
+    if (field instanceof z.ZodDefault) {
+      // ZodDefault may wrap optional/nullable types. Treat as optional for CLI purposes.
+      return { inner: field._def.innerType as z.ZodTypeAny, isOptional: true, isDefault: true };
     }
+    if (field instanceof z.ZodOptional) {
+      return { inner: field._def.innerType as z.ZodTypeAny, isOptional: true, isDefault: false };
+    }
+    return { inner: field, isOptional: false, isDefault: false };
+  };
+
+  const typeDescOf = (field: z.ZodTypeAny): 'string' | 'number' | 'boolean' => {
+    if (field instanceof z.ZodNumber) return 'number';
+    if (field instanceof z.ZodBoolean) return 'boolean';
+    // Treat unions/others as string for CLI ergonomics.
+    return 'string';
+  };
+
+  const defaultValueOf = (field: z.ZodTypeAny): unknown => {
+    if (!(field instanceof z.ZodDefault)) return undefined;
+    // Avoid relying on private internals: compute default via public parse(undefined).
+    try {
+      return field.parse(undefined);
+    } catch {
+      return undefined;
+    }
+  };
+
+  for (const key of keys) {
+    const zodField = shape[key] as z.ZodTypeAny;
+    const { isOptional } = unwrap(zodField);
+    if (isOptional) optionalFields.push({ name: key, field: zodField });
+    else requiredFields.push({ name: key, field: zodField });
   }
 
   // Add all required fields as positionals (in order)
   for (const { name, field } of requiredFields) {
-    const zodField = field as z.ZodTypeAny;
-    const def = zodField._def;
-    
-    // Determine type for description
-    let typeDesc = 'string';
-    if (def.typeName === 'ZodString') {
-      typeDesc = 'string';
-    } else if (def.typeName === 'ZodNumber') {
-      typeDesc = 'number';
-    } else if (def.typeName === 'ZodBoolean') {
-      typeDesc = 'boolean';
-    }
+    const { inner } = unwrap(field);
+    const typeDesc = typeDescOf(inner);
     
     positionals.push({
       name,
@@ -95,28 +108,8 @@ export function extractYargsOptionsFromSchema(schema: z.ZodObject<any>): {
   let skipFirstOptional = false;
   if (positionals.length === 0 && optionalFields.length === 1) {
     const { name, field } = optionalFields[0];
-    const zodField = field as z.ZodTypeAny;
-    const def = zodField._def;
-    
-    // Get inner type
-    let innerType = zodField;
-    if (def.typeName === 'ZodOptional') {
-      innerType = def.innerType;
-    } else if (def.typeName === 'ZodDefault') {
-      innerType = def.innerType;
-    }
-    
-    const innerDef = (innerType as z.ZodTypeAny)._def;
-    
-    // Determine type for description
-    let typeDesc = 'string';
-    if (innerDef.typeName === 'ZodString') {
-      typeDesc = 'string';
-    } else if (innerDef.typeName === 'ZodNumber') {
-      typeDesc = 'number';
-    } else if (innerDef.typeName === 'ZodBoolean') {
-      typeDesc = 'boolean';
-    }
+    const { inner } = unwrap(field);
+    const typeDesc = typeDescOf(inner);
     
     positionals.push({
       name,
@@ -134,37 +127,9 @@ export function extractYargsOptionsFromSchema(schema: z.ZodObject<any>): {
       continue;
     }
     const { name, field } = optionalFields[i];
-    const zodField = field as z.ZodTypeAny;
-    const def = zodField._def;
-
-    // Get inner type
-    let innerType = zodField;
-    if (def.typeName === 'ZodOptional') {
-      innerType = def.innerType;
-    } else if (def.typeName === 'ZodDefault') {
-      innerType = def.innerType;
-    }
-
-    const innerDef = (innerType as z.ZodTypeAny)._def;
-
-    // Determine type
-    let type = 'string';
-    if (innerDef.typeName === 'ZodString') {
-      type = 'string';
-    } else if (innerDef.typeName === 'ZodNumber') {
-      type = 'number';
-    } else if (innerDef.typeName === 'ZodBoolean') {
-      type = 'boolean';
-    } else if (innerDef.typeName === 'ZodUnion') {
-      // For union types, default to string
-      type = 'string';
-    }
-
-    // Check for default value
-    let defaultValue: unknown = undefined;
-    if (def.typeName === 'ZodDefault') {
-      defaultValue = def.defaultValue();
-    }
+    const { inner } = unwrap(field);
+    const type = typeDescOf(inner);
+    const defaultValue = defaultValueOf(field);
 
     options[name] = {
       type,
@@ -187,6 +152,7 @@ export function buildInputFromArgs(
   const input: Record<string, unknown> = {};
   const shape = schema.shape;
   const handledKeys = new Set<string>();
+  const keys = Object.keys(shape).sort((a, b) => a.localeCompare(b));
 
   // Handle positional arguments
   if (positionalNames && positionalNames.length > 0) {
@@ -202,7 +168,7 @@ export function buildInputFromArgs(
   }
 
   // Copy other options (skip already handled positionals)
-  for (const [key] of Object.entries(shape)) {
+  for (const key of keys) {
     if (handledKeys.has(key)) {
       continue;
     }

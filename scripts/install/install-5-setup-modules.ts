@@ -10,7 +10,7 @@
 
 import path from 'path';
 import fs from 'fs';
-import { readJSON } from '../lib/config.js';
+import { readWorkspaceConfigFromRoot } from '../lib/workspace-config.js';
 import { print, symbols } from '../utils.js';
 import { loadModulesForChecks, createCheckFunctions } from './install-common.js';
 import { markStepCompleted, type ModuleResult, getExecutedChecks, trackCheckExecution, generateCheckId } from './install-state.js';
@@ -42,16 +42,15 @@ export async function runStep5SetupModules(
     log(`[Step 5] Starting module setup`);
   }
   
-  const configFile = path.join(workspaceRoot, 'workspace.config.json');
-  const config = readJSON<WorkspaceConfig>(configFile);
+  const { config, configFile } = readWorkspaceConfigFromRoot<WorkspaceConfig>(workspaceRoot);
   
   if (!config) {
-    print(`  ${symbols.error} Cannot read workspace.config.json`, 'red');
+    print(`  ${symbols.error} Cannot read workspace config (${path.basename(configFile)})`, 'red');
     if (log) {
-      log(`[Step 5] ERROR: Cannot read workspace.config.json`);
+      log(`[Step 5] ERROR: Cannot read workspace config (${configFile})`);
     }
     const result: SetupModulesStepResult = { modules: [] };
-    markStepCompleted(workspaceRoot, 'setup-modules', result, 'Cannot read workspace.config.json');
+    markStepCompleted(workspaceRoot, 'setup-modules', result, `Cannot read ${path.basename(configFile)}`);
     return result;
   }
   

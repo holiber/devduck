@@ -22,6 +22,7 @@ import {
 } from './lib/provider-registry.js';
 import { resolveDevduckRoot } from './lib/devduck-paths.js';
 import { readJSON } from './lib/config.js';
+import { getWorkspaceConfigFilePath, readWorkspaceConfigFile } from './lib/workspace-config.js';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
@@ -43,10 +44,10 @@ function pickProviderNameFromConfig(moduleName: string, workspaceRoot: string | 
 
   if (!workspaceRoot) return null;
 
-  const configPath = path.join(workspaceRoot, 'workspace.config.json');
+  const configPath = getWorkspaceConfigFilePath(workspaceRoot);
   if (!fs.existsSync(configPath)) return null;
 
-  const cfg = readJSON<WorkspaceConfigLike>(configPath);
+  const cfg = readWorkspaceConfigFile<WorkspaceConfigLike>(configPath);
   const moduleSettings = (cfg && cfg.moduleSettings) || {};
   const moduleSettingsObj = moduleSettings as Record<string, unknown>;
   const moduleConfig = moduleSettingsObj[moduleName] as Record<string, unknown> | undefined;
@@ -70,9 +71,9 @@ async function initializeProviders(
 
   // Discover providers from external repositories
   if (workspaceRoot) {
-    const configPath = path.join(workspaceRoot, 'workspace.config.json');
+    const configPath = getWorkspaceConfigFilePath(workspaceRoot);
     if (fs.existsSync(configPath)) {
-      const config = readJSON<WorkspaceConfigLike>(configPath);
+      const config = readWorkspaceConfigFile<WorkspaceConfigLike>(configPath);
       if (config && config.repos && Array.isArray(config.repos)) {
         const { loadModulesFromRepo, getDevduckVersion } = await import('./lib/repo-modules.js');
         const devduckVersion = getDevduckVersion();

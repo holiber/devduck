@@ -35,7 +35,7 @@ The module defines a Zod contract that issue tracker providers must implement:
 
 ## Provider selection
 
-- `workspace.config.json`: `moduleSettings.issueTracker.provider`
+- `workspace.config.yml`: `moduleSettings.issueTracker.provider`
 - Environment variable: `ISSUE_TRACKER_PROVIDER`
 - Fallback: first available provider (after discovery)
 

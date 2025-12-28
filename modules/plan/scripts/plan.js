@@ -22,16 +22,18 @@ async function getTracker() {
     const { discoverProvidersFromModules, getProvider } = await import('../../../scripts/lib/provider-registry.js');
     const { resolveDevduckRoot } = await import('../../../scripts/lib/devduck-paths.js');
     const { findWorkspaceRoot } = await import('../../../scripts/lib/workspace-root.js');
+    const { getWorkspaceConfigFilePath, readWorkspaceConfigFile } = await import(
+      '../../../scripts/lib/workspace-config.js'
+    );
     const workspaceRoot = findWorkspaceRoot(process.cwd());
     const { devduckRoot } = resolveDevduckRoot({ cwd: process.cwd(), moduleDir: __dirname });
     await discoverProvidersFromModules({ modulesDir: path.join(devduckRoot, 'modules') });
     
     // Discover from external repos if workspace config exists
     if (workspaceRoot) {
-      const configPath = path.join(workspaceRoot, 'workspace.config.json');
+      const configPath = getWorkspaceConfigFilePath(workspaceRoot);
       if (fs.existsSync(configPath)) {
-        const { readJSON } = await import('../../../scripts/lib/config.js');
-        const config = readJSON(configPath);
+        const config = readWorkspaceConfigFile(configPath);
         if (config?.repos) {
           const { loadModulesFromRepo, getDevduckVersion } = await import('../../../scripts/lib/repo-modules.js');
           const devduckVersion = getDevduckVersion();

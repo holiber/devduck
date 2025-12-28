@@ -198,8 +198,8 @@
       "durationMs": 377.898214
     },
     {
-      "fullTitle": "Workspace Installer - Unattended Mode > Fresh Workspace Installation > Unattended Installation with workspace.config.json (local folder project src)",
-      "title": "Unattended Installation with workspace.config.json (local folder project src)",
+      "fullTitle": "Workspace Installer - Unattended Mode > Fresh Workspace Installation > Unattended Installation with workspace config template (local folder project src)",
+      "title": "Unattended Installation with workspace config template (local folder project src)",
       "suitePath": [
         "Workspace Installer - Unattended Mode",
         "Fresh Workspace Installation"
@@ -208,8 +208,8 @@
       "durationMs": 480.728222
     },
     {
-      "fullTitle": "Workspace Installer - Unattended Mode > Fresh Workspace Installation > Unattended Installation with workspace.config.json seedFiles[] copies seed files/folders",
-      "title": "Unattended Installation with workspace.config.json seedFiles[] copies seed files/folders",
+      "fullTitle": "Workspace Installer - Unattended Mode > Fresh Workspace Installation > Unattended Installation with workspace config template seedFiles[] copies seed files/folders",
+      "title": "Unattended Installation with workspace config template seedFiles[] copies seed files/folders",
       "suitePath": [
         "Workspace Installer - Unattended Mode",
         "Fresh Workspace Installation"

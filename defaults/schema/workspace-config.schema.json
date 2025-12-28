@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://devduck.dev/schema/workspace-config.schema.json",
+  "title": "DevDuck Workspace Config (YAML nadformat)",
+  "type": "object",
+  "additionalProperties": true,
+  "properties": {
+    "version": { "type": ["integer", "string"], "description": "Schema version (nadformat)" },
+    "name": { "type": "string" },
+    "devduck_path": { "type": "string", "description": "Path to DevDuck sources (relative to workspace root)" },
+    "devduckPath": { "type": "string", "description": "Legacy key; kept for compatibility" },
+    "repos": { "type": "array", "items": { "type": "string" } },
+    "modules": { "type": "array", "items": { "type": "string" } },
+    "moduleSettings": { "type": "object", "additionalProperties": true },
+    "projects": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": ["src"],
+        "properties": {
+          "src": { "type": "string" },
+          "description": { "type": "string" },
+          "checks": { "$ref": "#/$defs/checks" }
+        }
+      }
+    },
+    "checks": { "$ref": "#/$defs/checks" },
+    "env": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": ["name"],
+        "properties": {
+          "name": { "type": "string" },
+          "default": { "type": "string" },
+          "description": { "type": "string" }
+        }
+      }
+    },
+    "extends": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Optional list of taskfile fragments (not interpreted by DevDuck yet)"
+    }
+  },
+  "$defs": {
+    "checks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": ["name"],
+        "properties": {
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "tier": { "type": "string" },
+          "skip": { "type": "boolean" },
+          "test": { "type": "string" },
+          "install": { "type": "string" },
+          "mcpSettings": { "type": "object", "additionalProperties": true }
+        }
+      }
+    }
+  }
+}
+

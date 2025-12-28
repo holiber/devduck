@@ -5,6 +5,7 @@ import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { resolveCorePaths } from '../../../scripts/lib/devduck-paths.js';
 import { findWorkspaceRoot } from '../../../scripts/lib/workspace-root.js';
+import { getWorkspaceConfigFilePath, readWorkspaceConfigFile } from '../../../scripts/lib/workspace-config.js';
 import type { ExecuteCommandResult } from '../../../scripts/utils.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -49,19 +50,12 @@ function loadWorkspaceConfig(): WorkspaceConfig | null {
     return null;
   }
   
-  const configPath = path.join(workspaceRoot, 'workspace.config.json');
+  const configPath = getWorkspaceConfigFilePath(workspaceRoot);
   if (!fs.existsSync(configPath)) {
     return null;
   }
   
-  try {
-    const content = fs.readFileSync(configPath, 'utf8');
-    return JSON.parse(content) as WorkspaceConfig;
-  } catch (error) {
-    const err = error as Error;
-    console.error(`Failed to parse workspace.config.json: ${err.message}`);
-    return null;
-  }
+  return readWorkspaceConfigFile<WorkspaceConfig>(configPath);
 }
 
 /**
@@ -397,7 +391,7 @@ export function main(): void {
   
   const workspaceConfig = loadWorkspaceConfig();
   if (!workspaceConfig) {
-    console.error('Error: Failed to load workspace.config.json');
+    console.error('Error: Failed to load workspace config');
     process.exit(1);
   }
   

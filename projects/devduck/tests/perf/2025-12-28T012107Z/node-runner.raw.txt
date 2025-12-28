@@ -21,7 +21,7 @@ Found 13 test files
   ✔ discovers smogcheck-provider from modules directory and registers it (29.208924ms)
 ✔ ci: provider registry discovery (29.315374ms)
 ✔ launch dev starts background processes, runs smokecheck, captures browser console, and allows reuse (5035.288499ms)
-✔ workspace.config.json launch.dev starts processes, runs smokecheck, and supports smokecheck without args (4824.55368ms)
+✔ workspace config launch.dev starts processes, runs smokecheck, and supports smokecheck without args (4824.55368ms)
 ✔ ProcessManager writes stdout/stderr logs (87.768493ms)
 ✔ stop kills a process group (parent + child) (112.036451ms)
 ▶ email: gmail-provider

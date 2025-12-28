@@ -9,7 +9,7 @@
  */
 
 import path from 'path';
-import { readJSON } from '../lib/config.js';
+import { readWorkspaceConfigFromRoot } from '../lib/workspace-config.js';
 import { print, symbols } from '../utils.js';
 import { collectAllEnvRequirements, checkEnvVariables, loadModulesForChecks, loadProjectsForChecks } from './install-common.js';
 import { markStepCompleted, type CheckEnvResult } from './install-state.js';
@@ -36,13 +36,12 @@ export async function runStep1CheckEnv(
     log(`[Step 1] Starting environment variable check`);
   }
   
-  const configFile = path.join(workspaceRoot, 'workspace.config.json');
-  const config = readJSON<WorkspaceConfig>(configFile);
+  const { config, configFile } = readWorkspaceConfigFromRoot<WorkspaceConfig>(workspaceRoot);
   
   if (!config) {
-    print(`  ${symbols.error} Cannot read workspace.config.json`, 'red');
+    print(`  ${symbols.error} Cannot read workspace config (${path.basename(configFile)})`, 'red');
     if (log) {
-      log(`[Step 1] ERROR: Cannot read workspace.config.json`);
+      log(`[Step 1] ERROR: Cannot read workspace config (${configFile})`);
     }
     const result: CheckEnvStepResult = {
       validationStatus: 'failed',
@@ -50,7 +49,7 @@ export async function runStep1CheckEnv(
       missing: [],
       optional: []
     };
-    markStepCompleted(workspaceRoot, 'check-env', result, 'Cannot read workspace.config.json');
+    markStepCompleted(workspaceRoot, 'check-env', result, `Cannot read ${path.basename(configFile)}`);
     return result;
   }
   
@@ -62,7 +61,7 @@ export async function runStep1CheckEnv(
   
   try {
     // Load available modules (without external repos at this step), then resolve
-    // the *selected* modules from workspace.config.json (including dependencies).
+    // the *selected* modules from workspace config (including dependencies).
     //
     // IMPORTANT: Do NOT collect env requirements from all available modules,
     // otherwise we will incorrectly require tokens for modules that are not installed.

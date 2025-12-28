@@ -24,7 +24,7 @@ This module provides a GitHub-backed provider for the `ci` module.
 
 ## Usage
 
-The provider is automatically discovered when the module is loaded. Configure it in `workspace.config.json`:
+The provider is automatically discovered when the module is loaded. Configure it in `workspace.config.yml`:
 
 ```json
 {

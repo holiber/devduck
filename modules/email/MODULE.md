@@ -17,7 +17,7 @@ Email module implementing a provider system based on a Zod contract (future Asyn
 
 ## Provider selection
 
-- `workspace.config.json`: `moduleSettings.email.provider`
+- `workspace.config.yml`: `moduleSettings.email.provider`
 - Environment variable: `EMAIL_PROVIDER`
 - Fallback: first available provider (after discovery)
 

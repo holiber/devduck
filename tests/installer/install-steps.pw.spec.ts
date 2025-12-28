@@ -3,6 +3,7 @@ import assert from 'node:assert';
 import path from 'node:path';
 import { promises as fs } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import YAML from 'yaml';
 
 import {
   createSharedTempWorkspace,
@@ -38,7 +39,7 @@ test.describe.serial('Installation Steps', () => {
   async function ensureCompletedUpTo(step: 2 | 3 | 4 | 5): Promise<void> {
     // When running a subset via --grep (e.g. smoke), earlier steps may not execute.
     // Make later steps runnable in isolation by performing minimal prerequisite setup.
-    const configPath = path.join(sharedWorkspace, 'workspace.config.json');
+    const configPath = path.join(sharedWorkspace, 'workspace.config.yml');
     try {
       await fs.access(configPath);
     } catch {
@@ -59,17 +60,17 @@ test.describe.serial('Installation Steps', () => {
     }
 
     if (step >= 2 && !stepResults.get('download-repos')) {
-      const cfg = JSON.parse(await fs.readFile(configPath, 'utf8'));
+      const cfg = YAML.parse(await fs.readFile(configPath, 'utf8'));
       cfg.repos = [];
-      await fs.writeFile(configPath, JSON.stringify(cfg, null, 2));
+      await fs.writeFile(configPath, YAML.stringify(cfg), 'utf8');
       await runStep2DownloadRepos(sharedWorkspace);
       stepResults.set('download-repos', true);
     }
 
     if (step >= 3 && !stepResults.get('download-projects')) {
-      const cfg = JSON.parse(await fs.readFile(configPath, 'utf8'));
+      const cfg = YAML.parse(await fs.readFile(configPath, 'utf8'));
       cfg.projects = [];
-      await fs.writeFile(configPath, JSON.stringify(cfg, null, 2));
+      await fs.writeFile(configPath, YAML.stringify(cfg), 'utf8');
       await runStep3DownloadProjects(sharedWorkspace);
       stepResults.set('download-projects', true);
     }
@@ -135,10 +136,10 @@ test.describe.serial('Installation Steps', () => {
     test.skip(!stepResults.get('check-env'), 'Skipping Step 2: Step 1 failed');
 
     // Test with no repos configured (should skip)
-    const configPath = path.join(sharedWorkspace, 'workspace.config.json');
-    const config = JSON.parse(await fs.readFile(configPath, 'utf8'));
+    const configPath = path.join(sharedWorkspace, 'workspace.config.yml');
+    const config = YAML.parse(await fs.readFile(configPath, 'utf8'));
     config.repos = [];
-    await fs.writeFile(configPath, JSON.stringify(config, null, 2));
+    await fs.writeFile(configPath, YAML.stringify(config), 'utf8');
 
     const result1 = await runStep2DownloadRepos(sharedWorkspace);
     assert.strictEqual(result1.repos.length, 0, 'Should have no repos when none configured');
@@ -153,10 +154,10 @@ test.describe.serial('Installation Steps', () => {
     }
 
     // Test with no projects configured (should skip)
-    const configPath = path.join(sharedWorkspace, 'workspace.config.json');
-    const config = JSON.parse(await fs.readFile(configPath, 'utf8'));
+    const configPath = path.join(sharedWorkspace, 'workspace.config.yml');
+    const config = YAML.parse(await fs.readFile(configPath, 'utf8'));
     config.projects = [];
-    await fs.writeFile(configPath, JSON.stringify(config, null, 2));
+    await fs.writeFile(configPath, YAML.stringify(config), 'utf8');
 
     const result1 = await runStep3DownloadProjects(sharedWorkspace);
     assert.strictEqual(result1.projects.length, 0, 'Should have no projects when none configured');

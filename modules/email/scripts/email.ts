@@ -4,9 +4,9 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { createYargs, installEpipeHandler } from '../../../scripts/lib/cli.js';
-import { readJSON } from '../../../scripts/lib/config.js';
 import { resolveDevduckRoot } from '../../../scripts/lib/devduck-paths.js';
 import { findWorkspaceRoot } from '../../../scripts/lib/workspace-root.js';
+import { getWorkspaceConfigFilePath, readWorkspaceConfigFile } from '../../../scripts/lib/workspace-config.js';
 import {
   discoverProvidersFromModules,
   getProvidersByType,
@@ -57,10 +57,10 @@ function pickProviderNameFromConfig(workspaceRoot: string | null): string | null
   const root = workspaceRoot || findWorkspaceRoot(process.cwd());
   if (!root) return null;
 
-  const configPath = path.join(root, 'workspace.config.json');
+  const configPath = getWorkspaceConfigFilePath(root);
   if (!fs.existsSync(configPath)) return null;
 
-  const cfg = readJSON<WorkspaceConfigLike>(configPath);
+  const cfg = readWorkspaceConfigFile<WorkspaceConfigLike>(configPath);
   const moduleSettings = (cfg && cfg.moduleSettings) || {};
   const emailSettings = (moduleSettings as Record<string, unknown>).email as Record<string, unknown> | undefined;
   const name = emailSettings && typeof emailSettings.provider === 'string' ? emailSettings.provider : '';

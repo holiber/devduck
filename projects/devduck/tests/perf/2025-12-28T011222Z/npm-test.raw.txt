@@ -21,7 +21,7 @@ Found 21 test files
   ✔ discovers smogcheck-provider from modules directory and registers it (56.201293ms)
 ✔ ci: provider registry discovery (56.27588ms)
 ✔ launch dev starts background processes, runs smokecheck, captures browser console, and allows reuse (6379.89933ms)
-✔ workspace.config.json launch.dev starts processes, runs smokecheck, and supports smokecheck without args (5657.057065ms)
+✔ workspace config launch.dev starts processes, runs smokecheck, and supports smokecheck without args (5657.057065ms)
 ✔ ProcessManager writes stdout/stderr logs (82.930875ms)
 ✔ stop kills a process group (parent + child) (101.805988ms)
 ▶ email: gmail-provider
@@ -118,8 +118,8 @@ Cleaned up shared workspace: /workspace/.cache/temp/install-steps-test-176688435
     ✔ Unattended Installation from fixture - cursor-only (388.886746ms)
     ✔ Unattended Installation - Fresh Workspace (342.048525ms)
     ✔ Unattended Installation with Config File (338.088476ms)
-    ✔ Unattended Installation with workspace.config.json (local folder project src) (447.668617ms)
-    ✔ Unattended Installation with workspace.config.json seedFiles[] copies seed files/folders (370.91219ms)
+    ✔ Unattended Installation with workspace config template (local folder project src) (447.668617ms)
+    ✔ Unattended Installation with workspace config template seedFiles[] copies seed files/folders (370.91219ms)
     ✔ Unattended Installation - Full Structure Verification (380.155283ms)
   ✔ Fresh Workspace Installation (2268.498915ms)
   ▶ Existing Workspace Operations

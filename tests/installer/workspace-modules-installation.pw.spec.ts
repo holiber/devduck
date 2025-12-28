@@ -2,6 +2,7 @@ import { test } from '@playwright/test';
 import assert from 'node:assert';
 import path from 'node:path';
 import { promises as fs } from 'node:fs';
+import YAML from 'yaml';
 
 import {
   createTempWorkspace,
@@ -14,7 +15,7 @@ import {
 test.describe('Workspace Installer - Workspace-local modules/', () => {
   test('Installs module from workspace/modules when listed in config', async () => {
     const tempWorkspace = await createTempWorkspace();
-    const configPath = path.join(tempWorkspace, 'test-config.json');
+    const configPath = path.join(tempWorkspace, 'test-config.yml');
 
     try {
       // Create a workspace-local module with a post-install hook.
@@ -63,7 +64,7 @@ test.describe('Workspace Installer - Workspace-local modules/', () => {
         modules: ['core', 'cursor', moduleName],
         skipRepoInit: true
       };
-      await fs.writeFile(configPath, JSON.stringify(config, null, 2), 'utf8');
+      await fs.writeFile(configPath, YAML.stringify(config), 'utf8');
 
       const result = await runInstaller(tempWorkspace, {
         unattended: true,

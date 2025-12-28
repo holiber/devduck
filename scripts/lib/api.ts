@@ -14,6 +14,7 @@ import type { ProviderRouter } from './provider-router.js';
 import { resolveDevduckRoot } from './devduck-paths.js';
 import { findWorkspaceRoot } from './workspace-root.js';
 import { readJSON } from './config.js';
+import { getWorkspaceConfigFilePath, readWorkspaceConfigFile } from './workspace-config.js';
 import { readEnvFile } from './env.js';
 import { loadModulesFromRepo, getDevduckVersion } from './repo-modules.js';
 
@@ -259,9 +260,9 @@ export async function collectUnifiedAPI(quiet: boolean = false): Promise<Unified
   
   // Discover modules from external repositories
   if (workspaceRoot) {
-    const configPath = path.join(workspaceRoot, 'workspace.config.json');
+    const configPath = getWorkspaceConfigFilePath(workspaceRoot);
     if (fs.existsSync(configPath)) {
-      const config = readJSON<{ repos?: string[] }>(configPath);
+      const config = readWorkspaceConfigFile<{ repos?: string[] }>(configPath) || readJSON<{ repos?: string[] }>(configPath);
       
       if (config && config.repos && Array.isArray(config.repos)) {
         const devduckVersion = getDevduckVersion();
