@@ -193,10 +193,11 @@ function ensureDevduckInWorkspace(params: {
 }
 
 function buildDefaultWorkspaceConfig(): WorkspaceConfigLike {
+  const defaultModules = process.env.NODE_ENV === 'test' ? ['core'] : ['core', 'cursor'];
   return {
     version: '0.1.0',
     devduck_path: './devduck/src',
-    modules: ['core', 'cursor'],
+    modules: defaultModules,
     moduleSettings: {},
     repos: [],
     projects: [],

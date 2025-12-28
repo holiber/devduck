@@ -8,6 +8,17 @@ import { showStatus } from './install/status.js';
 import { checkTokensOnly } from './install/tokens.js';
 import { runSelectedChecks } from './install/selected-checks.js';
 import { createInstallRuntime } from './install/cli-runtime.js';
+import { installWorkspace } from './install/workspace-install.js';
+import {
+  installStep1CheckEnv,
+  installStep2DownloadRepos,
+  installStep3DownloadProjects,
+  installStep4CheckEnvAgain,
+  installStep5SetupModules,
+  installStep6SetupProjects,
+  installStep7VerifyInstallation
+} from './install/index.js';
+import { loadInstallState } from './install/install-state.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -25,57 +36,7 @@ const { flags, paths, initLogging, log } = runtime;
 
 // NOTE: seed-files copy helpers were moved to ./install/installer-utils.ts
 
-// NOTE: workspace installer moved to scripts/install/workspace-install.ts
-
-function runSyncAndInstallViaTaskfile(params: { workspaceRoot: string; autoYes: boolean }): void {
-  const { workspaceRoot, autoYes } = params;
-
-  const npxCmd = process.platform === 'win32' ? 'npx.cmd' : 'npx';
-
-  // 1) Generate `.cache/taskfile.generated.yml` from merged workspace.config.yml (extends aware).
-  // Use npx to ensure `tsx` is available even in fresh environments.
-  const devduckCliPath = path.join(PROJECT_ROOT, 'scripts', 'devduck-cli.ts');
-  const sync = spawnSync(
-    npxCmd,
-    ['--yes', '-p', 'tsx', 'tsx', devduckCliPath, 'sync', workspaceRoot],
-    {
-      cwd: PROJECT_ROOT,
-      env: { ...process.env },
-      encoding: 'utf8',
-      stdio: 'inherit'
-    }
-  );
-  if (sync.status !== 0) {
-    throw new Error(`Taskfile sync failed (exit ${sync.status ?? 'unknown'})`);
-  }
-
-  // 2) Execute the generated taskfile directly (single source of truth).
-  // Use npx to ensure both `task` and `tsx` are available to task commands.
-  const generatedTaskfile = path.join(workspaceRoot, '.cache', 'taskfile.generated.yml');
-  const taskArgs = [
-    '--yes',
-    '-p',
-    '@go-task/cli',
-    '-p',
-    'tsx',
-    'task',
-    '--silent',
-    ...(autoYes ? ['--yes'] : []),
-    '-t',
-    generatedTaskfile,
-    'install'
-  ];
-
-  const install = spawnSync(npxCmd, taskArgs, {
-    cwd: workspaceRoot,
-    env: { ...process.env },
-    encoding: 'utf8',
-    stdio: 'inherit'
-  });
-  if (install.status !== 0) {
-    process.exit(install.status ?? 1);
-  }
-}
+// NOTE: workspace installer lives in scripts/install/workspace-install.ts
 
 /**
  * Main installation check function
@@ -125,9 +86,47 @@ async function main(): Promise<void> {
     return;
   }
 
-  // Default behavior: rely on Taskfile-generated runtime as the single source of truth.
-  print(`\n${symbols.search} Installing workspace (Taskfile)...\n`, 'blue');
-  runSyncAndInstallViaTaskfile({ workspaceRoot: paths.workspaceRoot, autoYes: flags.autoYes });
+  // Default behavior: run the canonical installer steps (works for fresh workspaces and CI tests).
+  print(`\n${symbols.search} Installing workspace...\n`, 'blue');
+
+  const result = await installWorkspace({
+    workspaceRoot: paths.workspaceRoot,
+    projectRoot: PROJECT_ROOT,
+    configFilePath: paths.configFile,
+    envFilePath: paths.envFile,
+    cacheDir: paths.cacheDir,
+    logFilePath: paths.logFile,
+    projectsDir: paths.projectsDir,
+    autoYes: flags.autoYes,
+    installModules: flags.installModules,
+    workspaceConfigPath: flags.workspaceConfigPath,
+    configFilePathOverride: flags.configFilePath,
+    log,
+    logger: runtime.getLogger(),
+    getInstallSteps: async () => [
+      { id: 'check-env', title: 'Check environment variables', run: installStep1CheckEnv },
+      { id: 'download-repos', title: 'Download repositories', run: installStep2DownloadRepos },
+      { id: 'download-projects', title: 'Download projects', run: installStep3DownloadProjects },
+      { id: 'check-env-again', title: 'Check environment variables again', run: installStep4CheckEnvAgain },
+      { id: 'setup-modules', title: 'Setup modules', run: installStep5SetupModules },
+      { id: 'setup-projects', title: 'Setup projects', run: installStep6SetupProjects },
+      { id: 'verify-installation', title: 'Verify installation', run: installStep7VerifyInstallation }
+    ]
+  });
+
+  if (result.status !== 'completed') {
+    if (result.status === 'failed') {
+      const state = loadInstallState(paths.workspaceRoot);
+      const executed = Array.isArray(state.executedChecks) ? state.executedChecks : [];
+      const total = executed.filter((c) => c.passed !== null).length;
+      const passed = executed.filter((c) => c.passed === true).length;
+
+      print('\nINSTALLATION FINISHED WITH ERRORS', 'red');
+      print(`Checks: ${passed}/${total} passed`, 'red');
+      print(`See log: .cache/install.log`, 'red');
+    }
+    process.exit(1);
+  }
 
   // Keep compatibility with npm install lifecycle expectations.
   if (isNpmInstallLifecycle) process.exit(0);

@@ -47,9 +47,9 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
-      # E2E tests (installer suite, smoke subset). Keep artifacts for failures.
-      - name: Run Playwright installer smoke suite (timed)
-        run: node scripts/ci/run-and-record.mjs --name pw_installer_smoke --allow-failure 1 --cmd "npx playwright test -c tests/installer/playwright.config.ts --reporter=list --grep @smoke" --log .cache/logs/pw-installer-smoke.log --out .cache/metrics/test-commands.json
+      # E2E tests (installer suite). Keep artifacts for failures.
+      - name: Run Playwright installer suite (timed)
+        run: node scripts/ci/run-and-record.mjs --name pw_installer --allow-failure 1 --cmd "npx playwright test -c tests/installer/playwright.config.ts --reporter=list" --log .cache/logs/pw-installer.log --out .cache/metrics/test-commands.json
 
       # Optional smoke suite (only makes sense when BASE_URL is provided).
       - name: Run Playwright smoke suite (timed)
@@ -156,5 +156,5 @@ jobs:
 
       - name: Fail workflow if tests failed
         if: ${{ always() }}
-        run: node scripts/ci/assert-tests-passed.mjs --file .cache/metrics/test-commands.json --require npm_test --require pw_installer_smoke
+        run: node scripts/ci/assert-tests-passed.mjs --file .cache/metrics/test-commands.json --require npm_test --require pw_installer
 
