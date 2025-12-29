@@ -79,6 +79,84 @@ function runUrl() {
   return `${server}/${repo}/actions/runs/${runId}`;
 }
 
+function readStatus() {
+  const status = readArg('--status') ?? 'ready';
+  if (status === 'ready' || status === 'building' || status === 'rebuilding' || status === 'fail') return status;
+  return 'ready';
+}
+
+function statusBadgeLine(status) {
+  // Use shields badges which render consistently in PR comments.
+  if (status === 'building') return '![CI](https://img.shields.io/badge/CI-BUILDING...-orange)';
+  if (status === 'rebuilding') return '![CI](https://img.shields.io/badge/CI-REBUILDING...-orange)';
+  if (status === 'fail') return '![CI](https://img.shields.io/badge/CI-FAIL-red)';
+  return undefined;
+}
+
+function buildStatusBlock(status, { hasPreviousMetrics }) {
+  const badge = statusBadgeLine(status);
+  if (!badge) return [];
+
+  const lines = [];
+  lines.push('<!-- devduck-metrics-status:start -->');
+  lines.push(badge);
+  lines.push('');
+
+  if (status === 'building') {
+    lines.push('_The metrics will be displayed here once CI finishes collecting them._');
+  } else if (status === 'rebuilding') {
+    lines.push('_New commits pushed — rebuilding metrics for this PR. The table below may be from the previous successful run._');
+  } else if (status === 'fail') {
+    lines.push(
+      hasPreviousMetrics
+        ? '_CI failed for the current commit. Metrics below are shown for the last successful run for this PR._'
+        : '_CI failed for the current commit. No successful metrics are available for this PR yet._'
+    );
+  }
+
+  lines.push('<!-- devduck-metrics-status:end -->');
+  lines.push('');
+  return lines;
+}
+
+function stripStatusBlock(markdown) {
+  const start = '<!-- devduck-metrics-status:start -->';
+  const end = '<!-- devduck-metrics-status:end -->';
+  if (!markdown.includes(start)) return markdown;
+
+  const before = markdown.split(start)[0];
+  const after = markdown.split(end).slice(1).join(end);
+  return (before + after).replace(/\n{3,}/g, '\n\n').trim() + '\n';
+}
+
+function upsertTopBlock({ markdown, status, url, hasPreviousMetrics }) {
+  let body = stripStatusBlock(markdown ?? '');
+  const lines = body.split('\n');
+
+  const header = '### 🧠 CI Metrics Dashboard';
+  const headerIdx = lines.findIndex((l) => l.trim() === header);
+  if (headerIdx === -1) return undefined;
+
+  // Remove a previously-rendered "Workflow run" line near the top.
+  const pruned = [];
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (i <= headerIdx + 10 && line.startsWith('- **Workflow run**:')) continue;
+    pruned.push(line);
+  }
+
+  const statusBlock = buildStatusBlock(status, { hasPreviousMetrics });
+  const workflowLine = url ? [`- **Workflow run**: ${url}`, ''] : [];
+
+  const out = [];
+  out.push(...pruned.slice(0, headerIdx + 1));
+  out.push(...statusBlock);
+  out.push(...workflowLine);
+  out.push(...pruned.slice(headerIdx + 1));
+
+  return out.join('\n').replace(/\n{3,}/g, '\n\n').trim() + '\n';
+}
+
 function defaultPagesDashboardUrl() {
   const repo = process.env.GITHUB_REPOSITORY; // "owner/name"
   if (!repo || !repo.includes('/')) return undefined;
@@ -116,6 +194,8 @@ async function probeDashboardUrl(url) {
 async function main() {
   const dir = readArg('--dir') ?? '.cache/metrics';
   const outPath = readArg('--out') ?? path.join(dir, 'pr-comment.md');
+  const status = readStatus();
+  const existingPath = readArg('--existing');
 
   const current = await readJsonOr(path.join(dir, 'current.json'), {});
   const diff = await readJsonOr(path.join(dir, 'diff.json'), { deltas: {} });
@@ -132,6 +212,32 @@ async function main() {
 
   const lines = [];
   lines.push('### 🧠 CI Metrics Dashboard');
+  if (status !== 'ready') {
+    // When status is not ready, either decorate the previous successful comment,
+    // or render a placeholder comment.
+    if (existingPath) {
+      const existing = await fsp.readFile(existingPath, 'utf8').catch(() => '');
+      const hasPreviousMetrics = existing.includes('| Metric | Current |');
+      const updated = upsertTopBlock({ markdown: existing, status, url, hasPreviousMetrics });
+      if (updated) {
+        await fsp.mkdir(path.dirname(outPath), { recursive: true });
+        await fsp.writeFile(outPath, updated, 'utf8');
+        return;
+      }
+    }
+
+    lines.push(...buildStatusBlock(status, { hasPreviousMetrics: false }));
+    if (url) lines.push(`- **Workflow run**: ${url}`);
+    lines.push('');
+    lines.push('<!-- devduck-metrics-comment -->');
+    lines.push('');
+
+    await fsp.mkdir(path.dirname(outPath), { recursive: true });
+    await fsp.writeFile(outPath, lines.join('\n'), 'utf8');
+    return;
+  }
+
+  // Ready (normal) comment.
   // PR title/number and code diff are already visible on the PR page; avoid duplicating it in the comment.
   if (url) lines.push(`- **Workflow run**: ${url}`);
   lines.push('');
