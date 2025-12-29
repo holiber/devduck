@@ -91,7 +91,7 @@ export function checkFileExists(filePath: string, opts: { baseDir: string }): Fi
 /**
  * Get project name from `src`
  * e.g., "crm/frontend/services/shell" -> "shell"
- * e.g., "github.com/holiber/devduck" -> "devduck"
+ * e.g., "github.com/<owner>/<repo>" -> "<repo>"
  * e.g., "arc://junk/user/project" -> "project"
  */
 export function getProjectName(src: string | undefined): string {

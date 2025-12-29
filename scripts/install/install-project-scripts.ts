@@ -39,7 +39,7 @@ interface PackageJson {
 /**
  * Get project name from path_in_arcadia or src
  * e.g., "crm/frontend/services/shell" -> "shell"
- * e.g., "github.com/holiber/devduck" -> "devduck"
+ * e.g., "github.com/<owner>/<repo>" -> "<repo>"
  * e.g., "arc://junk/user/project" -> "project"
  */
 function getProjectName(projectSrcOrPath: string | undefined): string {
