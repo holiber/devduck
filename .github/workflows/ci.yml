@@ -1,4 +1,4 @@
-name: Tests & Metrics
+name: AFTER MERGE - Tests & Metrics
 
 on:
   pull_request:
