@@ -1,3 +1,3 @@
 ## Brief description of next tasks
 
-- /pr should follow CONTRIBUTION.md
+- /pr should follow CONTRIBUTING.md
