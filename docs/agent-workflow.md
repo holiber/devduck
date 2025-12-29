@@ -233,6 +233,15 @@ The agent must update (edit) the existing comment containing the marker:
 
 `<!-- barducks-agent-status -->`
 
+### Required GitHub permissions
+
+To follow this workflow fully, the agent must have permission to:
+
+- Create PR comments
+- Edit existing PR comments
+
+If GitHub returns `403 Resource not accessible by integration`, the token/integration used by the agent does not have sufficient permissions. Fix the permissions for the agent identity (bot/app/token) used by `gh` in your environment.
+
 Suggested approach (copy/paste-friendly):
 
 1. Find the PR number:
