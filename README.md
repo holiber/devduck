@@ -1,5 +1,7 @@
 # DevDuck
 
+![Main CI](https://github.com/holiber/devduck/actions/workflows/ci.yml/badge.svg?branch=main)
+
 <div align="center">
   <img src="media/logo.png" alt="DevDuck Logo" width="200">
 </div>
