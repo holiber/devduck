@@ -1,6 +1,7 @@
 # Barducks
 
 [![AFTER MERGE - Tests & Metrics](https://github.com/holiber/barducks/actions/workflows/after-merge-ci.yml/badge.svg?branch=main)](https://github.com/holiber/barducks/actions/workflows/after-merge-ci.yml?query=branch%3Amain)
+[![project stats](https://holiber.github.io/barducks/metrics/project-stats.svg)](https://holiber.github.io/barducks/metrics/)
 
 <div align="center">
   <img src="media/logo.png" alt="Barducks Logo" width="200">

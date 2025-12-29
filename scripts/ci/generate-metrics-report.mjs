@@ -17,6 +17,55 @@ function readArg(name) {
   return i >= 0 ? process.argv[i + 1] : undefined;
 }
 
+function escapeXml(s) {
+  return String(s)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&apos;');
+}
+
+function makeSimpleBadgeSvg({ label, message, labelColor, messageColor }) {
+  // Minimal Shields-like badge, no external deps.
+  const labelText = escapeXml(label);
+  const msgText = escapeXml(message);
+
+  // Approximate text widths (DejaVu Sans is close enough).
+  const charW = 6.2;
+  const pad = 10;
+  const fontSize = 11;
+  const height = 20;
+
+  const labelW = Math.max(40, Math.round(label.length * charW + pad * 2));
+  const msgW = Math.max(38, Math.round(message.length * charW + pad * 2));
+  const width = labelW + msgW;
+
+  const labelX = Math.round(labelW / 2);
+  const msgX = labelW + Math.round(msgW / 2);
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" role="img" aria-label="${labelText}: ${msgText}">
+  <linearGradient id="s" x2="0" y2="100%">
+    <stop offset="0" stop-color="#bbb" stop-opacity=".1"/>
+    <stop offset="1" stop-opacity=".1"/>
+  </linearGradient>
+  <clipPath id="r">
+    <rect width="${width}" height="${height}" rx="3" fill="#fff"/>
+  </clipPath>
+  <g clip-path="url(#r)">
+    <rect width="${labelW}" height="${height}" fill="${labelColor}"/>
+    <rect x="${labelW}" width="${msgW}" height="${height}" fill="${messageColor}"/>
+    <rect width="${width}" height="${height}" fill="url(#s)"/>
+  </g>
+  <g fill="#fff" text-anchor="middle" font-family="Verdana,DejaVu Sans,sans-serif" font-size="${fontSize}">
+    <text x="${labelX}" y="14">${labelText}</text>
+    <text x="${msgX}" y="14">${msgText}</text>
+  </g>
+</svg>
+`;
+}
+
 async function readJsonOr(filePath, fallback) {
   try {
     const raw = await fsp.readFile(filePath, 'utf8');
@@ -246,6 +295,15 @@ async function main() {
   const metricsOutDir = path.join(outDir, 'metrics');
   await fsp.mkdir(metricsOutDir, { recursive: true });
   await writeFileEnsuringDir(path.join(metricsOutDir, 'index.html'), html);
+
+  // Project stats badge (published to GitHub Pages alongside the dashboard).
+  const badgeSvg = makeSimpleBadgeSvg({
+    label: 'project stats',
+    message: 'metrics',
+    labelColor: '#555',
+    messageColor: '#0366d6',
+  });
+  await writeFileEnsuringDir(path.join(metricsOutDir, 'project-stats.svg'), badgeSvg);
 
   // Copy JSON alongside HTML (so the dashboard is self-contained on Pages).
   const toCopy = ['current.json', 'baseline.json', 'compare-baseline.json', 'diff.json', 'history.json'];
