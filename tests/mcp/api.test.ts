@@ -250,7 +250,7 @@ describe('mcp: API module', () => {
       return;
     }
 
-    const apiCliPath = path.join(testWorkspaceRoot, 'projects', 'devduck', 'scripts', 'api-cli.ts');
+    const apiCliPath = path.join(testWorkspaceRoot, 'projects', 'barducks', 'scripts', 'api-cli.ts');
     if (!fs.existsSync(apiCliPath)) {
       // Skip if api-cli.ts doesn't exist
       return;

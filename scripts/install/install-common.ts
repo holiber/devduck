@@ -980,8 +980,8 @@ export async function loadModulesForChecks(
   
   // Load all modules with priority: workspace > projects > external > built-in
   const localModules = getAllModules();
-  const workspaceModulesDir = path.join(workspaceRoot, 'modules');
-  const workspaceModules = getAllModulesFromDirectory(workspaceModulesDir);
+  const workspaceExtensionsDir = path.join(workspaceRoot, 'extensions');
+  const workspaceModules = getAllModulesFromDirectory(workspaceExtensionsDir);
   
   const projectsModules: any[] = [];
   if (config.projects && Array.isArray(config.projects)) {
@@ -990,16 +990,16 @@ export async function loadModulesForChecks(
       const projectObj = project as { src?: string };
       const projectName = projectObj.src ? String(projectObj.src).split('/').pop()?.replace(/\.git$/, '') || '' : '';
       const projectPath = path.join(workspaceRoot, 'projects', projectName);
-      const projectModulesDir = path.join(projectPath, 'modules');
-      if (fs.existsSync(projectModulesDir)) {
-        const projectModules = getAllModulesFromDirectory(projectModulesDir);
+      const projectExtensionsDir = path.join(projectPath, 'extensions');
+      if (fs.existsSync(projectExtensionsDir)) {
+        const projectModules = getAllModulesFromDirectory(projectExtensionsDir);
         projectsModules.push(...(projectModules as any[]));
       }
     }
   }
   
   const allModules = [...workspaceModules, ...projectsModules, ...externalModules, ...localModules];
-  const moduleNames = expandModuleNames(Array.isArray(config.modules) ? config.modules : ['*'], allModules);
+  const moduleNames = expandModuleNames(Array.isArray((config as any).extensions) ? ((config as any).extensions as string[]) : ['*'], allModules);
   const resolvedModules = resolveDependencies(moduleNames, allModules);
   
   // Load module resources

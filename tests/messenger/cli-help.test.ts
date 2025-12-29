@@ -4,7 +4,7 @@ import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 
 function runHelp(args: string[]) {
-  return spawnSync('npx', ['tsx', 'modules/messenger/scripts/messenger.ts', ...args], {
+  return spawnSync('npx', ['tsx', 'extensions/messenger/scripts/messenger.ts', ...args], {
     cwd: process.cwd(),
     env: { ...process.env },
     encoding: 'utf8',
@@ -23,12 +23,12 @@ test('messenger CLI exposes required inputs as options', () => {
 });
 
 test('ci CLI positional still works (no duplicate required flags)', () => {
-  const ciScript = 'modules/ci/scripts/ci.ts';
+  const ciScript = 'extensions/ci/scripts/ci.ts';
   if (!fs.existsSync(ciScript)) {
     // In minimal builds where CI module is not present, skip the regression test.
     return;
   }
-  const ciHelp = spawnSync('npx', ['tsx', 'modules/ci/scripts/ci.ts', 'fetchPR', '--help'], {
+  const ciHelp = spawnSync('npx', ['tsx', 'extensions/ci/scripts/ci.ts', 'fetchPR', '--help'], {
     cwd: process.cwd(),
     env: { ...process.env },
     encoding: 'utf8',

@@ -5,14 +5,14 @@ import fs from 'fs';
 import { config } from 'dotenv';
 import { findWorkspaceRoot } from '../../scripts/lib/workspace-root.js';
 
-import provider from '../../modules/issue-tracker-github/providers/github-provider/index.js';
+import provider from '../../extensions/issue-tracker-github/providers/github-provider/index.js';
 import {
   IssueTrackerProviderSchema,
   IssueSchema,
   CommentSchema,
   PRReferenceSchema,
   DownloadResourcesResultSchema
-} from '../../modules/issue-tracker/schemas/contract.js';
+} from '../../extensions/issue-tracker/schemas/contract.js';
 
 import {
   clearProvidersForTests,
@@ -26,7 +26,7 @@ import {
   getResourcesJsonPath,
   getIssueResourcesDir,
   readResourcesJson
-} from '../../modules/issue-tracker/scripts/resources.js';
+} from '../../extensions/issue-tracker/scripts/resources.js';
 
 const TEST_ISSUE_ID = (process.env.GITHUB_TEST_ISSUE_ID || '').trim();
 const TEST_ISSUE_URL = (process.env.GITHUB_TEST_ISSUE_URL || '').trim();
@@ -285,8 +285,8 @@ describe('issue-tracker-github: provider registry discovery', () => {
   test('discovers github-provider from modules directory and registers it (with schema validation)', async () => {
     setProviderTypeSchema('issue-tracker', IssueTrackerProviderSchema);
 
-    const modulesDir = path.resolve(process.cwd(), 'modules');
-    await discoverProvidersFromModules({ modulesDir });
+    const extensionsDir = path.resolve(process.cwd(), 'extensions');
+    await discoverProvidersFromModules({ extensionsDir });
 
     const providers = getProvidersByType('issue-tracker');
     assert.ok(providers.some((p) => p.name === 'github-provider'));

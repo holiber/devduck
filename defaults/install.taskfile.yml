@@ -2,15 +2,15 @@ version: '3'
 output: interleaved
 
 vars:
-  # Resolve DevDuck root relative to this taskfile: <devduckRoot>/defaults/install.taskfile.yml
-  DEVDUCK_ROOT: '{{.TASKFILE_DIR}}/..'
+  # Resolve Barducks root relative to this taskfile: <barducksRoot>/defaults/install.taskfile.yml
+  BARDUCKS_ROOT: '{{.TASKFILE_DIR}}/..'
   WORKSPACE_ROOT: '{{ default "." .WORKSPACE_ROOT }}'
 
 tasks:
   sync:
     desc: "Generate .cache/taskfile.generated.yml from workspace config"
     cmds:
-      - tsx {{.DEVDUCK_ROOT}}/scripts/devduck-cli.ts sync {{.WORKSPACE_ROOT}}
+      - tsx {{.BARDUCKS_ROOT}}/scripts/barducks-cli.ts sync {{.WORKSPACE_ROOT}}
 
   install:
     desc: "Run full installation sequence (Steps 1–7)"

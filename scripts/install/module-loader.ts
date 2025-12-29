@@ -8,7 +8,15 @@
 
 import fs from 'fs';
 import path from 'path';
-import { loadModule, getAllModules, resolveModules, mergeModuleSettings, MODULES_DIR, type Module, type WorkspaceConfig } from './module-resolver.js';
+import {
+  loadModule,
+  getAllModules,
+  resolveModules,
+  mergeModuleSettings,
+  MODULES_DIR,
+  type Module,
+  type WorkspaceConfig
+} from './module-resolver.js';
 
 export interface ModuleFile {
   name: string;
@@ -114,7 +122,7 @@ export function loadModulesForWorkspace(workspaceConfig: WorkspaceConfig): Modul
   
   const loadedModules = resolvedModules.map(module => {
     const resources = loadModuleResources(module);
-    const mergedSettings = mergeModuleSettings(module, workspaceConfig.moduleSettings);
+    const mergedSettings = mergeModuleSettings(module, workspaceConfig.extensionSettings);
     
     return {
       ...resources,

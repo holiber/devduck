@@ -108,7 +108,7 @@ async function main(): Promise<void> {
       { id: 'download-repos', title: 'Download repositories', run: installStep2DownloadRepos },
       { id: 'download-projects', title: 'Download projects', run: installStep3DownloadProjects },
       { id: 'check-env-again', title: 'Check environment variables again', run: installStep4CheckEnvAgain },
-      { id: 'setup-modules', title: 'Setup modules', run: installStep5SetupModules },
+      { id: 'setup-modules', title: 'Setup extensions', run: installStep5SetupModules },
       { id: 'setup-projects', title: 'Setup projects', run: installStep6SetupProjects },
       { id: 'verify-installation', title: 'Verify installation', run: installStep7VerifyInstallation }
     ]

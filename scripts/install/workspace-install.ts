@@ -14,7 +14,7 @@ type WorkspaceConfig = Record<string, unknown> & {
   version?: string | number;
   devduck_path?: string;
   repos?: string[];
-  modules?: string[];
+  extensions?: string[];
   projects?: unknown[];
   checks?: unknown[];
   env?: Array<{ name: string; default?: string; description?: string }>;
@@ -81,11 +81,11 @@ export async function installWorkspace(params: {
 
   let config = readWorkspaceConfigFile<Record<string, unknown>>(configFilePath);
   if (!config) {
-    const modules = installModules ? installModules.split(',').map((m) => m.trim()) : ['core', 'cursor'];
+    const extensions = installModules ? installModules.split(',').map((m) => m.trim()) : ['core', 'cursor'];
 
     let devduckPath = path.relative(workspaceRoot, projectRoot);
     if (!devduckPath || devduckPath === '.') {
-      devduckPath = './projects/devduck';
+      devduckPath = './projects/barducks';
     } else if (!devduckPath.startsWith('.')) {
       devduckPath = './' + devduckPath;
     }
@@ -93,8 +93,8 @@ export async function installWorkspace(params: {
     config = {
       version: '0.1.0',
       devduck_path: devduckPath,
-      modules,
-      moduleSettings: {},
+      extensions,
+      extensionSettings: {},
       repos: [],
       projects: [],
       checks: [],
@@ -105,9 +105,8 @@ export async function installWorkspace(params: {
       const providedWorkspaceConfig = readWorkspaceConfigFile<Record<string, unknown>>(workspaceConfigPath);
       if (providedWorkspaceConfig) {
         config = { ...(config as Record<string, unknown>), ...(providedWorkspaceConfig as Record<string, unknown>) };
-        if ((providedWorkspaceConfig as { modules?: unknown }).modules) {
-          (config as { modules: unknown }).modules = (providedWorkspaceConfig as { modules: unknown }).modules;
-        }
+        const provided = providedWorkspaceConfig as { extensions?: unknown };
+        if (provided.extensions) (config as { extensions: unknown }).extensions = provided.extensions;
 
         const seedFiles =
           (providedWorkspaceConfig as Record<string, unknown>).seedFiles ??
@@ -128,17 +127,18 @@ export async function installWorkspace(params: {
       const providedConfig = readWorkspaceConfigFile<Record<string, unknown>>(configFilePathOverride);
       if (providedConfig) {
         config = { ...(config as Record<string, unknown>), ...(providedConfig as Record<string, unknown>) };
-        if ((providedConfig as { modules?: unknown }).modules) {
-          (config as { modules: unknown }).modules = (providedConfig as { modules: unknown }).modules;
-        }
+        const provided = providedConfig as { extensions?: unknown };
+        if (provided.extensions) (config as { extensions: unknown }).extensions = provided.extensions;
       }
     }
 
     writeWorkspaceConfigFile(configFilePath, config);
     print(`\n${symbols.success} Created workspace config`, 'green');
     log(
-      `Created workspace config with modules: ${
-        Array.isArray((config as { modules?: unknown }).modules) ? (config as { modules: string[] }).modules.join(', ') : ''
+      `Created workspace config with extensions: ${
+        Array.isArray((config as { extensions?: unknown }).extensions)
+          ? (config as { extensions: string[] }).extensions.join(', ')
+          : ''
       }`
     );
   } else {
@@ -147,11 +147,11 @@ export async function installWorkspace(params: {
       log(`Workspace config already exists at ${configFilePath}, ignoring --workspace-config=${workspaceConfigPath}`);
     }
     if (installModules) {
-      const modules = installModules.split(',').map((m) => m.trim());
-      (config as { modules: string[] }).modules = modules;
+      const extensions = installModules.split(',').map((m) => m.trim());
+      (config as { extensions: string[] }).extensions = extensions;
       writeWorkspaceConfigFile(configFilePath, config);
-      print(`\n${symbols.info} Updated workspace config with modules: ${modules.join(', ')}`, 'cyan');
-      log(`Updated workspace config with modules: ${modules.join(', ')}`);
+      print(`\n${symbols.info} Updated workspace config with extensions: ${extensions.join(', ')}`, 'cyan');
+      log(`Updated workspace config with extensions: ${extensions.join(', ')}`);
     }
   }
 
@@ -169,7 +169,7 @@ export async function installWorkspace(params: {
     const devduckPathRel =
       typeof resolvedConfig.devduck_path === 'string' && resolvedConfig.devduck_path.trim().length > 0
         ? resolvedConfig.devduck_path.trim()
-        : './projects/devduck';
+        : './projects/barducks';
     // This is a convenience for Taskfile-based workflows: keep runtime taskfile in .cache updated.
     ensureGeneratedTaskfile(workspaceRoot, cacheDir, devduckPathRel, resolvedConfig);
   }

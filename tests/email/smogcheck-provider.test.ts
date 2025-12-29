@@ -2,12 +2,12 @@ import { describe, test, beforeEach } from 'node:test';
 import assert from 'node:assert';
 import path from 'node:path';
 
-import provider from '../../modules/email/providers/smogcheck-provider/index.js';
+import provider from '../../extensions/email/providers/smogcheck-provider/index.js';
 import {
   AttachmentSchema,
   MessageSchema,
   type EmailProvider
-} from '../../modules/email/schemas/contract.js';
+} from '../../extensions/email/schemas/contract.js';
 
 import {
   clearProvidersForTests,
@@ -110,8 +110,8 @@ describe('email: provider registry discovery', () => {
   });
 
   test('discovers smogcheck-provider from modules directory and registers it', async () => {
-    const modulesDir = path.resolve(process.cwd(), 'modules');
-    await discoverProvidersFromModules({ modulesDir });
+    const extensionsDir = path.resolve(process.cwd(), 'extensions');
+    await discoverProvidersFromModules({ extensionsDir });
 
     const providers = getProvidersByType('email');
     assert.ok(providers.some((p) => p.name === 'smogcheck-provider'));

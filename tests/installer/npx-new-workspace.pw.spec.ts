@@ -12,14 +12,14 @@ async function readYaml(p: string): Promise<any> {
   return YAML.parse(raw);
 }
 
-test.describe('devduck new (npx-friendly bootstrap)', () => {
-  test('clones DevDuck into devduck/src when not listed in projects', async () => {
+test.describe('barducks new (npx-friendly bootstrap)', () => {
+  test('clones Barducks into barducks/src when not listed in projects', async () => {
     const workspaceRoot = await createTempWorkspace();
 
     try {
       const result = spawnSync(
         'node',
-        [path.join(process.cwd(), 'bin', 'devduck.js'), 'new', workspaceRoot, '--devduck-source', process.cwd()],
+        [path.join(process.cwd(), 'bin', 'barducks.js'), 'new', workspaceRoot, '--devduck-source', process.cwd()],
         {
           cwd: process.cwd(),
           env: { ...process.env, NODE_ENV: 'test' },
@@ -31,11 +31,11 @@ test.describe('devduck new (npx-friendly bootstrap)', () => {
 
       const cfgPath = path.join(workspaceRoot, 'workspace.config.yml');
       const cfg = await readYaml(cfgPath);
-      assert.strictEqual(cfg.devduck_path, './devduck/src', 'devduck_path should point to local devduck/src');
+      assert.strictEqual(cfg.devduck_path, './barducks/src', 'devduck_path should point to local barducks/src');
 
-      const clonedPackageJson = path.join(workspaceRoot, 'devduck', 'src', 'package.json');
+      const clonedPackageJson = path.join(workspaceRoot, 'barducks', 'src', 'package.json');
       const stat = await fs.stat(clonedPackageJson);
-      assert.ok(stat.isFile(), 'devduck/src/package.json should exist');
+      assert.ok(stat.isFile(), 'barducks/src/package.json should exist');
     } finally {
       await cleanupTempWorkspace(workspaceRoot);
     }
@@ -51,7 +51,7 @@ test.describe('devduck new (npx-friendly bootstrap)', () => {
     try {
       const result = spawnSync(
         'node',
-        [path.join(process.cwd(), 'bin', 'devduck.js'), 'new', workspaceName, '--devduck-source', process.cwd()],
+        [path.join(process.cwd(), 'bin', 'barducks.js'), 'new', workspaceName, '--devduck-source', process.cwd()],
         {
           // Simulate npx running inside a temporary package directory
           cwd: fakePkgCwd,
@@ -64,11 +64,11 @@ test.describe('devduck new (npx-friendly bootstrap)', () => {
 
       const cfgPath = path.join(workspaceRoot, 'workspace.config.yml');
       const cfg = await readYaml(cfgPath);
-      assert.strictEqual(cfg.devduck_path, './devduck/src', 'devduck_path should point to local devduck/src');
+      assert.strictEqual(cfg.devduck_path, './barducks/src', 'devduck_path should point to local barducks/src');
 
-      const clonedPackageJson = path.join(workspaceRoot, 'devduck', 'src', 'package.json');
+      const clonedPackageJson = path.join(workspaceRoot, 'barducks', 'src', 'package.json');
       const stat = await fs.stat(clonedPackageJson);
-      assert.ok(stat.isFile(), 'devduck/src/package.json should exist');
+      assert.ok(stat.isFile(), 'barducks/src/package.json should exist');
     } finally {
       await cleanupTempWorkspace(initCwd);
       await cleanupTempWorkspace(fakePkgCwd);

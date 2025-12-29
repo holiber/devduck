@@ -1,7 +1,7 @@
 version: "0.1.0"
 devduck_path: "./devduck"
-modules:
+extensions:
   - core
   - cursor
-moduleSettings: {}
+extensionSettings: {}
 

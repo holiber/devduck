@@ -438,7 +438,7 @@ export async function checkRepoVersion(repoPath: string, devduckVersion: string)
  * @param repoUrl - Repository URL
  * @param workspaceRoot - Workspace root directory
  * @param devduckVersion - Expected devduck version
- * @returns Path to modules directory
+ * @returns Path to extensions directory (legacy: modules directory)
  */
 export async function loadModulesFromRepo(
   repoUrl: string,
@@ -454,14 +454,12 @@ export async function loadModulesFromRepo(
     throw new Error(`Repository ${repoUrl} is not compatible: ${versionCheck.error}`);
   }
 
-  // Find modules directory
-  const modulesPath = path.join(repoPath, 'modules');
-
-  if (!fs.existsSync(modulesPath)) {
-    throw new Error(`modules directory not found in repository: ${repoUrl}`);
+  // Find extensions directory.
+  const extensionsPath = path.join(repoPath, 'extensions');
+  if (fs.existsSync(extensionsPath)) {
+    return extensionsPath;
   }
-
-  return modulesPath;
+  throw new Error(`extensions directory not found in repository: ${repoUrl}`);
 }
 
 /**

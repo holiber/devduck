@@ -1,4 +1,0 @@
-timestamp_utc=2025-12-28T012107Z
-node=v25.2.1
-npm=11.6.2
-baseline_ref=projects/devduck/tests/perf/2025-12-28T011222Z

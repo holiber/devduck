@@ -66,7 +66,7 @@ describe('Workspace Installer - Unattended Mode', () => {
           unattended: true,
           aiAgent: 'cursor',
           repoType: 'none',
-          modules: ['core'],
+          extensions: ['core'],
           skipRepoInit: true
         });
 
@@ -83,7 +83,7 @@ describe('Workspace Installer - Unattended Mode', () => {
         // Fresh/core-only install should not require Cursor integration artifacts.
 
         const configVerification = await verifyWorkspaceConfig(tempWorkspace, {
-          modules: ['core']
+          extensions: ['core']
         });
         assert.ok(configVerification.valid, 'Config should be valid');
 
@@ -101,7 +101,7 @@ describe('Workspace Installer - Unattended Mode', () => {
         const config = {
           aiAgent: 'cursor',
           repoType: 'none',
-          modules: ['core', 'vcs'],
+          extensions: ['core', 'vcs'],
           skipRepoInit: true
         };
         await fs.writeFile(configPath, YAML.stringify(config), 'utf8');
@@ -117,10 +117,10 @@ describe('Workspace Installer - Unattended Mode', () => {
         assert.ok(installed, 'Installation should complete');
 
         const configVerification = await verifyWorkspaceConfig(tempWorkspace, {
-          modules: ['core', 'vcs']
+          extensions: ['core', 'vcs']
         });
         assert.ok(configVerification.valid, 'Config should be valid');
-        assert.ok(configVerification.config.modules.includes('vcs'), 'vcs module should be installed');
+        assert.ok((configVerification.config.extensions as string[]).includes('vcs'), 'vcs extension should be installed');
 
         assert.strictEqual(result.exitCode, 0, 'Installer should exit with code 0');
       } finally {
@@ -141,7 +141,7 @@ describe('Workspace Installer - Unattended Mode', () => {
         const providedWorkspaceConfig = {
           version: '0.1.0',
           devduck_path: './devduck',
-          modules: ['core', 'cursor'],
+          extensions: ['core', 'cursor'],
           projects: [
             {
               src: localProjectPath,
@@ -167,7 +167,7 @@ describe('Workspace Installer - Unattended Mode', () => {
           unattended: true,
           aiAgent: 'cursor',
           repoType: 'none',
-          modules: ['core', 'cursor'],
+          extensions: ['core', 'cursor'],
           skipRepoInit: true,
           workspaceConfig: providedWorkspaceConfigPath
         });
@@ -234,7 +234,7 @@ describe('Workspace Installer - Unattended Mode', () => {
           unattended: true,
           aiAgent: 'cursor',
           repoType: 'none',
-          modules: ['core', 'cursor'],
+          extensions: ['core', 'cursor'],
           skipRepoInit: true,
           workspaceConfig: providedWorkspaceConfigPath
         });
@@ -265,7 +265,7 @@ describe('Workspace Installer - Unattended Mode', () => {
           unattended: true,
           aiAgent: 'cursor',
           repoType: 'none',
-          modules: ['core', 'cursor', 'plan', 'vcs'],
+          extensions: ['core', 'cursor', 'plan', 'vcs'],
           skipRepoInit: true
         });
 
@@ -288,7 +288,7 @@ describe('Workspace Installer - Unattended Mode', () => {
         }
 
         const configVerification = await verifyWorkspaceConfig(tempWorkspace, {
-          modules: ['core', 'cursor', 'plan', 'vcs']
+          extensions: ['core', 'cursor', 'plan', 'vcs']
         });
         assert.ok(configVerification.valid, 'workspace.config.yml should be valid');
         assert.ok(configVerification.config, 'Config should be loaded');
@@ -313,7 +313,7 @@ describe('Workspace Installer - Unattended Mode', () => {
           unattended: true,
           aiAgent: 'cursor',
           repoType: 'none',
-          modules: ['core', 'cursor'],
+          extensions: ['core', 'cursor'],
           skipRepoInit: true
         });
 
@@ -328,7 +328,7 @@ describe('Workspace Installer - Unattended Mode', () => {
           unattended: true,
           aiAgent: 'cursor',
           repoType: 'none',
-          modules: ['core', 'cursor', 'vcs'],
+          extensions: ['core', 'cursor', 'vcs'],
           skipRepoInit: true
         });
 
@@ -337,10 +337,10 @@ describe('Workspace Installer - Unattended Mode', () => {
         await waitForInstallation(tempWorkspace, 30000);
 
         const afterReinstall = await verifyWorkspaceConfig(tempWorkspace, {
-          modules: ['core', 'cursor', 'vcs']
+          extensions: ['core', 'cursor', 'vcs']
         });
         assert.ok(afterReinstall.valid, 'Config after reinstall should be valid');
-        assert.ok(afterReinstall.config.modules.includes('vcs'), 'vcs module should be added');
+        assert.ok((afterReinstall.config.extensions as string[]).includes('vcs'), 'vcs extension should be added');
 
         const structure = await verifyWorkspaceStructure(tempWorkspace);
         assert.ok(structure.workspaceConfigExists, 'workspace.config.yml should still exist');
@@ -355,7 +355,7 @@ describe('Workspace Installer - Unattended Mode', () => {
       }
     });
 
-    test('Add Modules to Existing Workspace', async () => {
+    test('Add Extensions to Existing Workspace', async () => {
       const tempWorkspace = await createTempWorkspace();
       
       try {
@@ -363,7 +363,7 @@ describe('Workspace Installer - Unattended Mode', () => {
           unattended: true,
           aiAgent: 'cursor',
           repoType: 'none',
-          modules: ['core', 'cursor'],
+          extensions: ['core', 'cursor'],
           skipRepoInit: true
         });
 
@@ -372,7 +372,7 @@ describe('Workspace Installer - Unattended Mode', () => {
         await waitForInstallation(tempWorkspace, 30000);
 
         const initialConfig = await verifyWorkspaceConfig(tempWorkspace, {
-          modules: ['core', 'cursor']
+          extensions: ['core', 'cursor']
         });
         assert.ok(initialConfig.valid, 'Initial config should be valid');
 
@@ -380,7 +380,7 @@ describe('Workspace Installer - Unattended Mode', () => {
           unattended: true,
           aiAgent: 'cursor',
           repoType: 'none',
-          modules: ['core', 'cursor', 'dashboard'],
+          extensions: ['core', 'cursor', 'dashboard'],
           skipRepoInit: true
         });
 
@@ -389,9 +389,9 @@ describe('Workspace Installer - Unattended Mode', () => {
         await waitForInstallation(tempWorkspace, 30000);
 
         const afterAdd = await verifyWorkspaceConfig(tempWorkspace);
-        assert.ok(afterAdd.config.modules.includes('dashboard'), 'dashboard module should be added');
-        assert.ok(afterAdd.config.modules.includes('core'), 'core module should still be present');
-        assert.ok(afterAdd.config.modules.includes('cursor'), 'cursor module should still be present');
+        assert.ok((afterAdd.config.extensions as string[]).includes('dashboard'), 'dashboard extension should be added');
+        assert.ok((afterAdd.config.extensions as string[]).includes('core'), 'core extension should still be present');
+        assert.ok((afterAdd.config.extensions as string[]).includes('cursor'), 'cursor extension should still be present');
 
         const moduleVerification = await verifyModuleInstallation(tempWorkspace);
         assert.ok(moduleVerification.commandsFound > 0, 'Commands should include dashboard commands');
@@ -400,7 +400,7 @@ describe('Workspace Installer - Unattended Mode', () => {
       }
     });
 
-    test('Remove Modules from Existing Workspace', async () => {
+    test('Remove Extensions from Existing Workspace', async () => {
       const tempWorkspace = await createTempWorkspace();
       
       try {
@@ -408,7 +408,7 @@ describe('Workspace Installer - Unattended Mode', () => {
           unattended: true,
           aiAgent: 'cursor',
           repoType: 'none',
-          modules: ['core', 'cursor', 'dashboard', 'vcs'],
+          extensions: ['core', 'cursor', 'dashboard', 'vcs'],
           skipRepoInit: true
         });
 
@@ -417,13 +417,13 @@ describe('Workspace Installer - Unattended Mode', () => {
         await waitForInstallation(tempWorkspace, 30000);
 
         const initialConfig = await verifyWorkspaceConfig(tempWorkspace);
-        assert.ok(initialConfig.config.modules.includes('dashboard'), 'dashboard should be initially installed');
+        assert.ok((initialConfig.config.extensions as string[]).includes('dashboard'), 'dashboard should be initially installed');
 
         const removeResult = await runInstaller(tempWorkspace, {
           unattended: true,
           aiAgent: 'cursor',
           repoType: 'none',
-          modules: ['core', 'cursor', 'vcs'],
+          extensions: ['core', 'cursor', 'vcs'],
           skipRepoInit: true
         });
 
@@ -432,10 +432,10 @@ describe('Workspace Installer - Unattended Mode', () => {
         await waitForInstallation(tempWorkspace, 30000);
 
         const afterRemove = await verifyWorkspaceConfig(tempWorkspace);
-        assert.ok(!afterRemove.config.modules.includes('dashboard'), 'dashboard module should be removed');
-        assert.ok(afterRemove.config.modules.includes('core'), 'core module should still be present');
-        assert.ok(afterRemove.config.modules.includes('cursor'), 'cursor module should still be present');
-        assert.ok(afterRemove.config.modules.includes('vcs'), 'vcs module should still be present');
+        assert.ok(!(afterRemove.config.extensions as string[]).includes('dashboard'), 'dashboard extension should be removed');
+        assert.ok((afterRemove.config.extensions as string[]).includes('core'), 'core extension should still be present');
+        assert.ok((afterRemove.config.extensions as string[]).includes('cursor'), 'cursor extension should still be present');
+        assert.ok((afterRemove.config.extensions as string[]).includes('vcs'), 'vcs extension should still be present');
       } finally {
         await cleanupTempWorkspace(tempWorkspace);
       }
@@ -449,7 +449,7 @@ describe('Workspace Installer - Unattended Mode', () => {
           unattended: true,
           aiAgent: 'cursor',
           repoType: 'none',
-          modules: ['core', 'cursor', 'plan'],
+          extensions: ['core', 'cursor', 'plan'],
           skipRepoInit: true
         });
 
@@ -461,7 +461,7 @@ describe('Workspace Installer - Unattended Mode', () => {
         const initialConfigContent = await fs.readFile(configPath, 'utf8');
         const initialConfig = YAML.parse(initialConfigContent);
 
-        initialConfig.moduleSettings = {
+        initialConfig.extensionSettings = {
           core: {
             testSetting: 'testValue'
           }
@@ -472,7 +472,7 @@ describe('Workspace Installer - Unattended Mode', () => {
           unattended: true,
           aiAgent: 'cursor',
           repoType: 'none',
-          modules: ['core', 'cursor', 'plan'],
+          extensions: ['core', 'cursor', 'plan'],
           skipRepoInit: true
         });
 
@@ -481,23 +481,23 @@ describe('Workspace Installer - Unattended Mode', () => {
         await waitForInstallation(tempWorkspace, 30000);
 
         const afterReinstall = await verifyWorkspaceConfig(tempWorkspace);
-        assert.ok(afterReinstall.config.moduleSettings, 'moduleSettings should be preserved');
-        assert.ok(afterReinstall.config.moduleSettings.core, 'core module settings should be preserved');
+        assert.ok(afterReinstall.config.extensionSettings, 'extensionSettings should be preserved');
+        assert.ok(afterReinstall.config.extensionSettings.core, 'core extension settings should be preserved');
         assert.strictEqual(
-          afterReinstall.config.moduleSettings.core.testSetting,
+          afterReinstall.config.extensionSettings.core.testSetting,
           'testValue',
           'Custom setting should be preserved'
         );
 
-        assert.ok(afterReinstall.config.modules.includes('core'), 'core should still be installed');
-        assert.ok(afterReinstall.config.modules.includes('cursor'), 'cursor should still be installed');
-        assert.ok(afterReinstall.config.modules.includes('plan'), 'plan should still be installed');
+        assert.ok((afterReinstall.config.extensions as string[]).includes('core'), 'core should still be installed');
+        assert.ok((afterReinstall.config.extensions as string[]).includes('cursor'), 'cursor should still be installed');
+        assert.ok((afterReinstall.config.extensions as string[]).includes('plan'), 'plan should still be installed');
       } finally {
         await cleanupTempWorkspace(tempWorkspace);
       }
     });
 
-    test('Reinstallation - Module Hooks Re-executed', async () => {
+    test('Reinstallation - Extension Hooks Re-executed', async () => {
       const tempWorkspace = await createTempWorkspace();
       
       try {
@@ -505,7 +505,7 @@ describe('Workspace Installer - Unattended Mode', () => {
           unattended: true,
           aiAgent: 'cursor',
           repoType: 'none',
-          modules: ['core', 'cursor'],
+          extensions: ['core', 'cursor'],
           skipRepoInit: true
         });
 
@@ -527,7 +527,7 @@ describe('Workspace Installer - Unattended Mode', () => {
           unattended: true,
           aiAgent: 'cursor',
           repoType: 'none',
-          modules: ['core', 'cursor'],
+          extensions: ['core', 'cursor'],
           skipRepoInit: true
         });
 
@@ -553,13 +553,87 @@ describe('Workspace Installer - Unattended Mode', () => {
       const tempWorkspace = await createTempWorkspace();
       
       try {
+        // Create a local git repo that provides an external extension repository.
+        // This avoids depending on GitHub/network and matches the "extensions/" layout (no legacy modules/).
+        const repoSourceRoot = path.join(tempWorkspace, 'external-repo-src');
+        const smogcheckExtDir = path.join(repoSourceRoot, 'extensions', 'smogcheck');
+        await fs.mkdir(path.join(smogcheckExtDir, 'commands'), { recursive: true });
+        await fs.mkdir(path.join(smogcheckExtDir, 'rules'), { recursive: true });
+
+        await fs.writeFile(
+          path.join(repoSourceRoot, 'manifest.json'),
+          JSON.stringify({ devduckVersion: '0.1.0' }, null, 2) + '\n',
+          'utf8'
+        );
+
+        await fs.writeFile(
+          path.join(smogcheckExtDir, 'MODULE.md'),
+          [
+            '---',
+            'name: smogcheck',
+            'version: 0.1.0',
+            'description: Test external extension repository (smogcheck)',
+            'dependencies: [core]',
+            '---',
+            '',
+            'Test extension used by installer tests.',
+            ''
+          ].join('\n'),
+          'utf8'
+        );
+
+        // Post-install hook writes a marker to the workspace root.
+        await fs.writeFile(
+          path.join(smogcheckExtDir, 'hooks.js'),
+          [
+            "const fs = require('fs');",
+            "const path = require('path');",
+            '',
+            'module.exports = {',
+            "  'post-install': async (ctx) => {",
+            "    const outPath = path.join(ctx.workspaceRoot, 'smogchecked.txt');",
+            "    fs.writeFileSync(outPath, 'smogcheck\\n', 'utf8');",
+            "    return { success: true, createdFiles: ['smogchecked.txt'] };",
+            '  }',
+            '};',
+            ''
+          ].join('\n'),
+          'utf8'
+        );
+
+        await fs.writeFile(
+          path.join(smogcheckExtDir, 'commands', 'smogcheck.md'),
+          '# smogcheck\n',
+          'utf8'
+        );
+
+        await fs.writeFile(
+          path.join(smogcheckExtDir, 'rules', 'smogcheck.md'),
+          '# smogcheck rules\n',
+          'utf8'
+        );
+
+        // Initialize a local git repo so the installer can `git clone` it.
+        await fs.writeFile(path.join(repoSourceRoot, 'README.md'), '# external repo\n', 'utf8');
+        const { spawnSync } = await import('node:child_process');
+        const init = spawnSync('git', ['init'], { cwd: repoSourceRoot, encoding: 'utf8' });
+        assert.strictEqual(init.status, 0, `git init should succeed. stderr:\n${init.stderr || ''}`);
+        const add = spawnSync('git', ['add', '.'], { cwd: repoSourceRoot, encoding: 'utf8' });
+        assert.strictEqual(add.status, 0, `git add should succeed. stderr:\n${add.stderr || ''}`);
+        const commit = spawnSync(
+          'git',
+          ['-c', 'user.name=test', '-c', 'user.email=test@example.com', 'commit', '-m', 'init'],
+          { cwd: repoSourceRoot, encoding: 'utf8' }
+        );
+        assert.strictEqual(commit.status, 0, `git commit should succeed. stderr:\n${commit.stderr || ''}`);
+
         // Create config with external repository
         const configPath = path.join(tempWorkspace, 'test-config.yml');
         const config = {
           aiAgent: 'cursor',
           repoType: 'none',
-          modules: ['core', 'cursor', 'smogcheck'],
-          repos: ['github.com/holiber/devduck-test-repo'],
+          extensions: ['core', 'cursor', 'smogcheck'],
+          repos: [repoSourceRoot],
           skipRepoInit: true
         };
         await fs.writeFile(configPath, YAML.stringify(config), 'utf8');
@@ -579,22 +653,19 @@ describe('Workspace Installer - Unattended Mode', () => {
         assert.ok(configVerification.valid, 'Config should be valid');
         assert.ok(configVerification.config.repos, 'Config should have repos field');
         assert.ok(
-          configVerification.config.repos.includes('github.com/holiber/devduck-test-repo'),
-          'Config should include devduck-test-repo in repos'
+          configVerification.config.repos.includes(repoSourceRoot),
+          'Config should include the local external repo path in repos'
         );
 
         // Repos from workspace config should be cloned under <workspace>/devduck/
         // (not hidden under .cache/), so users can inspect/edit them easily.
-        const expectedGitUrl = 'https://github.com/holiber/devduck-test-repo.git';
-        const expectedRepoName = expectedGitUrl
-          .replace(/\.git$/, '')
-          .replace(/[:\/]/g, '_');
+        const expectedRepoName = repoSourceRoot.replace(/\.git$/, '').replace(/[:\/]/g, '_');
         const repoRoot = path.join(tempWorkspace, 'devduck', expectedRepoName);
 
-        // Ensure the repo clone exists and contains the expected module.
+        // Ensure the repo clone exists and contains the expected extension.
         await fs.access(path.join(repoRoot, '.git'));
-        await fs.access(path.join(repoRoot, 'modules'));
-        await fs.access(path.join(repoRoot, 'modules', 'smogcheck', 'MODULE.md'));
+        await fs.access(path.join(repoRoot, 'extensions'));
+        await fs.access(path.join(repoRoot, 'extensions', 'smogcheck', 'MODULE.md'));
 
         // Verify installer recorded installed module paths in .cache/install-state.json
         const statePath = path.join(tempWorkspace, '.cache', 'install-state.json');
@@ -603,8 +674,8 @@ describe('Workspace Installer - Unattended Mode', () => {
         assert.ok(state.installedModules, 'install-state.json should include installedModules');
         assert.ok(
           typeof state.installedModules.smogcheck === 'string' &&
-            state.installedModules.smogcheck.endsWith(path.join('modules', 'smogcheck')),
-          'install-state.json should include smogcheck module path'
+            state.installedModules.smogcheck.endsWith(path.join('extensions', 'smogcheck')),
+          'install-state.json should include smogcheck extension path'
         );
 
         // Verify smogchecked.txt file exists (created by smogcheck module hook)

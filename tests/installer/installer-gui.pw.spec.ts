@@ -24,7 +24,7 @@ test.describe('Workspace Installer - GUI/Interactive Mode', () => {
           unattended: false,
           aiAgent: 'cursor',
           repoType: 'none',
-          modules: ['core', 'plan', 'vcs'],
+          extensions: ['core', 'plan', 'vcs'],
           skipRepoInit: true
         });
 
@@ -37,7 +37,7 @@ test.describe('Workspace Installer - GUI/Interactive Mode', () => {
         // In core-only installs, Cursor integration artifacts are optional.
 
         const configVerification = await verifyWorkspaceConfig(tempWorkspace, {
-          modules: ['core', 'plan', 'vcs']
+          extensions: ['core', 'plan', 'vcs']
         });
         assert.ok(configVerification.valid, 'workspace.config.yml should be valid');
         assert.ok(configVerification.config, 'Config should be loaded');

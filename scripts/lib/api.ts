@@ -11,7 +11,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import type { ProviderRouter } from './provider-router.js';
-import { resolveDevduckRoot } from './devduck-paths.js';
+import { resolveDevduckRoot } from './barducks-paths.js';
 import { findWorkspaceRoot } from './workspace-root.js';
 import { readJSON } from './config.js';
 import { getWorkspaceConfigFilePath, readWorkspaceConfigFile } from './workspace-config.js';
@@ -191,19 +191,23 @@ export async function collectUnifiedAPI(quiet: boolean = false): Promise<Unified
   // Try to resolve devduck root - in CI, we might be running from the repo root
   let { devduckRoot } = resolveDevduckRoot({ cwd: process.cwd(), moduleDir: __dirname });
   
-  // Verify that devduckRoot actually contains modules directory
+  // Verify that devduckRoot actually contains extensions directory (legacy: modules directory)
   // If not, try to resolve from current working directory (for CI environments)
-  const modulesDir = path.join(devduckRoot, 'modules');
-  if (!fs.existsSync(modulesDir)) {
+  const extensionsDir = path.join(devduckRoot, 'extensions');
+  const legacyModulesDir = path.join(devduckRoot, 'modules');
+  const mainDir = fs.existsSync(extensionsDir) ? extensionsDir : legacyModulesDir;
+  if (!fs.existsSync(mainDir)) {
     // In CI, we might be in the repo root, so try that
-    const cwdModulesDir = path.join(process.cwd(), 'modules');
-    if (fs.existsSync(cwdModulesDir)) {
+    const cwdExtensionsDir = path.join(process.cwd(), 'extensions');
+    const cwdLegacyModulesDir = path.join(process.cwd(), 'modules');
+    if (fs.existsSync(cwdExtensionsDir) || fs.existsSync(cwdLegacyModulesDir)) {
       devduckRoot = process.cwd();
     } else {
       // Last resort: try to find modules relative to this file
       const fileBasedRoot = path.resolve(__dirname, '../..');
-      const fileBasedModulesDir = path.join(fileBasedRoot, 'modules');
-      if (fs.existsSync(fileBasedModulesDir)) {
+      const fileBasedExtensionsDir = path.join(fileBasedRoot, 'extensions');
+      const fileBasedLegacyModulesDir = path.join(fileBasedRoot, 'modules');
+      if (fs.existsSync(fileBasedExtensionsDir) || fs.existsSync(fileBasedLegacyModulesDir)) {
         devduckRoot = fileBasedRoot;
       }
     }
@@ -239,9 +243,11 @@ export async function collectUnifiedAPI(quiet: boolean = false): Promise<Unified
     }
   }
   
-  // Then, discover modules from main devduck modules directory
-  const mainModulesDir = path.join(devduckRoot, 'modules');
-  const mainModules = await discoverModulesFromDirectory(mainModulesDir);
+  // Then, discover extensions from main project directory (legacy: modules)
+  const mainExtensionsDir = fs.existsSync(path.join(devduckRoot, 'extensions'))
+    ? path.join(devduckRoot, 'extensions')
+    : path.join(devduckRoot, 'modules');
+  const mainModules = await discoverModulesFromDirectory(mainExtensionsDir);
   
   for (const modulePath of mainModules) {
     const moduleName = path.basename(modulePath);
