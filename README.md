@@ -1,7 +1,7 @@
 # Barducks
 
 <div align="center">
-  <img src="media/logo.png" alt="Barducks Logo" width="200">
+  <img src="media/barducks-logo-rounded.jpg" alt="Barducks Logo" width="200">
 </div>
 
 KrYa!
