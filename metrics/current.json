@@ -1,39 +1,45 @@
 {
   "meta": {
-    "collectedAt": "2025-12-29T21:08:27.037Z",
+    "collectedAt": "2025-12-29T21:25:59.680Z",
     "repository": "holiber/barducks",
     "eventName": "push",
-    "sha": "f4226c46f7d3c4bcbef3f8aa25b1f2b5a2517895",
+    "sha": "6e3d84df2213ab70dac23044c58136b2b7a38ccc",
     "ref": "refs/heads/main",
-    "runId": "20582707865",
+    "runId": "20583044190",
     "runAttempt": "1",
+    "prNumber": 91,
+    "prUrl": "https://github.com/holiber/barducks/pull/91",
     "node": "v24.12.0"
+  },
+  "pr": {
+    "number": 91,
+    "url": "https://github.com/holiber/barducks/pull/91"
   },
   "commands": {
     "npm_test": {
       "name": "npm_test",
       "command": "bash -lc 'npx c8 --reporter=json-summary --report-dir .cache/coverage npm run test:unit || (echo \"⚠️ Unit tests failed, retrying after 60 seconds...\"; sleep 60; npx c8 --reporter=json-summary --report-dir .cache/coverage npm run test:unit)'",
       "exitCode": 0,
-      "durationMs": 30292,
-      "collectedAt": "2025-12-29T21:07:40.261Z"
+      "durationMs": 30561,
+      "collectedAt": "2025-12-29T21:25:13.806Z"
     },
     "pw_installer": {
       "name": "pw_installer",
       "command": "bash -lc 'npx playwright test -c tests/installer/playwright.config.ts || (echo \"⚠️ Playwright installer suite failed, retrying after 60 seconds...\"; sleep 60; npx playwright test -c tests/installer/playwright.config.ts)'",
       "exitCode": 0,
-      "durationMs": 29106,
-      "collectedAt": "2025-12-29T21:08:26.477Z"
+      "durationMs": 29270,
+      "collectedAt": "2025-12-29T21:25:59.195Z"
     },
     "npm_pack": {
       "name": "npm-pack",
       "command": "npm pack --silent",
       "exitCode": 0,
-      "durationMs": 787
+      "durationMs": 785
     }
   },
   "sizes": {
     "npm_pack": {
-      "bytes": 3403000
+      "bytes": 3406035
     }
   },
   "tests": {
@@ -43,15 +49,15 @@
       "passed": 74,
       "failed": 0,
       "skipped": 9,
-      "reportedDurationMs": 27450.846508,
-      "durationMs": 30292,
+      "reportedDurationMs": 27741.09763,
+      "durationMs": 30561,
       "exitCode": 0
     },
     "e2e_installer": {
       "total": 34,
       "passed": 34,
-      "reportedDurationMs": 27800,
-      "durationMs": 29106,
+      "reportedDurationMs": 28000,
+      "durationMs": 29270,
       "exitCode": 0
     },
     "flaky": {
@@ -59,8 +65,8 @@
     }
   },
   "code": {
-    "scriptCodeLines": 34823,
-    "totalTextLines": 44993,
+    "scriptCodeLines": 34829,
+    "totalTextLines": 45142,
     "hugeScripts": 3
   },
   "quality": {
@@ -81,9 +87,9 @@
       }
     },
     "duplication": {
-      "duplicatedPct": 41.62,
-      "duplicatedLines": 239744,
-      "totalLines": 575987
+      "duplicatedPct": 8.81,
+      "duplicatedLines": 2699,
+      "totalLines": 30620
     }
   },
   "notes": [
