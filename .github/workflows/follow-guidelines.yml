@@ -1,0 +1,55 @@
+name: Follow Guidelines
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: follow-guidelines-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  follow-guidelines:
+    name: Follow Guidelines
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fetch main
+        run: git fetch origin main --depth=1
+
+      - name: Verify a task file was added
+        shell: bash
+        run: |
+          set -euo pipefail
+          added="$(git diff --name-status origin/main...HEAD | awk '$1=="A"{print $2}')"
+          if ! echo "${added}" | grep -qE '^docs/tasks/[0-9]{4}-[0-9]{2}-[0-9]{2}-.*\.md$'; then
+            echo "❌ Missing new task file."
+            echo "Add at least one file matching: docs/tasks/YYYY-MM-DD-*.md"
+            echo ""
+            echo "Added files in this PR:"
+            echo "${added:-<none>}"
+            exit 1
+          fi
+
+      - name: Verify changelog updated
+        shell: bash
+        run: |
+          set -euo pipefail
+          changed="$(git diff --name-only origin/main...HEAD)"
+          if ! echo "${changed}" | grep -qE '^CHANGELOG\.md$'; then
+            echo "❌ Changelog not updated."
+            echo "Update CHANGELOG.md."
+            echo ""
+            echo "Changed files in this PR:"
+            echo "${changed:-<none>}"
+            exit 1
+          fi
+

@@ -9,7 +9,7 @@ Every pull request **must** include:
    - The PR must add at least one new file matching `docs/tasks/YYYY-MM-DD-*.md`
 2. An update to the root **`CHANGELOG.md`**
 
-Pull requests missing either requirement will fail CI (**Contributor checks**).
+Pull requests missing either requirement will fail CI (**Follow Guidelines**).
 
 ## Tips
 
