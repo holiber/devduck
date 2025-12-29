@@ -12,10 +12,10 @@ export type DevduckServicePaths = {
 };
 
 export function getDevduckServicePaths(cwd: string = process.cwd()): DevduckServicePaths {
-  const rootDir = path.join(cwd, '.cache', 'devduck-service');
+  const rootDir = path.join(cwd, '.cache', 'barducks-service');
   const logsDir = path.join(rootDir, 'logs');
   const ipcDir = path.join(rootDir, 'ipc');
-  const defaultSocketPath = path.join(ipcDir, 'devduck.sock');
+  const defaultSocketPath = path.join(ipcDir, 'barducks.sock');
 
   // Unix domain sockets have a strict path length limit on macOS.
   // If the default workspace-based socket path is too long, fall back to a short /tmp-based path.
@@ -23,7 +23,7 @@ export function getDevduckServicePaths(cwd: string = process.cwd()): DevduckServ
     process.platform === 'darwin' && defaultSocketPath.length >= 100
       ? path.join(
           os.tmpdir(),
-          `devduck-${crypto.createHash('sha1').update(cwd).digest('hex').slice(0, 12)}.sock`
+          `barducks-${crypto.createHash('sha1').update(cwd).digest('hex').slice(0, 12)}.sock`
         )
       : defaultSocketPath;
   return {

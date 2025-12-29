@@ -16,7 +16,7 @@
 - **`CHANGELOG.md`**
   - Replaced hardcoded `https://github.com/holiber/devduck/pull/...` links with plain `PR #NN` text.
   - Removed hardcoded compare/release link references and converted version headings to plain text.
-- **`scripts/devduck-cli.ts`**
+- **`scripts/barducks-cli.ts`**
   - Updated the default `--devduck-repo` from `holiber/devduck` to `holiber/barducks` (so `devduck new ...` clones the fork by default).
 - **`modules/vcs/commands/new.md`**
   - Replaced the `git:github.com/holiber/devduck` example with `git:github.com/<owner>/<repo>`.
@@ -40,7 +40,7 @@
 ## Recommendations for the fork
 
 - **Decide what should be “canonical”**
-  - If `holiber/barducks` is the long-term canonical repo, keep the new default in `scripts/devduck-cli.ts`.
+  - If `holiber/barducks` is the long-term canonical repo, keep the new default in `scripts/barducks-cli.ts`.
   - If you plan to rename the project and/or publish it elsewhere later, consider making `--devduck-repo` default configurable via an env var (so future forks don’t need code changes).
 
 - **GitHub Actions permissions**

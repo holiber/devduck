@@ -5,7 +5,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { createYargs, installEpipeHandler } from '../../../scripts/lib/cli.js';
-import { resolveDevduckRoot } from '../../../scripts/lib/devduck-paths.js';
+import { resolveDevduckRoot } from '../../../scripts/lib/barducks-paths.js';
 import { findWorkspaceRoot } from '../../../scripts/lib/workspace-root.js';
 import { readEnvFile } from '../../../scripts/lib/env.js';
 import { getWorkspaceConfigFilePath, readWorkspaceConfigFile } from '../../../scripts/lib/workspace-config.js';

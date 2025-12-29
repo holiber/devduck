@@ -4,7 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { createYargs, installEpipeHandler } from '../../../scripts/lib/cli.js';
-import { resolveDevduckRoot } from '../../../scripts/lib/devduck-paths.js';
+import { resolveDevduckRoot } from '../../../scripts/lib/barducks-paths.js';
 import { findWorkspaceRoot } from '../../../scripts/lib/workspace-root.js';
 import { getWorkspaceConfigFilePath, readWorkspaceConfigFile } from '../../../scripts/lib/workspace-config.js';
 import {

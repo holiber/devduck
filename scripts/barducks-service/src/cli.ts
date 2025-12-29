@@ -64,7 +64,7 @@ async function ensureServiceRunning(socketPath: string): Promise<void> {
     await sleep(50);
   }
   throw new Error(
-    `Failed to start DevduckService (socket: ${socketPath}). ` +
+    `Failed to start BarducksService (socket: ${socketPath}). ` +
       `See logs: ${outLogPath} ${errLogPath}`
   );
 }
@@ -298,7 +298,7 @@ async function cmdDev(
     return;
   }
 
-  const fixturesDir = path.join(process.cwd(), 'tests', 'devduck-service', 'fixtures');
+  const fixturesDir = path.join(process.cwd(), 'tests', 'barducks-service', 'fixtures');
   const serverScript = path.join(fixturesDir, 'http-server.mjs');
   const loggyScript = path.join(fixturesDir, 'loggy-process.mjs');
 

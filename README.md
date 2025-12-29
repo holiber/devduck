@@ -70,7 +70,7 @@ If you prefer a declarative Taskfile workflow (CursorCloud-friendly):
 
 ```bash
 # Generate Taskfile runtime from workspace config
-tsx ./barducks/src/scripts/devduck-cli.ts sync
+tsx ./barducks/src/scripts/barducks-cli.ts sync
 
 # Run installation via go-task
 npx --yes -p @go-task/cli task install

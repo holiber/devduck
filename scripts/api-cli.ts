@@ -20,7 +20,7 @@ import {
   getProvidersByType,
   getProvider
 } from './lib/provider-registry.js';
-import { resolveDevduckRoot } from './lib/devduck-paths.js';
+import { resolveDevduckRoot } from './lib/barducks-paths.js';
 import { readJSON } from './lib/config.js';
 import { getWorkspaceConfigFilePath, readWorkspaceConfigFile } from './lib/workspace-config.js';
 import path from 'path';

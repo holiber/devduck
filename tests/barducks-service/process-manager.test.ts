@@ -3,9 +3,9 @@ import assert from 'node:assert/strict';
 import fs from 'fs';
 import path from 'path';
 
-import { getDevduckServicePaths } from '../../scripts/devduck-service/src/paths.js';
-import { ProcessManager } from '../../scripts/devduck-service/src/process/ProcessManager.js';
-import { isPidAlive } from '../../scripts/devduck-service/src/pids.js';
+import { getDevduckServicePaths } from '../../scripts/barducks-service/src/paths.js';
+import { ProcessManager } from '../../scripts/barducks-service/src/process/ProcessManager.js';
+import { isPidAlive } from '../../scripts/barducks-service/src/pids.js';
 
 function rmCache(rootDir: string) {
   fs.rmSync(rootDir, { recursive: true, force: true });
@@ -39,7 +39,7 @@ test('ProcessManager writes stdout/stderr logs', async () => {
   rmCache(paths.rootDir);
 
   const pm = new ProcessManager({ sessionPath: paths.sessionPath, logsDir: paths.logsDir });
-  const fixture = path.join(process.cwd(), 'tests', 'devduck-service', 'fixtures', 'loggy-process.mjs');
+  const fixture = path.join(process.cwd(), 'tests', 'barducks-service', 'fixtures', 'loggy-process.mjs');
 
   const rec = pm.start({ name: 'loggy', command: process.execPath, args: [fixture], env: {} });
   assert.ok(rec.pid > 0);
@@ -63,7 +63,7 @@ test('stop kills a process group (parent + child)', async () => {
   fs.mkdirSync(paths.rootDir, { recursive: true });
 
   const pm = new ProcessManager({ sessionPath: paths.sessionPath, logsDir: paths.logsDir });
-  const fixturesDir = path.join(process.cwd(), 'tests', 'devduck-service', 'fixtures');
+  const fixturesDir = path.join(process.cwd(), 'tests', 'barducks-service', 'fixtures');
   const parent = path.join(fixturesDir, 'parent-spawns-child.mjs');
   const childPidFile = path.join(paths.rootDir, 'child.pid');
 

@@ -4,7 +4,7 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { Repo, type RepoStats, type DiffResult, type ChangedFilesResult, type CommitsResult, type BranchResult, type PRStatusResult, type CreatePRResult, type BranchExistsResult } from '../../vcs/scripts/repo.js';
-import { resolveCorePaths } from '../../../scripts/lib/devduck-paths.js';
+import { resolveCorePaths } from '../../../scripts/lib/barducks-paths.js';
 import type { ExecuteCommandResult } from '../../../scripts/utils.js';
 
 const __filename = fileURLToPath(import.meta.url);

@@ -77,7 +77,7 @@ test('devduck-cli sync generates .cache/taskfile.generated.yml from merged confi
     extends: ['devduck:defaults/workspace.install.yml']
   });
 
-  const cliPath = path.join(repoRoot, 'scripts', 'devduck-cli.ts');
+  const cliPath = path.join(repoRoot, 'scripts', 'barducks-cli.ts');
   const res = spawnSync('npx', ['tsx', cliPath, 'sync', wsRoot], {
     cwd: repoRoot,
     env: { ...process.env },

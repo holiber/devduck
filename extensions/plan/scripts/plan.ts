@@ -20,7 +20,7 @@ async function getTracker() {
   if (tracker) return tracker;
   try {
     const { discoverProvidersFromModules, getProvider } = await import('../../../scripts/lib/provider-registry.js');
-    const { resolveDevduckRoot } = await import('../../../scripts/lib/devduck-paths.js');
+    const { resolveDevduckRoot } = await import('../../../scripts/lib/barducks-paths.js');
     const { findWorkspaceRoot } = await import('../../../scripts/lib/workspace-root.js');
     const { getWorkspaceConfigFilePath, readWorkspaceConfigFile } = await import(
       '../../../scripts/lib/workspace-config.js'

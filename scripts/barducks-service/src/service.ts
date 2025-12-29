@@ -3,7 +3,7 @@
 import fs from 'fs';
 import net from 'net';
 import path from 'path';
-import { DevduckService } from './DevduckService.js';
+import { BarducksService } from './BarducksService.js';
 import { ensureDirSync, readJsonIfExistsSync, safeUnlinkSync, writeJsonAtomicSync } from './fs-utils.js';
 import { getDevduckServicePaths } from './paths.js';
 import { isPidAlive } from './pids.js';
@@ -43,7 +43,7 @@ async function main(): Promise<void> {
   const locked = await acquireSingletonLock(paths.lockPath, paths.socketPath);
   if (!locked) {
     // eslint-disable-next-line no-console
-    console.log(`DevduckService already running (socket: ${paths.socketPath})`);
+    console.log(`BarducksService already running (socket: ${paths.socketPath})`);
     return;
   }
 
@@ -52,7 +52,7 @@ async function main(): Promise<void> {
     safeUnlinkSync(paths.socketPath);
   }
 
-  const service = new DevduckService(paths);
+  const service = new BarducksService(paths);
   const server = startDevduckIpcServer({ socketPath: paths.socketPath, service });
 
   const shutdown = () => {
@@ -69,7 +69,7 @@ async function main(): Promise<void> {
   process.on('SIGINT', shutdown);
 
   // eslint-disable-next-line no-console
-  console.log(`DevduckService listening on ${paths.socketPath}`);
+  console.log(`BarducksService listening on ${paths.socketPath}`);
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

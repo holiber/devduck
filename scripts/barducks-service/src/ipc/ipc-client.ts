@@ -87,7 +87,7 @@ export function ipcLink(params: { socketPath: string }): TRPCLink<AppRouter> {
             done = true;
             const hint =
               `Connection closed by service before responding. ` +
-              `Check service logs in ${path.join(process.cwd(), '.cache', 'devduck-service', 'logs')} ` +
+              `Check service logs in ${path.join(process.cwd(), '.cache', 'barducks-service', 'logs')} ` +
               `(service.out.log / service.err.log).`;
             observer.error?.(TRPCClientError.from(new Error(hint)));
           }

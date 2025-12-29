@@ -9,11 +9,11 @@ const __dirname = path.dirname(__filename);
 
 // bin/ lives at <pkgRoot>/bin, scripts/ lives at <pkgRoot>/scripts
 const pkgRoot = path.resolve(__dirname, '..');
-const cliScript = path.join(pkgRoot, 'scripts', 'devduck-cli.ts');
+const cliScript = path.join(pkgRoot, 'scripts', 'barducks-cli.ts');
 
 // When invoked via npm/npx, INIT_CWD points to the directory where the user ran the command.
 // We should run the CLI as if it was launched from that directory so relative paths like
-// `devduck new ./my-workspace` are resolved correctly.
+// `barducks new ./my-workspace` are resolved correctly.
 const userCwd = process.env.INIT_CWD || process.cwd();
 
 const result = spawnSync(

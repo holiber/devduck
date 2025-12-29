@@ -1,7 +1,7 @@
 import net from 'net';
 import { TRPC_ERROR_CODES_BY_KEY, type TRPCRequestMessage, type TRPCResponse } from '@trpc/server/rpc';
 import path from 'path';
-import type { DevduckService } from '../DevduckService.js';
+import type { BarducksService } from '../BarducksService.js';
 import { safeUnlinkSync, ensureDirSync } from '../fs-utils.js';
 import { appRouter } from '../router.js';
 
@@ -23,7 +23,7 @@ function toTRPCErrorResponse(id: TRPCRequestMessage['id'], err: unknown): TRPCRe
 
 export function startDevduckIpcServer(params: {
   socketPath: string;
-  service: DevduckService;
+  service: BarducksService;
 }): net.Server {
   ensureDirSync(path.dirname(params.socketPath));
   safeUnlinkSync(params.socketPath);

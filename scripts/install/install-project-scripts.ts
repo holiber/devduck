@@ -11,7 +11,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { resolveDevduckRoot } from '../lib/devduck-paths.js';
+import { resolveDevduckRoot } from '../lib/barducks-paths.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

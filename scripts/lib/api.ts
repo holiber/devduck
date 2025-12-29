@@ -11,7 +11,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import type { ProviderRouter } from './provider-router.js';
-import { resolveDevduckRoot } from './devduck-paths.js';
+import { resolveDevduckRoot } from './barducks-paths.js';
 import { findWorkspaceRoot } from './workspace-root.js';
 import { readJSON } from './config.js';
 import { getWorkspaceConfigFilePath, readWorkspaceConfigFile } from './workspace-config.js';

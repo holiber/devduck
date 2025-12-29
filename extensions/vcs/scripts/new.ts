@@ -3,7 +3,7 @@
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
-import { resolveCorePaths } from '../../../scripts/lib/devduck-paths.js';
+import { resolveCorePaths } from '../../../scripts/lib/barducks-paths.js';
 import { findWorkspaceRoot } from '../../../scripts/lib/workspace-root.js';
 import { getWorkspaceConfigFilePath, readWorkspaceConfigFile } from '../../../scripts/lib/workspace-config.js';
 import type { ExecuteCommandResult } from '../../../scripts/utils.js';

@@ -4,7 +4,7 @@ import type { DevduckServicePaths } from './paths.js';
 import { ProcessManager } from './process/ProcessManager.js';
 import { PlaywrightService } from './playwright/PlaywrightService.js';
 
-export class DevduckService {
+export class BarducksService {
   public readonly processManager: ProcessManager;
   public readonly playwrightService: PlaywrightService;
 

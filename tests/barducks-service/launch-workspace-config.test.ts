@@ -10,7 +10,7 @@ import { spawnSync } from 'child_process';
 import YAML from 'yaml';
 
 function runLaunch(repoRoot: string, cwd: string, args: string[], opts?: { timeoutMs?: number }) {
-  const cliPath = path.join(repoRoot, 'scripts', 'devduck-service', 'src', 'cli.ts');
+  const cliPath = path.join(repoRoot, 'scripts', 'barducks-service', 'src', 'cli.ts');
   return spawnSync('npx', ['tsx', cliPath, ...args], {
     cwd,
     env: { ...process.env },
@@ -76,7 +76,7 @@ test(
 
     // Point to lightweight node fixtures (no npm install required).
     const repoRoot = process.cwd();
-    const fixturesDir = path.join(repoRoot, 'tests', 'devduck-service', 'fixtures');
+    const fixturesDir = path.join(repoRoot, 'tests', 'barducks-service', 'fixtures');
     const serverScript = path.join(fixturesDir, 'http-server.mjs');
     const loggyScript = path.join(fixturesDir, 'loggy-process.mjs');
     const playwrightBin = path.join(repoRoot, 'node_modules', '.bin', 'playwright');

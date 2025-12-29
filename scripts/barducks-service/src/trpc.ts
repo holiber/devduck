@@ -1,8 +1,8 @@
 import { initTRPC } from '@trpc/server';
-import type { DevduckService } from './DevduckService.js';
+import type { BarducksService } from './BarducksService.js';
 
 export type DevduckServiceContext = {
-  service: DevduckService;
+  service: BarducksService;
 };
 
 export const t = initTRPC.context<DevduckServiceContext>().create();

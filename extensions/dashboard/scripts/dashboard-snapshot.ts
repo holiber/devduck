@@ -182,7 +182,7 @@ function listDockerContainers(): ListContainersResult {
     '--filter',
     'name=plan-',
     '--filter',
-    'name=devduck-service',
+    'name=barducks-service',
     '--format',
     '{{.Names}}\t{{.Status}}\t{{.Image}}',
   ]);
@@ -198,7 +198,7 @@ function listDockerContainers(): ListContainersResult {
       ? 'worker'
       : name.startsWith('plan-')
         ? 'plan'
-        : name === 'devduck-service'
+        : name === 'barducks-service'
           ? 'service'
           : 'other';
     containers.push({
