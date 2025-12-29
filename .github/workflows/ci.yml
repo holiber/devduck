@@ -20,7 +20,7 @@ concurrency:
 
 jobs:
   merge-check:
-    name: Validate task file + changelog
+    name: Contributor checks
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -52,9 +52,9 @@ jobs:
         run: |
           set -euo pipefail
           changed="$(git diff --name-only origin/main...HEAD)"
-          if ! echo "${changed}" | grep -qE '^(CHANGELOG\.md|docs/CHANGELOG\.md)$'; then
+          if ! echo "${changed}" | grep -qE '^CHANGELOG\.md$'; then
             echo "❌ Changelog not updated."
-            echo "Update CHANGELOG.md (or docs/CHANGELOG.md)."
+            echo "Update CHANGELOG.md."
             echo ""
             echo "Changed files in this PR:"
             echo "${changed:-<none>}"

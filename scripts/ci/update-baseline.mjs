@@ -47,12 +47,17 @@ async function main() {
     intOrZero(process.env.DEV_DUCK_PR_NUMBER) ||
     0;
 
+  const timestamp = new Date().toISOString();
+
   const stamped = {
     ...current,
+    commit,
+    pr,
+    timestamp,
     baseline: {
       commit,
       pr,
-      timestamp: new Date().toISOString()
+      timestamp
     }
   };
 
