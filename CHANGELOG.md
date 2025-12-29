@@ -21,6 +21,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 🧹 **PR metrics comment** - Removed duplicate PR title/number and code diff lines (already visible on the PR page).
 - 🔤 **Renamed GitHub Actions workflow** - “CI & Metrics Dashboard” → “Tests & Metrics”
 
+### Changed - 2025-12-29
+
+- 🔔 **PR metrics comment** - Added a **gh-pages / GitHub Pages disabled** warning under the dashboard link (detects `404` from `GET /repos/{owner}/{repo}/pages`).
+- 🧹 **PR metrics comment** - Removed duplicate PR title/number and code diff lines (already visible on the PR page).
+- 🔤 **Renamed GitHub Actions workflow** - “CI & Metrics Dashboard” → “Tests & Metrics”
+
 ---
 
 ## 0.3.0 - 2025-12-28
