@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 🧹 **PR metrics comment** - Removed duplicate PR title/number and code diff lines (already visible on the PR page).
 - 🔤 **Renamed GitHub Actions workflow** - “CI & Metrics Dashboard” → “Tests & Metrics”
 - 📄 **License** - Switched to Apache License 2.0 and added `NOTICE` (Barducks).
+- 🧪 **CI on docs-only PRs** - Skip the heavy “Tests & Metrics” workflow when a PR changes only files under `docs/`.
 
 ---
 
