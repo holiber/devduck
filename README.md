@@ -148,3 +148,8 @@ Modules from external repositories must include `manifest.json` (or `devduck.man
 
 If something goes wrong remove the `.cache` directory and re-run `node install.js`
 Or type `/troubleshoot` command in AI chat
+
+## License
+
+Barducks is licensed under the Apache License 2.0.
+See the LICENSE and NOTICE files for details.
