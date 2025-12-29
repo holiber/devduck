@@ -67,7 +67,7 @@ If there are uncommitted changes, the output will show:
   "ok": false,
   "errors": [
     {
-      "repo": "git:github.com/holiber/devduck",
+      "repo": "git:github.com/<owner>/<repo>",
       "projectName": "devduck",
       "type": "uncommitted",
       "files": ["scripts/new.js", "modules/vcs/commands/new.md"]

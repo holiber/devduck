@@ -21,7 +21,6 @@ import {
   getProvidersByType,
   setProviderTypeSchema
 } from '../../scripts/lib/provider-registry.js';
-import { findWorkspaceRoot } from '../../scripts/lib/workspace-root.js';
 import {
   getIssueCacheDir,
   getResourcesJsonPath,
@@ -29,9 +28,8 @@ import {
   readResourcesJson
 } from '../../modules/issue-tracker/scripts/resources.js';
 
-// Test issue: https://github.com/holiber/devduck/issues/20
-const TEST_ISSUE_ID = 'holiber/devduck#20';
-const TEST_ISSUE_URL = 'https://github.com/holiber/devduck/issues/20';
+const TEST_ISSUE_ID = (process.env.GITHUB_TEST_ISSUE_ID || '').trim();
+const TEST_ISSUE_URL = (process.env.GITHUB_TEST_ISSUE_URL || '').trim();
 
 // Load .env file from workspace root
 const workspaceRoot = findWorkspaceRoot(process.cwd()) || process.cwd();
@@ -44,7 +42,44 @@ function hasGitHubToken(): boolean {
   return Boolean(process.env.GITHUB_TOKEN && process.env.GITHUB_TOKEN.trim());
 }
 
+function parseIssueId(issueId: string): { owner: string; repo: string; number: string } | null {
+  const m = issueId.match(/^([^/]+)\/([^#]+)#(\d+)$/);
+  if (!m) return null;
+  return { owner: m[1], repo: m[2], number: m[3] };
+}
+
+function parseIssueUrl(url: string): { owner: string; repo: string; number: string } | null {
+  const m = url.match(/^https?:\/\/github\.com\/([^/]+)\/([^/]+)\/issues\/(\d+)(?:[/?#].*)?$/i);
+  if (!m) return null;
+  return { owner: m[1], repo: m[2], number: m[3] };
+}
+
+function getTestIssueId(): string | null {
+  if (TEST_ISSUE_ID) return TEST_ISSUE_ID;
+  if (TEST_ISSUE_URL) {
+    const p = parseIssueUrl(TEST_ISSUE_URL);
+    if (p) return `${p.owner}/${p.repo}#${p.number}`;
+  }
+  return null;
+}
+
+function getTestIssueUrl(issueId: string): string | null {
+  if (TEST_ISSUE_URL) return TEST_ISSUE_URL;
+  const p = parseIssueId(issueId);
+  if (!p) return null;
+  return `https://github.com/${p.owner}/${p.repo}/issues/${p.number}`;
+}
+
+function getNonExistentIssueId(issueId: string): string {
+  const p = parseIssueId(issueId);
+  if (!p) return `${issueId}#999999`;
+  return `${p.owner}/${p.repo}#999999`;
+}
+
 describe('issue-tracker-github: github-provider', () => {
+  const testIssueId = getTestIssueId();
+  const shouldRunGitHubTests = hasGitHubToken() && Boolean(testIssueId);
+
   test('matches IssueTrackerProvider contract schema', () => {
     const res = IssueTrackerProviderSchema.safeParse(provider);
     assert.ok(res.success, res.success ? '' : res.error.message);
@@ -57,41 +92,38 @@ describe('issue-tracker-github: github-provider', () => {
     assert.ok(provider.manifest.tools.includes('downloadResources'));
   });
 
-  test('fetchIssue returns issue that matches Issue schema', async () => {
-    if (!hasGitHubToken()) {
-      return; // Skip test if token not set
-    }
+  test(
+    'fetchIssue returns issue that matches Issue schema',
+    { skip: !shouldRunGitHubTests },
+    async () => {
+      const issueId = testIssueId as string;
 
-    const issue = await provider.fetchIssue({ issueId: TEST_ISSUE_ID });
-    const parsed = IssueSchema.safeParse(issue);
-    assert.ok(parsed.success, parsed.success ? '' : parsed.error.message);
+      const issue = await provider.fetchIssue({ issueId });
+      const parsed = IssueSchema.safeParse(issue);
+      assert.ok(parsed.success, parsed.success ? '' : parsed.error.message);
+      assert.ok(issue.id);
+      assert.ok(issue.key);
+      assert.ok(typeof issue.title === 'string');
+      assert.ok(issue.title.length > 0);
+      assert.ok(typeof issue.description === 'string');
+    }
+  );
+
+  test('fetchIssue works with URL', { skip: !shouldRunGitHubTests }, async () => {
+    const issueId = testIssueId as string;
+    const url = getTestIssueUrl(issueId);
+    assert.ok(url, 'Test issue URL must be provided via GITHUB_TEST_ISSUE_URL or derived from GITHUB_TEST_ISSUE_ID');
+
+    const issue = await provider.fetchIssue({ url });
     assert.ok(issue.id);
     assert.ok(issue.key);
-    assert.ok(typeof issue.title === 'string');
-    assert.ok(issue.title.length > 0);
-    assert.ok(typeof issue.description === 'string');
   });
 
-  test('fetchIssue works with URL', async () => {
-    if (!hasGitHubToken()) {
-      test.skip('GITHUB_TOKEN not set');
-      return;
-    }
-
-    const issue = await provider.fetchIssue({ url: TEST_ISSUE_URL });
-    assert.ok(issue.id);
-    assert.ok(issue.key);
-    assert.ok(issue.title.includes('issue tracker') || issue.title.includes('Issue tracker'));
-  });
-
-  test('fetchIssue throws error for non-existent issue', async () => {
-    if (!hasGitHubToken()) {
-      test.skip('GITHUB_TOKEN not set');
-      return;
-    }
+  test('fetchIssue throws error for non-existent issue', { skip: !shouldRunGitHubTests }, async () => {
+    const issueId = testIssueId as string;
 
     try {
-      await provider.fetchIssue({ issueId: 'holiber/devduck#999999' });
+      await provider.fetchIssue({ issueId: getNonExistentIssueId(issueId) });
       assert.fail('Expected error for non-existent issue');
     } catch (error) {
       assert.ok(error instanceof Error);
@@ -99,13 +131,10 @@ describe('issue-tracker-github: github-provider', () => {
     }
   });
 
-  test('fetchComments returns comments that match Comment schema', async () => {
-    if (!hasGitHubToken()) {
-      test.skip('GITHUB_TOKEN not set');
-      return;
-    }
+  test('fetchComments returns comments that match Comment schema', { skip: !shouldRunGitHubTests }, async () => {
+    const issueId = testIssueId as string;
 
-    const comments = await provider.fetchComments({ issueId: TEST_ISSUE_ID });
+    const comments = await provider.fetchComments({ issueId });
     assert.ok(Array.isArray(comments));
     for (const comment of comments) {
       const parsed = CommentSchema.safeParse(comment);
@@ -118,13 +147,10 @@ describe('issue-tracker-github: github-provider', () => {
     }
   });
 
-  test('fetchPRs returns PR references that match PRReference schema', async () => {
-    if (!hasGitHubToken()) {
-      test.skip('GITHUB_TOKEN not set');
-      return;
-    }
+  test('fetchPRs returns PR references that match PRReference schema', { skip: !shouldRunGitHubTests }, async () => {
+    const issueId = testIssueId as string;
 
-    const prs = await provider.fetchPRs({ issueId: TEST_ISSUE_ID });
+    const prs = await provider.fetchPRs({ issueId });
     assert.ok(Array.isArray(prs));
     for (const pr of prs) {
       const parsed = PRReferenceSchema.safeParse(pr);
@@ -135,28 +161,25 @@ describe('issue-tracker-github: github-provider', () => {
     }
   });
 
-  test('downloadResources creates correct directory structure', async () => {
-    if (!hasGitHubToken()) {
-      test.skip('GITHUB_TOKEN not set');
-      return;
-    }
+  test('downloadResources creates correct directory structure', { skip: !shouldRunGitHubTests }, async () => {
+    const issueId = testIssueId as string;
 
     const workspaceRoot = findWorkspaceRoot(process.cwd()) || process.cwd();
 
-    const result = await provider.downloadResources({ issueId: TEST_ISSUE_ID, maxDistance: 1 });
+    const result = await provider.downloadResources({ issueId, maxDistance: 1 });
 
     // Verify result matches schema
     const parsed = DownloadResourcesResultSchema.safeParse(result);
     assert.ok(parsed.success, parsed.success ? '' : parsed.error.message);
-    assert.strictEqual(result.issueId, TEST_ISSUE_ID);
+    assert.strictEqual(result.issueId, issueId);
     assert.ok(typeof result.resourcesPath === 'string');
     assert.ok(typeof result.resourcesJsonPath === 'string');
     assert.ok(result.downloadedCount > 0);
 
     // Verify directories exist
-    const issueDir = getIssueCacheDir(workspaceRoot, TEST_ISSUE_ID);
-    const resourcesDir = getIssueResourcesDir(workspaceRoot, TEST_ISSUE_ID);
-    const resourcesJsonPath = getResourcesJsonPath(workspaceRoot, TEST_ISSUE_ID);
+    const issueDir = getIssueCacheDir(workspaceRoot, issueId);
+    const resourcesDir = getIssueResourcesDir(workspaceRoot, issueId);
+    const resourcesJsonPath = getResourcesJsonPath(workspaceRoot, issueId);
 
     assert.ok(fs.existsSync(issueDir), 'Issue directory should exist');
     assert.ok(fs.existsSync(resourcesDir), 'Resources directory should exist');
@@ -170,17 +193,14 @@ describe('issue-tracker-github: github-provider', () => {
     }
   });
 
-  test('downloadResources creates resources.json with correct metadata', async () => {
-    if (!hasGitHubToken()) {
-      test.skip('GITHUB_TOKEN not set');
-      return;
-    }
+  test('downloadResources creates resources.json with correct metadata', { skip: !shouldRunGitHubTests }, async () => {
+    const issueId = testIssueId as string;
 
     const workspaceRoot = findWorkspaceRoot(process.cwd()) || process.cwd();
 
-    await provider.downloadResources({ issueId: TEST_ISSUE_ID, maxDistance: 1 });
+    await provider.downloadResources({ issueId, maxDistance: 1 });
 
-    const resourcesJson = readResourcesJson(workspaceRoot, TEST_ISSUE_ID);
+    const resourcesJson = readResourcesJson(workspaceRoot, issueId);
 
     // Verify resources.json structure
     assert.ok(typeof resourcesJson === 'object');
@@ -196,24 +216,21 @@ describe('issue-tracker-github: github-provider', () => {
     assert.ok(typeof issueMetadata.size === 'number');
 
     // Cleanup
-    const issueDir = getIssueCacheDir(workspaceRoot, TEST_ISSUE_ID);
+    const issueDir = getIssueCacheDir(workspaceRoot, issueId);
     if (fs.existsSync(issueDir)) {
       fs.rmSync(issueDir, { recursive: true, force: true });
     }
   });
 
-  test('downloadResources downloads resources with distance <= 1', async () => {
-    if (!hasGitHubToken()) {
-      test.skip('GITHUB_TOKEN not set');
-      return;
-    }
+  test('downloadResources downloads resources with distance <= 1', { skip: !shouldRunGitHubTests }, async () => {
+    const issueId = testIssueId as string;
 
     const workspaceRoot = findWorkspaceRoot(process.cwd()) || process.cwd();
 
-    await provider.downloadResources({ issueId: TEST_ISSUE_ID, maxDistance: 1 });
+    await provider.downloadResources({ issueId, maxDistance: 1 });
 
-    const resourcesJson = readResourcesJson(workspaceRoot, TEST_ISSUE_ID);
-    const resourcesDir = getIssueResourcesDir(workspaceRoot, TEST_ISSUE_ID);
+    const resourcesJson = readResourcesJson(workspaceRoot, issueId);
+    const resourcesDir = getIssueResourcesDir(workspaceRoot, issueId);
 
     // Check that resources with distance <= 1 are downloaded
     for (const [resourceId, metadata] of Object.entries(resourcesJson)) {
@@ -230,23 +247,20 @@ describe('issue-tracker-github: github-provider', () => {
     }
 
     // Cleanup
-    const issueDir = getIssueCacheDir(workspaceRoot, TEST_ISSUE_ID);
+    const issueDir = getIssueCacheDir(workspaceRoot, issueId);
     if (fs.existsSync(issueDir)) {
       fs.rmSync(issueDir, { recursive: true, force: true });
     }
   });
 
-  test('downloadResources creates issue.json with comments', async () => {
-    if (!hasGitHubToken()) {
-      test.skip('GITHUB_TOKEN not set');
-      return;
-    }
+  test('downloadResources creates issue.json with comments', { skip: !shouldRunGitHubTests }, async () => {
+    const issueId = testIssueId as string;
 
     const workspaceRoot = findWorkspaceRoot(process.cwd()) || process.cwd();
 
-    await provider.downloadResources({ issueId: TEST_ISSUE_ID, maxDistance: 1 });
+    await provider.downloadResources({ issueId, maxDistance: 1 });
 
-    const resourcesDir = getIssueResourcesDir(workspaceRoot, TEST_ISSUE_ID);
+    const resourcesDir = getIssueResourcesDir(workspaceRoot, issueId);
     const issueJsonPath = path.join(resourcesDir, 'issue.json');
 
     assert.ok(fs.existsSync(issueJsonPath), 'issue.json should exist');
@@ -256,7 +270,7 @@ describe('issue-tracker-github: github-provider', () => {
     assert.ok(Array.isArray(issueData.comments));
 
     // Cleanup
-    const issueDir = getIssueCacheDir(workspaceRoot, TEST_ISSUE_ID);
+    const issueDir = getIssueCacheDir(workspaceRoot, issueId);
     if (fs.existsSync(issueDir)) {
       fs.rmSync(issueDir, { recursive: true, force: true });
     }

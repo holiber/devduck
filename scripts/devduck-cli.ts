@@ -261,7 +261,7 @@ async function main(argv = process.argv): Promise<void> {
           .option('devduck-repo', {
             type: 'string',
             describe: 'Git URL for DevDuck repository',
-            default: 'https://github.com/holiber/devduck.git'
+            default: 'https://github.com/holiber/barducks.git'
           })
           .option('devduck-ref', {
             type: 'string',

@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## Unreleased
 
 ### Added - 2025-12-29
 
@@ -23,25 +23,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [0.3.0] - 2025-12-28
+## 0.3.0 - 2025-12-28
 
 ### Added - 2025-12-28
 
-- 📊 **PR metrics dashboard + reports** ([PR #73](https://github.com/holiber/devduck/pull/73))
-- 🧪 **Playwright runner test coverage** ([PR #72](https://github.com/holiber/devduck/pull/72))
-- 📚 **Workspace modules documentation** ([PR #71](https://github.com/holiber/devduck/pull/71))
+- 📊 **PR metrics dashboard + reports** (PR #73)
+- 🧪 **Playwright runner test coverage** (PR #72)
+- 📚 **Workspace modules documentation** (PR #71)
 
 ### Changed - 2025-12-28
 
 - 🧰 **Installer CLI refactor** - Moved CLI argument parsing + workspace path resolution into `scripts/install/cli-runtime.ts`, keeping installer steps visible near the top of `scripts/install.ts`.
 - 🔌 **DevduckService socket fallback** - On macOS, when the default Unix socket path is too long, DevduckService now falls back to a short `/tmp/devduck-<hash>.sock` path to avoid `EINVAL` on `listen()`.
-- 🧾 **Taskfile install improvements** - Quieter output and more robust checks during Taskfile-driven installation ([PR #68](https://github.com/holiber/devduck/pull/68))
-- 🧪 **Installer tests migrated to Playwright** ([PR #59](https://github.com/holiber/devduck/pull/59))
-- 📦 **CI metrics and artifacts recording** ([PR #69](https://github.com/holiber/devduck/pull/69))
+- 🧾 **Taskfile install improvements** - Quieter output and more robust checks during Taskfile-driven installation (PR #68)
+- 🧪 **Installer tests migrated to Playwright** (PR #59)
+- 📦 **CI metrics and artifacts recording** (PR #69)
 
 ### Fixed - 2025-12-28
 
-- 🛠️ **MCP tools listing for nested `mcpSettings`** ([PR #65](https://github.com/holiber/devduck/pull/65))
+- 🛠️ **MCP tools listing for nested `mcpSettings`** (PR #65)
 
 ### Changed - 2025-12-27
 
@@ -51,7 +51,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed - 2025-12-26
 
-- ⏪ **Reverted Trinicode project setup** ([PR #55](https://github.com/holiber/devduck/pull/55))
+- ⏪ **Reverted Trinicode project setup** (PR #55)
 
 ### Fixed - 2025-12-25
 
@@ -180,11 +180,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [0.2.0] - 2025-12-24
+## 0.2.0 - 2025-12-24
 
 ### Changed - 2025-12-24
 
-- 🔄 **Full TypeScript migration** - Complete migration from JavaScript to TypeScript ([PR #13](https://github.com/holiber/devduck/pull/13))
+- 🔄 **Full TypeScript migration** - Complete migration from JavaScript to TypeScript (PR #13)
   - Converted all `.js` files to `.ts` with ES Modules
   - Replaced CommonJS (`require`/`module.exports`) with ES Modules (`import`/`export`)
   - Added TypeScript types and interfaces throughout the codebase
@@ -205,33 +205,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added - 2025-12-24
 
-- ✨ Automatic installation of project scripts to workspace `package.json` ([PR #12](https://github.com/holiber/devduck/pull/12))
+- ✨ Automatic installation of project scripts to workspace `package.json` (PR #12)
   - Copies standard scripts (`test`, `dev`, `build`, `start`, `lint`) from projects to workspace with `{projectName}:{scriptName}` format
   - Supports additional scripts via `importScripts` config field
   - See [ARCHITECTURE.md](ARCHITECTURE.md#project-scripts-installation) for details
 
 ---
 
-## [0.1.0] - 2025-12-24
+## 0.1.0 - 2025-12-24
 
 ### Added - 2025-12-24
 
-- 📝 Workspace config schema and documentation ([PR #11](https://github.com/holiber/devduck/pull/11))
+- 📝 Workspace config schema and documentation (PR #11)
 
 ### Added - 2025-12-23
 
-- ✨ Workspace-local module installation ([PR #10](https://github.com/holiber/devduck/pull/10))
+- ✨ Workspace-local module installation (PR #10)
   - Modules in workspace `modules/` directory take precedence over built-in/external ones
 
 ### Changed - 2025-12-23
 
-- 🔧 Migrated module CLIs to `yargs` for consistent interface ([PR #9](https://github.com/holiber/devduck/pull/9))
+- 🔧 Migrated module CLIs to `yargs` for consistent interface (PR #9)
   - Added shared utilities: `scripts/lib/cli.js`, `scripts/lib/workspace-root.js`, `scripts/lib/devduck-paths.js`
 
 ---
-
-[Unreleased]: https://github.com/holiber/devduck/compare/v0.3.0...HEAD
-[0.3.0]: https://github.com/holiber/devduck/compare/v0.2.0...v0.3.0
-[0.2.0]: https://github.com/holiber/devduck/compare/v0.1.0...v0.2.0
-[0.1.0]: https://github.com/holiber/devduck/releases/tag/v0.1.0
-

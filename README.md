@@ -1,7 +1,5 @@
 # DevDuck
 
-![Main CI](https://github.com/holiber/devduck/actions/workflows/ci.yml/badge.svg?branch=main)
-
 <div align="center">
   <img src="media/logo.png" alt="DevDuck Logo" width="200">
 </div>
@@ -21,7 +19,7 @@ Explain the problem, and the duck will write code, close tickets, and ship chang
 ### Create a new workspace (npx)
 
 ```bash
-npx --yes github:holiber/devduck new ./my-devduck-workspace
+npx --yes github:<owner>/<repo> new ./my-devduck-workspace
 ```
 
 This will:
@@ -33,7 +31,7 @@ This will:
 If you already have a `workspace.config.yml` (for example, checked into another repo or shared in your team), you can use it as a template:
 
 ```bash
-npx --yes github:holiber/devduck new ./my-devduck-workspace --workspace-config /path/to/workspace.config.yml
+npx --yes github:<owner>/<repo> new ./my-devduck-workspace --workspace-config /path/to/workspace.config.yml
 ```
 
 DevDuck will merge your template on top of the defaults and write the result to `./my-devduck-workspace/workspace.config.yml`.

@@ -54,7 +54,7 @@ jobs:
         run: mkdir -p .cache/{logs,metrics,ai_logs,playwright,tmp}
 
       - name: Find existing PR metrics comment
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
         id: find_comment
         uses: peter-evans/find-comment@v3
         with:
@@ -62,10 +62,10 @@ jobs:
           body-includes: "<!-- devduck-metrics-comment -->"
 
       - name: Save previous metrics comment body (if exists)
-        if: github.event_name == 'pull_request' && steps.find_comment.outputs.comment-id != ''
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && steps.find_comment.outputs.comment-id != ''
         shell: bash
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
           COMMENT_ID: ${{ steps.find_comment.outputs.comment-id }}
         run: |
           set -euo pipefail
@@ -73,7 +73,7 @@ jobs:
           curl -fsSL -H "Authorization: Bearer ${GH_TOKEN}" -H "Accept: application/vnd.github+json" "${api}" | jq -r '.body // ""' > .cache/metrics/previous-pr-comment.md
 
       - name: Render PR metrics comment (BUILDING/REBUILDING)
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
         run: |
           node scripts/ci/render-pr-comment-dashboard.mjs \
             --dir .cache/metrics \
@@ -82,7 +82,7 @@ jobs:
             --existing .cache/metrics/previous-pr-comment.md
 
       - name: Update PR metrics comment (status)
-        if: github.event_name == 'pull_request' && steps.find_comment.outputs.comment-id != ''
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && steps.find_comment.outputs.comment-id != ''
         uses: peter-evans/create-or-update-comment@v4
         with:
           comment-id: ${{ steps.find_comment.outputs.comment-id }}
@@ -90,7 +90,7 @@ jobs:
           edit-mode: replace
 
       - name: Create PR metrics comment (status, first run)
-        if: github.event_name == 'pull_request' && steps.find_comment.outputs.comment-id == ''
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && steps.find_comment.outputs.comment-id == ''
         id: create_status_comment
         uses: peter-evans/create-or-update-comment@v4
         with:
@@ -98,7 +98,7 @@ jobs:
           body-path: .cache/metrics/pr-comment.status.md
 
       - name: Persist metrics comment id
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
         shell: bash
         run: |
           set -euo pipefail
@@ -171,11 +171,11 @@ jobs:
         run: node scripts/ci/assert-tests-passed.mjs --file .cache/metrics/test-commands.json --require npm_test --require pw_installer
 
       - name: Render PR metrics comment (ready)
-        if: github.event_name == 'pull_request' && steps.tests_gate.outcome == 'success'
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && steps.tests_gate.outcome == 'success'
         run: node scripts/ci/render-pr-comment-dashboard.mjs --dir .cache/metrics --out .cache/metrics/pr-comment.ready.md
 
       - name: Update PR metrics comment (ready)
-        if: github.event_name == 'pull_request' && steps.tests_gate.outcome == 'success' && env.METRICS_COMMENT_ID != ''
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && steps.tests_gate.outcome == 'success' && env.METRICS_COMMENT_ID != ''
         uses: peter-evans/create-or-update-comment@v4
         with:
           comment-id: ${{ env.METRICS_COMMENT_ID }}
@@ -183,7 +183,7 @@ jobs:
           edit-mode: replace
 
       - name: Render PR metrics comment (FAIL)
-        if: github.event_name == 'pull_request' && steps.tests_gate.outcome != 'success'
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && steps.tests_gate.outcome != 'success'
         run: |
           node scripts/ci/render-pr-comment-dashboard.mjs \
             --dir .cache/metrics \
@@ -192,7 +192,7 @@ jobs:
             --existing .cache/metrics/previous-pr-comment.md
 
       - name: Update PR metrics comment (FAIL)
-        if: github.event_name == 'pull_request' && steps.tests_gate.outcome != 'success' && env.METRICS_COMMENT_ID != ''
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && steps.tests_gate.outcome != 'success' && env.METRICS_COMMENT_ID != ''
         uses: peter-evans/create-or-update-comment@v4
         with:
           comment-id: ${{ env.METRICS_COMMENT_ID }}
@@ -236,7 +236,7 @@ jobs:
         run: node scripts/ci/assert-tests-passed.mjs --file .cache/metrics/test-commands.json --require npm_test --require pw_installer
 
       - name: Render PR metrics comment (FAIL - job failure)
-        if: ${{ github.event_name == 'pull_request' && failure() }}
+        if: ${{ github.event_name == 'pull_request' && failure() && github.event.pull_request.head.repo.full_name == github.repository }}
         run: |
           node scripts/ci/render-pr-comment-dashboard.mjs \
             --dir .cache/metrics \
@@ -245,7 +245,7 @@ jobs:
             --existing .cache/metrics/previous-pr-comment.md
 
       - name: Update PR metrics comment (FAIL - job failure)
-        if: ${{ github.event_name == 'pull_request' && failure() && env.METRICS_COMMENT_ID != '' }}
+        if: ${{ github.event_name == 'pull_request' && failure() && github.event.pull_request.head.repo.full_name == github.repository && env.METRICS_COMMENT_ID != '' }}
         uses: peter-evans/create-or-update-comment@v4
         with:
           comment-id: ${{ env.METRICS_COMMENT_ID }}
