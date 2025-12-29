@@ -14,8 +14,8 @@ If you are a Cursor Cloud Agent working on a task, you MUST follow **exactly** t
 
 - **One PR only** per task. Do not open multiple PRs for the same task.
 - **One branch only** per task.
-- Create and maintain exactly **one task doc** file:
-  - `docs/<short-task-name>.md` where `<short-task-name>` is a **kebab-case slug**.
+- Create and maintain exactly **one task file** under `docs/tasks/`:
+  - `docs/tasks/YYYY-MM-DD-<short-task-name>.md` where `<short-task-name>` is a **kebab-case slug**.
 - PR title MUST start with:
   - `[🦆 <short-task-name>] ...`
 - The PR MUST have exactly **one** agent “service status comment” which you **edit** (never post new ones).
