@@ -87,6 +87,31 @@ function defaultPagesDashboardUrl() {
   return `https://${owner}.github.io/${name}/metrics/`;
 }
 
+async function isGithubPagesEnabled() {
+  const repo = process.env.GITHUB_REPOSITORY; // "owner/name"
+  const token = process.env.GITHUB_TOKEN;
+  const apiBase = process.env.GITHUB_API_URL ?? 'https://api.github.com';
+  if (!repo || !token) return null;
+
+  try {
+    const res = await fetch(`${apiBase}/repos/${repo}/pages`, {
+      method: 'GET',
+      headers: {
+        accept: 'application/vnd.github+json',
+        authorization: `Bearer ${token}`,
+        'user-agent': 'devduck-ci',
+        'x-github-api-version': '2022-11-28',
+      },
+    });
+
+    if (res.status === 200) return true;
+    if (res.status === 404) return false;
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 async function main() {
   const dir = readArg('--dir') ?? '.cache/metrics';
   const outPath = readArg('--out') ?? path.join(dir, 'pr-comment.md');
@@ -98,8 +123,11 @@ async function main() {
   const deltas = diff?.deltas ?? {};
   const url = runUrl();
 
-  const dashboardUrl = process.env.METRICS_DASHBOARD_URL ?? defaultPagesDashboardUrl();
+  const defaultDashboardUrl = defaultPagesDashboardUrl();
+  const dashboardUrl = process.env.METRICS_DASHBOARD_URL ?? defaultDashboardUrl;
   const isPullRequest = process.env.GITHUB_EVENT_NAME === 'pull_request';
+  const shouldCheckGithubPages = Boolean(dashboardUrl && defaultDashboardUrl && dashboardUrl === defaultDashboardUrl);
+  const githubPagesEnabled = shouldCheckGithubPages ? await isGithubPagesEnabled() : null;
 
   const lines = [];
   lines.push('### 🧠 CI Metrics Dashboard');
@@ -135,6 +163,11 @@ async function main() {
   if (dashboardUrl) {
     if (isPullRequest) {
       lines.push(`- **Dashboard (GitHub Pages)**: ${dashboardUrl} (published after merge to \`main\`)`);
+      if (githubPagesEnabled === false) {
+        // GitHub supports "admonitions" in Markdown; CAUTION renders red.
+        lines.push('  > [!CAUTION]');
+        lines.push('  > GitHub Pages is not enabled for this repository, so this dashboard link may not work. Enable it in **Settings → Pages**.');
+      }
     } else {
       lines.push(`- **Dashboard (history + charts)**: ${dashboardUrl}`);
     }
