@@ -1,11 +1,11 @@
 {
   "meta": {
-    "collectedAt": "2025-12-29T22:07:06.191Z",
+    "collectedAt": "2025-12-29T22:20:02.587Z",
     "repository": "holiber/barducks",
     "eventName": "push",
-    "sha": "e0ce6b1e1bd42f5529f062585be42b94b531722f",
+    "sha": "e3ec29dcc20e2b56b2d2e3ea17c83432ff98e7fd",
     "ref": "refs/heads/main",
-    "runId": "20583681824",
+    "runId": "20583932214",
     "runAttempt": "1",
     "node": "v24.12.0"
   },
@@ -14,26 +14,26 @@
       "name": "npm_test",
       "command": "bash -lc 'npx c8 --reporter=json-summary --report-dir .cache/coverage npm run test:unit || (echo \"⚠️ Unit tests failed, retrying after 60 seconds...\"; sleep 60; npx c8 --reporter=json-summary --report-dir .cache/coverage npm run test:unit)'",
       "exitCode": 0,
-      "durationMs": 33443,
-      "collectedAt": "2025-12-29T22:06:02.223Z"
+      "durationMs": 30487,
+      "collectedAt": "2025-12-29T22:19:16.659Z"
     },
     "pw_installer": {
       "name": "pw_installer",
       "command": "bash -lc 'npx playwright test -c tests/installer/playwright.config.ts || (echo \"⚠️ Playwright installer suite failed, retrying after 60 seconds...\"; sleep 60; npx playwright test -c tests/installer/playwright.config.ts)'",
       "exitCode": 0,
-      "durationMs": 31820,
-      "collectedAt": "2025-12-29T22:07:05.391Z"
+      "durationMs": 29434,
+      "collectedAt": "2025-12-29T22:20:02.083Z"
     },
     "npm_pack": {
       "name": "npm-pack",
       "command": "npm pack --silent",
       "exitCode": 0,
-      "durationMs": 830
+      "durationMs": 799
     }
   },
   "sizes": {
     "npm_pack": {
-      "bytes": 3606382
+      "bytes": 3607424
     }
   },
   "tests": {
@@ -43,15 +43,15 @@
       "passed": 74,
       "failed": 0,
       "skipped": 9,
-      "reportedDurationMs": 30539.191284,
-      "durationMs": 33443,
+      "reportedDurationMs": 27706.214837,
+      "durationMs": 30487,
       "exitCode": 0
     },
     "e2e_installer": {
       "total": 34,
       "passed": 34,
-      "reportedDurationMs": 30500,
-      "durationMs": 31820,
+      "reportedDurationMs": 28100,
+      "durationMs": 29434,
       "exitCode": 0
     },
     "flaky": {
@@ -59,8 +59,8 @@
     }
   },
   "code": {
-    "scriptCodeLines": 34887,
-    "totalTextLines": 45367,
+    "scriptCodeLines": 34914,
+    "totalTextLines": 45457,
     "hugeScripts": 3
   },
   "quality": {
@@ -81,21 +81,21 @@
       }
     },
     "duplication": {
-      "duplicatedPct": 8.78,
+      "duplicatedPct": 8.77,
       "duplicatedLines": 2694,
-      "totalLines": 30678
+      "totalLines": 30705
     }
   },
   "notes": [
     "BUILD_COMMAND not set; build metric skipped.",
     "DEV_COMMAND not set; dev startup metric skipped."
   ],
-  "commit": "e0ce6b1e1bd42f5529f062585be42b94b531722f",
+  "commit": "e3ec29dcc20e2b56b2d2e3ea17c83432ff98e7fd",
   "pr": 0,
-  "timestamp": "2025-12-29T22:07:11.301Z",
+  "timestamp": "2025-12-29T22:20:07.307Z",
   "baseline": {
-    "commit": "e0ce6b1e1bd42f5529f062585be42b94b531722f",
+    "commit": "e3ec29dcc20e2b56b2d2e3ea17c83432ff98e7fd",
     "pr": 0,
-    "timestamp": "2025-12-29T22:07:11.301Z"
+    "timestamp": "2025-12-29T22:20:07.307Z"
   }
 }
