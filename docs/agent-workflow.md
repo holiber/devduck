@@ -50,6 +50,15 @@ Use **only** these statuses (exact text, including ellipsis/emoji):
 
 ## The workflow (stage-by-stage)
 
+## Repo-specific CI requirements (Follow Guidelines)
+
+This repository’s CI will fail (**Follow Guidelines**) unless your PR:
+
+- Adds at least one new task file: `docs/tasks/YYYY-MM-DD-*.md`
+- Updates the root `CHANGELOG.md`
+
+These requirements are documented in `CONTRIBUTING.md`.
+
 ### Stage 0 — Start / Bootstrap PR (PR must appear immediately)
 
 Goal: as soon as the agent receives the task, the PR exists and shows “work in progress”.
@@ -69,6 +78,8 @@ Checklist:
 5. Create the single service status comment and set status to `intake…`.
 
 Hard rule: Stage 0 MUST end with **PR created** + **service status comment present**.
+
+Note: CI may be red after Stage 0 until you also satisfy the repo-specific requirements above.
 
 ### Stage 1 — Clarify Task
 
