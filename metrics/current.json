@@ -1,45 +1,39 @@
 {
   "meta": {
-    "collectedAt": "2025-12-29T22:28:07.198Z",
+    "collectedAt": "2025-12-29T22:30:48.248Z",
     "repository": "holiber/barducks",
     "eventName": "push",
-    "sha": "0f7afe792ce0d80373b9c379251e00e0adeff15d",
+    "sha": "bec0d1b49e0ce3ce14e6add1008cc50a2035ced7",
     "ref": "refs/heads/main",
-    "runId": "20584064328",
+    "runId": "20584109890",
     "runAttempt": "1",
-    "prNumber": 94,
-    "prUrl": "https://github.com/holiber/barducks/pull/94",
     "node": "v24.12.0"
-  },
-  "pr": {
-    "number": 94,
-    "url": "https://github.com/holiber/barducks/pull/94"
   },
   "commands": {
     "npm_test": {
       "name": "npm_test",
       "command": "bash -lc 'npx c8 --reporter=json-summary --report-dir .cache/coverage npm run test:unit || (echo \"⚠️ Unit tests failed, retrying after 60 seconds...\"; sleep 60; npx c8 --reporter=json-summary --report-dir .cache/coverage npm run test:unit)'",
       "exitCode": 0,
-      "durationMs": 32588,
-      "collectedAt": "2025-12-29T22:27:13.858Z"
+      "durationMs": 31719,
+      "collectedAt": "2025-12-29T22:29:50.788Z"
     },
     "pw_installer": {
       "name": "pw_installer",
       "command": "bash -lc 'npx playwright test -c tests/installer/playwright.config.ts || (echo \"⚠️ Playwright installer suite failed, retrying after 60 seconds...\"; sleep 60; npx playwright test -c tests/installer/playwright.config.ts)'",
       "exitCode": 0,
-      "durationMs": 29384,
-      "collectedAt": "2025-12-29T22:28:06.696Z"
+      "durationMs": 33714,
+      "collectedAt": "2025-12-29T22:30:47.733Z"
     },
     "npm_pack": {
       "name": "npm-pack",
       "command": "npm pack --silent",
       "exitCode": 0,
-      "durationMs": 791
+      "durationMs": 785
     }
   },
   "sizes": {
     "npm_pack": {
-      "bytes": 3608823
+      "bytes": 3609167
     }
   },
   "tests": {
@@ -49,15 +43,15 @@
       "passed": 74,
       "failed": 0,
       "skipped": 9,
-      "reportedDurationMs": 29660.93426,
-      "durationMs": 32588,
+      "reportedDurationMs": 28792.4336,
+      "durationMs": 31719,
       "exitCode": 0
     },
     "e2e_installer": {
       "total": 34,
       "passed": 34,
-      "reportedDurationMs": 28100,
-      "durationMs": 29384,
+      "reportedDurationMs": 32400,
+      "durationMs": 33714,
       "exitCode": 0
     },
     "flaky": {
