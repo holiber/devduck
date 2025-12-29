@@ -71,6 +71,14 @@ function fmtDeltaPct(p) {
   return `${sign}${fmtPct(p)}`;
 }
 
+function fmtTestDelta({ deltaTotal, deltaDurationMs }) {
+  const parts = [];
+  if (deltaTotal != null && Number.isFinite(deltaTotal)) parts.push(`${fmtDeltaInt(deltaTotal)} tests`);
+  if (deltaDurationMs != null && Number.isFinite(deltaDurationMs)) parts.push(fmtDeltaMs(deltaDurationMs));
+  if (parts.length === 0) return 'n/a';
+  return parts.join(' / ');
+}
+
 function runUrl() {
   const repo = process.env.GITHUB_REPOSITORY;
   const runId = process.env.GITHUB_RUN_ID;
@@ -256,12 +264,17 @@ async function main() {
   lines.push(`| 🐢 Slow tests (>20s) | ${fmtInt(current?.quality?.slowTests?.count)} | ${fmtDeltaInt(deltas.slow_tests_over_20s)} |`);
   lines.push(`| 🧬 Duplication (copy/paste) | ${fmtPct(current?.quality?.duplication?.duplicatedPct)} | ${fmtDeltaPct(deltas.duplication_pct)} |`);
   lines.push(
-    `| 🧪 Unit tests | ${current?.tests?.unit?.total ?? 'n/a'} tests / ${fmtMs(current?.tests?.unit?.reportedDurationMs ?? current?.tests?.unit?.durationMs)} | — |`
+    `| 🧪 Unit tests | ${current?.tests?.unit?.total ?? 'n/a'} tests / ${fmtMs(
+      current?.tests?.unit?.reportedDurationMs ?? current?.tests?.unit?.durationMs
+    )} | ${fmtTestDelta({ deltaTotal: deltas.unit_tests_total, deltaDurationMs: deltas.unit_tests_duration_ms })} |`
   );
   lines.push(
     `| 🧪 E2E (installer) | ${current?.tests?.e2e_installer?.total ?? 'n/a'} tests / ${fmtMs(
       current?.tests?.e2e_installer?.reportedDurationMs ?? current?.tests?.e2e_installer?.durationMs
-    )} | — |`
+    )} | ${fmtTestDelta({
+      deltaTotal: deltas.e2e_installer_tests_total,
+      deltaDurationMs: deltas.e2e_installer_tests_duration_ms
+    })} |`
   );
   lines.push('');
   if (dashboardUrl) {

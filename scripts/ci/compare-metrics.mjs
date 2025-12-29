@@ -29,6 +29,15 @@ function delta(cur, base) {
   return (cur ?? 0) - (base ?? 0);
 }
 
+function deltaIfBoth(cur, base) {
+  if (cur == null || base == null) return undefined;
+  return cur - base;
+}
+
+function pickedTestDurationMs(t) {
+  return num(t?.reportedDurationMs) ?? num(t?.durationMs);
+}
+
 async function main() {
   const dir = readArg('--dir') ?? '.cache/metrics';
   const currentPath = path.join(dir, 'current.json');
@@ -37,6 +46,11 @@ async function main() {
 
   const cur = await readJsonOr(currentPath, {});
   const base = await readJsonOr(baselinePath, {});
+
+  const curUnit = cur?.tests?.unit;
+  const baseUnit = base?.tests?.unit;
+  const curE2eInstaller = cur?.tests?.e2e_installer;
+  const baseE2eInstaller = base?.tests?.e2e_installer;
 
   const out = {
     meta: {
@@ -54,6 +68,15 @@ async function main() {
       total_text_lines: delta(num(cur?.code?.totalTextLines), num(base?.code?.totalTextLines)),
       huge_scripts: delta(num(cur?.code?.hugeScripts), num(base?.code?.hugeScripts)),
       flaky_tests: delta(num(cur?.tests?.flaky?.count), num(base?.tests?.flaky?.count)),
+
+      // Test metrics (best-effort; require both current+baseline to avoid misleading deltas)
+      unit_tests_total: deltaIfBoth(num(curUnit?.total), num(baseUnit?.total)),
+      unit_tests_duration_ms: deltaIfBoth(pickedTestDurationMs(curUnit), pickedTestDurationMs(baseUnit)),
+      e2e_installer_tests_total: deltaIfBoth(num(curE2eInstaller?.total), num(baseE2eInstaller?.total)),
+      e2e_installer_tests_duration_ms: deltaIfBoth(
+        pickedTestDurationMs(curE2eInstaller),
+        pickedTestDurationMs(baseE2eInstaller)
+      ),
 
       // Quality metrics
       coverage_lines_pct: delta(num(cur?.quality?.coverage?.linesPct), num(base?.quality?.coverage?.linesPct)),
