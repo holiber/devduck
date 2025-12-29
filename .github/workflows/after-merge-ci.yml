@@ -1,0 +1,144 @@
+name: AFTER MERGE - Tests & Metrics
+
+on:
+  push:
+    branches: [ main ]
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: after-merge-ci-metrics-${{ github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Resolve associated PR for main push (best-effort)
+        if: github.ref == 'refs/heads/main'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          owner_repo="${GITHUB_REPOSITORY}"
+          sha="${GITHUB_SHA}"
+          api="https://api.github.com/repos/${owner_repo}/commits/${sha}/pulls"
+          pr_number="$(curl -fsSL -H "Authorization: Bearer ${GH_TOKEN}" -H "Accept: application/vnd.github+json" "${api}" | jq -r '.[0].number // 0')"
+          pr_url="$(curl -fsSL -H "Authorization: Bearer ${GH_TOKEN}" -H "Accept: application/vnd.github+json" "${api}" | jq -r '.[0].html_url // ""')"
+          echo "DEV_DUCK_PR_NUMBER=${pr_number}" >> "${GITHUB_ENV}"
+          echo "DEV_DUCK_PR_URL=${pr_url}" >> "${GITHUB_ENV}"
+          echo "[main] associated PR: #${pr_number} ${pr_url}"
+
+      # Create artifact folders BEFORE any potentially failing steps
+      - name: Prepare artifact folders
+        run: mkdir -p .cache/{logs,metrics,ai_logs,playwright,tmp}
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      # Unit tests (run once, but don't stop artifact/metrics collection)
+      - name: Run unit tests (timed)
+        run: node scripts/ci/run-and-record.mjs --name npm_test --allow-failure 1 --cmd "bash -lc 'npx c8 --reporter=json-summary --report-dir .cache/coverage npm run test:unit || (echo \"⚠️ Unit tests failed, retrying after 60 seconds...\"; sleep 60; npx c8 --reporter=json-summary --report-dir .cache/coverage npm run test:unit)'" --log .cache/logs/npm-test.log --out .cache/metrics/test-commands.json
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      # E2E tests (installer suite). Keep artifacts for failures.
+      - name: Run Playwright installer suite (timed)
+        run: node scripts/ci/run-and-record.mjs --name pw_installer --allow-failure 1 --cmd "bash -lc 'npx playwright test -c tests/installer/playwright.config.ts || (echo \"⚠️ Playwright installer suite failed, retrying after 60 seconds...\"; sleep 60; npx playwright test -c tests/installer/playwright.config.ts)'" --log .cache/logs/pw-installer.log --out .cache/metrics/test-commands.json
+
+      # Optional smoke suite (only makes sense when BASE_URL is provided).
+      - name: Run Playwright smoke suite (timed)
+        if: ${{ env.BASE_URL }}
+        run: node scripts/ci/run-and-record.mjs --name pw_smoke --allow-failure 1 --cmd "bash -lc 'npx playwright test -c tests/smoke/playwright.config.ts || (echo \"⚠️ Playwright smoke suite failed, retrying after 60 seconds...\"; sleep 60; npx playwright test -c tests/smoke/playwright.config.ts)'" --log .cache/logs/pw-smoke.log --out .cache/metrics/test-commands.json
+
+      - name: Collect Playwright artifacts into .cache
+        if: ${{ always() }}
+        run: |
+          mkdir -p .cache/playwright
+          cp -r test-results .cache/playwright/ 2>/dev/null || true
+          cp -r playwright-report .cache/playwright/ 2>/dev/null || true
+          cp -r blob-report .cache/playwright/ 2>/dev/null || true
+
+      - name: Checkout gh-pages (baseline + history)
+        if: ${{ always() }}
+        id: ghpages
+        continue-on-error: true
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: gh-pages
+          fetch-depth: 1
+
+      - name: Load baseline/history from gh-pages (if present)
+        if: ${{ always() }}
+        run: |
+          mkdir -p .cache/metrics
+          if [ -f "gh-pages/metrics/baseline.json" ]; then cp "gh-pages/metrics/baseline.json" ".cache/metrics/baseline.json"; else echo '{}' > ".cache/metrics/baseline.json"; fi
+          if [ -f "gh-pages/metrics/history.json" ]; then cp "gh-pages/metrics/history.json" ".cache/metrics/history.json"; else echo '[]' > ".cache/metrics/history.json"; fi
+          cp ".cache/metrics/baseline.json" ".cache/metrics/compare-baseline.json"
+
+      - name: Collect current metrics (no tests)
+        if: ${{ always() }}
+        run: node scripts/ci/collect-metrics.mjs
+
+      - name: Compare with baseline
+        if: ${{ always() }}
+        run: node scripts/ci/compare-metrics.mjs --dir .cache/metrics --baseline .cache/metrics/compare-baseline.json
+
+      - name: Evaluate test result gate
+        id: tests_gate
+        continue-on-error: true
+        run: node scripts/ci/assert-tests-passed.mjs --file .cache/metrics/test-commands.json --require npm_test --require pw_installer
+
+      - name: Update history (main only, successful runs only)
+        if: ${{ github.ref == 'refs/heads/main' && steps.tests_gate.outcome == 'success' }}
+        run: node scripts/ci/update-history.mjs --dir .cache/metrics --limit 200
+
+      - name: Update baseline (main only, successful runs only)
+        if: ${{ github.ref == 'refs/heads/main' && steps.tests_gate.outcome == 'success' }}
+        run: node scripts/ci/update-baseline.mjs --dir .cache/metrics
+
+      - name: Generate HTML dashboard (always)
+        run: node scripts/ci/generate-metrics-report.mjs --metrics-dir .cache/metrics --out-dir .cache/metrics-pages
+
+      - name: Upload metrics + artifacts
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: after-merge-ci-metrics-artifacts
+          path: |
+            .cache/metrics
+            .cache/logs
+            .cache/playwright
+            .cache/coverage
+            .cache/ai_logs
+            .cache/metrics-pages
+          retention-days: 14
+
+      - name: Deploy dashboard to GitHub Pages (main only)
+        if: ${{ github.ref == 'refs/heads/main' && steps.tests_gate.outcome == 'success' }}
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ github.token }}
+          publish_dir: .cache/metrics-pages
+
+      - name: Fail workflow if tests failed
+        if: ${{ always() && steps.tests_gate.outcome != 'success' }}
+        run: node scripts/ci/assert-tests-passed.mjs --file .cache/metrics/test-commands.json --require npm_test --require pw_installer
+

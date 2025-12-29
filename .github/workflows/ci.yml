@@ -1,4 +1,4 @@
-name: AFTER MERGE - Tests & Metrics
+name: PR - Tests & Metrics
 
 on:
   pull_request:
@@ -6,19 +6,15 @@ on:
     # Don't run heavy tests/metrics workflow for docs-only PRs.
     paths-ignore:
       - "docs/**"
-  push:
-    branches: [ main ]
 
 permissions:
-  contents: write
+  contents: read
   pull-requests: write
   issues: write
-  pages: write
-  id-token: write
 
 concurrency:
   # Avoid referencing github.event.pull_request on push events (can be null).
-  group: ci-metrics-${{ github.head_ref || github.ref_name }}
+  group: pr-ci-metrics-${{ github.head_ref || github.ref_name }}
   cancel-in-progress: true
 
 jobs:
@@ -35,22 +31,6 @@ jobs:
         with:
           node-version: 24
           cache: npm
-
-      - name: Resolve associated PR for main push (best-effort)
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          owner_repo="${GITHUB_REPOSITORY}"
-          sha="${GITHUB_SHA}"
-          api="https://api.github.com/repos/${owner_repo}/commits/${sha}/pulls"
-          pr_number="$(curl -fsSL -H "Authorization: Bearer ${GH_TOKEN}" -H "Accept: application/vnd.github+json" "${api}" | jq -r '.[0].number // 0')"
-          pr_url="$(curl -fsSL -H "Authorization: Bearer ${GH_TOKEN}" -H "Accept: application/vnd.github+json" "${api}" | jq -r '.[0].html_url // ""')"
-          echo "DEV_DUCK_PR_NUMBER=${pr_number}" >> "${GITHUB_ENV}"
-          echo "DEV_DUCK_PR_URL=${pr_url}" >> "${GITHUB_ENV}"
-          echo "[main] associated PR: #${pr_number} ${pr_url}"
 
       # Create artifact folders BEFORE any potentially failing steps
       - name: Prepare artifact folders
@@ -202,14 +182,6 @@ jobs:
           body-path: .cache/metrics/pr-comment.fail.md
           edit-mode: replace
 
-      - name: Update history (main only, successful runs only)
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.tests_gate.outcome == 'success'
-        run: node scripts/ci/update-history.mjs --dir .cache/metrics --limit 200
-
-      - name: Update baseline (main only, successful runs only)
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.tests_gate.outcome == 'success'
-        run: node scripts/ci/update-baseline.mjs --dir .cache/metrics
-
       - name: Generate HTML dashboard (always)
         run: node scripts/ci/generate-metrics-report.mjs --metrics-dir .cache/metrics --out-dir .cache/metrics-pages
 
@@ -226,13 +198,6 @@ jobs:
             .cache/ai_logs
             .cache/metrics-pages
           retention-days: 14
-
-      - name: Deploy dashboard to GitHub Pages (main only)
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.tests_gate.outcome == 'success'
-        uses: peaceiris/actions-gh-pages@v4
-        with:
-          github_token: ${{ github.token }}
-          publish_dir: .cache/metrics-pages
 
       - name: Fail workflow if tests failed
         if: ${{ always() && steps.tests_gate.outcome != 'success' }}
