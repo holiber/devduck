@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Changed - 2025-12-29
+
+- 🦆➡️🦢 **Project rename** - Renamed DevDuck to Barducks across CLI, docs, and service paths.
+- 🧩 **Extensions naming** - Renamed `modules/` to `extensions/` and removed legacy `modules`/`moduleSettings` support (see migration guide in `docs/tasks/`).
+
 ### Added - 2025-12-29
 
 - ✅ **Follow Guidelines** - CI blocks merges unless the PR adds a new task file under `docs/tasks/`.
