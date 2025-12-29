@@ -135,10 +135,7 @@ async function main() {
 
   const lines = [];
   lines.push('### 🧠 CI Metrics Dashboard');
-  if (pr.number != null) lines.push(`- **PR**: #${pr.number}${pr.title ? ` — ${pr.title}` : ''}`);
-  if (pr.additions != null || pr.deletions != null) {
-    lines.push(`- **Δ Code**: +${pr.additions ?? 'n/a'} / -${pr.deletions ?? 'n/a'} (files: ${pr.changed_files ?? 'n/a'})`);
-  }
+  // PR title/number and code diff are already visible on the PR page; avoid duplicating it in the comment.
   if (url) lines.push(`- **Workflow run**: ${url}`);
   lines.push('');
   lines.push('| Metric | Current | Δ vs main |');
@@ -169,14 +166,18 @@ async function main() {
       lines.push(`- **Dashboard (GitHub Pages)**: ${dashboardUrl} (published after merge to \`main\`)`);
       if (githubPages.enabled === false) {
         // GitHub supports "admonitions" in Markdown; CAUTION renders red.
-        lines.push('  > [!CAUTION]');
-        lines.push('  > GitHub Pages is not enabled for this repository, so this dashboard link may not work. Enable it in **Settings → Pages**.');
+        lines.push('');
+        lines.push('> [!CAUTION]');
+        lines.push('> GitHub Pages is not enabled for this repository, so this dashboard link may not work. Enable it in **Settings → Pages**.');
+        lines.push('');
       } else if (shouldCheckGithubPages && githubPages.enabled == null) {
         // We couldn't prove Pages is enabled/disabled (auth, permissions, rate limit, API issues).
-        lines.push('  > [!WARNING]');
+        lines.push('');
+        lines.push('> [!WARNING]');
         lines.push(
-          `  > Unable to verify GitHub Pages status${githubPages.status ? ` (HTTP ${githubPages.status})` : ''}. This link may be unavailable.`
+          `> Unable to verify GitHub Pages status${githubPages.status ? ` (HTTP ${githubPages.status})` : ''}. This link may be unavailable.`
         );
+        lines.push('');
       }
     } else {
       lines.push(`- **Dashboard (history + charts)**: ${dashboardUrl}`);
