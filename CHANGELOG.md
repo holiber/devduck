@@ -7,10 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
-### Changed - 2025-12-29
+### Added - 2025-12-30
 
-- 🦆➡️🦢 **Project rename** - Renamed DevDuck to Barducks across CLI, docs, and service paths.
-- 🧩 **Extensions naming** - Renamed `modules/` to `extensions/` and removed legacy `modules`/`moduleSettings` support (see migration guide in `docs/tasks/`).
+- 🧪 **After-merge CI workflow** - Added `AFTER MERGE - Tests & Metrics` to run on pushes to `main`, run tests, update metrics baseline/history, and deploy the dashboard.
+- 🏷️ **Workflow badge** - Added a GitHub Actions status badge for the after-merge workflow on the `main` branch.
+
+### Changed - 2025-12-30
+
+- 🖼️ **README logo** - Updated the README logo to use `media/barducks-logo-rounded.jpg`.
+- 🗂️ **Task file convention** - Updated agent workflow docs/templates and Cursor rules to use `docs/tasks/YYYY-MM-DD-<slug>.md` (instead of `docs/<slug>.md`).
+
+### Fixed - 2025-12-30
+
+- 🧬 **Duplication metric accuracy** - Fixed `jscpd` ignore handling by enabling `--gitignore` and using a single comma-separated `--ignore` value (prevents accidentally scanning `node_modules/` in CI).
 
 ### Added - 2025-12-29
 
@@ -23,12 +32,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed - 2025-12-29
 
-- 🔔 **PR metrics comment** - Added a **gh-pages / GitHub Pages disabled** warning under the dashboard link (detects `404` from `GET /repos/{owner}/{repo}/pages`).
+- 🦆➡️🦢 **Project rename** - Renamed DevDuck to Barducks across CLI, docs, and service paths.
+- 🧩 **Extensions naming** - Renamed `modules/` to `extensions/` and removed legacy `modules`/`moduleSettings` support (see migration guide in `docs/tasks/`).
+- 🧭 **Cursor Cloud rules** - Stopped ignoring `.cursor/` and committed repository rules so Cursor Cloud agents can follow project guidelines.
+- 🔔 **PR metrics comment** - Added a **gh-pages / GitHub Pages disabled** warning under the dashboard link (warns when the dashboard URL returns `404`).
 - 🧹 **PR metrics comment** - Removed duplicate PR title/number and code diff lines (already visible on the PR page).
 - 🔤 **Renamed GitHub Actions workflow** - “CI & Metrics Dashboard” → “Tests & Metrics”
 - 📄 **License** - Switched to Apache License 2.0 and added `NOTICE` (Barducks).
 - 🧪 **CI on docs-only PRs** - Skip the heavy “Tests & Metrics” workflow when a PR changes only files under `docs/`.
 - 🧾 **Changelog policy** - Stop requiring `CHANGELOG.md` updates in every PR; use `docs/tasks/` as the per-PR log and assemble the release changelog before publishing.
+
+### Fixed - 2025-12-29
+
+- 🪪 **Fork-safe CI permissions** - Avoid posting/updating PR metrics comments for forked pull requests and use `github.token` where appropriate for better compatibility.
 
 ---
 
