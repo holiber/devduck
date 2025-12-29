@@ -1,4 +1,4 @@
-name: CI & Metrics Dashboard
+name: Tests & Metrics
 
 on:
   pull_request:
