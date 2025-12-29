@@ -3,6 +3,9 @@ name: Tests & Metrics
 on:
   pull_request:
     types: [opened, synchronize, reopened]
+    # Don't run heavy tests/metrics workflow for docs-only PRs.
+    paths-ignore:
+      - "docs/**"
   push:
     branches: [ main ]
 
