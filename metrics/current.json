@@ -1,11 +1,11 @@
 {
   "meta": {
-    "collectedAt": "2025-12-28T11:40:57.408Z",
+    "collectedAt": "2025-12-29T12:51:21.150Z",
     "repository": "holiber/devduck",
     "eventName": "push",
-    "sha": "7246770e62bafe2e64ba84f49458ca44304db8ce",
+    "sha": "6357b8daa6a2a6dee795d778f66153726032a4e9",
     "ref": "refs/heads/main",
-    "runId": "20553240119",
+    "runId": "20573236927",
     "runAttempt": "1",
     "node": "v24.12.0"
   },
@@ -14,26 +14,26 @@
       "name": "npm_test",
       "command": "npx c8 --reporter=json-summary --report-dir .cache/coverage npm run test:unit",
       "exitCode": 0,
-      "durationMs": 31989,
-      "collectedAt": "2025-12-28T11:40:12.109Z"
+      "durationMs": 31662,
+      "collectedAt": "2025-12-29T12:50:35.099Z"
     },
     "pw_installer": {
       "name": "pw_installer",
       "command": "npx playwright test -c tests/installer/playwright.config.ts",
       "exitCode": 0,
-      "durationMs": 28490,
-      "collectedAt": "2025-12-28T11:40:56.901Z"
+      "durationMs": 29259,
+      "collectedAt": "2025-12-29T12:51:20.539Z"
     },
     "npm_pack": {
       "name": "npm-pack",
       "command": "npm pack --silent",
       "exitCode": 0,
-      "durationMs": 786
+      "durationMs": 775
     }
   },
   "sizes": {
     "npm_pack": {
-      "bytes": 2950057
+      "bytes": 2951022
     }
   },
   "tests": {
@@ -43,15 +43,15 @@
       "passed": 83,
       "failed": 0,
       "skipped": 8,
-      "reportedDurationMs": 29080.027813,
-      "durationMs": 31989,
+      "reportedDurationMs": 28892.399107,
+      "durationMs": 31662,
       "exitCode": 0
     },
     "e2e_installer": {
       "total": 34,
       "passed": 34,
-      "reportedDurationMs": 27300,
-      "durationMs": 28490,
+      "reportedDurationMs": 28100,
+      "durationMs": 29259,
       "exitCode": 0
     },
     "flaky": {
@@ -59,8 +59,8 @@
     }
   },
   "code": {
-    "scriptCodeLines": 34459,
-    "totalTextLines": 45793,
+    "scriptCodeLines": 34503,
+    "totalTextLines": 45838,
     "hugeScripts": 3
   },
   "quality": {
@@ -81,9 +81,9 @@
       }
     },
     "duplication": {
-      "duplicatedPct": 41.65,
+      "duplicatedPct": 41.64,
       "duplicatedLines": 239729,
-      "totalLines": 575626
+      "totalLines": 575670
     }
   },
   "notes": [
