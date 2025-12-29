@@ -248,7 +248,6 @@ Each env entry is an object:
 - **`name`**: environment variable name
 - **`default`**: default value used when generating `.env`
 - **`description`**: shown to the user during interactive `.env` setup
->>>>>>> origin/main
 
 ## Module Installation Process
 
