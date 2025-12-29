@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 🔁 **One retry for tests in CI** - Unit and Playwright installer suites retry once after a short delay.
 - 📊 **Trusted main metrics** - `main` runs update metrics baseline/history and publish GitHub Pages only when tests pass.
 - 🏷️ **Baseline stamping** - Baseline includes `commit`, `pr`, and `timestamp` for traceability.
+- 🧠 **CI Metrics Dashboard status** - PR metrics comment now shows BUILDING/REBUILDING/FAIL status to avoid stale dashboards during reruns.
 
 ### Changed - 2025-12-29
 
