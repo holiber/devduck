@@ -5,7 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import YAML from 'yaml';
-import { readWorkspaceConfigFromRoot } from '../scripts/lib/workspace-config.js';
+import { readWorkspaceConfigFromRoot } from '../src/lib/workspace-config.js';
 
 function mkTmpDir(prefix: string): string {
   return fs.mkdtempSync(path.join(os.tmpdir(), prefix));

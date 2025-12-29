@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import http from 'node:http';
 
-import { checkMcpServer } from '../../scripts/install/mcp.ts';
+import { checkMcpServer } from '../../src/install/mcp.ts';
 
 const silent = { log: () => {}, print: () => {} };
 

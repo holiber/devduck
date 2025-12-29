@@ -485,7 +485,7 @@ export function createCheckCommandFunction(
     // Default test for MCP checks: if no explicit test provided, verify MCP via tools/list
     let effectiveTest = test;
     if ((!effectiveTest || typeof effectiveTest !== 'string' || !effectiveTest.trim()) && item.mcpSettings && name) {
-      effectiveTest = `node "${path.join(projectRoot, 'scripts', 'test-mcp.js')}" "${name}"`;
+      effectiveTest = `npx tsx "${path.join(projectRoot, 'scripts', 'test-mcp-connection.ts')}" "${name}"`;
     }
     
     // If no test command, skip verification

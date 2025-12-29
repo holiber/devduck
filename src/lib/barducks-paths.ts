@@ -72,9 +72,17 @@ export function resolveDevduckRoot(opts: ResolveDevduckRootOptions = {}): Resolv
 export function resolveCorePaths(opts: ResolveCorePathsOptions = {}): ResolveCorePathsResult {
   const { devduckRoot } = resolveDevduckRoot(opts);
 
+  // Preferred (current repo layout): projectRoot/src/...
+  const srcUtils = path.join(devduckRoot, 'src', 'utils.ts');
+  const srcEnv = path.join(devduckRoot, 'src', 'lib', 'env.ts');
+
+  if (fs.existsSync(srcUtils) && fs.existsSync(srcEnv)) {
+    return { devduckRoot, coreUtilsPath: srcUtils, coreEnvPath: srcEnv };
+  }
+
+  // Backward compatibility: projectRoot/scripts/... (old layout)
   const scriptsUtils = path.join(devduckRoot, 'scripts', 'utils.ts');
   const scriptsEnv = path.join(devduckRoot, 'scripts', 'lib', 'env.ts');
-
   if (fs.existsSync(scriptsUtils) && fs.existsSync(scriptsEnv)) {
     return { devduckRoot, coreUtilsPath: scriptsUtils, coreEnvPath: scriptsEnv };
   }

@@ -7,7 +7,7 @@
 import path from 'path';
 import fs from 'fs';
 import * as plan from './plan.js';
-import { createYargs, installEpipeHandler } from '../../../scripts/lib/cli.js';
+import { createYargs, installEpipeHandler } from '../../../src/lib/cli.js';
 
 function extractIssueKey(input: string): string | null {
   if (input.startsWith('http')) {

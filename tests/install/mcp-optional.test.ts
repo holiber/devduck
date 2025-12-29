@@ -2,7 +2,7 @@ import { describe, test } from 'node:test';
 import assert from 'node:assert';
 import http from 'node:http';
 
-import { checkMcpServer } from '../../scripts/install/mcp.js';
+import { checkMcpServer } from '../../src/install/mcp.js';
 
 const silent = { log: () => {}, print: () => {} };
 

@@ -14,13 +14,13 @@ import {
   createMockWorkspace
 } from './helpers.js';
 
-import { runStep1CheckEnv } from '../../scripts/install/install-1-check-env.js';
-import { runStep2DownloadRepos } from '../../scripts/install/install-2-download-repos.js';
-import { runStep3DownloadProjects } from '../../scripts/install/install-3-download-projects.js';
-import { runStep4CheckEnvAgain } from '../../scripts/install/install-4-check-env-again.js';
-import { runStep5SetupModules } from '../../scripts/install/install-5-setup-modules.js';
-import { runStep6SetupProjects } from '../../scripts/install/install-6-setup-projects.js';
-import { runStep7VerifyInstallation } from '../../scripts/install/install-7-verify-installation.js';
+import { runStep1CheckEnv } from '../../src/install/install-1-check-env.js';
+import { runStep2DownloadRepos } from '../../src/install/install-2-download-repos.js';
+import { runStep3DownloadProjects } from '../../src/install/install-3-download-projects.js';
+import { runStep4CheckEnvAgain } from '../../src/install/install-4-check-env-again.js';
+import { runStep5SetupModules } from '../../src/install/install-5-setup-modules.js';
+import { runStep6SetupProjects } from '../../src/install/install-6-setup-projects.js';
+import { runStep7VerifyInstallation } from '../../src/install/install-7-verify-installation.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

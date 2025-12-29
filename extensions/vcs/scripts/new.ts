@@ -3,10 +3,10 @@
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
-import { resolveCorePaths } from '../../../scripts/lib/barducks-paths.js';
-import { findWorkspaceRoot } from '../../../scripts/lib/workspace-root.js';
-import { getWorkspaceConfigFilePath, readWorkspaceConfigFile } from '../../../scripts/lib/workspace-config.js';
-import type { ExecuteCommandResult } from '../../../scripts/utils.js';
+import { resolveCorePaths } from '../../../src/lib/barducks-paths.js';
+import { findWorkspaceRoot } from '../../../src/lib/workspace-root.js';
+import { getWorkspaceConfigFilePath, readWorkspaceConfigFile } from '../../../src/lib/workspace-config.js';
+import type { ExecuteCommandResult } from '../../../src/utils.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

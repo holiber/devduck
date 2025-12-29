@@ -3,7 +3,7 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert';
 import path from 'node:path';
-import { resolveWorkspaceRoot, _internal } from '../scripts/lib/workspace-path.js';
+import { resolveWorkspaceRoot, _internal } from '../src/lib/workspace-path.js';
 
 describe('workspace-path resolver', () => {
   test('parses ark:/ links as Arcadia links', () => {
