@@ -4,6 +4,12 @@ globs: ["**/pr*.md", "**/.cache/tasks/pr/**", "**/templates/pr.plan.md"]
 ---
 # Pull Request Description Formatting Rules
 
+## Exception: Cursor Cloud Agent (barducks 🦆)
+
+If you are a Cursor Cloud Agent following `docs/agent-workflow.md`, **do not** wait for explicit approval before creating the PR:
+
+- Barducks Stage 0 requires the PR to exist immediately.
+
 ## PR Plan Structure
 
 The PR plan file (`.cache/tasks/pr/<pr-name>.plan.md`) is the single source of truth for PR description.
