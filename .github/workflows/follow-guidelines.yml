@@ -38,18 +38,3 @@ jobs:
             echo "${added:-<none>}"
             exit 1
           fi
-
-      - name: Verify changelog updated
-        shell: bash
-        run: |
-          set -euo pipefail
-          changed="$(git diff --name-only origin/main...HEAD)"
-          if ! echo "${changed}" | grep -qE '^CHANGELOG\.md$'; then
-            echo "❌ Changelog not updated."
-            echo "Update CHANGELOG.md."
-            echo ""
-            echo "Changed files in this PR:"
-            echo "${changed:-<none>}"
-            exit 1
-          fi
-

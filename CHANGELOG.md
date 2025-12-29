@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added - 2025-12-29
 
-- ✅ **Follow Guidelines** - CI blocks merges unless the PR adds a new task file under `docs/tasks/` and updates `CHANGELOG.md`.
+- ✅ **Follow Guidelines** - CI blocks merges unless the PR adds a new task file under `docs/tasks/`.
 - 🦆 **Agent PR workflow discipline** - Added barducks workflow docs, task template, and Cursor rules to enforce a strict stage-by-stage single-task PR process.
 - 🔁 **One retry for tests in CI** - Unit and Playwright installer suites retry once after a short delay.
 - 📊 **Trusted main metrics** - `main` runs update metrics baseline/history and publish GitHub Pages only when tests pass.
@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 🔤 **Renamed GitHub Actions workflow** - “CI & Metrics Dashboard” → “Tests & Metrics”
 - 📄 **License** - Switched to Apache License 2.0 and added `NOTICE` (Barducks).
 - 🧪 **CI on docs-only PRs** - Skip the heavy “Tests & Metrics” workflow when a PR changes only files under `docs/`.
+- 🧾 **Changelog policy** - Stop requiring `CHANGELOG.md` updates in every PR; use `docs/tasks/` as the per-PR log and assemble the release changelog before publishing.
 
 ---
 

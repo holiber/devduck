@@ -9,17 +9,15 @@ This change enforces contribution rules and hardens `main` CI:
 - Metrics **history/baseline/pages are updated only on successful `main` runs**, so graphs reflect verified results.
 - A PR merge check enforces:
   - at least one new task file under `docs/tasks/` matching `YYYY-MM-DD-*.md`
-  - an updated root `CHANGELOG.md`
 
 ## Rationale
 
 - `main` should stay green and its metrics should be trustworthy (no failed runs in the baseline/history).
-- Every PR should be traceable via a task file and changelog entry.
+- Every PR should be traceable via a task file. The release changelog is assembled before publishing a new version.
 
 ## Expected CI behavior
 
 - **Merge PR → `main`**: full CI runs automatically and updates the dashboard baseline/history.
 - **Test fails once**: CI retries that test step once.
 - **Missing task file**: PR check fails with a clear message.
-- **Missing `CHANGELOG.md` update**: PR check fails with a clear message.
 
