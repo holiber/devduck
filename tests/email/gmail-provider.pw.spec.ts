@@ -9,7 +9,7 @@ import {
   clearProvidersForTests,
   discoverProvidersFromModules,
   getProvider
-} from '../../scripts/lib/provider-registry.ts';
+} from '../../src/lib/provider-registry.ts';
 
 test.describe('email: gmail-provider', () => {
   test('matches EmailProvider interface', () => {

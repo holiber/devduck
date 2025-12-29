@@ -3,15 +3,15 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { createYargs, installEpipeHandler } from '../../../scripts/lib/cli.js';
-import { resolveDevduckRoot } from '../../../scripts/lib/barducks-paths.js';
-import { findWorkspaceRoot } from '../../../scripts/lib/workspace-root.js';
-import { getWorkspaceConfigFilePath, readWorkspaceConfigFile } from '../../../scripts/lib/workspace-config.js';
+import { createYargs, installEpipeHandler } from '../../../src/lib/cli.js';
+import { resolveDevduckRoot } from '../../../src/lib/barducks-paths.js';
+import { findWorkspaceRoot } from '../../../src/lib/workspace-root.js';
+import { getWorkspaceConfigFilePath, readWorkspaceConfigFile } from '../../../src/lib/workspace-config.js';
 import {
   discoverProvidersFromModules,
   getProvidersByType,
   getProvider
-} from '../../../scripts/lib/provider-registry.js';
+} from '../../../src/lib/provider-registry.js';
 import type { EmailProvider, Message } from '../schemas/contract.js';
 import { emailRouter } from '../api.js';
 

@@ -154,10 +154,10 @@ export function createCheckEngine(params: {
     const env = readEnvFile(envFilePath);
 
     // Default test for MCP checks: if no explicit test provided, verify MCP via tools/list
-    // using scripts/test-mcp.js against the generated .cursor/mcp.json configuration.
+    // using scripts/test-mcp-connection.ts against the generated .cursor/mcp.json configuration.
     let effectiveTest = test;
     if ((!effectiveTest || typeof effectiveTest !== 'string' || !effectiveTest.trim()) && item.mcpSettings && name) {
-      effectiveTest = `node "${path.join(projectRoot, 'scripts', 'test-mcp.js')}" "${name}"`;
+      effectiveTest = `npx tsx "${path.join(projectRoot, 'scripts', 'test-mcp-connection.ts')}" "${name}"`;
     }
 
     if (!effectiveTest) {

@@ -9,8 +9,8 @@
  * Usage: tsx sudo-exec.ts <command>
  */
 
-import { executeCommand } from '../../../scripts/utils.js';
-import { createYargs } from '../../../scripts/lib/cli.js';
+import { executeCommand } from '../../../src/utils.js';
+import { createYargs } from '../../../src/lib/cli.js';
 
 async function main(argv: string[] = process.argv): Promise<unknown> {
   const parsed = await createYargs(argv)

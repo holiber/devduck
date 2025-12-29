@@ -7,7 +7,7 @@
 
 import { z } from 'zod';
 import { Buffer } from 'node:buffer';
-import { initProviderContract } from '../../scripts/lib/provider-router.js';
+import { initProviderContract } from '../../src/lib/provider-router.js';
 import type { EmailProvider } from './schemas/contract.js';
 import {
   DownloadAttachmentInputSchema,

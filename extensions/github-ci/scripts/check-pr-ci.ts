@@ -9,8 +9,8 @@ import fs from 'fs';
 import { spawnSync } from 'child_process';
 import { GitRepo } from '../../git/scripts/git-repo.js';
 import { GitHubCI } from './github-ci.js';
-import { createYargs, installEpipeHandler } from '../../../scripts/lib/cli.js';
-import { findWorkspaceRoot } from '../../../scripts/lib/workspace-root.js';
+import { createYargs, installEpipeHandler } from '../../../src/lib/cli.js';
+import { findWorkspaceRoot } from '../../../src/lib/workspace-root.js';
 
 /**
  * Main function

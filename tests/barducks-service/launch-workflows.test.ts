@@ -4,11 +4,11 @@ import fs from 'fs';
 import path from 'path';
 import { spawnSync } from 'child_process';
 
-import { getDevduckServicePaths } from '../../scripts/barducks-service/src/paths.js';
-import { isPidAlive } from '../../scripts/barducks-service/src/pids.js';
+import { getDevduckServicePaths } from '../../src/barducks-service/src/paths.js';
+import { isPidAlive } from '../../src/barducks-service/src/pids.js';
 
 function runLaunch(args: string[], opts?: { timeoutMs?: number }) {
-  return spawnSync('npx', ['tsx', 'scripts/barducks-service/src/cli.ts', ...args], {
+  return spawnSync('npx', ['tsx', 'scripts/barducks-service/cli.ts', ...args], {
     cwd: process.cwd(),
     env: { ...process.env },
     encoding: 'utf8',

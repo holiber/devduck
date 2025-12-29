@@ -4,16 +4,16 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { createYargs, installEpipeHandler } from '../../../scripts/lib/cli.js';
-import { resolveDevduckRoot } from '../../../scripts/lib/barducks-paths.js';
-import { findWorkspaceRoot } from '../../../scripts/lib/workspace-root.js';
-import { readEnvFile } from '../../../scripts/lib/env.js';
-import { getWorkspaceConfigFilePath, readWorkspaceConfigFile } from '../../../scripts/lib/workspace-config.js';
+import { createYargs, installEpipeHandler } from '../../../src/lib/cli.js';
+import { resolveDevduckRoot } from '../../../src/lib/barducks-paths.js';
+import { findWorkspaceRoot } from '../../../src/lib/workspace-root.js';
+import { readEnvFile } from '../../../src/lib/env.js';
+import { getWorkspaceConfigFilePath, readWorkspaceConfigFile } from '../../../src/lib/workspace-config.js';
 import {
   discoverProvidersFromModules,
   getProvidersByType,
   getProvider
-} from '../../../scripts/lib/provider-registry.js';
+} from '../../../src/lib/provider-registry.js';
 
 import type { MessengerProvider } from '../schemas/contract.js';
 import { messengerRouter } from '../api.js';
@@ -61,7 +61,7 @@ async function initializeProviders(workspaceRoot: string | null): Promise<{
     if (fs.existsSync(configPath)) {
       const config = readWorkspaceConfigFile<WorkspaceConfigLike>(configPath);
       if (config && config.repos && Array.isArray(config.repos)) {
-        const { loadModulesFromRepo, getDevduckVersion } = await import('../../../scripts/lib/repo-modules.js');
+        const { loadModulesFromRepo, getDevduckVersion } = await import('../../../src/lib/repo-modules.js');
         const devduckVersion = getDevduckVersion();
 
         for (const repoUrl of config.repos) {

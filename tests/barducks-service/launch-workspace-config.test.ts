@@ -10,7 +10,7 @@ import { spawnSync } from 'child_process';
 import YAML from 'yaml';
 
 function runLaunch(repoRoot: string, cwd: string, args: string[], opts?: { timeoutMs?: number }) {
-  const cliPath = path.join(repoRoot, 'scripts', 'barducks-service', 'src', 'cli.ts');
+  const cliPath = path.join(repoRoot, 'scripts', 'barducks-service', 'cli.ts');
   return spawnSync('npx', ['tsx', cliPath, ...args], {
     cwd,
     env: { ...process.env },

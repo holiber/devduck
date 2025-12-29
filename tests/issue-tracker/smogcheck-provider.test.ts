@@ -18,8 +18,8 @@ import {
   getProvider,
   getProvidersByType,
   setProviderTypeSchema
-} from '../../scripts/lib/provider-registry.js';
-import { findWorkspaceRoot } from '../../scripts/lib/workspace-root.js';
+} from '../../src/lib/provider-registry.js';
+import { findWorkspaceRoot } from '../../src/lib/workspace-root.js';
 import {
   getIssueCacheDir,
   getResourcesJsonPath,

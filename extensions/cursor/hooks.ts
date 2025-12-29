@@ -6,9 +6,9 @@
 
 import fs from 'fs';
 import path from 'path';
-import type { HookContext, HookResult } from '../../scripts/install/module-hooks.js';
-import { replaceVariablesInObject } from '../../scripts/lib/config.js';
-import { readEnvFile } from '../../scripts/lib/env.js';
+import type { HookContext, HookResult } from '../../src/install/module-hooks.js';
+import { replaceVariablesInObject } from '../../src/lib/config.js';
+import { readEnvFile } from '../../src/lib/env.js';
 
 export default {
   /**
@@ -84,7 +84,7 @@ export default {
     for (const module of context.allModules) {
       // First, try to load mcpSettings from module frontmatter (MODULE.md)
       // This is the preferred way for modules to provide MCP configuration
-      const { loadModuleFromPath } = await import('../../scripts/install/module-resolver.js');
+      const { loadModuleFromPath } = await import('../../src/install/module-resolver.js');
       const moduleWithMcp = loadModuleFromPath(module.path, module.name);
       if (moduleWithMcp?.mcpSettings) {
         // mcpSettings from frontmatter is a map of server names to server configs
@@ -124,7 +124,7 @@ export default {
     
     // 3.5. Test MCP servers functionality
     if (Object.keys(mcpServers).length > 0) {
-      const { testMcpServer } = await import('../../scripts/install/mcp-test.js');
+      const { testMcpServer } = await import('../../src/install/mcp-test.js');
       const testResults: Array<{ name: string; success: boolean; error?: string; optional?: boolean }> = [];
       const failedNonOptionalServers: Array<{ name: string; error: string }> = [];
       
