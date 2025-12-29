@@ -130,6 +130,26 @@ function fmtPct(p) {
   return `${p.toFixed(2)}%`;
 }
 
+function fmtDeltaMs(ms) {
+  if (ms == null || !Number.isFinite(ms)) return 'n/a';
+  const sign = ms > 0 ? '+' : '';
+  return `${sign}${fmtMs(ms)}`;
+}
+
+function fmtDeltaInt(n) {
+  if (n == null || !Number.isFinite(n)) return 'n/a';
+  const sign = n > 0 ? '+' : '';
+  return `${sign}${fmtInt(n)}`;
+}
+
+function fmtTestDelta({ deltaTotal, deltaDurationMs }) {
+  const parts = [];
+  if (deltaTotal != null && Number.isFinite(deltaTotal)) parts.push(`${fmtDeltaInt(deltaTotal)} tests`);
+  if (deltaDurationMs != null && Number.isFinite(deltaDurationMs)) parts.push(fmtDeltaMs(deltaDurationMs));
+  if (parts.length === 0) return 'n/a';
+  return parts.join(' / ');
+}
+
 function clsForDelta(n) {
   if (n == null || !Number.isFinite(n) || n === 0) return '';
   return n > 0 ? 'pos' : 'neg';
@@ -162,6 +182,8 @@ async function main() {
   const outBytes = current?.sizes?.build_output_dir?.bytes;
   const unitTests = current?.tests?.unit;
   const e2eInstaller = current?.tests?.e2e_installer;
+  const unitDeltaMs = diff?.deltas?.unit_tests_duration_ms;
+  const e2eInstallerDeltaMs = diff?.deltas?.e2e_installer_tests_duration_ms;
   const scriptCodeLines = current?.code?.scriptCodeLines;
   const totalTextLines = current?.code?.totalTextLines;
   const hugeScripts = current?.code?.hugeScripts;
@@ -218,12 +240,18 @@ async function main() {
         <tr>
           <td>🧪 Unit tests</td>
           <td>${unitTests?.total ?? 'n/a'} tests / ${fmtMs(unitTests?.reportedDurationMs ?? unitTests?.durationMs)}</td>
-          <td></td>
+          <td class="${clsForDelta(unitDeltaMs)}">${fmtTestDelta({
+            deltaTotal: diff?.deltas?.unit_tests_total,
+            deltaDurationMs: unitDeltaMs
+          })}</td>
         </tr>
         <tr>
           <td>🧪 E2E (installer)</td>
           <td>${e2eInstaller?.total ?? 'n/a'} tests / ${fmtMs(e2eInstaller?.reportedDurationMs ?? e2eInstaller?.durationMs)}</td>
-          <td></td>
+          <td class="${clsForDelta(e2eInstallerDeltaMs)}">${fmtTestDelta({
+            deltaTotal: diff?.deltas?.e2e_installer_tests_total,
+            deltaDurationMs: e2eInstallerDeltaMs
+          })}</td>
         </tr>
         <tr>
           <td>🗂 dist size</td>
