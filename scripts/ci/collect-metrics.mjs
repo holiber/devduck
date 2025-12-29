@@ -281,10 +281,24 @@ async function runJscpdAndReadSummary() {
   const outDir = path.join(METRICS_DIR, 'jscpd');
   await mkdirp(outDir);
 
+  // NOTE:
+  // `jscpd`'s `--ignore` option is a single string (comma-separated globs).
+  // Passing multiple `--ignore` flags results in the last one winning, which
+  // can accidentally include `node_modules/` in CI (after `npm ci`) and inflate
+  // the duplication percentage.
+  const ignoreGlobs = [
+    '**/node_modules/**',
+    '**/.cache/**',
+    '**/gh-pages/**',
+    '**/projects/**',
+    '**/dist/**'
+  ].join(',');
+
   const cmdParts = [
     'npx',
     'jscpd',
     '--silent',
+    '--gitignore',
     '--reporters',
     'json',
     '--output',
@@ -292,15 +306,7 @@ async function runJscpdAndReadSummary() {
     '--pattern',
     '"**/*.{ts,tsx,js,jsx,mjs,cjs,cts,mts}"',
     '--ignore',
-    '"**/node_modules/**"',
-    '--ignore',
-    '"**/.cache/**"',
-    '--ignore',
-    '"**/gh-pages/**"',
-    '--ignore',
-    '"**/projects/**"',
-    '--ignore',
-    '"**/dist/**"'
+    `"${ignoreGlobs}"`
   ];
   const command = cmdParts.join(' ');
   await runCommandToLog({ name: 'jscpd', command, logPath: path.join(LOGS_DIR, 'jscpd.log'), timeoutMs: 60_000 });
