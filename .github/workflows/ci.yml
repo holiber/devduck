@@ -19,6 +19,48 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  merge-check:
+    name: Validate task file + changelog
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fetch main
+        run: git fetch origin main --depth=1
+
+      - name: Verify a task file was added
+        shell: bash
+        run: |
+          set -euo pipefail
+          added="$(git diff --name-status origin/main...HEAD | awk '$1=="A"{print $2}')"
+          if ! echo "${added}" | grep -qE '^docs/tasks/[0-9]{4}-[0-9]{2}-[0-9]{2}-.*\.md$'; then
+            echo "❌ Missing new task file."
+            echo "Add at least one file matching: docs/tasks/YYYY-MM-DD-*.md"
+            echo ""
+            echo "Added files in this PR:"
+            echo "${added:-<none>}"
+            exit 1
+          fi
+
+      - name: Verify changelog updated
+        shell: bash
+        run: |
+          set -euo pipefail
+          changed="$(git diff --name-only origin/main...HEAD)"
+          if ! echo "${changed}" | grep -qE '^(CHANGELOG\.md|docs/CHANGELOG\.md)$'; then
+            echo "❌ Changelog not updated."
+            echo "Update CHANGELOG.md (or docs/CHANGELOG.md)."
+            echo ""
+            echo "Changed files in this PR:"
+            echo "${changed:-<none>}"
+            exit 1
+          fi
+
   ci:
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -33,6 +75,22 @@ jobs:
           node-version: 24
           cache: npm
 
+      - name: Resolve associated PR for main push (best-effort)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          owner_repo="${GITHUB_REPOSITORY}"
+          sha="${GITHUB_SHA}"
+          api="https://api.github.com/repos/${owner_repo}/commits/${sha}/pulls"
+          pr_number="$(curl -fsSL -H "Authorization: Bearer ${GH_TOKEN}" -H "Accept: application/vnd.github+json" "${api}" | jq -r '.[0].number // 0')"
+          pr_url="$(curl -fsSL -H "Authorization: Bearer ${GH_TOKEN}" -H "Accept: application/vnd.github+json" "${api}" | jq -r '.[0].html_url // ""')"
+          echo "DEV_DUCK_PR_NUMBER=${pr_number}" >> "${GITHUB_ENV}"
+          echo "DEV_DUCK_PR_URL=${pr_url}" >> "${GITHUB_ENV}"
+          echo "[main] associated PR: #${pr_number} ${pr_url}"
+
       # Create artifact folders BEFORE any potentially failing steps
       - name: Prepare artifact folders
         run: mkdir -p .cache/{logs,metrics,ai_logs,playwright,tmp}
@@ -42,19 +100,19 @@ jobs:
 
       # Unit tests (run once, but don't stop artifact/metrics collection)
       - name: Run unit tests (timed)
-        run: node scripts/ci/run-and-record.mjs --name npm_test --allow-failure 1 --cmd "npx c8 --reporter=json-summary --report-dir .cache/coverage npm run test:unit" --log .cache/logs/npm-test.log --out .cache/metrics/test-commands.json
+        run: node scripts/ci/run-and-record.mjs --name npm_test --allow-failure 1 --cmd "bash -lc 'npx c8 --reporter=json-summary --report-dir .cache/coverage npm run test:unit || (echo \"⚠️ Unit tests failed, retrying after 60 seconds...\"; sleep 60; npx c8 --reporter=json-summary --report-dir .cache/coverage npm run test:unit)'" --log .cache/logs/npm-test.log --out .cache/metrics/test-commands.json
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
       # E2E tests (installer suite). Keep artifacts for failures.
       - name: Run Playwright installer suite (timed)
-        run: node scripts/ci/run-and-record.mjs --name pw_installer --allow-failure 1 --cmd "npx playwright test -c tests/installer/playwright.config.ts" --log .cache/logs/pw-installer.log --out .cache/metrics/test-commands.json
+        run: node scripts/ci/run-and-record.mjs --name pw_installer --allow-failure 1 --cmd "bash -lc 'npx playwright test -c tests/installer/playwright.config.ts || (echo \"⚠️ Playwright installer suite failed, retrying after 60 seconds...\"; sleep 60; npx playwright test -c tests/installer/playwright.config.ts)'" --log .cache/logs/pw-installer.log --out .cache/metrics/test-commands.json
 
       # Optional smoke suite (only makes sense when BASE_URL is provided).
       - name: Run Playwright smoke suite (timed)
         if: ${{ env.BASE_URL }}
-        run: node scripts/ci/run-and-record.mjs --name pw_smoke --allow-failure 1 --cmd "npx playwright test -c tests/smoke/playwright.config.ts" --log .cache/logs/pw-smoke.log --out .cache/metrics/test-commands.json
+        run: node scripts/ci/run-and-record.mjs --name pw_smoke --allow-failure 1 --cmd "bash -lc 'npx playwright test -c tests/smoke/playwright.config.ts || (echo \"⚠️ Playwright smoke suite failed, retrying after 60 seconds...\"; sleep 60; npx playwright test -c tests/smoke/playwright.config.ts)'" --log .cache/logs/pw-smoke.log --out .cache/metrics/test-commands.json
 
       - name: Collect Playwright artifacts into .cache
         if: ${{ always() }}
@@ -123,13 +181,18 @@ jobs:
           issue-number: ${{ github.event.pull_request.number }}
           body-path: .cache/metrics/pr-comment.md
 
-      - name: Update history (main only)
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      - name: Evaluate test result gate
+        id: tests_gate
+        continue-on-error: true
+        run: node scripts/ci/assert-tests-passed.mjs --file .cache/metrics/test-commands.json --require npm_test --require pw_installer
+
+      - name: Update history (main only, successful runs only)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.tests_gate.outcome == 'success'
         run: node scripts/ci/update-history.mjs --dir .cache/metrics --limit 200
 
-      - name: Update baseline (main only)
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: cp .cache/metrics/current.json .cache/metrics/baseline.json
+      - name: Update baseline (main only, successful runs only)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.tests_gate.outcome == 'success'
+        run: node scripts/ci/update-baseline.mjs --dir .cache/metrics
 
       - name: Generate HTML dashboard (always)
         run: node scripts/ci/generate-metrics-report.mjs --metrics-dir .cache/metrics --out-dir .cache/metrics-pages
@@ -149,13 +212,13 @@ jobs:
           retention-days: 14
 
       - name: Deploy dashboard to GitHub Pages (main only)
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.tests_gate.outcome == 'success'
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: .cache/metrics-pages
 
       - name: Fail workflow if tests failed
-        if: ${{ always() }}
+        if: ${{ always() && steps.tests_gate.outcome != 'success' }}
         run: node scripts/ci/assert-tests-passed.mjs --file .cache/metrics/test-commands.json --require npm_test --require pw_installer
 

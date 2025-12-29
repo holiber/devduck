@@ -449,6 +449,15 @@ function extractPrDelta(event) {
   };
 }
 
+function readAssociatedPrFromEnv() {
+  const raw = process.env.DEV_DUCK_PR_NUMBER;
+  const n = raw ? Number.parseInt(String(raw), 10) : undefined;
+  const number = Number.isFinite(n) && n != null && n > 0 ? n : undefined;
+  const url = process.env.DEV_DUCK_PR_URL ? String(process.env.DEV_DUCK_PR_URL) : undefined;
+  if (!number) return undefined;
+  return { number, url };
+}
+
 function runCommandToLog({ name, command, logPath, timeoutMs, readyRegex }) {
   return new Promise((resolve) => {
     const start = Date.now();
@@ -510,7 +519,9 @@ async function main() {
   await mkdirp(AI_LOGS_DIR);
 
   const event = readGithubEvent();
-  const pr = extractPrDelta(event);
+  const prFromEvent = extractPrDelta(event);
+  const prFromEnv = readAssociatedPrFromEnv();
+  const pr = prFromEvent ?? prFromEnv;
 
   const meta = {
     collectedAt: nowIso(),
@@ -520,6 +531,8 @@ async function main() {
     ref: process.env.GITHUB_REF,
     runId: process.env.GITHUB_RUN_ID,
     runAttempt: process.env.GITHUB_RUN_ATTEMPT,
+    prNumber: pr?.number,
+    prUrl: pr?.url,
     node: process.version
   };
 
