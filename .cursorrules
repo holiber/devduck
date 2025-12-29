@@ -1,0 +1,9 @@
+# IMPORTANT: When making a PR you must follow the rules in CONTRIBUTING.md
+
+## PR requirements (CI-enforced)
+
+- Every PR must add a new task file: `docs/tasks/YYYY-MM-DD-short-description.md`
+- Every PR must update: `CHANGELOG.md`
+
+Example task file: `docs/tasks/2025-12-29-add-cursorrules-and-pr-template.md`
+
