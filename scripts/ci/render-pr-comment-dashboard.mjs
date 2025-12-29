@@ -91,24 +91,28 @@ async function isGithubPagesEnabled() {
   const repo = process.env.GITHUB_REPOSITORY; // "owner/name"
   const token = process.env.GITHUB_TOKEN;
   const apiBase = process.env.GITHUB_API_URL ?? 'https://api.github.com';
-  if (!repo || !token) return null;
+  if (!repo) return { enabled: null, status: null };
 
   try {
+    const headers = {
+      accept: 'application/vnd.github+json',
+      'user-agent': 'devduck-ci',
+      'x-github-api-version': '2022-11-28',
+    };
+    // If token is unavailable (e.g. PR from fork, or workflow didn't expose it),
+    // still try unauthenticated request to detect the common "Pages not enabled" case (404).
+    if (token) headers.authorization = `Bearer ${token}`;
+
     const res = await fetch(`${apiBase}/repos/${repo}/pages`, {
       method: 'GET',
-      headers: {
-        accept: 'application/vnd.github+json',
-        authorization: `Bearer ${token}`,
-        'user-agent': 'devduck-ci',
-        'x-github-api-version': '2022-11-28',
-      },
+      headers,
     });
 
-    if (res.status === 200) return true;
-    if (res.status === 404) return false;
-    return null;
+    if (res.status === 200) return { enabled: true, status: 200 };
+    if (res.status === 404) return { enabled: false, status: 404 };
+    return { enabled: null, status: res.status };
   } catch {
-    return null;
+    return { enabled: null, status: null };
   }
 }
 
@@ -127,7 +131,7 @@ async function main() {
   const dashboardUrl = process.env.METRICS_DASHBOARD_URL ?? defaultDashboardUrl;
   const isPullRequest = process.env.GITHUB_EVENT_NAME === 'pull_request';
   const shouldCheckGithubPages = Boolean(dashboardUrl && defaultDashboardUrl && dashboardUrl === defaultDashboardUrl);
-  const githubPagesEnabled = shouldCheckGithubPages ? await isGithubPagesEnabled() : null;
+  const githubPages = shouldCheckGithubPages ? await isGithubPagesEnabled() : { enabled: null, status: null };
 
   const lines = [];
   lines.push('### 🧠 CI Metrics Dashboard');
@@ -163,10 +167,16 @@ async function main() {
   if (dashboardUrl) {
     if (isPullRequest) {
       lines.push(`- **Dashboard (GitHub Pages)**: ${dashboardUrl} (published after merge to \`main\`)`);
-      if (githubPagesEnabled === false) {
+      if (githubPages.enabled === false) {
         // GitHub supports "admonitions" in Markdown; CAUTION renders red.
         lines.push('  > [!CAUTION]');
         lines.push('  > GitHub Pages is not enabled for this repository, so this dashboard link may not work. Enable it in **Settings → Pages**.');
+      } else if (shouldCheckGithubPages && githubPages.enabled == null) {
+        // We couldn't prove Pages is enabled/disabled (auth, permissions, rate limit, API issues).
+        lines.push('  > [!WARNING]');
+        lines.push(
+          `  > Unable to verify GitHub Pages status${githubPages.status ? ` (HTTP ${githubPages.status})` : ''}. This link may be unavailable.`
+        );
       }
     } else {
       lines.push(`- **Dashboard (history + charts)**: ${dashboardUrl}`);
