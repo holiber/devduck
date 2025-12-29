@@ -44,7 +44,7 @@ test.describe.serial('Installation Steps', () => {
       await fs.access(configPath);
     } catch {
       await createMockWorkspace(sharedWorkspace, {
-        modules: ['core'],
+        extensions: ['core'],
         env: [{ name: 'TEST_VAR_1', description: 'Test variable 1' }]
       });
     }
@@ -92,9 +92,9 @@ test.describe.serial('Installation Steps', () => {
   });
 
   test('Step 1: Check Environment Variables', async () => {
-    // Create minimal workspace config with only core module (which has minimal env requirements)
+    // Create minimal workspace config with only core extension (which has minimal env requirements)
     await createMockWorkspace(sharedWorkspace, {
-      modules: ['core'],
+      extensions: ['core'],
       env: [
         { name: 'TEST_VAR_1', description: 'Test variable 1' },
         { name: 'TEST_VAR_2', description: 'Test variable 2', optional: true }

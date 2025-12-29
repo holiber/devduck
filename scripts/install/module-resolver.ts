@@ -6,6 +6,7 @@
  * Resolves module dependencies, handles wildcards, and merges settings.
  */
 
+import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { parse as parseYaml } from 'yaml';

@@ -78,7 +78,7 @@ export async function runStep1CheckEnv(
     // Priority: workspace modules override built-in modules with the same name.
     const allModules = [...workspaceModules, ...localModules];
 
-    const moduleNames = expandModuleNames(Array.isArray(config.modules) ? config.modules : ['*'], allModules);
+    const moduleNames = expandModuleNames(Array.isArray((config as any).extensions) ? ((config as any).extensions as string[]) : ['*'], allModules);
     const resolvedModules = resolveDependencies(moduleNames, allModules);
 
     loadedModules = resolvedModules;

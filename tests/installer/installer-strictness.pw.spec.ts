@@ -10,7 +10,7 @@ test('installer: hook load failure is fatal', async () => {
   const tempWorkspace = await createTempWorkspace('devduck-hook-fail-');
   try {
     const moduleName = 'badmod';
-    const moduleDir = path.join(tempWorkspace, 'modules', moduleName);
+    const moduleDir = path.join(tempWorkspace, 'extensions', moduleName);
     await fs.mkdir(moduleDir, { recursive: true });
 
     await fs.writeFile(
@@ -39,7 +39,7 @@ test('installer: hook load failure is fatal', async () => {
 
     const result = await runInstaller(tempWorkspace, {
       unattended: true,
-      modules: ['core', moduleName],
+      extensions: ['core', moduleName],
       skipRepoInit: true
     });
 
@@ -61,7 +61,7 @@ test('installer: .env values are available to shell checks (fill-missing)', asyn
         {
             version: '0.1.0',
             devduck_path: './projects/devduck',
-          modules: ['core'],
+          extensions: ['core'],
           repos: [],
           projects: [],
           checks: [
@@ -80,7 +80,7 @@ test('installer: .env values are available to shell checks (fill-missing)', asyn
 
     const result = await runInstaller(tempWorkspace, {
       unattended: true,
-      modules: ['core'],
+      extensions: ['core'],
       skipRepoInit: true
     });
 
@@ -96,7 +96,7 @@ test('installer: checks without name do not print "Checking undefined"', async (
     await fs.writeFile(path.join(tempWorkspace, '.env'), 'SOME_TOKEN=ok\n', 'utf8');
 
     const moduleName = 'nonamecheck';
-    const moduleDir = path.join(tempWorkspace, 'modules', moduleName);
+    const moduleDir = path.join(tempWorkspace, 'extensions', moduleName);
     await fs.mkdir(moduleDir, { recursive: true });
 
     await fs.writeFile(
@@ -122,7 +122,7 @@ test('installer: checks without name do not print "Checking undefined"', async (
 
     const result = await runInstaller(tempWorkspace, {
       unattended: true,
-      modules: ['core', moduleName],
+      extensions: ['core', moduleName],
       skipRepoInit: true
     });
 
@@ -143,7 +143,7 @@ test('installer summary: prints INSTALLATION FINISHED WITH ERRORS on failures', 
         {
             version: '0.1.0',
             devduck_path: './projects/devduck',
-          modules: ['core'],
+          extensions: ['core'],
           repos: [],
           projects: [],
           checks: [
@@ -161,7 +161,7 @@ test('installer summary: prints INSTALLATION FINISHED WITH ERRORS on failures', 
 
     const result = await runInstaller(tempWorkspace, {
       unattended: true,
-      modules: ['core'],
+      extensions: ['core'],
       skipRepoInit: true
     });
 

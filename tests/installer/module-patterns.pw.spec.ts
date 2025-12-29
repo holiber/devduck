@@ -11,8 +11,8 @@ async function readYaml(p: string): Promise<any> {
   return YAML.parse(raw);
 }
 
-test.describe('workspace modules patterns', () => {
-  test('modules: ["issue-*"] expands to issue-tracker and issue-tracker-github', async () => {
+test.describe('workspace extension patterns', () => {
+  test('extensions: ["issue-*"] expands to issue-tracker and issue-tracker-github', async () => {
     const fixtureConfigPath = path.join(
       process.cwd(),
       'tests',
@@ -22,7 +22,7 @@ test.describe('workspace modules patterns', () => {
     );
 
     const cfg = await readYaml(fixtureConfigPath);
-    assert.deepStrictEqual(cfg.modules, ['issue-*'], 'fixture should keep the pattern in modules[]');
+    assert.deepStrictEqual(cfg.extensions, ['issue-*'], 'fixture should keep the pattern in extensions[]');
 
     const all = getAllModules();
     const resolved = resolveModules(cfg, all).map((m) => m.name);

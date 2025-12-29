@@ -546,8 +546,8 @@ export async function createMockWorkspace(workspacePath: string, config: Record<
   const defaultConfig = {
     version: '0.1.0',
     devduck_path: './devduck',
-    modules: ['core', 'cursor'],
-    moduleSettings: {}
+    extensions: ['core', 'cursor'],
+    extensionSettings: {}
   };
 
   const finalConfig = { ...defaultConfig, ...config };
