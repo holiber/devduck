@@ -29,7 +29,9 @@ function escapeXml(s) {
 function makeSimpleBadgeSvg({ label, message, labelColor, messageColor }) {
   // Minimal Shields-like badge, no external deps.
   const labelText = escapeXml(label);
-  const msgText = escapeXml(message);
+  const msg = message == null ? '' : String(message);
+  const msgText = escapeXml(msg);
+  const hasMessage = msg.length > 0;
 
   // Approximate text widths (DejaVu Sans is close enough).
   const charW = 6.2;
@@ -37,8 +39,33 @@ function makeSimpleBadgeSvg({ label, message, labelColor, messageColor }) {
   const fontSize = 11;
   const height = 20;
 
+  if (!hasMessage) {
+    const width = Math.max(70, Math.round(label.length * charW + pad * 2));
+    const x = Math.round(width / 2);
+    const bg = labelColor || messageColor || '#0366d6';
+
+    return `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" role="img" aria-label="${labelText}">
+  <linearGradient id="s" x2="0" y2="100%">
+    <stop offset="0" stop-color="#bbb" stop-opacity=".1"/>
+    <stop offset="1" stop-opacity=".1"/>
+  </linearGradient>
+  <clipPath id="r">
+    <rect width="${width}" height="${height}" rx="3" fill="#fff"/>
+  </clipPath>
+  <g clip-path="url(#r)">
+    <rect width="${width}" height="${height}" fill="${bg}"/>
+    <rect width="${width}" height="${height}" fill="url(#s)"/>
+  </g>
+  <g fill="#fff" text-anchor="middle" font-family="Verdana,DejaVu Sans,sans-serif" font-size="${fontSize}">
+    <text x="${x}" y="14">${labelText}</text>
+  </g>
+</svg>
+`;
+  }
+
   const labelW = Math.max(40, Math.round(label.length * charW + pad * 2));
-  const msgW = Math.max(38, Math.round(message.length * charW + pad * 2));
+  const msgW = Math.max(38, Math.round(msg.length * charW + pad * 2));
   const width = labelW + msgW;
 
   const labelX = Math.round(labelW / 2);
@@ -299,8 +326,8 @@ async function main() {
   // Project stats badge (published to GitHub Pages alongside the dashboard).
   const badgeSvg = makeSimpleBadgeSvg({
     label: 'project stats',
-    message: 'metrics',
-    labelColor: '#555',
+    message: '',
+    labelColor: '#0366d6',
     messageColor: '#0366d6',
   });
   await writeFileEnsuringDir(path.join(metricsOutDir, 'project-stats.svg'), badgeSvg);
