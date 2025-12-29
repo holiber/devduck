@@ -11,8 +11,8 @@ This includes (non-exhaustive):
 - One task = one branch + one PR
 - A single continuously-updated PR status comment (no comment spam) with:
   - `<!-- barducks-agent-status -->`
-- A single task doc:
-  - `docs/<short-task-name>.md`
+- A single task file under `docs/tasks/` (required by CI):
+  - `docs/tasks/YYYY-MM-DD-<short-task-name>.md`
 - Stage-by-stage commits/pushes after the required checkpoints
 
 
