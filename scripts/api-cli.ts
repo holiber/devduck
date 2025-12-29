@@ -30,7 +30,8 @@ import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 type WorkspaceConfigLike = {
-  moduleSettings?: Record<string, unknown>;
+  extensionSettings?: Record<string, unknown>;
+  moduleSettings?: Record<string, unknown>; // legacy
   repos?: string[];
 };
 
@@ -48,9 +49,9 @@ function pickProviderNameFromConfig(moduleName: string, workspaceRoot: string | 
   if (!fs.existsSync(configPath)) return null;
 
   const cfg = readWorkspaceConfigFile<WorkspaceConfigLike>(configPath);
-  const moduleSettings = (cfg && cfg.moduleSettings) || {};
-  const moduleSettingsObj = moduleSettings as Record<string, unknown>;
-  const moduleConfig = moduleSettingsObj[moduleName] as Record<string, unknown> | undefined;
+  const settings = (cfg && (cfg.extensionSettings || cfg.moduleSettings)) || {};
+  const settingsObj = settings as Record<string, unknown>;
+  const moduleConfig = settingsObj[moduleName] as Record<string, unknown> | undefined;
   const name = moduleConfig && typeof moduleConfig.provider === 'string' ? moduleConfig.provider : '';
   return name.trim() || null;
 }
@@ -66,8 +67,8 @@ async function initializeProviders(
 }> {
   const { devduckRoot } = resolveDevduckRoot({ cwd: process.cwd(), moduleDir: __dirname });
 
-  // Discover providers from devduck modules
-  await discoverProvidersFromModules({ modulesDir: path.join(devduckRoot, 'modules') });
+  // Discover providers from built-in extensions (legacy: modules)
+  await discoverProvidersFromModules({ extensionsDir: path.join(devduckRoot, 'extensions') });
 
   // Discover providers from external repositories
   if (workspaceRoot) {
@@ -82,7 +83,7 @@ async function initializeProviders(
           try {
             const repoModulesPath = await loadModulesFromRepo(repoUrl, workspaceRoot, devduckVersion);
             if (fs.existsSync(repoModulesPath)) {
-              await discoverProvidersFromModules({ modulesDir: repoModulesPath });
+              await discoverProvidersFromModules({ extensionsDir: repoModulesPath });
             }
           } catch (error) {
             // Skip failed repos, but log warning
@@ -221,8 +222,8 @@ async function formatAvailableMethods(unifiedAPI: any, devduckRoot: string): Pro
       continue;
     }
     
-    // Get module description
-    const modulePath = path.join(devduckRoot, 'modules', moduleName);
+  // Get extension description
+  const modulePath = path.join(devduckRoot, 'extensions', moduleName);
     const moduleDescription = readModuleDescription(modulePath) || moduleName;
     
     output += `\n  ${moduleDescription}:\n`;
@@ -312,7 +313,7 @@ async function main(argv = process.argv): Promise<void> {
   const router = unifiedAPI[moduleName];
   if (!router) {
     console.error(`Error: Module "${moduleName}" not found in unified API`);
-    console.error('\nAvailable modules:');
+    console.error('\nAvailable extensions:');
     for (const name of Object.keys(unifiedAPI)) {
       console.error(`  - ${name}`);
     }

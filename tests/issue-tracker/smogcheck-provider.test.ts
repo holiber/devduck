@@ -3,14 +3,14 @@ import assert from 'node:assert';
 import path from 'node:path';
 import fs from 'fs';
 
-import provider from '../../modules/issue-tracker/providers/smogcheck-provider/index.js';
+import provider from '../../extensions/issue-tracker/providers/smogcheck-provider/index.js';
 import {
   IssueTrackerProviderSchema,
   IssueSchema,
   CommentSchema,
   PRReferenceSchema,
   DownloadResourcesResultSchema
-} from '../../modules/issue-tracker/schemas/contract.js';
+} from '../../extensions/issue-tracker/schemas/contract.js';
 
 import {
   clearProvidersForTests,
@@ -25,7 +25,7 @@ import {
   getResourcesJsonPath,
   getIssueResourcesDir,
   readResourcesJson
-} from '../../modules/issue-tracker/scripts/resources.js';
+} from '../../extensions/issue-tracker/scripts/resources.js';
 
 describe('issue-tracker: smogcheck-provider', () => {
   test('matches IssueTrackerProvider contract schema', () => {
@@ -306,8 +306,8 @@ describe('issue-tracker: provider registry discovery', () => {
   test('discovers smogcheck-provider from modules directory and registers it (with schema validation)', async () => {
     setProviderTypeSchema('issue-tracker', IssueTrackerProviderSchema);
 
-    const modulesDir = path.resolve(process.cwd(), 'modules');
-    await discoverProvidersFromModules({ modulesDir });
+    const extensionsDir = path.resolve(process.cwd(), 'extensions');
+    await discoverProvidersFromModules({ extensionsDir });
 
     const providers = getProvidersByType('issue-tracker');
     assert.ok(providers.some((p) => p.name === 'smogcheck-provider'));

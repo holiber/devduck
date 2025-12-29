@@ -23,10 +23,10 @@ const STEP_IDS: InstallStepId[] = [
 
 const STEP_DESCRIPTIONS: Record<InstallStepId, string> = {
   'check-env': 'Verify required environment variables',
-  'download-repos': 'Download external module repositories',
+  'download-repos': 'Download external extension repositories',
   'download-projects': 'Clone/link workspace projects',
   'check-env-again': 'Re-check environment variables',
-  'setup-modules': 'Setup all DevDuck modules',
+  'setup-modules': 'Setup all Barducks extensions',
   'setup-projects': 'Setup all workspace projects',
   'verify-installation': 'Verify installation correctness'
 };

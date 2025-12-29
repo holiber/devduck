@@ -12,6 +12,9 @@ import { buildGeneratedTaskfile } from './lib/taskfile-gen.js';
 type WorkspaceConfigLike = {
   version?: string | number;
   devduck_path?: string;
+  extensions?: string[];
+  extensionSettings?: Record<string, unknown>;
+  // Backward compatibility
   modules?: string[];
   moduleSettings?: Record<string, unknown>;
   repos?: string[];
@@ -40,20 +43,20 @@ function ensureWorkspacePackageJson(workspaceRoot: string): void {
   const pkgPath = path.join(workspaceRoot, 'package.json');
   if (fs.existsSync(pkgPath)) return;
 
-  // Keep dependencies minimal: only what's needed to run DevDuck installer via TSX.
-  // Avoid pulling the DevDuck npm package itself to prevent heavy postinstall steps.
+  // Keep dependencies minimal: only what's needed to run Barducks installer via TSX.
+  // Avoid pulling the Barducks npm package itself to prevent heavy postinstall steps.
   const pkg = {
-    name: path.basename(workspaceRoot) || 'devduck-workspace',
+    name: path.basename(workspaceRoot) || 'barducks-workspace',
     private: true,
     type: 'module',
     scripts: {
       // This runs automatically on `npm install` and bootstraps the workspace.
-      install: 'tsx ./devduck/src/scripts/install.ts --workspace-path . --unattended'
+      install: 'tsx ./barducks/src/scripts/install.ts --workspace-path . --unattended'
     },
     dependencies: {
       // Taskfile runner (go-task) to support `npx task install`
       '@go-task/cli': '^3.46.4',
-      // Needed by DevDuck installer/runtime (imported from devduck/src/scripts/*)
+      // Needed by Barducks installer/runtime (imported from barducks/src/scripts/*)
       '@modelcontextprotocol/sdk': '^1.25.1',
       'compare-versions': '^6.1.1',
       dotenv: '^16.4.7',
@@ -89,14 +92,21 @@ function isDevduckProjectSrc(src: string): boolean {
   const s = src.trim();
 
   // github.com/<org>/devduck or https://github.com/<org>/devduck(.git)
-  if (/github\.com/i.test(s) && /\/devduck(\.git)?$/i.test(s)) return true;
+  if (/github\.com/i.test(s) && /\/(devduck|barducks)(\.git)?$/i.test(s)) return true;
 
   // git@github.com:<org>/devduck(.git)
-  if (/git@github\.com:/i.test(s) && /\/devduck(\.git)?$/i.test(s.replace(':', '/'))) return true;
+  if (/git@github\.com:/i.test(s) && /\/(devduck|barducks)(\.git)?$/i.test(s.replace(':', '/'))) return true;
 
   // local paths: .../devduck or .../devduck/src
   const norm = path.posix.normalize(s.replace(/\\/g, '/'));
-  if (norm.endsWith('/devduck') || norm.endsWith('/devduck/src')) return true;
+  if (
+    norm.endsWith('/barducks') ||
+    norm.endsWith('/barducks/src') ||
+    norm.endsWith('/devduck') ||
+    norm.endsWith('/devduck/src')
+  ) {
+    return true;
+  }
 
   return false;
 }
@@ -170,7 +180,7 @@ function ensureDevduckInWorkspace(params: {
   const { workspaceRoot, devduckRepo, devduckRef, devduckSource } = params;
   const config = params.config;
 
-  const devduckDest = path.join(workspaceRoot, 'devduck', 'src');
+  const devduckDest = path.join(workspaceRoot, 'barducks', 'src');
   const shouldMaterialize = !configListsDevduckAsProject(config);
 
   if (!shouldMaterialize) {
@@ -186,19 +196,19 @@ function ensureDevduckInWorkspace(params: {
   }
 
   if (!config.devduck_path) {
-    config.devduck_path = './devduck/src';
+    config.devduck_path = './barducks/src';
   }
 
   return config;
 }
 
 function buildDefaultWorkspaceConfig(): WorkspaceConfigLike {
-  const defaultModules = process.env.NODE_ENV === 'test' ? ['core'] : ['core', 'cursor'];
+  const defaultExtensions = process.env.NODE_ENV === 'test' ? ['core'] : ['core', 'cursor'];
   return {
     version: '0.1.0',
-    devduck_path: './devduck/src',
-    modules: defaultModules,
-    moduleSettings: {},
+    devduck_path: './barducks/src',
+    extensions: defaultExtensions,
+    extensionSettings: {},
     repos: [],
     projects: [],
     checks: [],
@@ -208,7 +218,7 @@ function buildDefaultWorkspaceConfig(): WorkspaceConfigLike {
 
 async function main(argv = process.argv): Promise<void> {
   const y = yargs(hideBin(argv))
-    .scriptName('devduck')
+    .scriptName('barducks')
     .command(
       'sync [workspacePath]',
       'Generate .cache/taskfile.generated.yml (Taskfile runtime) for a workspace',
@@ -246,7 +256,7 @@ async function main(argv = process.argv): Promise<void> {
     )
     .command(
       'new <workspacePath>',
-      'Create a new DevDuck workspace',
+      'Create a new Barducks workspace',
       (yy) =>
         yy
           .positional('workspacePath', {
@@ -260,7 +270,7 @@ async function main(argv = process.argv): Promise<void> {
           })
           .option('devduck-repo', {
             type: 'string',
-            describe: 'Git URL for DevDuck repository',
+            describe: 'Git URL for Barducks repository',
             default: 'https://github.com/holiber/barducks.git'
           })
           .option('devduck-ref', {
@@ -270,7 +280,7 @@ async function main(argv = process.argv): Promise<void> {
           .option('devduck-source', {
             type: 'string',
             describe:
-              'Local folder to copy DevDuck from (no git clone). Intended for offline/CI tests.'
+              'Local folder to copy Barducks from (no git clone). Intended for offline/CI tests.'
           }),
       (args) => {
         // When invoked via npm/npx, process.cwd() may point to a temporary package folder

@@ -1,6 +1,6 @@
 ---
 alwaysApply: false
-globs: ["**/devduck/**", "**/modules/**", "**/ARCHITECTURE.md", "**/migration-plan.md"]
+globs: ["**/barducks/**", "**/extensions/**", "**/ARCHITECTURE.md", "**/migration-plan.md"]
 ---
 # Evolution Module Rules
 

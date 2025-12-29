@@ -980,8 +980,10 @@ export async function loadModulesForChecks(
   
   // Load all modules with priority: workspace > projects > external > built-in
   const localModules = getAllModules();
-  const workspaceModulesDir = path.join(workspaceRoot, 'modules');
-  const workspaceModules = getAllModulesFromDirectory(workspaceModulesDir);
+  const workspaceExtensionsDir = fs.existsSync(path.join(workspaceRoot, 'extensions'))
+    ? path.join(workspaceRoot, 'extensions')
+    : path.join(workspaceRoot, 'modules');
+  const workspaceModules = getAllModulesFromDirectory(workspaceExtensionsDir);
   
   const projectsModules: any[] = [];
   if (config.projects && Array.isArray(config.projects)) {
@@ -990,16 +992,21 @@ export async function loadModulesForChecks(
       const projectObj = project as { src?: string };
       const projectName = projectObj.src ? String(projectObj.src).split('/').pop()?.replace(/\.git$/, '') || '' : '';
       const projectPath = path.join(workspaceRoot, 'projects', projectName);
-      const projectModulesDir = path.join(projectPath, 'modules');
-      if (fs.existsSync(projectModulesDir)) {
-        const projectModules = getAllModulesFromDirectory(projectModulesDir);
+      const projectExtensionsDir = fs.existsSync(path.join(projectPath, 'extensions'))
+        ? path.join(projectPath, 'extensions')
+        : path.join(projectPath, 'modules');
+      if (fs.existsSync(projectExtensionsDir)) {
+        const projectModules = getAllModulesFromDirectory(projectExtensionsDir);
         projectsModules.push(...(projectModules as any[]));
       }
     }
   }
   
   const allModules = [...workspaceModules, ...projectsModules, ...externalModules, ...localModules];
-  const moduleNames = expandModuleNames(Array.isArray(config.modules) ? config.modules : ['*'], allModules);
+  const selectors = Array.isArray((config as any).extensions)
+    ? ((config as any).extensions as string[])
+    : (Array.isArray((config as any).modules) ? ((config as any).modules as string[]) : ['*']);
+  const moduleNames = expandModuleNames(selectors, allModules);
   const resolvedModules = resolveDependencies(moduleNames, allModules);
   
   // Load module resources

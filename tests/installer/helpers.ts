@@ -32,6 +32,7 @@ interface RunInstallerOptions {
   workspaceConfig?: string;
   aiAgent?: string;
   repoType?: string;
+  extensions?: string | string[];
   modules?: string | string[];
   skipRepoInit?: boolean;
   inputs?: string[];
@@ -156,8 +157,10 @@ export async function runInstaller(workspacePath: string, options: RunInstallerO
       args.push('--repo-type', options.repoType);
     }
     
-    if (options.modules) {
-      args.push('--modules', Array.isArray(options.modules) ? options.modules.join(',') : options.modules);
+    const extensions = options.extensions ?? options.modules;
+    if (extensions) {
+      // Prefer the new flag, keep legacy behavior covered too.
+      args.push('--extensions', Array.isArray(extensions) ? extensions.join(',') : extensions);
     }
     
     if (options.skipRepoInit) {
@@ -172,7 +175,7 @@ export async function runInstaller(workspacePath: string, options: RunInstallerO
     // Provide deterministic dummy values so installer checks don't block unattended installs.
     const needsCursor = await workspaceNeedsCursorModule({
       workspacePath,
-      modulesArg: options.modules,
+      modulesArg: options.extensions ?? options.modules,
       configPath: options.config,
       workspaceConfigPath: options.workspaceConfig
     });
@@ -293,8 +296,10 @@ async function workspaceNeedsCursorModule(params: {
   const readModulesFromYamlFile = async (filePath: string): Promise<string[] | null> => {
     try {
       const raw = await fs.readFile(filePath, 'utf8');
-      const parsed = YAML.parse(raw) as { modules?: unknown };
-      return Array.isArray(parsed.modules) ? (parsed.modules as string[]) : null;
+      const parsed = YAML.parse(raw) as { extensions?: unknown; modules?: unknown };
+      if (Array.isArray(parsed.extensions)) return parsed.extensions as string[];
+      if (Array.isArray(parsed.modules)) return parsed.modules as string[];
+      return null;
     } catch {
       return null;
     }
@@ -316,8 +321,10 @@ async function workspaceNeedsCursorModule(params: {
   const configPath = path.join(params.workspacePath, 'workspace.config.yml');
   try {
     const raw = await fs.readFile(configPath, 'utf8');
-    const parsed = YAML.parse(raw) as { modules?: unknown };
-    const mods = Array.isArray(parsed.modules) ? (parsed.modules as string[]) : [];
+    const parsed = YAML.parse(raw) as { extensions?: unknown; modules?: unknown };
+    const mods = Array.isArray(parsed.extensions)
+      ? (parsed.extensions as string[])
+      : (Array.isArray(parsed.modules) ? (parsed.modules as string[]) : []);
     return mods.includes('cursor');
   } catch {
     return false;
@@ -432,17 +439,18 @@ export async function verifyWorkspaceConfig(workspacePath: string, expectedConfi
     if (!config.version) {
       results.errors.push('version missing');
     }
-    if (!config.modules || !Array.isArray(config.modules)) {
-      results.errors.push('modules missing or invalid');
+    const extensions = (config.extensions ?? config.modules) as unknown;
+    if (!extensions || !Array.isArray(extensions)) {
+      results.errors.push('extensions missing or invalid');
     }
 
     // Verify expected values
-    if (expectedConfig.modules) {
-      const actualModules = (config.modules || []) as string[];
-      const expectedModules = expectedConfig.modules as string[];
-      const missing = expectedModules.filter(m => !actualModules.includes(m));
+    const expectedExtensions = (expectedConfig.extensions ?? expectedConfig.modules) as unknown;
+    if (Array.isArray(expectedExtensions)) {
+      const actual = (Array.isArray(config.extensions) ? config.extensions : config.modules || []) as string[];
+      const missing = (expectedExtensions as string[]).filter(m => !actual.includes(m));
       if (missing.length > 0) {
-        results.errors.push(`Missing modules: ${missing.join(', ')}`);
+        results.errors.push(`Missing extensions: ${missing.join(', ')}`);
       }
     }
 

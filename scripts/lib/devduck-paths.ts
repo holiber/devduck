@@ -24,14 +24,15 @@ interface ResolveCorePathsResult {
 }
 
 /**
- * Resolve where DevDuck project root lives for a module script.
+ * Resolve where Barducks/DevDuck project root lives for an extension script.
  *
- * In a full workspace install, DevDuck is usually checked out under:
- *   <workspaceRoot>/projects/devduck
+ * In a full workspace install, the project is usually checked out under:
+ *   <workspaceRoot>/projects/barducks (preferred)
+ *   <workspaceRoot>/projects/devduck (legacy)
  *
- * In this repository (or when running from within DevDuck itself),
- * module scripts live under:
- *   <devduckRoot>/modules/<module>/scripts
+ * In this repository (or when running from within the project itself),
+ * extension scripts live under:
+ *   <projectRoot>/extensions/<extension>/scripts
  *
  * @param opts - Options object
  * @returns Object with workspaceRoot and devduckRoot
@@ -42,14 +43,19 @@ export function resolveDevduckRoot(opts: ResolveDevduckRootOptions = {}): Resolv
 
   const workspaceRoot = findWorkspaceRoot(cwd) || findWorkspaceRoot(moduleDir);
   if (workspaceRoot) {
-    const candidate = path.join(workspaceRoot, 'projects', 'devduck');
-    if (fs.existsSync(candidate)) {
-      return { workspaceRoot, devduckRoot: candidate };
+    const preferred = path.join(workspaceRoot, 'projects', 'barducks');
+    if (fs.existsSync(preferred)) {
+      return { workspaceRoot, devduckRoot: preferred };
+    }
+
+    const legacy = path.join(workspaceRoot, 'projects', 'devduck');
+    if (fs.existsSync(legacy)) {
+      return { workspaceRoot, devduckRoot: legacy };
     }
     // Workspace root found but project not present; fall back to module-relative.
   }
 
-  // Fallback: assume we're inside the devduck repo and modules/<name>/scripts.
+  // Fallback: assume we're inside the repo and extensions/<name>/scripts.
   return { workspaceRoot: workspaceRoot || null, devduckRoot: path.resolve(moduleDir, '../../..') };
 }
 
@@ -57,8 +63,8 @@ export function resolveDevduckRoot(opts: ResolveDevduckRootOptions = {}): Resolv
  * Resolve paths to "core" utilities for module scripts.
  *
  * We support both layouts:
- * - devduckRoot/scripts/... (current repo)
- * - devduckRoot/modules/core/scripts/... (legacy / external packaging)
+ * - projectRoot/scripts/... (current repo)
+ * - projectRoot/extensions/core/scripts/... (legacy / external packaging)
  *
  * @param opts - Options object
  * @returns Object with devduckRoot, coreUtilsPath, and coreEnvPath
@@ -75,8 +81,8 @@ export function resolveCorePaths(opts: ResolveCorePathsOptions = {}): ResolveCor
 
   return {
     devduckRoot,
-    coreUtilsPath: path.join(devduckRoot, 'modules', 'core', 'scripts', 'utils.ts'),
-    coreEnvPath: path.join(devduckRoot, 'modules', 'core', 'scripts', 'lib', 'env.ts')
+    coreUtilsPath: path.join(devduckRoot, 'extensions', 'core', 'scripts', 'utils.ts'),
+    coreEnvPath: path.join(devduckRoot, 'extensions', 'core', 'scripts', 'lib', 'env.ts')
   };
 }
 

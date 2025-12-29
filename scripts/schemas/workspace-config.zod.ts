@@ -139,9 +139,13 @@ const WorkspaceConfigSchema = z
     // Paths are relative to the folder containing the provided workspace config file.
     seedFiles: z.array(z.string()).optional(),
 
-    // Module selection: explicit module list or ["*"] to mean "all available modules".
+    // Extension selection: explicit list or ["*"] to mean "all available extensions".
+    extensions: z.array(z.string()).optional(),
+    // Per-extension override settings. Merge behavior is implemented in resolver.
+    extensionSettings: z.record(z.string(), z.any()).optional(),
+
+    // Backward compatibility (legacy naming).
     modules: z.array(z.string()).optional(),
-    // Per-module override settings. Merge behavior is implemented in module resolver.
     moduleSettings: z.record(z.string(), z.any()).optional(),
 
     // External module repositories to load (git / arcadia formats).

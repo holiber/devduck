@@ -1,6 +1,6 @@
 ---
 alwaysApply: false
-globs: ["**/ARCHITECTURE.md", "**/modules/**/MODULE.md", "**/workspace.config.yml", "**/migration-plan.md"]
+globs: ["**/ARCHITECTURE.md", "**/extensions/**/MODULE.md", "**/workspace.config.yml", "**/migration-plan.md"]
 ---
 # Architecture Documentation Rule
 

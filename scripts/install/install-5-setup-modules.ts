@@ -38,10 +38,10 @@ export async function runStep5SetupModules(
   autoYes = false
 ): Promise<SetupModulesStepResult> {
   if (process.env.DEVDUCK_SUPPRESS_STEP_HEADER !== '1') {
-    print(`\n[Step 5] Setting up modules...`, 'cyan');
+    print(`\n[Step 5] Setting up extensions...`, 'cyan');
   }
   if (log) {
-    log(`[Step 5] Starting module setup`);
+    log(`[Step 5] Starting extension setup`);
   }
   
   const { config, configFile } = readWorkspaceConfigFromRoot<WorkspaceConfig>(workspaceRoot);
@@ -96,10 +96,12 @@ export async function runStep5SetupModules(
       }
     }
     
-    // Load all modules with priority: workspace > projects > external > built-in
+    // Load all extensions with priority: workspace > projects > external > built-in
     const localModules = getAllModules();
-    const workspaceModulesDir = path.join(workspaceRoot, 'modules');
-    const workspaceModules = getAllModulesFromDirectory(workspaceModulesDir);
+    const workspaceExtensionsDir = fs.existsSync(path.join(workspaceRoot, 'extensions'))
+      ? path.join(workspaceRoot, 'extensions')
+      : path.join(workspaceRoot, 'modules');
+    const workspaceModules = getAllModulesFromDirectory(workspaceExtensionsDir);
     
     const projectsModules: Array<{ name: string; path: string; checks?: unknown[]; [key: string]: unknown }> = [];
     if (config.projects && Array.isArray(config.projects)) {
@@ -108,22 +110,30 @@ export async function runStep5SetupModules(
         const projectObj = project as { src?: string };
         const projectName = projectObj.src ? String(projectObj.src).split('/').pop()?.replace(/\.git$/, '') || '' : '';
         const projectPath = path.join(workspaceRoot, 'projects', projectName);
-        const projectModulesDir = path.join(projectPath, 'modules');
-        if (fs.existsSync(projectModulesDir)) {
-          const projectModules = getAllModulesFromDirectory(projectModulesDir);
+        const projectExtensionsDir = fs.existsSync(path.join(projectPath, 'extensions'))
+          ? path.join(projectPath, 'extensions')
+          : path.join(projectPath, 'modules');
+        if (fs.existsSync(projectExtensionsDir)) {
+          const projectModules = getAllModulesFromDirectory(projectExtensionsDir);
           projectsModules.push(...projectModules);
         }
       }
     }
     
     const allModules = [...workspaceModules, ...projectsModules, ...externalModules, ...localModules];
-    const moduleNames = expandModuleNames(Array.isArray(config.modules) ? config.modules : ['*'], allModules);
+    const selectors = Array.isArray((config as any).extensions)
+      ? ((config as any).extensions as string[])
+      : (Array.isArray((config as any).modules) ? ((config as any).modules as string[]) : ['*']);
+    const moduleNames = expandModuleNames(selectors, allModules);
     const resolvedModules = resolveDependencies(moduleNames, allModules);
     
     // Load module resources
     loadedModules = resolvedModules.map(module => {
       const resources = loadModuleResources(module);
-      const mergedSettings = mergeModuleSettings(module, config.moduleSettings);
+      const settings = ((config as any).extensionSettings ?? (config as any).moduleSettings) as
+        | Record<string, Record<string, unknown>>
+        | undefined;
+      const mergedSettings = mergeModuleSettings(module, settings);
       
       return {
         ...resources,

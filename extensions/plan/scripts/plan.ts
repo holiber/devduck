@@ -27,7 +27,7 @@ async function getTracker() {
     );
     const workspaceRoot = findWorkspaceRoot(process.cwd());
     const { devduckRoot } = resolveDevduckRoot({ cwd: process.cwd(), moduleDir: __dirname });
-    await discoverProvidersFromModules({ modulesDir: path.join(devduckRoot, 'modules') });
+    await discoverProvidersFromModules({ extensionsDir: path.join(devduckRoot, 'extensions') });
     
     // Discover from external repos if workspace config exists
     if (workspaceRoot) {
@@ -41,7 +41,7 @@ async function getTracker() {
             try {
               const repoModulesPath = await loadModulesFromRepo(repoUrl, workspaceRoot, devduckVersion);
               if (fs.existsSync(repoModulesPath)) {
-                await discoverProvidersFromModules({ modulesDir: repoModulesPath });
+                await discoverProvidersFromModules({ extensionsDir: repoModulesPath });
               }
             } catch {
               // Skip failed repos

@@ -2,8 +2,8 @@ import { test } from '@playwright/test';
 import assert from 'node:assert';
 import path from 'node:path';
 
-import provider from '../../modules/email-gmail/providers/gmail-provider/index.ts';
-import type { EmailProvider } from '../../modules/email/schemas/contract.ts';
+import provider from '../../extensions/email-gmail/providers/gmail-provider/index.ts';
+import type { EmailProvider } from '../../extensions/email/schemas/contract.ts';
 
 import {
   clearProvidersForTests,
@@ -34,8 +34,8 @@ test.describe('email: provider registry discovery (gmail-provider)', () => {
   });
 
   test('discovers gmail-provider from modules directory and registers it', async () => {
-    const modulesDir = path.resolve(process.cwd(), 'modules');
-    await discoverProvidersFromModules({ modulesDir });
+    const extensionsDir = path.resolve(process.cwd(), 'extensions');
+    await discoverProvidersFromModules({ extensionsDir });
 
     const p = getProvider('email', 'gmail-provider');
     assert.ok(p);

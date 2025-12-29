@@ -2,15 +2,15 @@ import { describe, test, beforeEach } from 'node:test';
 import assert from 'node:assert';
 import path from 'node:path';
 
-import telegramProvider from '../../modules/messenger-telegram/providers/telegram-provider/index.js';
-import yandexProvider from '../../modules/messenger-yandex-messenger/providers/yandex-messenger-provider/index.js';
+import telegramProvider from '../../extensions/messenger-telegram/providers/telegram-provider/index.js';
+import yandexProvider from '../../extensions/messenger-yandex-messenger/providers/yandex-messenger-provider/index.js';
 import {
   ChatMessageSchema,
   ChatSchema,
   DownloadFileResultSchema,
   MessengerProviderSchema,
   type MessengerProvider
-} from '../../modules/messenger/schemas/contract.js';
+} from '../../extensions/messenger/schemas/contract.js';
 
 import {
   clearProvidersForTests,
@@ -105,8 +105,8 @@ describe('messenger: provider registry discovery', () => {
 
   test('discovers messenger providers from modules directory and registers them (with schema validation)', async () => {
     setProviderTypeSchema('messenger', MessengerProviderSchema);
-    const modulesDir = path.resolve(process.cwd(), 'modules');
-    await discoverProvidersFromModules({ modulesDir });
+    const extensionsDir = path.resolve(process.cwd(), 'extensions');
+    await discoverProvidersFromModules({ extensionsDir });
 
     const providers = getProvidersByType('messenger');
     assert.ok(providers.some((p) => p.name === 'telegram-provider'));

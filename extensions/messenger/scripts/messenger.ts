@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
 import { createYargs, installEpipeHandler } from '../../../scripts/lib/cli.js';
 import { resolveDevduckRoot } from '../../../scripts/lib/devduck-paths.js';
 import { findWorkspaceRoot } from '../../../scripts/lib/workspace-root.js';
@@ -13,22 +14,25 @@ import {
   getProvidersByType,
   getProvider
 } from '../../../scripts/lib/provider-registry.js';
-import type { IssueTrackerProvider } from '../schemas/contract.js';
-import { issueTrackerRouter } from '../api.js';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+import type { MessengerProvider } from '../schemas/contract.js';
+import { messengerRouter } from '../api.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 type WorkspaceConfigLike = {
-  moduleSettings?: Record<string, unknown>;
+  extensionSettings?: Record<string, unknown>;
+  moduleSettings?: Record<string, unknown>; // legacy
   repos?: string[];
 };
 
-function asIssueTrackerProvider(p: unknown): IssueTrackerProvider {
-  return p as IssueTrackerProvider;
+function asMessengerProvider(p: unknown): MessengerProvider {
+  return p as MessengerProvider;
 }
 
 function pickProviderNameFromConfig(workspaceRoot: string | null): string | null {
-  const envName = (process.env.ISSUE_TRACKER_PROVIDER || '').trim();
+  const envName = (process.env.MESSENGER_PROVIDER || '').trim();
   if (envName) return envName;
 
   const root = workspaceRoot || findWorkspaceRoot(process.cwd());
@@ -38,21 +42,19 @@ function pickProviderNameFromConfig(workspaceRoot: string | null): string | null
   if (!fs.existsSync(configPath)) return null;
 
   const cfg = readWorkspaceConfigFile<WorkspaceConfigLike>(configPath);
-  const moduleSettings = (cfg && cfg.moduleSettings) || {};
-  const issueTrackerSettings = (moduleSettings as Record<string, unknown>).issueTracker as
-    | Record<string, unknown>
-    | undefined;
-  const name = issueTrackerSettings && typeof issueTrackerSettings.provider === 'string' ? issueTrackerSettings.provider : '';
+  const settings = (cfg && (cfg.extensionSettings || cfg.moduleSettings)) || {};
+  const messengerSettings = (settings as Record<string, unknown>).messenger as Record<string, unknown> | undefined;
+  const name = messengerSettings && typeof messengerSettings.provider === 'string' ? messengerSettings.provider : '';
   return name.trim() || null;
 }
 
 async function initializeProviders(workspaceRoot: string | null): Promise<{
-  getProvider: (providerName?: string) => IssueTrackerProvider | null;
+  getProvider: (providerName?: string) => MessengerProvider | null;
 }> {
   const { devduckRoot } = resolveDevduckRoot({ cwd: process.cwd(), moduleDir: __dirname });
 
   // Discover providers from devduck modules
-  await discoverProvidersFromModules({ modulesDir: path.join(devduckRoot, 'modules') });
+  await discoverProvidersFromModules({ extensionsDir: path.join(devduckRoot, 'extensions') });
 
   // Discover providers from external repositories
   if (workspaceRoot) {
@@ -62,16 +64,16 @@ async function initializeProviders(workspaceRoot: string | null): Promise<{
       if (config && config.repos && Array.isArray(config.repos)) {
         const { loadModulesFromRepo, getDevduckVersion } = await import('../../../scripts/lib/repo-modules.js');
         const devduckVersion = getDevduckVersion();
-        
+
         for (const repoUrl of config.repos) {
           try {
             const repoModulesPath = await loadModulesFromRepo(repoUrl, workspaceRoot, devduckVersion);
             if (fs.existsSync(repoModulesPath)) {
-              await discoverProvidersFromModules({ modulesDir: repoModulesPath });
+              await discoverProvidersFromModules({ extensionsDir: repoModulesPath });
             }
           } catch (error) {
-            // Skip failed repos, but log warning
             const err = error as Error;
+            // eslint-disable-next-line no-console
             console.warn(`Warning: Failed to load providers from ${repoUrl}: ${err.message}`);
           }
         }
@@ -79,9 +81,9 @@ async function initializeProviders(workspaceRoot: string | null): Promise<{
     }
   }
 
-  const providers = getProvidersByType('issue-tracker');
+  const providers = getProvidersByType('messenger');
   if (providers.length === 0) {
-    throw new Error('No issue tracker providers discovered');
+    throw new Error('No messenger providers discovered');
   }
 
   return {
@@ -89,9 +91,8 @@ async function initializeProviders(workspaceRoot: string | null): Promise<{
       const explicit = String(providerName || '').trim();
       const configured = pickProviderNameFromConfig(workspaceRoot);
       const selectedName = explicit || configured || providers[0].name;
-
-      const selected = getProvider('issue-tracker', selectedName);
-      return selected ? asIssueTrackerProvider(selected) : asIssueTrackerProvider(providers[0]);
+      const selected = getProvider('messenger', selectedName);
+      return selected ? asMessengerProvider(selected) : asMessengerProvider(providers[0]);
     }
   };
 }
@@ -100,29 +101,22 @@ async function main(argv = process.argv): Promise<void> {
   installEpipeHandler();
 
   const workspaceRoot = findWorkspaceRoot(process.cwd());
-  
+
   // Load environment variables from .env file
   if (workspaceRoot) {
     const envPath = path.join(workspaceRoot, '.env');
     const env = readEnvFile(envPath);
-    // Set environment variables from .env (don't override existing ones)
     for (const [key, value] of Object.entries(env)) {
-      if (!process.env[key]) {
-        process.env[key] = value;
-      }
+      if (!process.env[key]) process.env[key] = value;
     }
   }
-  
-  const { getProvider: getIssueTrackerProvider } = await initializeProviders(workspaceRoot);
 
-  // Build yargs with commands generated from router
-  const yargsInstance = issueTrackerRouter.toCli(
-    createYargs(argv)
-      .scriptName('issue-tracker')
-      .strict()
-      .usage('Usage: $0 <command> [options]'),
+  const { getProvider: getMessengerProvider } = await initializeProviders(workspaceRoot);
+
+  const yargsInstance = messengerRouter.toCli(
+    createYargs(argv).scriptName('messenger').strict().usage('Usage: $0 <command> [options]'),
     {
-      getProvider: getIssueTrackerProvider,
+      getProvider: getMessengerProvider,
       commonOptions: {
         provider: {
           type: 'string',
@@ -133,10 +127,7 @@ async function main(argv = process.argv): Promise<void> {
     }
   );
 
-  await yargsInstance
-    .demandCommand(1, 'You need at least one command before moving on')
-    .help()
-    .parseAsync();
+  await yargsInstance.demandCommand(1, 'You need at least one command before moving on').help().parseAsync();
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

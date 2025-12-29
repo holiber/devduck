@@ -8,6 +8,7 @@
  * Stop installation with warning if variables are missing
  */
 
+import fs from 'fs';
 import path from 'path';
 import { readWorkspaceConfigFromRoot } from '../lib/workspace-config.js';
 import { print, symbols } from '../utils.js';
@@ -71,8 +72,10 @@ export async function runStep1CheckEnv(
       await import('./module-resolver.js');
 
     const localModules = getAllModules();
-    const workspaceModulesDir = path.join(workspaceRoot, 'modules');
-    const workspaceModules = getAllModulesFromDirectory(workspaceModulesDir);
+    const workspaceExtensionsDir = fs.existsSync(path.join(workspaceRoot, 'extensions'))
+      ? path.join(workspaceRoot, 'extensions')
+      : path.join(workspaceRoot, 'modules');
+    const workspaceModules = getAllModulesFromDirectory(workspaceExtensionsDir);
 
     // Priority: workspace modules override built-in modules with the same name.
     const allModules = [...workspaceModules, ...localModules];

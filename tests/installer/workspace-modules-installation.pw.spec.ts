@@ -12,15 +12,15 @@ import {
   checkInstallerResult
 } from './helpers.js';
 
-test.describe('Workspace Installer - Workspace-local modules/', () => {
-  test('Installs module from workspace/modules when listed in config', async () => {
+test.describe('Workspace Installer - Workspace-local extensions/', () => {
+  test('Installs extension from workspace/extensions when listed in config', async () => {
     const tempWorkspace = await createTempWorkspace();
     const configPath = path.join(tempWorkspace, 'test-config.yml');
 
     try {
-      // Create a workspace-local module with a post-install hook.
+      // Create a workspace-local extension with a post-install hook.
       const moduleName = 'localmod';
-      const moduleDir = path.join(tempWorkspace, 'modules', moduleName);
+      const moduleDir = path.join(tempWorkspace, 'extensions', moduleName);
       await fs.mkdir(moduleDir, { recursive: true });
 
       await fs.writeFile(
@@ -29,11 +29,11 @@ test.describe('Workspace Installer - Workspace-local modules/', () => {
           '---',
           `name: ${moduleName}`,
           'version: 0.1.0',
-          'description: Workspace-local module',
+          'description: Workspace-local extension',
           'dependencies: [core]',
           '---',
           '',
-          'Workspace-local module used for tests.',
+          'Workspace-local extension used for tests.',
           ''
         ].join('\n'),
         'utf8'
@@ -57,11 +57,11 @@ test.describe('Workspace Installer - Workspace-local modules/', () => {
         'utf8'
       );
 
-      // Run installer with a config that includes the workspace-local module.
+      // Run installer with a config that includes the workspace-local extension.
       const config = {
         aiAgent: 'cursor',
         repoType: 'none',
-        modules: ['core', 'cursor', moduleName],
+        extensions: ['core', 'cursor', moduleName],
         skipRepoInit: true
       };
       await fs.writeFile(configPath, YAML.stringify(config), 'utf8');
@@ -76,10 +76,10 @@ test.describe('Workspace Installer - Workspace-local modules/', () => {
       const installed = await waitForInstallation(tempWorkspace, 30000);
       assert.ok(installed, 'Installation should complete');
 
-      // Verify the workspace-local module hook ran.
+      // Verify the workspace-local extension hook ran.
       const markerPath = path.join(tempWorkspace, 'localmod-installed.txt');
       const marker = await fs.readFile(markerPath, 'utf8');
-      assert.strictEqual(marker, 'ok\n', 'Workspace-local module post-install hook should create marker file');
+      assert.strictEqual(marker, 'ok\n', 'Workspace-local extension post-install hook should create marker file');
     } finally {
       await cleanupTempWorkspace(tempWorkspace);
     }

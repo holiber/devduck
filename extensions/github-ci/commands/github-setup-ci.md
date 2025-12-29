@@ -41,7 +41,7 @@ The AI agent should:
 - Use the found branch, or default to `main`
 
 #### 2.5. Create workflow file
-- Load template from `modules/github-ci/templates/ci-workflow.yml`
+- Load template from `extensions/github-ci/templates/ci-workflow.yml`
 - Replace `{{TEST_COMMAND}}` with the detected test command
 - Replace `branches: [ main, master ]` with `branches: [ ${baseBranch} ]` (single branch)
 - Create `.github/workflows/` directory if it doesn't exist
@@ -60,7 +60,7 @@ The AI agent should:
 ## Template location
 
 The workflow template is located at:
-- `projects/devduck/modules/github-ci/templates/ci-workflow.yml`
+- `projects/barducks/extensions/github-ci/templates/ci-workflow.yml`
 
 ## Template placeholders
 

@@ -1,17 +1,17 @@
-# DevDuck
+# Barducks
 
 <div align="center">
-  <img src="media/logo.png" alt="DevDuck Logo" width="200">
+  <img src="media/logo.png" alt="Barducks Logo" width="200">
 </div>
 
 KrYa!
 
-Devduck is rubber duck debugging — automated.
+Barducks is rubber duck debugging — automated.
 Explain the problem, and the duck will write code, close tickets, and ship changes.
 
 ## Documentation
 
-- **Workspace & modules**: `docs/workspace-and-modules.md`
+- **Workspace & extensions**: `docs/workspace-and-extensions.md`
 - **Architecture (EN)**: `docs/ARCHITECTURE.md`
 
 ## Quick Start
@@ -19,22 +19,22 @@ Explain the problem, and the duck will write code, close tickets, and ship chang
 ### Create a new workspace (npx)
 
 ```bash
-npx --yes github:<owner>/<repo> new ./my-devduck-workspace
+npx --yes github:<owner>/<repo> new ./my-barducks-workspace
 ```
 
 This will:
-- create `./my-devduck-workspace/workspace.config.yml`
-- clone DevDuck into `./my-devduck-workspace/devduck/src` (unless DevDuck is already listed in `projects[]`)
+- create `./my-barducks-workspace/workspace.config.yml`
+- clone Barducks into `./my-barducks-workspace/barducks/src` (unless Barducks is already listed in `projects[]`)
 
 ### Create a new workspace from an existing `workspace.config.yml`
 
 If you already have a `workspace.config.yml` (for example, checked into another repo or shared in your team), you can use it as a template:
 
 ```bash
-npx --yes github:<owner>/<repo> new ./my-devduck-workspace --workspace-config /path/to/workspace.config.yml
+npx --yes github:<owner>/<repo> new ./my-barducks-workspace --workspace-config /path/to/workspace.config.yml
 ```
 
-DevDuck will merge your template on top of the defaults and write the result to `./my-devduck-workspace/workspace.config.yml`.
+Barducks will merge your template on top of the defaults and write the result to `./my-barducks-workspace/workspace.config.yml`.
 
 Your workspace can reference local projects too, for example:
 
@@ -47,7 +47,7 @@ Your workspace can reference local projects too, for example:
 Then open the workspace in Cursor and run:
 
 ```bash
-node install.js --workspace-path ./my-devduck-workspace
+node install.js --workspace-path ./my-barducks-workspace
 ```
 
 Or use `/install` command in Cursor IDE.
@@ -70,7 +70,7 @@ If you prefer a declarative Taskfile workflow (CursorCloud-friendly):
 
 ```bash
 # Generate Taskfile runtime from workspace config
-tsx ./devduck/src/scripts/devduck-cli.ts sync
+tsx ./barducks/src/scripts/devduck-cli.ts sync
 
 # Run installation via go-task
 npx --yes -p @go-task/cli task install

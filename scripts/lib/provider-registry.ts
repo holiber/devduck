@@ -101,7 +101,10 @@ export function clearProvidersForTests(): void {
 }
 
 export interface DiscoverProvidersOptions {
-  modulesDir: string;
+  // Canonical: scan extensions directory
+  extensionsDir?: string;
+  // Backward compatibility: legacy name
+  modulesDir?: string;
 }
 
 export interface DiscoveredProvider {
@@ -140,16 +143,16 @@ async function importProviderFromFile(entryPath: string): Promise<ProviderBase> 
 }
 
 /**
- * Discover providers by scanning modules directory.
+ * Discover providers by scanning extensions directory (legacy: modules directory).
  *
  * Supported layouts:
- * - Provider inside a module:
- *   modules/<module>/providers/<provider-name>/{PROVIDER.md,index.ts|js}
- * - Provider as a standalone provider module:
- *   modules/<module>/{PROVIDER.md,index.ts|js}
+ * - Provider inside an extension:
+ *   extensions/<extension>/providers/<provider-name>/{PROVIDER.md,index.ts|js}
+ * - Provider as a standalone provider extension:
+ *   extensions/<extension>/{PROVIDER.md,index.ts|js}
  */
 export async function discoverProvidersFromModules(opts: DiscoverProvidersOptions): Promise<DiscoveredProvider[]> {
-  const modulesDir = opts.modulesDir;
+  const modulesDir = (opts.extensionsDir || opts.modulesDir || '').toString();
   const discovered: DiscoveredProvider[] = [];
 
   if (!modulesDir || typeof modulesDir !== 'string') return discovered;

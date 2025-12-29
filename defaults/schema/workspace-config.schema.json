@@ -1,16 +1,19 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://devduck.dev/schema/workspace-config.schema.json",
-  "title": "DevDuck Workspace Config (YAML nadformat)",
+  "$id": "https://barducks.dev/schema/workspace-config.schema.json",
+  "title": "Barducks Workspace Config (YAML nadformat)",
   "type": "object",
   "additionalProperties": true,
   "properties": {
     "version": { "type": ["integer", "string"], "description": "Schema version (nadformat)" },
     "name": { "type": "string" },
-    "devduck_path": { "type": "string", "description": "Path to DevDuck sources (relative to workspace root)" },
+    "devduck_path": { "type": "string", "description": "Path to Barducks sources (relative to workspace root)" },
     "repos": { "type": "array", "items": { "type": "string" } },
-    "modules": { "type": "array", "items": { "type": "string" } },
-    "moduleSettings": { "type": "object", "additionalProperties": true },
+    "extensions": { "type": "array", "items": { "type": "string" } },
+    "extensionSettings": { "type": "object", "additionalProperties": true },
+
+    "modules": { "type": "array", "items": { "type": "string" }, "description": "Legacy alias for extensions" },
+    "moduleSettings": { "type": "object", "additionalProperties": true, "description": "Legacy alias for extensionSettings" },
     "projects": {
       "type": "array",
       "items": {

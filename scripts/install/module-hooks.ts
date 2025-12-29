@@ -232,9 +232,12 @@ export function createHookContext(
   // Try to find devduck relative to this file first (for built-in modules)
   let devduckRoot: string | undefined = path.resolve(__dirname, '../..');
   
-  // If we're in a workspace, try to find devduck in projects/devduck
+  // If we're in a workspace, try to find project in projects/barducks (legacy: projects/devduck)
+  const workspaceBarducks = path.join(workspaceRoot, 'projects', 'barducks');
   const workspaceDevduck = path.join(workspaceRoot, 'projects', 'devduck');
-  if (fs.existsSync(workspaceDevduck)) {
+  if (fs.existsSync(workspaceBarducks)) {
+    devduckRoot = workspaceBarducks;
+  } else if (fs.existsSync(workspaceDevduck)) {
     devduckRoot = workspaceDevduck;
   } else {
     // Try to find devduck relative to workspace config

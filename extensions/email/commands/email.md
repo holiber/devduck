@@ -11,7 +11,7 @@ Usage:
 Run directly:
 
 ```bash
-npx tsx modules/email/scripts/email.ts
+npx tsx extensions/email/scripts/email.ts
 ```
 
 ## Provider selection

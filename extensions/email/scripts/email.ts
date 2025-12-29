@@ -19,7 +19,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 type WorkspaceConfigLike = {
-  moduleSettings?: Record<string, unknown>;
+  extensionSettings?: Record<string, unknown>;
+  moduleSettings?: Record<string, unknown>; // legacy
 };
 
 function asEmailProvider(p: unknown): EmailProvider {
@@ -61,8 +62,8 @@ function pickProviderNameFromConfig(workspaceRoot: string | null): string | null
   if (!fs.existsSync(configPath)) return null;
 
   const cfg = readWorkspaceConfigFile<WorkspaceConfigLike>(configPath);
-  const moduleSettings = (cfg && cfg.moduleSettings) || {};
-  const emailSettings = (moduleSettings as Record<string, unknown>).email as Record<string, unknown> | undefined;
+  const settings = (cfg && (cfg.extensionSettings || cfg.moduleSettings)) || {};
+  const emailSettings = (settings as Record<string, unknown>).email as Record<string, unknown> | undefined;
   const name = emailSettings && typeof emailSettings.provider === 'string' ? emailSettings.provider : '';
   return name.trim() || null;
 }
@@ -97,8 +98,8 @@ async function main(argv = process.argv): Promise<void> {
   const { devduckRoot } = resolveDevduckRoot({ cwd: process.cwd(), moduleDir: __dirname });
   const workspaceRoot = findWorkspaceRoot(process.cwd());
 
-  // Discover providers from modules.
-  await discoverProvidersFromModules({ modulesDir: path.join(devduckRoot, 'modules') });
+  // Discover providers from extensions (legacy: modules).
+  await discoverProvidersFromModules({ extensionsDir: path.join(devduckRoot, 'extensions') });
 
   const providers = getProvidersByType('email');
   if (providers.length === 0) {

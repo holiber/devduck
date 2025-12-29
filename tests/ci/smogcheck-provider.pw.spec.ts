@@ -2,13 +2,13 @@ import { test } from '@playwright/test';
 import assert from 'node:assert';
 import path from 'node:path';
 
-import provider from '../../modules/ci/providers/smogcheck-provider/index.ts';
+import provider from '../../extensions/ci/providers/smogcheck-provider/index.ts';
 import {
   PRInfoSchema,
   CheckStatusSchema,
   CommentSchema,
   type CIProvider
-} from '../../modules/ci/schemas/contract.ts';
+} from '../../extensions/ci/schemas/contract.ts';
 
 import {
   clearProvidersForTests,
@@ -139,8 +139,8 @@ test.describe('ci: provider registry discovery', () => {
   });
 
   test('discovers smogcheck-provider from modules directory and registers it', async () => {
-    const modulesDir = path.resolve(process.cwd(), 'modules');
-    await discoverProvidersFromModules({ modulesDir });
+    const extensionsDir = path.resolve(process.cwd(), 'extensions');
+    await discoverProvidersFromModules({ extensionsDir });
 
     const providers = getProvidersByType('ci');
     assert.ok(providers.some((p) => p.name === 'smogcheck-provider'));

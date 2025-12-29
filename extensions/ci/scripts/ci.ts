@@ -1,9 +1,8 @@
 #!/usr/bin/env node
 
-import fs from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { createYargs, installEpipeHandler } from '../../../scripts/lib/cli.js';
 import { resolveDevduckRoot } from '../../../scripts/lib/devduck-paths.js';
 import { findWorkspaceRoot } from '../../../scripts/lib/workspace-root.js';
@@ -14,24 +13,23 @@ import {
   getProvidersByType,
   getProvider
 } from '../../../scripts/lib/provider-registry.js';
+import type { CIProvider } from '../schemas/contract.js';
+import { ciRouter } from '../api.js';
 
-import type { MessengerProvider } from '../schemas/contract.js';
-import { messengerRouter } from '../api.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 type WorkspaceConfigLike = {
-  moduleSettings?: Record<string, unknown>;
+  extensionSettings?: Record<string, unknown>;
+  moduleSettings?: Record<string, unknown>; // legacy
   repos?: string[];
 };
 
-function asMessengerProvider(p: unknown): MessengerProvider {
-  return p as MessengerProvider;
+function asCIProvider(p: unknown): CIProvider {
+  return p as CIProvider;
 }
 
 function pickProviderNameFromConfig(workspaceRoot: string | null): string | null {
-  const envName = (process.env.MESSENGER_PROVIDER || '').trim();
+  const envName = (process.env.CI_PROVIDER || '').trim();
   if (envName) return envName;
 
   const root = workspaceRoot || findWorkspaceRoot(process.cwd());
@@ -41,20 +39,19 @@ function pickProviderNameFromConfig(workspaceRoot: string | null): string | null
   if (!fs.existsSync(configPath)) return null;
 
   const cfg = readWorkspaceConfigFile<WorkspaceConfigLike>(configPath);
-  const moduleSettings = (cfg && cfg.moduleSettings) || {};
-  const messengerSettings = (moduleSettings as Record<string, unknown>).messenger as Record<string, unknown> | undefined;
-  const name = messengerSettings && typeof messengerSettings.provider === 'string' ? messengerSettings.provider : '';
+  const settings = (cfg && (cfg.extensionSettings || cfg.moduleSettings)) || {};
+  const ciSettings = (settings as Record<string, unknown>).ci as Record<string, unknown> | undefined;
+  const name = ciSettings && typeof ciSettings.provider === 'string' ? ciSettings.provider : '';
   return name.trim() || null;
 }
 
 async function initializeProviders(workspaceRoot: string | null): Promise<{
-  getProvider: (providerName?: string) => MessengerProvider | null;
+  getProvider: (providerName?: string) => CIProvider | null;
 }> {
   const { devduckRoot } = resolveDevduckRoot({ cwd: process.cwd(), moduleDir: __dirname });
 
-  // Discover providers from devduck modules
-  await discoverProvidersFromModules({ modulesDir: path.join(devduckRoot, 'modules') });
-
+  // Discover providers from built-in extensions (legacy: modules)
+  await discoverProvidersFromModules({ extensionsDir: path.join(devduckRoot, 'extensions') });
   // Discover providers from external repositories
   if (workspaceRoot) {
     const configPath = getWorkspaceConfigFilePath(workspaceRoot);
@@ -63,16 +60,16 @@ async function initializeProviders(workspaceRoot: string | null): Promise<{
       if (config && config.repos && Array.isArray(config.repos)) {
         const { loadModulesFromRepo, getDevduckVersion } = await import('../../../scripts/lib/repo-modules.js');
         const devduckVersion = getDevduckVersion();
-
+        
         for (const repoUrl of config.repos) {
           try {
             const repoModulesPath = await loadModulesFromRepo(repoUrl, workspaceRoot, devduckVersion);
             if (fs.existsSync(repoModulesPath)) {
-              await discoverProvidersFromModules({ modulesDir: repoModulesPath });
+              await discoverProvidersFromModules({ extensionsDir: repoModulesPath });
             }
           } catch (error) {
+            // Skip failed repos, but log warning
             const err = error as Error;
-            // eslint-disable-next-line no-console
             console.warn(`Warning: Failed to load providers from ${repoUrl}: ${err.message}`);
           }
         }
@@ -80,9 +77,9 @@ async function initializeProviders(workspaceRoot: string | null): Promise<{
     }
   }
 
-  const providers = getProvidersByType('messenger');
+  const providers = getProvidersByType('ci');
   if (providers.length === 0) {
-    throw new Error('No messenger providers discovered');
+    throw new Error('No CI providers discovered');
   }
 
   return {
@@ -90,8 +87,9 @@ async function initializeProviders(workspaceRoot: string | null): Promise<{
       const explicit = String(providerName || '').trim();
       const configured = pickProviderNameFromConfig(workspaceRoot);
       const selectedName = explicit || configured || providers[0].name;
-      const selected = getProvider('messenger', selectedName);
-      return selected ? asMessengerProvider(selected) : asMessengerProvider(providers[0]);
+
+      const selected = getProvider('ci', selectedName);
+      return selected ? asCIProvider(selected) : asCIProvider(providers[0]);
     }
   };
 }
@@ -100,22 +98,29 @@ async function main(argv = process.argv): Promise<void> {
   installEpipeHandler();
 
   const workspaceRoot = findWorkspaceRoot(process.cwd());
-
+  
   // Load environment variables from .env file
   if (workspaceRoot) {
     const envPath = path.join(workspaceRoot, '.env');
     const env = readEnvFile(envPath);
+    // Set environment variables from .env (don't override existing ones)
     for (const [key, value] of Object.entries(env)) {
-      if (!process.env[key]) process.env[key] = value;
+      if (!process.env[key]) {
+        process.env[key] = value;
+      }
     }
   }
+  
+  const { getProvider: getCIProvider } = await initializeProviders(workspaceRoot);
 
-  const { getProvider: getMessengerProvider } = await initializeProviders(workspaceRoot);
-
-  const yargsInstance = messengerRouter.toCli(
-    createYargs(argv).scriptName('messenger').strict().usage('Usage: $0 <command> [options]'),
+  // Build yargs with commands generated from router
+  const yargsInstance = ciRouter.toCli(
+    createYargs(argv)
+      .scriptName('ci')
+      .strict()
+      .usage('Usage: $0 <command> [options]'),
     {
-      getProvider: getMessengerProvider,
+      getProvider: getCIProvider,
       commonOptions: {
         provider: {
           type: 'string',
@@ -126,7 +131,10 @@ async function main(argv = process.argv): Promise<void> {
     }
   );
 
-  await yargsInstance.demandCommand(1, 'You need at least one command before moving on').help().parseAsync();
+  await yargsInstance
+    .demandCommand(1, 'You need at least one command before moving on')
+    .help()
+    .parseAsync();
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
@@ -139,4 +147,3 @@ if (import.meta.url === `file://${process.argv[1]}`) {
 }
 
 export { main };
-
