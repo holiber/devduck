@@ -11,9 +11,6 @@
     "repos": { "type": "array", "items": { "type": "string" } },
     "extensions": { "type": "array", "items": { "type": "string" } },
     "extensionSettings": { "type": "object", "additionalProperties": true },
-
-    "modules": { "type": "array", "items": { "type": "string" }, "description": "Legacy alias for extensions" },
-    "moduleSettings": { "type": "object", "additionalProperties": true, "description": "Legacy alias for extensionSettings" },
     "projects": {
       "type": "array",
       "items": {

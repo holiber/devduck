@@ -454,18 +454,12 @@ export async function loadModulesFromRepo(
     throw new Error(`Repository ${repoUrl} is not compatible: ${versionCheck.error}`);
   }
 
-  // Find extensions directory (preferred), fall back to legacy "modules".
+  // Find extensions directory.
   const extensionsPath = path.join(repoPath, 'extensions');
   if (fs.existsSync(extensionsPath)) {
     return extensionsPath;
   }
-
-  const modulesPath = path.join(repoPath, 'modules');
-  if (fs.existsSync(modulesPath)) {
-    return modulesPath;
-  }
-
-  throw new Error(`extensions directory not found in repository (legacy: modules): ${repoUrl}`);
+  throw new Error(`extensions directory not found in repository: ${repoUrl}`);
 }
 
 /**

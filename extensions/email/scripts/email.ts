@@ -20,7 +20,6 @@ const __dirname = path.dirname(__filename);
 
 type WorkspaceConfigLike = {
   extensionSettings?: Record<string, unknown>;
-  moduleSettings?: Record<string, unknown>; // legacy
 };
 
 function asEmailProvider(p: unknown): EmailProvider {
@@ -62,7 +61,7 @@ function pickProviderNameFromConfig(workspaceRoot: string | null): string | null
   if (!fs.existsSync(configPath)) return null;
 
   const cfg = readWorkspaceConfigFile<WorkspaceConfigLike>(configPath);
-  const settings = (cfg && (cfg.extensionSettings || cfg.moduleSettings)) || {};
+  const settings = (cfg && cfg.extensionSettings) || {};
   const emailSettings = (settings as Record<string, unknown>).email as Record<string, unknown> | undefined;
   const name = emailSettings && typeof emailSettings.provider === 'string' ? emailSettings.provider : '';
   return name.trim() || null;

@@ -72,9 +72,7 @@ export async function runStep1CheckEnv(
       await import('./module-resolver.js');
 
     const localModules = getAllModules();
-    const workspaceExtensionsDir = fs.existsSync(path.join(workspaceRoot, 'extensions'))
-      ? path.join(workspaceRoot, 'extensions')
-      : path.join(workspaceRoot, 'modules');
+    const workspaceExtensionsDir = path.join(workspaceRoot, 'extensions');
     const workspaceModules = getAllModulesFromDirectory(workspaceExtensionsDir);
 
     // Priority: workspace modules override built-in modules with the same name.

@@ -20,7 +20,6 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 type WorkspaceConfigLike = {
   extensionSettings?: Record<string, unknown>;
-  moduleSettings?: Record<string, unknown>; // legacy
   repos?: string[];
 };
 
@@ -39,7 +38,7 @@ function pickProviderNameFromConfig(workspaceRoot: string | null): string | null
   if (!fs.existsSync(configPath)) return null;
 
   const cfg = readWorkspaceConfigFile<WorkspaceConfigLike>(configPath);
-  const settings = (cfg && (cfg.extensionSettings || cfg.moduleSettings)) || {};
+  const settings = (cfg && cfg.extensionSettings) || {};
   const issueTrackerSettings = (settings as Record<string, unknown>).issueTracker as
     | Record<string, unknown>
     | undefined;

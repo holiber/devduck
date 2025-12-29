@@ -33,7 +33,6 @@ interface RunInstallerOptions {
   aiAgent?: string;
   repoType?: string;
   extensions?: string | string[];
-  modules?: string | string[];
   skipRepoInit?: boolean;
   inputs?: string[];
 }
@@ -157,7 +156,7 @@ export async function runInstaller(workspacePath: string, options: RunInstallerO
       args.push('--repo-type', options.repoType);
     }
     
-    const extensions = options.extensions ?? options.modules;
+    const extensions = options.extensions;
     if (extensions) {
       // Prefer the new flag, keep legacy behavior covered too.
       args.push('--extensions', Array.isArray(extensions) ? extensions.join(',') : extensions);
@@ -175,7 +174,7 @@ export async function runInstaller(workspacePath: string, options: RunInstallerO
     // Provide deterministic dummy values so installer checks don't block unattended installs.
     const needsCursor = await workspaceNeedsCursorModule({
       workspacePath,
-      modulesArg: options.extensions ?? options.modules,
+      modulesArg: options.extensions,
       configPath: options.config,
       workspaceConfigPath: options.workspaceConfig
     });
@@ -293,12 +292,11 @@ async function workspaceNeedsCursorModule(params: {
   const fromArg = normalizeModulesList(params.modulesArg);
   if (fromArg) return fromArg.includes('cursor');
 
-  const readModulesFromYamlFile = async (filePath: string): Promise<string[] | null> => {
+  const readExtensionsFromYamlFile = async (filePath: string): Promise<string[] | null> => {
     try {
       const raw = await fs.readFile(filePath, 'utf8');
-      const parsed = YAML.parse(raw) as { extensions?: unknown; modules?: unknown };
+      const parsed = YAML.parse(raw) as { extensions?: unknown };
       if (Array.isArray(parsed.extensions)) return parsed.extensions as string[];
-      if (Array.isArray(parsed.modules)) return parsed.modules as string[];
       return null;
     } catch {
       return null;
@@ -307,13 +305,13 @@ async function workspaceNeedsCursorModule(params: {
 
   // If a config file is passed, infer modules from it (common in tests).
   if (params.configPath) {
-    const mods = await readModulesFromYamlFile(params.configPath);
+    const mods = await readExtensionsFromYamlFile(params.configPath);
     if (mods && mods.includes('cursor')) return true;
   }
 
   // If a workspace-config template is passed, infer modules from it.
   if (params.workspaceConfigPath) {
-    const mods = await readModulesFromYamlFile(params.workspaceConfigPath);
+    const mods = await readExtensionsFromYamlFile(params.workspaceConfigPath);
     if (mods && mods.includes('cursor')) return true;
   }
 
@@ -321,10 +319,8 @@ async function workspaceNeedsCursorModule(params: {
   const configPath = path.join(params.workspacePath, 'workspace.config.yml');
   try {
     const raw = await fs.readFile(configPath, 'utf8');
-    const parsed = YAML.parse(raw) as { extensions?: unknown; modules?: unknown };
-    const mods = Array.isArray(parsed.extensions)
-      ? (parsed.extensions as string[])
-      : (Array.isArray(parsed.modules) ? (parsed.modules as string[]) : []);
+    const parsed = YAML.parse(raw) as { extensions?: unknown };
+    const mods = Array.isArray(parsed.extensions) ? (parsed.extensions as string[]) : [];
     return mods.includes('cursor');
   } catch {
     return false;
@@ -439,15 +435,15 @@ export async function verifyWorkspaceConfig(workspacePath: string, expectedConfi
     if (!config.version) {
       results.errors.push('version missing');
     }
-    const extensions = (config.extensions ?? config.modules) as unknown;
+    const extensions = config.extensions as unknown;
     if (!extensions || !Array.isArray(extensions)) {
       results.errors.push('extensions missing or invalid');
     }
 
     // Verify expected values
-    const expectedExtensions = (expectedConfig.extensions ?? expectedConfig.modules) as unknown;
+    const expectedExtensions = expectedConfig.extensions as unknown;
     if (Array.isArray(expectedExtensions)) {
-      const actual = (Array.isArray(config.extensions) ? config.extensions : config.modules || []) as string[];
+      const actual = (config.extensions || []) as string[];
       const missing = (expectedExtensions as string[]).filter(m => !actual.includes(m));
       if (missing.length > 0) {
         results.errors.push(`Missing extensions: ${missing.join(', ')}`);

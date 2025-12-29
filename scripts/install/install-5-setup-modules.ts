@@ -98,9 +98,7 @@ export async function runStep5SetupModules(
     
     // Load all extensions with priority: workspace > projects > external > built-in
     const localModules = getAllModules();
-    const workspaceExtensionsDir = fs.existsSync(path.join(workspaceRoot, 'extensions'))
-      ? path.join(workspaceRoot, 'extensions')
-      : path.join(workspaceRoot, 'modules');
+    const workspaceExtensionsDir = path.join(workspaceRoot, 'extensions');
     const workspaceModules = getAllModulesFromDirectory(workspaceExtensionsDir);
     
     const projectsModules: Array<{ name: string; path: string; checks?: unknown[]; [key: string]: unknown }> = [];
@@ -110,9 +108,7 @@ export async function runStep5SetupModules(
         const projectObj = project as { src?: string };
         const projectName = projectObj.src ? String(projectObj.src).split('/').pop()?.replace(/\.git$/, '') || '' : '';
         const projectPath = path.join(workspaceRoot, 'projects', projectName);
-        const projectExtensionsDir = fs.existsSync(path.join(projectPath, 'extensions'))
-          ? path.join(projectPath, 'extensions')
-          : path.join(projectPath, 'modules');
+        const projectExtensionsDir = path.join(projectPath, 'extensions');
         if (fs.existsSync(projectExtensionsDir)) {
           const projectModules = getAllModulesFromDirectory(projectExtensionsDir);
           projectsModules.push(...projectModules);
@@ -121,19 +117,13 @@ export async function runStep5SetupModules(
     }
     
     const allModules = [...workspaceModules, ...projectsModules, ...externalModules, ...localModules];
-    const selectors = Array.isArray((config as any).extensions)
-      ? ((config as any).extensions as string[])
-      : (Array.isArray((config as any).modules) ? ((config as any).modules as string[]) : ['*']);
-    const moduleNames = expandModuleNames(selectors, allModules);
+    const moduleNames = expandModuleNames(Array.isArray((config as any).extensions) ? ((config as any).extensions as string[]) : ['*'], allModules);
     const resolvedModules = resolveDependencies(moduleNames, allModules);
     
     // Load module resources
     loadedModules = resolvedModules.map(module => {
       const resources = loadModuleResources(module);
-      const settings = ((config as any).extensionSettings ?? (config as any).moduleSettings) as
-        | Record<string, Record<string, unknown>>
-        | undefined;
-      const mergedSettings = mergeModuleSettings(module, settings);
+      const mergedSettings = mergeModuleSettings(module, (config as any).extensionSettings as any);
       
       return {
         ...resources,

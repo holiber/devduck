@@ -144,10 +144,6 @@ const WorkspaceConfigSchema = z
     // Per-extension override settings. Merge behavior is implemented in resolver.
     extensionSettings: z.record(z.string(), z.any()).optional(),
 
-    // Backward compatibility (legacy naming).
-    modules: z.array(z.string()).optional(),
-    moduleSettings: z.record(z.string(), z.any()).optional(),
-
     // External module repositories to load (git / arcadia formats).
     repos: z.array(z.string()).optional(),
 

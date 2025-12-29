@@ -58,7 +58,6 @@ export function createInstallRuntime(argv: string[], projectRoot: string): {
       description: 'Path to an existing workspace.config.yml to use when creating a workspace'
     })
     .option('extensions', { type: 'string', description: 'Comma-separated list of extensions to install' })
-    .option('modules', { type: 'string', description: 'Legacy alias for --extensions' })
     // Keep these options for compatibility even if not currently used in code paths.
     .option('ai-agent', { type: 'string', description: 'AI agent to use' })
     .option('repo-type', { type: 'string', description: 'Repository type' })
@@ -92,7 +91,7 @@ export function createInstallRuntime(argv: string[], projectRoot: string): {
 
   const workspacePath = parsed['workspace-path'] as string | undefined;
   const workspaceConfigPath = parsed['workspace-config'] as string | undefined;
-  const installModules = (parsed['extensions'] as string | undefined) ?? (parsed['modules'] as string | undefined);
+  const installModules = parsed['extensions'] as string | undefined;
   const configFilePath = parsed['config'] as string | undefined;
 
   const autoYes = Boolean(

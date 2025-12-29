@@ -6,7 +6,6 @@
  * Resolves module dependencies, handles wildcards, and merges settings.
  */
 
-import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { parse as parseYaml } from 'yaml';
@@ -15,9 +14,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const EXTENSIONS_DIR = path.join(__dirname, '..', '..', 'extensions');
-const LEGACY_MODULES_DIR = path.join(__dirname, '..', '..', 'modules');
-// Backward compatibility: prefer "extensions/", fall back to legacy "modules/".
-const MODULES_DIR = fs.existsSync(EXTENSIONS_DIR) ? EXTENSIONS_DIR : LEGACY_MODULES_DIR;
+const MODULES_DIR = EXTENSIONS_DIR;
 const CORE_MODULE_NAME = 'core';
 const CURSOR_MODULE_NAME = 'cursor';
 const GIT_MODULE_NAME = 'git';
@@ -267,12 +264,8 @@ export function resolveDependencies(moduleNames: string[], allModules: Module[])
 }
 
 export interface WorkspaceConfig {
-  // Canonical names
   extensions?: string[];
   extensionSettings?: Record<string, Record<string, unknown>>;
-  // Backward compatibility
-  modules?: string[];
-  moduleSettings?: Record<string, Record<string, unknown>>;
 }
 
 function escapeRegExp(s: string): string {
@@ -329,10 +322,7 @@ export function expandModuleNames(selectors: string[], allModules: Module[]): st
  * Resolve modules from workspace config
  */
 export function resolveModules(workspaceConfig: WorkspaceConfig, allModules: Module[]): Module[] {
-  const selectors = Array.isArray(workspaceConfig.extensions)
-    ? workspaceConfig.extensions
-    : (Array.isArray(workspaceConfig.modules) ? workspaceConfig.modules : ['*']);
-  const moduleNames = expandModuleNames(selectors, allModules);
+  const moduleNames = expandModuleNames(workspaceConfig.extensions || ['*'], allModules);
 
   // Filter by tags if needed (future feature)
   // For now, just resolve by name
@@ -341,7 +331,7 @@ export function resolveModules(workspaceConfig: WorkspaceConfig, allModules: Mod
 }
 
 /**
- * Merge extension settings (aka legacy "moduleSettings")
+ * Merge extension settings
  */
 export function mergeModuleSettings(
   module: Module,
@@ -365,7 +355,6 @@ export function mergeModuleSettings(
 
 export {
   EXTENSIONS_DIR,
-  LEGACY_MODULES_DIR,
   MODULES_DIR,
   CORE_MODULE_NAME,
   CURSOR_MODULE_NAME,

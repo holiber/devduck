@@ -130,9 +130,9 @@ The script handles the full PR workflow:
 
 
 
-## External Module Repositories
+## External Extension Repositories
 
-DevDuck supports loading modules from external repositories:
+Barducks supports loading extensions from external repositories:
 
 ```bash
 node install.js --repos git@github.com:user/repo.git,github.com/user/repo2

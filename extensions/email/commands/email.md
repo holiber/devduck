@@ -19,6 +19,6 @@ npx tsx extensions/email/scripts/email.ts
 Provider is selected in this order:
 
 1. `EMAIL_PROVIDER` env var
-2. `workspace.config.yml` → `moduleSettings.email.provider`
+2. `workspace.config.yml` → `extensionSettings.email.provider`
 3. First discovered provider
 

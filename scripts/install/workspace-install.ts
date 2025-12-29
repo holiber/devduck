@@ -15,7 +15,6 @@ type WorkspaceConfig = Record<string, unknown> & {
   devduck_path?: string;
   repos?: string[];
   extensions?: string[];
-  modules?: string[]; // legacy
   projects?: unknown[];
   checks?: unknown[];
   env?: Array<{ name: string; default?: string; description?: string }>;
@@ -106,9 +105,8 @@ export async function installWorkspace(params: {
       const providedWorkspaceConfig = readWorkspaceConfigFile<Record<string, unknown>>(workspaceConfigPath);
       if (providedWorkspaceConfig) {
         config = { ...(config as Record<string, unknown>), ...(providedWorkspaceConfig as Record<string, unknown>) };
-        const provided = providedWorkspaceConfig as { extensions?: unknown; modules?: unknown };
+        const provided = providedWorkspaceConfig as { extensions?: unknown };
         if (provided.extensions) (config as { extensions: unknown }).extensions = provided.extensions;
-        else if (provided.modules) (config as { extensions: unknown }).extensions = provided.modules;
 
         const seedFiles =
           (providedWorkspaceConfig as Record<string, unknown>).seedFiles ??
@@ -129,9 +127,8 @@ export async function installWorkspace(params: {
       const providedConfig = readWorkspaceConfigFile<Record<string, unknown>>(configFilePathOverride);
       if (providedConfig) {
         config = { ...(config as Record<string, unknown>), ...(providedConfig as Record<string, unknown>) };
-        const provided = providedConfig as { extensions?: unknown; modules?: unknown };
+        const provided = providedConfig as { extensions?: unknown };
         if (provided.extensions) (config as { extensions: unknown }).extensions = provided.extensions;
-        else if (provided.modules) (config as { extensions: unknown }).extensions = provided.modules;
       }
     }
 

@@ -122,10 +122,7 @@ export function loadModulesForWorkspace(workspaceConfig: WorkspaceConfig): Modul
   
   const loadedModules = resolvedModules.map(module => {
     const resources = loadModuleResources(module);
-    const settings =
-      (workspaceConfig.extensionSettings as Record<string, Record<string, unknown>> | undefined) ??
-      (workspaceConfig.moduleSettings as Record<string, Record<string, unknown>> | undefined);
-    const mergedSettings = mergeModuleSettings(module, settings);
+    const mergedSettings = mergeModuleSettings(module, workspaceConfig.extensionSettings);
     
     return {
       ...resources,

@@ -101,10 +101,7 @@ export function clearProvidersForTests(): void {
 }
 
 export interface DiscoverProvidersOptions {
-  // Canonical: scan extensions directory
-  extensionsDir?: string;
-  // Backward compatibility: legacy name
-  modulesDir?: string;
+  extensionsDir: string;
 }
 
 export interface DiscoveredProvider {
@@ -152,7 +149,7 @@ async function importProviderFromFile(entryPath: string): Promise<ProviderBase> 
  *   extensions/<extension>/{PROVIDER.md,index.ts|js}
  */
 export async function discoverProvidersFromModules(opts: DiscoverProvidersOptions): Promise<DiscoveredProvider[]> {
-  const modulesDir = (opts.extensionsDir || opts.modulesDir || '').toString();
+  const modulesDir = String(opts.extensionsDir || '').trim();
   const discovered: DiscoveredProvider[] = [];
 
   if (!modulesDir || typeof modulesDir !== 'string') return discovered;
