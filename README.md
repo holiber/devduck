@@ -118,9 +118,9 @@ Create or update PRs with auto-generated descriptions:
 
 ```bash
 /pr
-# or
-node scripts/pr.js
+js
 ```
+Prepeare/create PR based on your CONTRIBUTION.md
 
 The script handles the full PR workflow:
 - Checks for uncommitted changes (suggests `/commit` first)
@@ -128,15 +128,7 @@ The script handles the full PR workflow:
 - Generates PR description from plan
 - Creates PR or updates existing one
 
-**Example workflow:**
-```
-/pr
-→ Checks for uncommitted changes
-→ If found, suggests /commit first
-→ Generates PR plan file
-→ Opens plan for review
-→ After approval: pushes commits and creates/updates PR
-```
+
 
 ## External Module Repositories
 
