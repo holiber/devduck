@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added - 2025-12-29
 
 - ✅ **Follow Guidelines** - CI blocks merges unless the PR adds a new task file under `docs/tasks/` and updates `CHANGELOG.md`.
+- 🦆 **Agent PR workflow discipline** - Added barducks workflow docs, task template, and Cursor rules to enforce a strict stage-by-stage single-task PR process.
 - 🔁 **One retry for tests in CI** - Unit and Playwright installer suites retry once after a short delay.
 - 📊 **Trusted main metrics** - `main` runs update metrics baseline/history and publish GitHub Pages only when tests pass.
 - 🏷️ **Baseline stamping** - Baseline includes `commit`, `pr`, and `timestamp` for traceability.
