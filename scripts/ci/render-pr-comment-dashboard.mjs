@@ -87,32 +87,29 @@ function defaultPagesDashboardUrl() {
   return `https://${owner}.github.io/${name}/metrics/`;
 }
 
-async function isGithubPagesEnabled() {
-  const repo = process.env.GITHUB_REPOSITORY; // "owner/name"
-  const token = process.env.GITHUB_TOKEN;
-  const apiBase = process.env.GITHUB_API_URL ?? 'https://api.github.com';
-  if (!repo) return { enabled: null, status: null };
+async function probeDashboardUrl(url) {
+  if (!url) return { ok: null, status: null };
+
+  // Keep this fast and unauthenticated: the dashboard is expected to be public on GitHub Pages.
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 5000);
 
   try {
-    const headers = {
-      accept: 'application/vnd.github+json',
-      'user-agent': 'devduck-ci',
-      'x-github-api-version': '2022-11-28',
-    };
-    // If token is unavailable (e.g. PR from fork, or workflow didn't expose it),
-    // still try unauthenticated request to detect the common "Pages not enabled" case (404).
-    if (token) headers.authorization = `Bearer ${token}`;
-
-    const res = await fetch(`${apiBase}/repos/${repo}/pages`, {
+    const res = await fetch(url, {
       method: 'GET',
-      headers,
+      redirect: 'follow',
+      signal: controller.signal,
+      headers: { 'user-agent': 'devduck-ci' },
     });
 
-    if (res.status === 200) return { enabled: true, status: 200 };
-    if (res.status === 404) return { enabled: false, status: 404 };
-    return { enabled: null, status: res.status };
+    // Treat 2xx/3xx as reachable.
+    if (res.status >= 200 && res.status < 400) return { ok: true, status: res.status };
+    if (res.status === 404) return { ok: false, status: 404 };
+    return { ok: null, status: res.status };
   } catch {
-    return { enabled: null, status: null };
+    return { ok: null, status: null };
+  } finally {
+    clearTimeout(timeout);
   }
 }
 
@@ -131,7 +128,7 @@ async function main() {
   const dashboardUrl = process.env.METRICS_DASHBOARD_URL ?? defaultDashboardUrl;
   const isPullRequest = process.env.GITHUB_EVENT_NAME === 'pull_request';
   const shouldCheckGithubPages = Boolean(dashboardUrl && defaultDashboardUrl && dashboardUrl === defaultDashboardUrl);
-  const githubPages = shouldCheckGithubPages ? await isGithubPagesEnabled() : { enabled: null, status: null };
+  const dashboardProbe = shouldCheckGithubPages ? await probeDashboardUrl(dashboardUrl) : { ok: null, status: null };
 
   const lines = [];
   lines.push('### 🧠 CI Metrics Dashboard');
@@ -164,18 +161,20 @@ async function main() {
   if (dashboardUrl) {
     if (isPullRequest) {
       lines.push(`- **Dashboard (GitHub Pages)**: ${dashboardUrl} (published after merge to \`main\`)`);
-      if (githubPages.enabled === false) {
+      if (dashboardProbe.ok === false) {
         // GitHub supports "admonitions" in Markdown; CAUTION renders red.
         lines.push('');
         lines.push('> [!CAUTION]');
-        lines.push('> GitHub Pages is not enabled for this repository, so this dashboard link may not work. Enable it in **Settings → Pages**.');
+        lines.push(
+          '> The GitHub Pages dashboard URL returned **HTTP 404**, so this link may not work. Verify GitHub Pages is enabled and the dashboard is deployed.'
+        );
         lines.push('');
-      } else if (shouldCheckGithubPages && githubPages.enabled == null) {
-        // We couldn't prove Pages is enabled/disabled (auth, permissions, rate limit, API issues).
+      } else if (shouldCheckGithubPages && dashboardProbe.ok == null) {
+        // We couldn't verify the URL (network, rate limit, transient errors).
         lines.push('');
         lines.push('> [!WARNING]');
         lines.push(
-          `> Unable to verify GitHub Pages status${githubPages.status ? ` (HTTP ${githubPages.status})` : ''}. This link may be unavailable.`
+          `> Unable to verify GitHub Pages dashboard URL${dashboardProbe.status ? ` (HTTP ${dashboardProbe.status})` : ''}. This link may be unavailable.`
         );
         lines.push('');
       }

@@ -79,7 +79,7 @@ jobs:
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         shell: bash
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           owner_repo="${GITHUB_REPOSITORY}"
@@ -215,7 +215,7 @@ jobs:
         if: github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.tests_gate.outcome == 'success'
         uses: peaceiris/actions-gh-pages@v4
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          github_token: ${{ github.token }}
           publish_dir: .cache/metrics-pages
 
       - name: Fail workflow if tests failed
