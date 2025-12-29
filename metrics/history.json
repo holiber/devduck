@@ -677,5 +677,104 @@
       "BUILD_COMMAND not set; build metric skipped.",
       "DEV_COMMAND not set; dev startup metric skipped."
     ]
+  },
+  {
+    "meta": {
+      "collectedAt": "2025-12-29T16:34:51.867Z",
+      "repository": "holiber/devduck",
+      "eventName": "push",
+      "sha": "cf4d3a98f063dfe20f603aa8b0919654017d1ff6",
+      "ref": "refs/heads/main",
+      "runId": "20577716178",
+      "runAttempt": "1",
+      "prNumber": 81,
+      "prUrl": "https://github.com/holiber/devduck/pull/81",
+      "node": "v24.12.0"
+    },
+    "pr": {
+      "number": 81,
+      "url": "https://github.com/holiber/devduck/pull/81"
+    },
+    "commands": {
+      "npm_test": {
+        "name": "npm_test",
+        "command": "bash -lc 'npx c8 --reporter=json-summary --report-dir .cache/coverage npm run test:unit || (echo \"⚠️ Unit tests failed, retrying after 60 seconds...\"; sleep 60; npx c8 --reporter=json-summary --report-dir .cache/coverage npm run test:unit)'",
+        "exitCode": 0,
+        "durationMs": 32640,
+        "collectedAt": "2025-12-29T16:34:05.243Z"
+      },
+      "pw_installer": {
+        "name": "pw_installer",
+        "command": "bash -lc 'npx playwright test -c tests/installer/playwright.config.ts || (echo \"⚠️ Playwright installer suite failed, retrying after 60 seconds...\"; sleep 60; npx playwright test -c tests/installer/playwright.config.ts)'",
+        "exitCode": 0,
+        "durationMs": 29172,
+        "collectedAt": "2025-12-29T16:34:51.382Z"
+      },
+      "npm_pack": {
+        "name": "npm-pack",
+        "command": "npm pack --silent",
+        "exitCode": 0,
+        "durationMs": 796
+      }
+    },
+    "sizes": {
+      "npm_pack": {
+        "bytes": 2957735
+      }
+    },
+    "tests": {
+      "unit": {
+        "total": 91,
+        "suites": 16,
+        "passed": 83,
+        "failed": 0,
+        "skipped": 8,
+        "reportedDurationMs": 29705.135205,
+        "durationMs": 32640,
+        "exitCode": 0
+      },
+      "e2e_installer": {
+        "total": 34,
+        "passed": 34,
+        "reportedDurationMs": 27900,
+        "durationMs": 29172,
+        "exitCode": 0
+      },
+      "flaky": {
+        "count": 0
+      }
+    },
+    "code": {
+      "scriptCodeLines": 34695,
+      "totalTextLines": 46235,
+      "hugeScripts": 3
+    },
+    "quality": {
+      "coverage": {
+        "linesPct": 63.39,
+        "statementsPct": 63.39,
+        "branchesPct": 61.29,
+        "functionsPct": 64.82
+      },
+      "slowTests": {
+        "thresholdMs": 20000,
+        "count": 0,
+        "bySuite": {
+          "unit": {
+            "count": 0,
+            "top": []
+          }
+        }
+      },
+      "duplication": {
+        "duplicatedPct": 41.63,
+        "duplicatedLines": 239752,
+        "totalLines": 575859
+      }
+    },
+    "notes": [
+      "BUILD_COMMAND not set; build metric skipped.",
+      "DEV_COMMAND not set; dev startup metric skipped."
+    ]
   }
 ]
