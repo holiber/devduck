@@ -29,7 +29,9 @@ function escapeXml(s) {
 function makeSimpleBadgeSvg({ label, message, labelColor, messageColor }) {
   // Minimal Shields-like badge, no external deps.
   const labelText = escapeXml(label);
-  const msgText = escapeXml(message);
+  const msg = message == null ? '' : String(message);
+  const msgText = escapeXml(msg);
+  const hasMessage = msg.length > 0;
 
   // Approximate text widths (DejaVu Sans is close enough).
   const charW = 6.2;
@@ -37,8 +39,33 @@ function makeSimpleBadgeSvg({ label, message, labelColor, messageColor }) {
   const fontSize = 11;
   const height = 20;
 
+  if (!hasMessage) {
+    const width = Math.max(70, Math.round(label.length * charW + pad * 2));
+    const x = Math.round(width / 2);
+    const bg = labelColor || messageColor || '#0366d6';
+
+    return `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" role="img" aria-label="${labelText}">
+  <linearGradient id="s" x2="0" y2="100%">
+    <stop offset="0" stop-color="#bbb" stop-opacity=".1"/>
+    <stop offset="1" stop-opacity=".1"/>
+  </linearGradient>
+  <clipPath id="r">
+    <rect width="${width}" height="${height}" rx="3" fill="#fff"/>
+  </clipPath>
+  <g clip-path="url(#r)">
+    <rect width="${width}" height="${height}" fill="${bg}"/>
+    <rect width="${width}" height="${height}" fill="url(#s)"/>
+  </g>
+  <g fill="#fff" text-anchor="middle" font-family="Verdana,DejaVu Sans,sans-serif" font-size="${fontSize}">
+    <text x="${x}" y="14">${labelText}</text>
+  </g>
+</svg>
+`;
+  }
+
   const labelW = Math.max(40, Math.round(label.length * charW + pad * 2));
-  const msgW = Math.max(38, Math.round(message.length * charW + pad * 2));
+  const msgW = Math.max(38, Math.round(msg.length * charW + pad * 2));
   const width = labelW + msgW;
 
   const labelX = Math.round(labelW / 2);
@@ -103,6 +130,26 @@ function fmtPct(p) {
   return `${p.toFixed(2)}%`;
 }
 
+function fmtDeltaMs(ms) {
+  if (ms == null || !Number.isFinite(ms)) return 'n/a';
+  const sign = ms > 0 ? '+' : '';
+  return `${sign}${fmtMs(ms)}`;
+}
+
+function fmtDeltaInt(n) {
+  if (n == null || !Number.isFinite(n)) return 'n/a';
+  const sign = n > 0 ? '+' : '';
+  return `${sign}${fmtInt(n)}`;
+}
+
+function fmtTestDelta({ deltaTotal, deltaDurationMs }) {
+  const parts = [];
+  if (deltaTotal != null && Number.isFinite(deltaTotal)) parts.push(`${fmtDeltaInt(deltaTotal)} tests`);
+  if (deltaDurationMs != null && Number.isFinite(deltaDurationMs)) parts.push(fmtDeltaMs(deltaDurationMs));
+  if (parts.length === 0) return 'n/a';
+  return parts.join(' / ');
+}
+
 function clsForDelta(n) {
   if (n == null || !Number.isFinite(n) || n === 0) return '';
   return n > 0 ? 'pos' : 'neg';
@@ -135,6 +182,8 @@ async function main() {
   const outBytes = current?.sizes?.build_output_dir?.bytes;
   const unitTests = current?.tests?.unit;
   const e2eInstaller = current?.tests?.e2e_installer;
+  const unitDeltaMs = diff?.deltas?.unit_tests_duration_ms;
+  const e2eInstallerDeltaMs = diff?.deltas?.e2e_installer_tests_duration_ms;
   const scriptCodeLines = current?.code?.scriptCodeLines;
   const totalTextLines = current?.code?.totalTextLines;
   const hugeScripts = current?.code?.hugeScripts;
@@ -191,12 +240,18 @@ async function main() {
         <tr>
           <td>🧪 Unit tests</td>
           <td>${unitTests?.total ?? 'n/a'} tests / ${fmtMs(unitTests?.reportedDurationMs ?? unitTests?.durationMs)}</td>
-          <td></td>
+          <td class="${clsForDelta(unitDeltaMs)}">${fmtTestDelta({
+            deltaTotal: diff?.deltas?.unit_tests_total,
+            deltaDurationMs: unitDeltaMs
+          })}</td>
         </tr>
         <tr>
           <td>🧪 E2E (installer)</td>
           <td>${e2eInstaller?.total ?? 'n/a'} tests / ${fmtMs(e2eInstaller?.reportedDurationMs ?? e2eInstaller?.durationMs)}</td>
-          <td></td>
+          <td class="${clsForDelta(e2eInstallerDeltaMs)}">${fmtTestDelta({
+            deltaTotal: diff?.deltas?.e2e_installer_tests_total,
+            deltaDurationMs: e2eInstallerDeltaMs
+          })}</td>
         </tr>
         <tr>
           <td>🗂 dist size</td>
@@ -299,9 +354,9 @@ async function main() {
   // Project stats badge (published to GitHub Pages alongside the dashboard).
   const badgeSvg = makeSimpleBadgeSvg({
     label: 'project stats',
-    message: 'metrics',
-    labelColor: '#555',
-    messageColor: '#0366d6',
+    message: '',
+    labelColor: '#0366d6',
+    messageColor: '#0366d6'
   });
   await writeFileEnsuringDir(path.join(metricsOutDir, 'project-stats.svg'), badgeSvg);
 
