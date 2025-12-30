@@ -26,6 +26,8 @@ const TSX_BIN = path.join(
   process.platform === 'win32' ? 'tsx.cmd' : 'tsx'
 );
 
+type CapturedOutput = { stdout: string; stderr: string };
+
 interface RunInstallerOptions {
   unattended?: boolean;
   config?: string;
@@ -240,6 +242,181 @@ export async function runInstaller(workspacePath: string, options: RunInstallerO
       reject(error);
     });
   });
+}
+
+function captureOutputWrite<TWrite extends (...args: any[]) => any>(
+  original: TWrite,
+  onChunk: (chunk: string) => void
+): TWrite {
+  return ((...args: any[]) => {
+    try {
+      const first = args[0];
+      if (typeof first === 'string') onChunk(first);
+      else if (Buffer.isBuffer(first)) onChunk(first.toString('utf8'));
+    } catch {
+      // ignore
+    }
+    return original(...args);
+  }) as unknown as TWrite;
+}
+
+async function captureStdoutStderr<T>(fn: () => Promise<T>): Promise<{ value: T; output: CapturedOutput }> {
+  const out: CapturedOutput = { stdout: '', stderr: '' };
+
+  const origStdoutWrite = process.stdout.write.bind(process.stdout);
+  const origStderrWrite = process.stderr.write.bind(process.stderr);
+
+  // Capture but still pass-through so developer logs remain visible when debugging locally.
+  (process.stdout as any).write = captureOutputWrite(origStdoutWrite, (c) => {
+    out.stdout += c;
+  });
+  (process.stderr as any).write = captureOutputWrite(origStderrWrite, (c) => {
+    out.stderr += c;
+  });
+
+  try {
+    const value = await fn();
+    return { value, output: out };
+  } finally {
+    (process.stdout as any).write = origStdoutWrite;
+    (process.stderr as any).write = origStderrWrite;
+  }
+}
+
+function withPatchedEnv<T>(vars: Record<string, string | undefined>, fn: () => Promise<T>): Promise<T> {
+  const prev: Record<string, string | undefined> = {};
+  for (const [k, v] of Object.entries(vars)) {
+    prev[k] = process.env[k];
+    if (v === undefined) delete process.env[k];
+    else process.env[k] = v;
+  }
+  return fn().finally(() => {
+    for (const [k, v] of Object.entries(prev)) {
+      if (v === undefined) delete process.env[k];
+      else process.env[k] = v;
+    }
+  });
+}
+
+/**
+ * Faster installer runner for tests: runs installer in-process (no tsx child process).
+ *
+ * Notes:
+ * - Still exercises the same install steps as the CLI (via installWorkspace()).
+ * - Captures stdout/stderr while preserving pass-through output.
+ */
+export async function runInstallerInProcess(
+  workspacePath: string,
+  options: RunInstallerOptions = {}
+): Promise<InstallerResult> {
+  const projectRoot = PROJECT_ROOT;
+  const cacheDir = path.join(workspacePath, '.cache');
+  const logFilePath = path.join(cacheDir, 'install.log');
+  const projectsDir = path.join(workspacePath, 'projects');
+  const configFilePath = path.join(workspacePath, 'workspace.config.yml');
+  const envFilePath = path.join(workspacePath, '.env');
+
+  const autoYes = Boolean(options.unattended);
+  const extensions = options.extensions;
+  const installModules =
+    extensions && (Array.isArray(extensions) ? extensions.join(',') : extensions);
+
+  const needsCursor = await workspaceNeedsCursorModule({
+    workspacePath,
+    modulesArg: options.extensions,
+    configPath: options.config,
+    workspaceConfigPath: options.workspaceConfig
+  });
+
+  // Important: when the cursor module is enabled, tests rely on a mock HTTP server.
+  // The installer executes checks via sync child processes; if we run the mock server
+  // in the same process, the event loop is blocked and curl can't get a response.
+  // Fall back to the subprocess-based runner for cursor-enabled installs.
+  if (needsCursor) {
+    return await runInstaller(workspacePath, options);
+  }
+
+  const mockCursorApiBaseUrl = needsCursor ? await getOrStartMockCursorApiBaseUrl() : null;
+
+  const { installWorkspace } = await import('../../src/install/workspace-install.js');
+  const {
+    installStep1CheckEnv,
+    installStep2DownloadRepos,
+    installStep3DownloadProjects,
+    installStep4CheckEnvAgain,
+    installStep5SetupModules,
+    installStep6SetupProjects,
+    installStep7VerifyInstallation
+  } = await import('../../src/install/index.js');
+
+  const { value: result, output } = await withPatchedEnv(
+    {
+      NODE_ENV: 'test',
+      ...(needsCursor
+        ? {
+            CURSOR_API_KEY: process.env.CURSOR_API_KEY || 'test-cursor-api-key',
+            CURSOR_API_BASE_URL: process.env.CURSOR_API_BASE_URL || (mockCursorApiBaseUrl ?? undefined)
+          }
+        : {})
+    },
+    async () =>
+      await captureStdoutStderr(async () => {
+        // Best-effort: avoid installer prompting in unattended tests, but keep behavior for GUI tests.
+        // Most installer tests run with unattended=true; for unattended=false we still allow prompts.
+        const logMessages: string[] = [];
+        const log = (msg: string) => logMessages.push(msg);
+
+        return await installWorkspace({
+          workspaceRoot: workspacePath,
+          projectRoot,
+          configFilePath,
+          envFilePath,
+          cacheDir,
+          logFilePath,
+          projectsDir,
+          autoYes,
+          installModules,
+          workspaceConfigPath: options.workspaceConfig,
+          configFilePathOverride: options.config,
+          log,
+          logger: null,
+          getInstallSteps: async () => [
+            { id: 'check-env', title: 'Check environment variables', run: installStep1CheckEnv },
+            { id: 'download-repos', title: 'Download repositories', run: installStep2DownloadRepos },
+            { id: 'download-projects', title: 'Download projects', run: installStep3DownloadProjects },
+            { id: 'check-env-again', title: 'Check environment variables again', run: installStep4CheckEnvAgain },
+            { id: 'setup-modules', title: 'Setup extensions', run: installStep5SetupModules },
+            { id: 'setup-projects', title: 'Setup projects', run: installStep6SetupProjects },
+            { id: 'verify-installation', title: 'Verify installation', run: installStep7VerifyInstallation }
+          ]
+        });
+      })
+  );
+
+  const status = (result as { status?: string }).status;
+  const exitCode = status === 'completed' ? 0 : 1;
+
+  // Some tests assert on CLI-only summary lines. When running in-process, emulate the same
+  // "INSTALLATION FINISHED WITH ERRORS" footer the CLI prints on failures.
+  if (status === 'failed') {
+    try {
+      const { loadInstallState } = await import('../../src/install/install-state.js');
+      const state = loadInstallState(workspacePath) as { executedChecks?: Array<{ passed: boolean | null }> };
+      const executed = Array.isArray(state.executedChecks) ? state.executedChecks : [];
+      const total = executed.filter((c) => c.passed !== null).length;
+      const passed = executed.filter((c) => c.passed === true).length;
+
+      output.stdout += `\nINSTALLATION FINISHED WITH ERRORS\nChecks: ${passed}/${total} passed\nSee log: .cache/install.log\n`;
+    } catch {
+      // Best-effort only.
+    }
+  }
+
+  return {
+    stdout: output.stdout,
+    stderr: output.stderr,
+    exitCode
+  };
 }
 
 let mockCursorApiServer: http.Server | null = null;

@@ -7,8 +7,7 @@ import YAML from 'yaml';
 import {
   createTempWorkspace,
   cleanupTempWorkspace,
-  runInstaller,
-  waitForInstallation,
+  runInstallerInProcess,
   checkInstallerResult
 } from './helpers.js';
 
@@ -67,15 +66,12 @@ test.describe('Workspace Installer - Workspace-local extensions/', () => {
       };
       await fs.writeFile(configPath, YAML.stringify(config), 'utf8');
 
-      const result = await runInstaller(tempWorkspace, {
+      const result = await runInstallerInProcess(tempWorkspace, {
         unattended: true,
         config: configPath
       });
 
       checkInstallerResult(result);
-
-      const installed = await waitForInstallation(tempWorkspace, 30000);
-      assert.ok(installed, 'Installation should complete');
 
       // Verify the workspace-local extension hook ran.
       const markerPath = path.join(tempWorkspace, '.cache', 'barducks', 'localmod-installed.txt');

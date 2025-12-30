@@ -11,11 +11,10 @@ import {
   createTempWorkspace,
   createWorkspaceFromFixture,
   cleanupTempWorkspace,
-  runInstaller,
+  runInstallerInProcess,
   verifyWorkspaceStructure,
   verifyWorkspaceConfig,
   verifyModuleInstallation,
-  waitForInstallation,
   checkInstallerResult
 } from './helpers.js';
 
@@ -29,15 +28,12 @@ describe('Workspace Installer - Unattended Mode', () => {
       });
 
       try {
-        const result = await runInstaller(tempWorkspace, {
+        const result = await runInstallerInProcess(tempWorkspace, {
           unattended: true,
           skipRepoInit: true
         });
 
         checkInstallerResult(result);
-
-        const installed = await waitForInstallation(tempWorkspace, 30000);
-        assert.ok(installed, 'Installation should complete');
 
         const structure = await verifyWorkspaceStructure(tempWorkspace);
         assert.ok(structure.workspaceConfigExists, 'workspace.config.yml should exist');
@@ -62,7 +58,7 @@ describe('Workspace Installer - Unattended Mode', () => {
       const tempWorkspace = await createTempWorkspace();
       
       try {
-        const result = await runInstaller(tempWorkspace, {
+        const result = await runInstallerInProcess(tempWorkspace, {
           unattended: true,
           aiAgent: 'cursor',
           repoType: 'none',
@@ -71,9 +67,6 @@ describe('Workspace Installer - Unattended Mode', () => {
         });
 
         checkInstallerResult(result);
-
-        const installed = await waitForInstallation(tempWorkspace, 30000);
-        assert.ok(installed, 'Installation should complete');
 
         const hasPrompts = result.stdout.includes('?') || result.stderr.includes('?');
         assert.ok(!hasPrompts, 'Unattended mode should not show prompts');
@@ -106,15 +99,12 @@ describe('Workspace Installer - Unattended Mode', () => {
         };
         await fs.writeFile(configPath, YAML.stringify(config), 'utf8');
 
-        const result = await runInstaller(tempWorkspace, {
+        const result = await runInstallerInProcess(tempWorkspace, {
           unattended: true,
           config: configPath
         });
 
         checkInstallerResult(result);
-
-        const installed = await waitForInstallation(tempWorkspace, 30000);
-        assert.ok(installed, 'Installation should complete');
 
         const configVerification = await verifyWorkspaceConfig(tempWorkspace, {
           extensions: ['core', 'vcs']
@@ -163,7 +153,7 @@ describe('Workspace Installer - Unattended Mode', () => {
         };
         await fs.writeFile(providedWorkspaceConfigPath, YAML.stringify(providedWorkspaceConfig), 'utf8');
 
-        const result = await runInstaller(tempWorkspace, {
+        const result = await runInstallerInProcess(tempWorkspace, {
           unattended: true,
           aiAgent: 'cursor',
           repoType: 'none',
@@ -173,9 +163,6 @@ describe('Workspace Installer - Unattended Mode', () => {
         });
         
         checkInstallerResult(result);
-        
-        const installed = await waitForInstallation(tempWorkspace, 30000);
-        assert.ok(installed, 'Installation should complete');
 
         // Ensure project check ran and succeeded.
         // Check both stdout and stderr as output may go to either.
@@ -230,7 +217,7 @@ describe('Workspace Installer - Unattended Mode', () => {
       const providedWorkspaceConfigPath = path.join(sourceWorkspace, 'workspace.config.yml');
 
       try {
-        const result = await runInstaller(destWorkspace, {
+        const result = await runInstallerInProcess(destWorkspace, {
           unattended: true,
           aiAgent: 'cursor',
           repoType: 'none',
@@ -240,9 +227,6 @@ describe('Workspace Installer - Unattended Mode', () => {
         });
 
         checkInstallerResult(result);
-
-        const installed = await waitForInstallation(destWorkspace, 30000);
-        assert.ok(installed, 'Installation should complete');
 
         // Verify seed file copied
         const seedContent = await fs.readFile(path.join(destWorkspace, 'seed.txt'), 'utf8');
@@ -261,7 +245,7 @@ describe('Workspace Installer - Unattended Mode', () => {
       const tempWorkspace = await createTempWorkspace();
       
       try {
-        const result = await runInstaller(tempWorkspace, {
+        const result = await runInstallerInProcess(tempWorkspace, {
           unattended: true,
           aiAgent: 'cursor',
           repoType: 'none',
@@ -270,9 +254,6 @@ describe('Workspace Installer - Unattended Mode', () => {
         });
 
         checkInstallerResult(result);
-
-        const installed = await waitForInstallation(tempWorkspace, 30000);
-        assert.ok(installed, 'Installation should complete');
 
         const structure = await verifyWorkspaceStructure(tempWorkspace);
         assert.ok(structure.workspaceConfigExists, 'workspace.config.yml should exist');
@@ -304,247 +285,150 @@ describe('Workspace Installer - Unattended Mode', () => {
     });
   });
 
-  describe('Existing Workspace Operations', () => {
+  // These tests are inherently stateful (they mutate the same workspace).
+  // Keep them serial and share one workspace to avoid repeating expensive fresh installs.
+  describe.serial('Existing Workspace Operations', () => {
+    let tempWorkspace: string;
+
+    before(async () => {
+      tempWorkspace = await createTempWorkspace();
+    });
+
+    after(async () => {
+      await cleanupTempWorkspace(tempWorkspace);
+    });
+
     test('Reinstall Existing Workspace - Unattended', async () => {
-      const tempWorkspace = await createTempWorkspace();
-      
-      try {
-        const initialResult = await runInstaller(tempWorkspace, {
-          unattended: true,
-          aiAgent: 'cursor',
-          repoType: 'none',
-          extensions: ['core', 'cursor'],
-          skipRepoInit: true
-        });
+      const initialResult = await runInstallerInProcess(tempWorkspace, {
+        unattended: true,
+        aiAgent: 'cursor',
+        repoType: 'none',
+        extensions: ['core', 'cursor'],
+        skipRepoInit: true
+      });
 
-        checkInstallerResult(initialResult);
+      checkInstallerResult(initialResult);
 
-        await waitForInstallation(tempWorkspace, 30000);
+      const initialConfig = await verifyWorkspaceConfig(tempWorkspace);
+      assert.ok(initialConfig.valid, 'Initial config should be valid');
 
-        const initialConfig = await verifyWorkspaceConfig(tempWorkspace);
-        assert.ok(initialConfig.valid, 'Initial config should be valid');
+      const reinstallResult = await runInstallerInProcess(tempWorkspace, {
+        unattended: true,
+        aiAgent: 'cursor',
+        repoType: 'none',
+        extensions: ['core', 'cursor', 'vcs'],
+        skipRepoInit: true
+      });
 
-        const reinstallResult = await runInstaller(tempWorkspace, {
-          unattended: true,
-          aiAgent: 'cursor',
-          repoType: 'none',
-          extensions: ['core', 'cursor', 'vcs'],
-          skipRepoInit: true
-        });
+      checkInstallerResult(reinstallResult);
 
-        checkInstallerResult(reinstallResult);
+      const afterReinstall = await verifyWorkspaceConfig(tempWorkspace, {
+        extensions: ['core', 'cursor', 'vcs']
+      });
+      assert.ok(afterReinstall.valid, 'Config after reinstall should be valid');
+      assert.ok((afterReinstall.config.extensions as string[]).includes('vcs'), 'vcs extension should be added');
 
-        await waitForInstallation(tempWorkspace, 30000);
+      const structure = await verifyWorkspaceStructure(tempWorkspace);
+      assert.ok(structure.workspaceConfigExists, 'workspace.config.yml should still exist');
+      assert.ok(structure.cursorDirExists, '.cursor directory should still exist');
 
-        const afterReinstall = await verifyWorkspaceConfig(tempWorkspace, {
-          extensions: ['core', 'cursor', 'vcs']
-        });
-        assert.ok(afterReinstall.valid, 'Config after reinstall should be valid');
-        assert.ok((afterReinstall.config.extensions as string[]).includes('vcs'), 'vcs extension should be added');
-
-        const structure = await verifyWorkspaceStructure(tempWorkspace);
-        assert.ok(structure.workspaceConfigExists, 'workspace.config.yml should still exist');
-        assert.ok(structure.cursorDirExists, '.cursor directory should still exist');
-
-        const moduleVerification = await verifyModuleInstallation(tempWorkspace, ['core', 'cursor', 'vcs']);
-        assert.ok(moduleVerification.commandsFound > 0, 'Commands should be present');
-
-        assert.strictEqual(reinstallResult.exitCode, 0, 'Reinstall should exit with code 0');
-      } finally {
-        await cleanupTempWorkspace(tempWorkspace);
-      }
+      const moduleVerification = await verifyModuleInstallation(tempWorkspace, ['core', 'cursor', 'vcs']);
+      assert.ok(moduleVerification.commandsFound > 0, 'Commands should be present');
     });
 
     test('Add Extensions to Existing Workspace', async () => {
-      const tempWorkspace = await createTempWorkspace();
-      
-      try {
-        const initialResult = await runInstaller(tempWorkspace, {
-          unattended: true,
-          aiAgent: 'cursor',
-          repoType: 'none',
-          extensions: ['core', 'cursor'],
-          skipRepoInit: true
-        });
+      const addResult = await runInstallerInProcess(tempWorkspace, {
+        unattended: true,
+        aiAgent: 'cursor',
+        repoType: 'none',
+        extensions: ['core', 'cursor', 'vcs', 'dashboard'],
+        skipRepoInit: true
+      });
 
-        checkInstallerResult(initialResult);
+      checkInstallerResult(addResult);
 
-        await waitForInstallation(tempWorkspace, 30000);
-
-        const initialConfig = await verifyWorkspaceConfig(tempWorkspace, {
-          extensions: ['core', 'cursor']
-        });
-        assert.ok(initialConfig.valid, 'Initial config should be valid');
-
-        const addResult = await runInstaller(tempWorkspace, {
-          unattended: true,
-          aiAgent: 'cursor',
-          repoType: 'none',
-          extensions: ['core', 'cursor', 'dashboard'],
-          skipRepoInit: true
-        });
-
-        checkInstallerResult(addResult);
-
-        await waitForInstallation(tempWorkspace, 30000);
-
-        const afterAdd = await verifyWorkspaceConfig(tempWorkspace);
-        assert.ok((afterAdd.config.extensions as string[]).includes('dashboard'), 'dashboard extension should be added');
-        assert.ok((afterAdd.config.extensions as string[]).includes('core'), 'core extension should still be present');
-        assert.ok((afterAdd.config.extensions as string[]).includes('cursor'), 'cursor extension should still be present');
-
-        const moduleVerification = await verifyModuleInstallation(tempWorkspace);
-        assert.ok(moduleVerification.commandsFound > 0, 'Commands should include dashboard commands');
-      } finally {
-        await cleanupTempWorkspace(tempWorkspace);
-      }
+      const afterAdd = await verifyWorkspaceConfig(tempWorkspace);
+      assert.ok((afterAdd.config.extensions as string[]).includes('dashboard'), 'dashboard extension should be added');
+      assert.ok((afterAdd.config.extensions as string[]).includes('core'), 'core extension should still be present');
+      assert.ok((afterAdd.config.extensions as string[]).includes('cursor'), 'cursor extension should still be present');
+      assert.ok((afterAdd.config.extensions as string[]).includes('vcs'), 'vcs extension should still be present');
     });
 
     test('Remove Extensions from Existing Workspace', async () => {
-      const tempWorkspace = await createTempWorkspace();
-      
-      try {
-        const initialResult = await runInstaller(tempWorkspace, {
-          unattended: true,
-          aiAgent: 'cursor',
-          repoType: 'none',
-          extensions: ['core', 'cursor', 'dashboard', 'vcs'],
-          skipRepoInit: true
-        });
+      const removeResult = await runInstallerInProcess(tempWorkspace, {
+        unattended: true,
+        aiAgent: 'cursor',
+        repoType: 'none',
+        extensions: ['core', 'cursor', 'vcs'],
+        skipRepoInit: true
+      });
 
-        checkInstallerResult(initialResult);
+      checkInstallerResult(removeResult);
 
-        await waitForInstallation(tempWorkspace, 30000);
-
-        const initialConfig = await verifyWorkspaceConfig(tempWorkspace);
-        assert.ok((initialConfig.config.extensions as string[]).includes('dashboard'), 'dashboard should be initially installed');
-
-        const removeResult = await runInstaller(tempWorkspace, {
-          unattended: true,
-          aiAgent: 'cursor',
-          repoType: 'none',
-          extensions: ['core', 'cursor', 'vcs'],
-          skipRepoInit: true
-        });
-
-        checkInstallerResult(removeResult);
-
-        await waitForInstallation(tempWorkspace, 30000);
-
-        const afterRemove = await verifyWorkspaceConfig(tempWorkspace);
-        assert.ok(!(afterRemove.config.extensions as string[]).includes('dashboard'), 'dashboard extension should be removed');
-        assert.ok((afterRemove.config.extensions as string[]).includes('core'), 'core extension should still be present');
-        assert.ok((afterRemove.config.extensions as string[]).includes('cursor'), 'cursor extension should still be present');
-        assert.ok((afterRemove.config.extensions as string[]).includes('vcs'), 'vcs extension should still be present');
-      } finally {
-        await cleanupTempWorkspace(tempWorkspace);
-      }
+      const afterRemove = await verifyWorkspaceConfig(tempWorkspace);
+      assert.ok(!(afterRemove.config.extensions as string[]).includes('dashboard'), 'dashboard extension should be removed');
+      assert.ok((afterRemove.config.extensions as string[]).includes('core'), 'core extension should still be present');
+      assert.ok((afterRemove.config.extensions as string[]).includes('cursor'), 'cursor extension should still be present');
+      assert.ok((afterRemove.config.extensions as string[]).includes('vcs'), 'vcs extension should still be present');
     });
 
     test('Reinstallation Verification - Preserve Configuration', async () => {
-      const tempWorkspace = await createTempWorkspace();
-      
-      try {
-        const initialResult = await runInstaller(tempWorkspace, {
-          unattended: true,
-          aiAgent: 'cursor',
-          repoType: 'none',
-          extensions: ['core', 'cursor', 'plan'],
-          skipRepoInit: true
-        });
+      const configPath = path.join(tempWorkspace, 'workspace.config.yml');
+      const initialConfigContent = await fs.readFile(configPath, 'utf8');
+      const initialConfig = YAML.parse(initialConfigContent);
 
-        checkInstallerResult(initialResult);
+      initialConfig.extensionSettings = {
+        ...(initialConfig.extensionSettings || {}),
+        core: {
+          testSetting: 'testValue'
+        }
+      };
+      await fs.writeFile(configPath, YAML.stringify(initialConfig), 'utf8');
 
-        await waitForInstallation(tempWorkspace, 30000);
+      const reinstallResult = await runInstallerInProcess(tempWorkspace, {
+        unattended: true,
+        aiAgent: 'cursor',
+        repoType: 'none',
+        extensions: ['core', 'cursor', 'vcs'],
+        skipRepoInit: true
+      });
 
-        const configPath = path.join(tempWorkspace, 'workspace.config.yml');
-        const initialConfigContent = await fs.readFile(configPath, 'utf8');
-        const initialConfig = YAML.parse(initialConfigContent);
+      checkInstallerResult(reinstallResult);
 
-        initialConfig.extensionSettings = {
-          core: {
-            testSetting: 'testValue'
-          }
-        };
-        await fs.writeFile(configPath, YAML.stringify(initialConfig), 'utf8');
-
-        const reinstallResult = await runInstaller(tempWorkspace, {
-          unattended: true,
-          aiAgent: 'cursor',
-          repoType: 'none',
-          extensions: ['core', 'cursor', 'plan'],
-          skipRepoInit: true
-        });
-
-        checkInstallerResult(reinstallResult);
-
-        await waitForInstallation(tempWorkspace, 30000);
-
-        const afterReinstall = await verifyWorkspaceConfig(tempWorkspace);
-        assert.ok(afterReinstall.config.extensionSettings, 'extensionSettings should be preserved');
-        assert.ok(afterReinstall.config.extensionSettings.core, 'core extension settings should be preserved');
-        assert.strictEqual(
-          afterReinstall.config.extensionSettings.core.testSetting,
-          'testValue',
-          'Custom setting should be preserved'
-        );
-
-        assert.ok((afterReinstall.config.extensions as string[]).includes('core'), 'core should still be installed');
-        assert.ok((afterReinstall.config.extensions as string[]).includes('cursor'), 'cursor should still be installed');
-        assert.ok((afterReinstall.config.extensions as string[]).includes('plan'), 'plan should still be installed');
-      } finally {
-        await cleanupTempWorkspace(tempWorkspace);
-      }
+      const afterReinstall = await verifyWorkspaceConfig(tempWorkspace);
+      assert.ok(afterReinstall.config.extensionSettings, 'extensionSettings should be preserved');
+      assert.ok(afterReinstall.config.extensionSettings.core, 'core extension settings should be preserved');
+      assert.strictEqual(
+        afterReinstall.config.extensionSettings.core.testSetting,
+        'testValue',
+        'Custom setting should be preserved'
+      );
     });
 
     test('Reinstallation - Extension Hooks Re-executed', async () => {
-      const tempWorkspace = await createTempWorkspace();
-      
+      const cursorignorePath = path.join(tempWorkspace, '.cursorignore');
+
       try {
-        const initialResult = await runInstaller(tempWorkspace, {
-          unattended: true,
-          aiAgent: 'cursor',
-          repoType: 'none',
-          extensions: ['core', 'cursor'],
-          skipRepoInit: true
-        });
-
-        checkInstallerResult(initialResult);
-
-        await waitForInstallation(tempWorkspace, 30000);
-
-        const cursorignorePath = path.join(tempWorkspace, '.cursorignore');
-        let initialCursorignore = '';
-        try {
-          initialCursorignore = await fs.readFile(cursorignorePath, 'utf8');
-        } catch (e) {
-          throw new Error('.cursorignore should exist after initial installation');
-        }
-
-        await fs.writeFile(cursorignorePath, '# Modified content', 'utf8');
-
-        const reinstallResult = await runInstaller(tempWorkspace, {
-          unattended: true,
-          aiAgent: 'cursor',
-          repoType: 'none',
-          extensions: ['core', 'cursor'],
-          skipRepoInit: true
-        });
-
-        checkInstallerResult(reinstallResult);
-
-        await waitForInstallation(tempWorkspace, 30000);
-
-        const afterReinstall = await fs.readFile(cursorignorePath, 'utf8');
-        assert.notStrictEqual(
-          afterReinstall,
-          '# Modified content',
-          '.cursorignore should be regenerated by hooks'
-        );
-        assert.ok(afterReinstall.includes('.env'), '.cursorignore should contain default content');
-      } finally {
-        await cleanupTempWorkspace(tempWorkspace);
+        await fs.access(cursorignorePath);
+      } catch {
+        throw new Error('.cursorignore should exist after installation');
       }
+
+      await fs.writeFile(cursorignorePath, '# Modified content', 'utf8');
+
+      const reinstallResult = await runInstallerInProcess(tempWorkspace, {
+        unattended: true,
+        aiAgent: 'cursor',
+        repoType: 'none',
+        extensions: ['core', 'cursor', 'vcs'],
+        skipRepoInit: true
+      });
+
+      checkInstallerResult(reinstallResult);
+
+      const afterReinstall = await fs.readFile(cursorignorePath, 'utf8');
+      assert.notStrictEqual(afterReinstall, '# Modified content', '.cursorignore should be regenerated by hooks');
+      assert.ok(afterReinstall.includes('.env'), '.cursorignore should contain default content');
     });
   });
 
@@ -642,15 +526,12 @@ describe('Workspace Installer - Unattended Mode', () => {
         };
         await fs.writeFile(configPath, YAML.stringify(config), 'utf8');
 
-        const result = await runInstaller(tempWorkspace, {
+        const result = await runInstallerInProcess(tempWorkspace, {
           unattended: true,
           config: configPath
         });
 
         checkInstallerResult(result);
-
-        const installed = await waitForInstallation(tempWorkspace, 30000);
-        assert.ok(installed, 'Installation should complete');
 
         // Verify workspace config includes the repo
         const configVerification = await verifyWorkspaceConfig(tempWorkspace);

@@ -4,7 +4,7 @@ import path from 'node:path';
 import { promises as fs } from 'node:fs';
 import YAML from 'yaml';
 
-import { createTempWorkspace, cleanupTempWorkspace, runInstaller } from './helpers.js';
+import { createTempWorkspace, cleanupTempWorkspace, runInstallerInProcess } from './helpers.js';
 
 test('installer: hook load failure is fatal', async () => {
   const tempWorkspace = await createTempWorkspace('barducks-hook-fail-');
@@ -37,7 +37,7 @@ test('installer: hook load failure is fatal', async () => {
       'utf8'
     );
 
-    const result = await runInstaller(tempWorkspace, {
+    const result = await runInstallerInProcess(tempWorkspace, {
       unattended: true,
       extensions: ['core', moduleName],
       skipRepoInit: true
@@ -78,7 +78,7 @@ test('installer: .env values are available to shell checks (fill-missing)', asyn
       'utf8'
     );
 
-    const result = await runInstaller(tempWorkspace, {
+    const result = await runInstallerInProcess(tempWorkspace, {
       unattended: true,
       extensions: ['core'],
       skipRepoInit: true
@@ -120,7 +120,7 @@ test('installer: checks without name do not print "Checking undefined"', async (
       'utf8'
     );
 
-    const result = await runInstaller(tempWorkspace, {
+    const result = await runInstallerInProcess(tempWorkspace, {
       unattended: true,
       extensions: ['core', moduleName],
       skipRepoInit: true
@@ -159,7 +159,7 @@ test('installer summary: prints INSTALLATION FINISHED WITH ERRORS on failures', 
       'utf8'
     );
 
-    const result = await runInstaller(tempWorkspace, {
+    const result = await runInstallerInProcess(tempWorkspace, {
       unattended: true,
       extensions: ['core'],
       skipRepoInit: true

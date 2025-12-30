@@ -32,15 +32,18 @@ if (testFiles.length === 0) {
   process.exit(1);
 }
 
-// Run tests with tsx (use npx to ensure tsx is available)
-const result = spawnSync(
-  'npx',
-  ['tsx', '--test', '--test-concurrency=1', ...testFiles],
-  {
-    stdio: 'inherit',
-    cwd: process.cwd()
-  }
+// Run tests with local tsx binary (faster than npx).
+const TSX_BIN = join(
+  process.cwd(),
+  'node_modules',
+  '.bin',
+  process.platform === 'win32' ? 'tsx.cmd' : 'tsx'
 );
+
+const result = spawnSync(TSX_BIN, ['--test', '--test-concurrency=1', ...testFiles], {
+  stdio: 'inherit',
+  cwd: process.cwd()
+});
 
 process.exit(result.status ?? 1);
 
