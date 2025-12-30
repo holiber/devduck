@@ -1,43 +1,45 @@
 {
   "meta": {
-    "collectedAt": "2025-12-30T08:30:04.444Z",
+    "collectedAt": "2025-12-30T09:04:03.769Z",
     "repository": "holiber/barducks",
     "eventName": "push",
-    "sha": "f57cbfc4063ff8655616806191e7f1696f7fc885",
+    "sha": "1723b9fd557ede8f58afc245e7a75d3300840d61",
     "ref": "refs/heads/main",
-    "runId": "20592328595",
+    "runId": "20592874232",
     "runAttempt": "1",
-    "prNumber": 108,
+    "prNumber": 112,
+    "prUrl": "https://github.com/holiber/barducks/pull/112",
     "node": "v24.12.0"
   },
   "pr": {
-    "number": 108
+    "number": 112,
+    "url": "https://github.com/holiber/barducks/pull/112"
   },
   "commands": {
     "npm_test": {
       "name": "npm_test",
       "command": "bash -lc 'npx c8 --reporter=json-summary --report-dir .cache/coverage npm run test:unit || (echo \"⚠️ Unit tests failed, retrying after 60 seconds...\"; sleep 60; npx c8 --reporter=json-summary --report-dir .cache/coverage npm run test:unit)'",
       "exitCode": 0,
-      "durationMs": 30102,
-      "collectedAt": "2025-12-30T08:29:20.286Z"
+      "durationMs": 34334,
+      "collectedAt": "2025-12-30T09:02:50.219Z"
     },
     "pw_installer": {
       "name": "pw_installer",
       "command": "bash -lc 'npx playwright test -c tests/installer/playwright.config.ts || (echo \"⚠️ Playwright installer suite failed, retrying after 60 seconds...\"; sleep 60; npx playwright test -c tests/installer/playwright.config.ts)'",
       "exitCode": 0,
-      "durationMs": 27959,
-      "collectedAt": "2025-12-30T08:30:03.932Z"
+      "durationMs": 28174,
+      "collectedAt": "2025-12-30T09:04:02.962Z"
     },
     "npm_pack": {
       "name": "npm-pack",
       "command": "npm pack --silent",
       "exitCode": 0,
-      "durationMs": 819
+      "durationMs": 832
     }
   },
   "sizes": {
     "npm_pack": {
-      "bytes": 3630599
+      "bytes": 3631764
     }
   },
   "tests": {
@@ -47,15 +49,15 @@
       "passed": 74,
       "failed": 0,
       "skipped": 9,
-      "reportedDurationMs": 27277.636394,
-      "durationMs": 30102,
+      "reportedDurationMs": 31425.507706,
+      "durationMs": 34334,
       "exitCode": 0
     },
     "e2e_installer": {
       "total": 34,
       "passed": 34,
-      "reportedDurationMs": 26700,
-      "durationMs": 27959,
+      "reportedDurationMs": 26900,
+      "durationMs": 28174,
       "exitCode": 0
     },
     "flaky": {
@@ -63,8 +65,8 @@
     }
   },
   "code": {
-    "scriptCodeLines": 35849,
-    "totalTextLines": 47309,
+    "scriptCodeLines": 35891,
+    "totalTextLines": 47404,
     "hugeScripts": 3
   },
   "quality": {
@@ -76,18 +78,23 @@
     },
     "slowTests": {
       "thresholdMs": 10000,
-      "count": 0,
+      "count": 1,
       "bySuite": {
         "unit": {
-          "count": 0,
-          "top": []
+          "count": 1,
+          "top": [
+            {
+              "name": "launch dev starts background processes, runs smokecheck, captures browser console, and allows reuse",
+              "durationMs": 13207.105181
+            }
+          ]
         }
       }
     },
     "duplication": {
-      "duplicatedPct": 8.76,
-      "duplicatedLines": 2765,
-      "totalLines": 31553
+      "duplicatedPct": 8.8,
+      "duplicatedLines": 2779,
+      "totalLines": 31595
     }
   },
   "notes": [
