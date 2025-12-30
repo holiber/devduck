@@ -78,7 +78,7 @@ test.describe('Workspace Installer - Workspace-local extensions/', () => {
       assert.ok(installed, 'Installation should complete');
 
       // Verify the workspace-local extension hook ran.
-      const markerPath = path.join(tempWorkspace, '.cache', 'devduck', 'localmod-installed.txt');
+      const markerPath = path.join(tempWorkspace, '.cache', 'barducks', 'localmod-installed.txt');
       const marker = await fs.readFile(markerPath, 'utf8');
       assert.strictEqual(marker, 'ok\n', 'Workspace-local extension post-install hook should create marker file');
     } finally {

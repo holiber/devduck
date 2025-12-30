@@ -683,7 +683,7 @@ describe('Workspace Installer - Unattended Mode', () => {
         );
 
         // Verify smogchecked.txt file exists (created by smogcheck module hook)
-        const smogcheckedPath = path.join(tempWorkspace, '.cache', 'devduck', 'smogchecked.txt');
+        const smogcheckedPath = path.join(tempWorkspace, '.cache', 'barducks', 'smogchecked.txt');
         try {
           await fs.access(smogcheckedPath);
           const smogcheckedContent = await fs.readFile(smogcheckedPath, 'utf8');
