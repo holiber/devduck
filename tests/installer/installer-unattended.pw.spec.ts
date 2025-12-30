@@ -582,7 +582,10 @@ describe('Workspace Installer - Unattended Mode', () => {
           'utf8'
         );
 
-        // Post-install hook writes a marker to the workspace root.
+        // Post-install hook writes a marker to the workspace cache dir.
+        // (Writing arbitrary files to the workspace root is noisy and can
+        // accidentally pollute a developer repo if the installer is pointed
+        // at "." during local testing.)
         await fs.writeFile(
           path.join(smogcheckExtDir, 'hooks.js'),
           [
@@ -591,9 +594,10 @@ describe('Workspace Installer - Unattended Mode', () => {
             '',
             'module.exports = {',
             "  'post-install': async (ctx) => {",
-            "    const outPath = path.join(ctx.workspaceRoot, 'smogchecked.txt');",
+            "    const outPath = path.join(ctx.cacheDir, 'smogchecked.txt');",
+            "    fs.mkdirSync(path.dirname(outPath), { recursive: true });",
             "    fs.writeFileSync(outPath, 'smogcheck\\n', 'utf8');",
-            "    return { success: true, createdFiles: ['smogchecked.txt'] };",
+            "    return { success: true, createdFiles: [path.relative(ctx.workspaceRoot, outPath)] };",
             '  }',
             '};',
             ''
@@ -679,13 +683,13 @@ describe('Workspace Installer - Unattended Mode', () => {
         );
 
         // Verify smogchecked.txt file exists (created by smogcheck module hook)
-        const smogcheckedPath = path.join(tempWorkspace, 'smogchecked.txt');
+        const smogcheckedPath = path.join(tempWorkspace, '.cache', 'devduck', 'smogchecked.txt');
         try {
           await fs.access(smogcheckedPath);
           const smogcheckedContent = await fs.readFile(smogcheckedPath, 'utf8');
           assert.ok(smogcheckedContent.includes('smogcheck'), 'smogchecked.txt should contain smogcheck');
         } catch (e) {
-          throw new Error('smogchecked.txt file should exist in workspace root');
+          throw new Error('smogchecked.txt file should exist in workspace cache dir');
         }
 
         // Verify smogcheck command is copied to .cursor/commands/
