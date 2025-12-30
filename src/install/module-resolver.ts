@@ -25,7 +25,12 @@ export interface ModuleCheck {
   var?: string;
   name?: string;
   description?: string;
+  when?: string;
   test?: string;
+  install?: string;
+  requirement?: 'required' | 'recomended' | 'recommended' | 'optional' | string;
+  // Deprecated, replaced by requirement
+  optional?: boolean;
   [key: string]: unknown;
 }
 

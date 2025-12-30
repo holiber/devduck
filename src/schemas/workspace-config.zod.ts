@@ -49,11 +49,23 @@ const WorkspaceCheckSchema = z
   .object({
     name: z.string(),
     description: z.string().optional(),
+    when: z.string().optional(),
     test: z.string().optional(),
     install: z.string().optional(),
 
     tier: z.string().optional(),
     skip: z.boolean().optional(),
+
+    // New check requirement semantics:
+    // - required (default): failing check blocks installation
+    // - recomended: failing check does not block installation
+    // - optional: installer will not attempt to install; check is skipped
+    //
+    // Note: "recomended" is the canonical spelling in configs.
+    requirement: z.enum(['required', 'recomended', 'recommended', 'optional']).optional(),
+
+    // Deprecated: replaced by `requirement`.
+    optional: z.boolean().optional(),
 
     mcpSettings: McpServerSettingsSchema.optional(),
   })
