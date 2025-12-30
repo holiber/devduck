@@ -39,7 +39,7 @@ The script outputs JSON with:
 2. If `autoCommit: true` — execute commit without asking
 3. If `autoCommit: false` — check warnings and ask user for confirmation
 4. Update current README.md if needed
-5. Create item in ROADMAP.md if some useful feature implemented
+5. Create item in `docs/ROADMAP-DRAFT.md` if some useful feature implemented
 6. Ensure the commit message is informative (override the script suggestion if needed):
    - Prefer **imperative** mood and be specific: **what changed** + (optionally) **why**.
    - Avoid generic messages like: `Update files`, `Fix`, `WIP`, `Changes`, `Update N files`.
