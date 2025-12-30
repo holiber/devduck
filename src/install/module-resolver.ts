@@ -239,6 +239,15 @@ export function resolveDependencies(moduleNames: string[], allModules: Module[])
     toResolve.push(GIT_MODULE_NAME);
   }
 
+  // Always include modules tagged as `core`.
+  // This allows shipping built-in "core feature" modules without requiring users
+  // to explicitly list them in `workspace.config.yml`.
+  for (const m of moduleMap.values()) {
+    if (Array.isArray(m.tags) && m.tags.includes('core') && !toResolve.includes(m.name)) {
+      toResolve.push(m.name);
+    }
+  }
+
   while (toResolve.length > 0) {
     const moduleName = toResolve.shift();
     if (!moduleName) continue;
@@ -329,14 +338,6 @@ export function expandModuleNames(selectors: string[], allModules: Module[]): st
  */
 export function resolveModules(workspaceConfig: WorkspaceConfig, allModules: Module[]): Module[] {
   const moduleNames = expandModuleNames(workspaceConfig.extensions || ['*'], allModules);
-
-  // Always include modules tagged as `core` (auto-enabled without explicit config).
-  const coreTagged = allModules.filter((m) => Array.isArray(m.tags) && m.tags.includes('core')).map((m) => m.name);
-  for (const name of coreTagged) {
-    if (!moduleNames.includes(name)) {
-      moduleNames.push(name);
-    }
-  }
 
   // Filter by tags if needed (future feature)
   // For now, just resolve by name
