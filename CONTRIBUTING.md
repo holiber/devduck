@@ -14,6 +14,5 @@ We no longer require updating `CHANGELOG.md` in every PR (it causes frequent mer
 
 ## Tips
 
-- Keep PRs focused and small (one logical change).
 - Run `npm test` locally before pushing.
 
