@@ -3706,5 +3706,103 @@
       "BUILD_COMMAND not set; build metric skipped.",
       "DEV_COMMAND not set; dev startup metric skipped."
     ]
+  },
+  {
+    "meta": {
+      "collectedAt": "2025-12-30T09:21:08.904Z",
+      "repository": "holiber/barducks",
+      "eventName": "push",
+      "sha": "e9b75d1d81a61ce88b0ee627be1af658e8ede351",
+      "ref": "refs/heads/main",
+      "runId": "20593197886",
+      "runAttempt": "1",
+      "node": "v24.12.0"
+    },
+    "commands": {
+      "npm_test": {
+        "name": "npm_test",
+        "command": "bash -lc 'npx c8 --reporter=json-summary --report-dir .cache/coverage npm run test:unit || (echo \"⚠️ Unit tests failed, retrying after 60 seconds...\"; sleep 60; npx c8 --reporter=json-summary --report-dir .cache/coverage npm run test:unit)'",
+        "exitCode": 0,
+        "durationMs": 31853,
+        "collectedAt": "2025-12-30T09:20:18.221Z"
+      },
+      "pw_installer": {
+        "name": "pw_installer",
+        "command": "bash -lc 'npx playwright test -c tests/installer/playwright.config.ts || (echo \"⚠️ Playwright installer suite failed, retrying after 60 seconds...\"; sleep 60; npx playwright test -c tests/installer/playwright.config.ts)'",
+        "exitCode": 0,
+        "durationMs": 28493,
+        "collectedAt": "2025-12-30T09:21:08.317Z"
+      },
+      "npm_pack": {
+        "name": "npm-pack",
+        "command": "npm pack --silent",
+        "exitCode": 0,
+        "durationMs": 826
+      }
+    },
+    "sizes": {
+      "npm_pack": {
+        "bytes": 3639558
+      }
+    },
+    "tests": {
+      "unit": {
+        "total": 83,
+        "suites": 16,
+        "passed": 74,
+        "failed": 0,
+        "skipped": 9,
+        "reportedDurationMs": 28933.113223,
+        "durationMs": 31853,
+        "exitCode": 0
+      },
+      "e2e_installer": {
+        "total": 34,
+        "passed": 34,
+        "reportedDurationMs": 27200,
+        "durationMs": 28493,
+        "exitCode": 0
+      },
+      "flaky": {
+        "count": 0
+      }
+    },
+    "code": {
+      "scriptCodeLines": 36287,
+      "totalTextLines": 48009,
+      "hugeScripts": 3
+    },
+    "quality": {
+      "coverage": {
+        "linesPct": 64.29,
+        "statementsPct": 64.29,
+        "branchesPct": 61.25,
+        "functionsPct": 66.02
+      },
+      "slowTests": {
+        "thresholdMs": 10000,
+        "count": 1,
+        "bySuite": {
+          "unit": {
+            "count": 1,
+            "top": [
+              {
+                "name": "launch dev starts background processes, runs smokecheck, captures browser console, and allows reuse",
+                "durationMs": 10796.661991
+              }
+            ]
+          }
+        }
+      },
+      "duplication": {
+        "duplicatedPct": 8.62,
+        "duplicatedLines": 2756,
+        "totalLines": 31970
+      }
+    },
+    "notes": [
+      "BUILD_COMMAND not set; build metric skipped.",
+      "DEV_COMMAND not set; dev startup metric skipped."
+    ]
   }
 ]
