@@ -120,6 +120,14 @@ function fmtMs(ms) {
   return `${ms.toFixed(0)}ms`;
 }
 
+function fmtTestMs(ms) {
+  // Test durations are stored in ms but displayed in seconds.
+  if (ms == null || !Number.isFinite(ms)) return 'n/a';
+  const s = ms / 1000;
+  const dp = s >= 100 ? 0 : s >= 10 ? 1 : 2;
+  return `${s.toFixed(dp)}s`;
+}
+
 function fmtInt(n) {
   if (n == null || !Number.isFinite(n)) return 'n/a';
   return new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(n);
@@ -134,6 +142,12 @@ function fmtDeltaMs(ms) {
   if (ms == null || !Number.isFinite(ms)) return 'n/a';
   const sign = ms > 0 ? '+' : '';
   return `${sign}${fmtMs(ms)}`;
+}
+
+function fmtDeltaTestMs(ms) {
+  if (ms == null || !Number.isFinite(ms)) return 'n/a';
+  const sign = ms > 0 ? '+' : '';
+  return `${sign}${fmtTestMs(ms)}`;
 }
 
 function fmtThresholdMs(ms) {
@@ -151,7 +165,7 @@ function fmtDeltaInt(n) {
 function fmtTestDelta({ deltaTotal, deltaDurationMs }) {
   const parts = [];
   if (deltaTotal != null && Number.isFinite(deltaTotal)) parts.push(`${fmtDeltaInt(deltaTotal)} tests`);
-  if (deltaDurationMs != null && Number.isFinite(deltaDurationMs)) parts.push(fmtDeltaMs(deltaDurationMs));
+  if (deltaDurationMs != null && Number.isFinite(deltaDurationMs)) parts.push(fmtDeltaTestMs(deltaDurationMs));
   if (parts.length === 0) return 'n/a';
   return parts.join(' / ');
 }
@@ -249,7 +263,7 @@ async function main() {
         </tr>
         <tr>
           <td>🧪 Unit tests</td>
-          <td>${unitTests?.total ?? 'n/a'} tests / ${fmtMs(unitTests?.reportedDurationMs ?? unitTests?.durationMs)}</td>
+          <td>${unitTests?.total ?? 'n/a'} tests / ${fmtTestMs(unitTests?.reportedDurationMs ?? unitTests?.durationMs)}</td>
           <td class="${clsForDelta(unitDeltaMs)}">${fmtTestDelta({
             deltaTotal: diff?.deltas?.unit_tests_total,
             deltaDurationMs: unitDeltaMs
@@ -257,7 +271,7 @@ async function main() {
         </tr>
         <tr>
           <td>🧪 E2E (installer)</td>
-          <td>${e2eInstaller?.total ?? 'n/a'} tests / ${fmtMs(e2eInstaller?.reportedDurationMs ?? e2eInstaller?.durationMs)}</td>
+          <td>${e2eInstaller?.total ?? 'n/a'} tests / ${fmtTestMs(e2eInstaller?.reportedDurationMs ?? e2eInstaller?.durationMs)}</td>
           <td class="${clsForDelta(e2eInstallerDeltaMs)}">${fmtTestDelta({
             deltaTotal: diff?.deltas?.e2e_installer_tests_total,
             deltaDurationMs: e2eInstallerDeltaMs
@@ -385,7 +399,12 @@ async function main() {
           interaction: { mode: 'index', intersect: false },
           plugins: { legend: { position: 'bottom' } },
           scales: {
-            y: { type: 'linear', position: 'left', title: { display: true, text: 'duration (ms)' } },
+            y: {
+              type: 'linear',
+              position: 'left',
+              title: { display: true, text: 'duration (s)' },
+              ticks: { callback: (v) => (typeof v === 'number' ? v + 's' : v) }
+            },
             y2: { type: 'linear', position: 'right', grid: { drawOnChartArea: false }, title: { display: true, text: 'tests' } }
           }
         }
@@ -415,27 +434,36 @@ async function main() {
       });
     }
 
-    const unitDurationMs = history.map(h => pickedTestDurationMs(h?.tests?.unit));
+    const unitDurationS = history.map(h => {
+      const ms = pickedTestDurationMs(h?.tests?.unit);
+      return (typeof ms === 'number') ? ms / 1000 : null;
+    });
     const unitTotal = history.map(h => pickedTestTotal(h?.tests?.unit));
     renderTestChart({
       canvasId: 'trend-unit',
       durationDatasets: [
-        { label: 'Unit duration (ms)', data: unitDurationMs, borderColor: '#3498db' }
+        { label: 'Unit duration (s)', data: unitDurationS, borderColor: '#3498db' }
       ],
       totalDatasets: [
         { label: 'Unit total (tests)', data: unitTotal, borderColor: '#3498db', hidden: true }
       ]
     });
 
-    const e2eInstallerDurationMs = history.map(h => pickedTestDurationMs(h?.tests?.e2e_installer));
+    const e2eInstallerDurationS = history.map(h => {
+      const ms = pickedTestDurationMs(h?.tests?.e2e_installer);
+      return (typeof ms === 'number') ? ms / 1000 : null;
+    });
     const e2eInstallerTotal = history.map(h => pickedTestTotal(h?.tests?.e2e_installer));
-    const e2eSmokeDurationMs = history.map(h => pickedTestDurationMs(h?.tests?.e2e_smoke));
+    const e2eSmokeDurationS = history.map(h => {
+      const ms = pickedTestDurationMs(h?.tests?.e2e_smoke);
+      return (typeof ms === 'number') ? ms / 1000 : null;
+    });
     const e2eSmokeTotal = history.map(h => pickedTestTotal(h?.tests?.e2e_smoke));
     renderTestChart({
       canvasId: 'trend-e2e',
       durationDatasets: [
-        { label: 'Installer duration (ms)', data: e2eInstallerDurationMs, borderColor: '#9b59b6' },
-        { label: 'Smoke duration (ms)', data: e2eSmokeDurationMs, borderColor: '#e67e22' }
+        { label: 'Installer duration (s)', data: e2eInstallerDurationS, borderColor: '#9b59b6' },
+        { label: 'Smoke duration (s)', data: e2eSmokeDurationS, borderColor: '#e67e22' }
       ],
       totalDatasets: [
         { label: 'Installer total (tests)', data: e2eInstallerTotal, borderColor: '#9b59b6', hidden: true },

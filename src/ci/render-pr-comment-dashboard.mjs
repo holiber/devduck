@@ -37,10 +37,24 @@ function fmtMs(ms) {
   return `${ms.toFixed(0)}ms`;
 }
 
+function fmtTestMs(ms) {
+  // Test durations are stored in ms but displayed in seconds.
+  if (ms == null || !Number.isFinite(ms)) return 'n/a';
+  const s = ms / 1000;
+  const dp = s >= 100 ? 0 : s >= 10 ? 1 : 2;
+  return `${s.toFixed(dp)}s`;
+}
+
 function fmtDeltaMs(ms) {
   if (ms == null || !Number.isFinite(ms)) return 'n/a';
   const sign = ms > 0 ? '+' : '';
   return `${sign}${fmtMs(ms)}`;
+}
+
+function fmtDeltaTestMs(ms) {
+  if (ms == null || !Number.isFinite(ms)) return 'n/a';
+  const sign = ms > 0 ? '+' : '';
+  return `${sign}${fmtTestMs(ms)}`;
 }
 
 function fmtDeltaBytes(bytes) {
@@ -80,7 +94,7 @@ function fmtThresholdMs(ms) {
 function fmtTestDelta({ deltaTotal, deltaDurationMs }) {
   const parts = [];
   if (deltaTotal != null && Number.isFinite(deltaTotal)) parts.push(`${fmtDeltaInt(deltaTotal)} tests`);
-  if (deltaDurationMs != null && Number.isFinite(deltaDurationMs)) parts.push(fmtDeltaMs(deltaDurationMs));
+  if (deltaDurationMs != null && Number.isFinite(deltaDurationMs)) parts.push(fmtDeltaTestMs(deltaDurationMs));
   if (parts.length === 0) return 'n/a';
   return parts.join(' / ');
 }
@@ -275,12 +289,12 @@ async function main() {
   );
   lines.push(`| 🧬 Duplication (copy/paste) | ${fmtPct(current?.quality?.duplication?.duplicatedPct)} | ${fmtDeltaPct(deltas.duplication_pct)} |`);
   lines.push(
-    `| 🧪 Unit tests | ${current?.tests?.unit?.total ?? 'n/a'} tests / ${fmtMs(
+    `| 🧪 Unit tests | ${current?.tests?.unit?.total ?? 'n/a'} tests / ${fmtTestMs(
       current?.tests?.unit?.reportedDurationMs ?? current?.tests?.unit?.durationMs
     )} | ${fmtTestDelta({ deltaTotal: deltas.unit_tests_total, deltaDurationMs: deltas.unit_tests_duration_ms })} |`
   );
   lines.push(
-    `| 🧪 E2E (installer) | ${current?.tests?.e2e_installer?.total ?? 'n/a'} tests / ${fmtMs(
+    `| 🧪 E2E (installer) | ${current?.tests?.e2e_installer?.total ?? 'n/a'} tests / ${fmtTestMs(
       current?.tests?.e2e_installer?.reportedDurationMs ?? current?.tests?.e2e_installer?.durationMs
     )} | ${fmtTestDelta({
       deltaTotal: deltas.e2e_installer_tests_total,
