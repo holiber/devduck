@@ -3,7 +3,7 @@ import assert from 'node:assert';
 import path from 'node:path';
 import fs from 'fs';
 import { config } from 'dotenv';
-import { findWorkspaceRoot } from '../../scripts/lib/workspace-root.js';
+import { findWorkspaceRoot } from '../../src/lib/workspace-root.js';
 
 import provider from '../../extensions/issue-tracker-github/providers/github-provider/index.js';
 import {
@@ -20,7 +20,7 @@ import {
   getProvider,
   getProvidersByType,
   setProviderTypeSchema
-} from '../../scripts/lib/provider-registry.js';
+} from '../../src/lib/provider-registry.js';
 import {
   getIssueCacheDir,
   getResourcesJsonPath,

@@ -12,9 +12,9 @@ function pathToFileURL(filePath: string): URL {
   return new URL(`file://${normalized}`);
 }
 
-import { mcpRouter } from '../../scripts/lib/api/mcp.js';
-import { getUnifiedAPI } from '../../scripts/lib/api.js';
-import { findWorkspaceRoot } from '../../scripts/lib/workspace-root.js';
+import { mcpRouter } from '../../src/lib/api/mcp.js';
+import { getUnifiedAPI } from '../../src/lib/api.js';
+import { findWorkspaceRoot } from '../../src/lib/workspace-root.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -88,7 +88,7 @@ describe('mcp: API module', () => {
       // Try to import mcp module directly to see if there's an import error
       try {
         // Use relative path from test file to module
-        const mcpApiPath = path.resolve(__dirname, '../../scripts/lib/api/mcp.js');
+        const mcpApiPath = path.resolve(__dirname, '../../src/lib/api/mcp.js');
         
         if (fs.existsSync(mcpApiPath)) {
           const mcpModule = await import(pathToFileURL(mcpApiPath).href);
@@ -99,7 +99,7 @@ describe('mcp: API module', () => {
           }
         } else {
           // Try with .ts extension (for source files)
-          const mcpApiPathTs = path.resolve(__dirname, '../../scripts/lib/api/mcp.ts');
+          const mcpApiPathTs = path.resolve(__dirname, '../../src/lib/api/mcp.ts');
           if (fs.existsSync(mcpApiPathTs)) {
             console.warn(`mcp api.ts found but api.js not found - may need compilation`);
           } else {

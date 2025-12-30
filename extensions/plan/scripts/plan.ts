@@ -19,11 +19,11 @@ let tracker: any = null;
 async function getTracker() {
   if (tracker) return tracker;
   try {
-    const { discoverProvidersFromModules, getProvider } = await import('../../../scripts/lib/provider-registry.js');
-    const { resolveDevduckRoot } = await import('../../../scripts/lib/barducks-paths.js');
-    const { findWorkspaceRoot } = await import('../../../scripts/lib/workspace-root.js');
+    const { discoverProvidersFromModules, getProvider } = await import('../../../src/lib/provider-registry.js');
+    const { resolveDevduckRoot } = await import('../../../src/lib/barducks-paths.js');
+    const { findWorkspaceRoot } = await import('../../../src/lib/workspace-root.js');
     const { getWorkspaceConfigFilePath, readWorkspaceConfigFile } = await import(
-      '../../../scripts/lib/workspace-config.js'
+      '../../../src/lib/workspace-config.js'
     );
     const workspaceRoot = findWorkspaceRoot(process.cwd());
     const { devduckRoot } = resolveDevduckRoot({ cwd: process.cwd(), moduleDir: __dirname });
@@ -35,7 +35,7 @@ async function getTracker() {
       if (fs.existsSync(configPath)) {
         const config = readWorkspaceConfigFile<{ repos?: string[] }>(configPath);
         if (config?.repos) {
-          const { loadModulesFromRepo, getDevduckVersion } = await import('../../../scripts/lib/repo-modules.js');
+          const { loadModulesFromRepo, getDevduckVersion } = await import('../../../src/lib/repo-modules.js');
           const devduckVersion = getDevduckVersion();
           for (const repoUrl of config.repos) {
             try {
@@ -62,7 +62,7 @@ async function getTracker() {
   throw new Error('Issue tracker provider not available. Please install an issue tracker provider module.');
 }
 import { getEnv } from '../../core/scripts/lib/env.js';
-import { createYargs, installEpipeHandler } from '../../../scripts/lib/cli.js';
+import { createYargs, installEpipeHandler } from '../../../src/lib/cli.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

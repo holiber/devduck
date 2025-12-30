@@ -3,7 +3,7 @@ import assert from 'node:assert';
 import path from 'node:path';
 import { promises as fs } from 'node:fs';
 
-import { installProjectScripts } from '../../scripts/install/install-project-scripts.js';
+import { installProjectScripts } from '../../src/install/install-project-scripts.js';
 import { createWorkspaceFromFixture, cleanupTempWorkspace } from './helpers.js';
 
 async function readJSON(filePath: string): Promise<any> {

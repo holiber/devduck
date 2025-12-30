@@ -11,8 +11,8 @@
   "scripts": {
     "install:check": "tsx scripts/install.ts",
     "postinstall": "npx playwright install chromium",
-    "barducks:service": "tsx scripts/barducks-service/src/service.ts",
-    "barducks:launch": "tsx scripts/barducks-service/src/cli.ts",
+    "barducks:service": "tsx scripts/barducks-service/service.ts",
+    "barducks:launch": "tsx scripts/barducks-service/cli.ts",
     "test": "npm run test:unit && npm run test:e2e",
     "test:unit": "tsx scripts/run-tests.ts",
     "test:e2e": "npm run test:installer:pw",

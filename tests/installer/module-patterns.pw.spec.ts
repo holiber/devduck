@@ -3,7 +3,7 @@ import assert from 'node:assert';
 import path from 'node:path';
 import { promises as fs } from 'node:fs';
 
-import { getAllModules, resolveModules } from '../../scripts/install/module-resolver.js';
+import { getAllModules, resolveModules } from '../../src/install/module-resolver.js';
 import YAML from 'yaml';
 
 async function readYaml(p: string): Promise<any> {

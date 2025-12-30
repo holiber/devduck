@@ -612,7 +612,7 @@ export async function cleanupSharedTempWorkspace(workspacePath: string): Promise
  * @returns True if step is completed successfully
  */
 export async function isStepCompleted(workspaceRoot: string, stepName: string): Promise<boolean> {
-  const { loadInstallState } = await import('../../scripts/install/install-state.js');
+  const { loadInstallState } = await import('../../src/install/install-state.js');
   const state = loadInstallState(workspaceRoot);
   
   const stepKey = stepName as keyof typeof state.steps;
@@ -626,7 +626,7 @@ export async function isStepCompleted(workspaceRoot: string, stepName: string): 
  * @returns Step result or null if step not completed
  */
 export async function getStepResult(workspaceRoot: string, stepName: string): Promise<unknown> {
-  const { loadInstallState } = await import('../../scripts/install/install-state.js');
+  const { loadInstallState } = await import('../../src/install/install-state.js');
   const state = loadInstallState(workspaceRoot);
   
   const stepKey = stepName as keyof typeof state.steps;
@@ -639,7 +639,7 @@ export async function getStepResult(workspaceRoot: string, stepName: string): Pr
  * @returns Array of executed checks
  */
 export async function getExecutedChecks(workspaceRoot: string): Promise<Array<{checkId: string; step: string; passed: boolean | null; executedAt: string; checkName?: string}>> {
-  const { loadInstallState } = await import('../../scripts/install/install-state.js');
+  const { loadInstallState } = await import('../../src/install/install-state.js');
   const state = loadInstallState(workspaceRoot);
   
   return state.executedChecks || [];
@@ -657,7 +657,7 @@ export async function verifyStepState(
   stepName: string,
   expectedStatus: 'completed' | 'failed'
 ): Promise<boolean> {
-  const { loadInstallState } = await import('../../scripts/install/install-state.js');
+  const { loadInstallState } = await import('../../src/install/install-state.js');
   const state = loadInstallState(workspaceRoot);
   
   const stepKey = stepName as keyof typeof state.steps;

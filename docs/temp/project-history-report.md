@@ -1,8 +1,8 @@
 # Barducks project history report
 
-Generated: 2025-12-29 23:04 UTC
-Merged PRs covered: 82
-History window: 2025-12-22 19:56 UTC -> 2025-12-29 23:02 UTC
+Generated: 2025-12-30 01:25 UTC
+Merged PRs covered: 83
+History window: 2025-12-22 19:56 UTC -> 2025-12-30 01:14 UTC
 
 This report lists every merged PR with added/deleted line counts and an explanation of why it was important.
 
@@ -49,7 +49,7 @@ This report lists every merged PR with added/deleted line counts and an explanat
 - **Branch**: `main` <- `refactor/add-modules`
 - **Added/Deleted**: `+281 / -14` (files: 3)
 - **Why it was important**: Expanded install test coverage to catch regressions in the most failure-prone area: setup.
-- **Commentary**: Another clean merge into main; the project keeps compounding.
+- **Commentary**: Another clean merge; compounding progress.
 - **PR link**: `https://github.com/holiber/barducks/pull/4`
 
 #### #5 — Cursor/install script yargs integration bcf6
@@ -59,7 +59,7 @@ This report lists every merged PR with added/deleted line counts and an explanat
 - **Branch**: `main` <- `cursor/install-script-yargs-integration-bcf6`
 - **Added/Deleted**: `+340 / -32` (files: 4)
 - **Why it was important**: Standardized CLI argument parsing with yargs, reducing accidental breakage and making commands self-documenting.
-- **Commentary**: Another clean merge into main; the project keeps compounding.
+- **Commentary**: Another clean merge; compounding progress.
 - **PR link**: `https://github.com/holiber/barducks/pull/5`
 
 #### #7 — Installer local project paths
@@ -69,7 +69,7 @@ This report lists every merged PR with added/deleted line counts and an explanat
 - **Branch**: `main` <- `cursor/installer-local-project-paths-b99a`
 - **Added/Deleted**: `+229 / -5` (files: 3)
 - **Why it was important**: Added support for local project paths so real teams can use existing codebases without awkward workarounds.
-- **Commentary**: Another clean merge into main; the project keeps compounding.
+- **Commentary**: Another clean merge; compounding progress.
 - **PR link**: `https://github.com/holiber/barducks/pull/7`
 
 #### #6 — Skipped test resolution
@@ -89,7 +89,7 @@ This report lists every merged PR with added/deleted line counts and an explanat
 - **Branch**: `main` <- `cursor/workspace-path-handling-6b96`
 - **Added/Deleted**: `+223 / -1` (files: 3)
 - **Why it was important**: Fixed workspace path handling so installs behave consistently regardless of where and how the CLI is invoked.
-- **Commentary**: Another clean merge into main; the project keeps compounding.
+- **Commentary**: Another clean merge; compounding progress.
 - **PR link**: `https://github.com/holiber/barducks/pull/8`
 
 #### #10 — Workspace module installation
@@ -99,7 +99,7 @@ This report lists every merged PR with added/deleted line counts and an explanat
 - **Branch**: `main` <- `cursor/workspace-module-installation-585a`
 - **Added/Deleted**: `+167 / -3` (files: 3)
 - **Why it was important**: Enabled workspace-local modules, unlocking rapid iteration and customization without forking the core.
-- **Commentary**: Another clean merge into main; the project keeps compounding.
+- **Commentary**: Another clean merge; compounding progress.
 - **PR link**: `https://github.com/holiber/barducks/pull/10`
 
 ### 2025-12-24
@@ -111,7 +111,7 @@ This report lists every merged PR with added/deleted line counts and an explanat
 - **Branch**: `main` <- `cursor/workspace-config-documentation-and-schema-af39`
 - **Added/Deleted**: `+236 / -41` (files: 5)
 - **Why it was important**: Added workspace config docs + schema, converting tribal knowledge into a versioned contract.
-- **Commentary**: Another clean merge into main; the project keeps compounding.
+- **Commentary**: Another clean merge; compounding progress.
 - **PR link**: `https://github.com/holiber/barducks/pull/11`
 
 #### #9 — Module script yargs migration
@@ -121,7 +121,7 @@ This report lists every merged PR with added/deleted line counts and an explanat
 - **Branch**: `main` <- `cursor/module-script-yargs-migration-a199`
 - **Added/Deleted**: `+652 / -713` (files: 16)
 - **Why it was important**: Centralized CLI/path logic so every module behaves consistently and future CLIs are cheaper to build.
-- **Commentary**: Another clean merge into main; the project keeps compounding.
+- **Commentary**: Another clean merge; compounding progress.
 - **PR link**: `https://github.com/holiber/barducks/pull/9`
 
 #### #12 — feat: add project scripts installation to workspace package.json
@@ -161,7 +161,7 @@ This report lists every merged PR with added/deleted line counts and an explanat
 - **Branch**: `main` <- `cursor/workspace-file-copying-config-5efc`
 - **Added/Deleted**: `+121 / -0` (files: 3)
 - **Why it was important**: Added configurable workspace file copying, turning setup steps into declarative, repeatable behavior.
-- **Commentary**: Another clean merge into main; the project keeps compounding.
+- **Commentary**: Another clean merge; compounding progress.
 - **PR link**: `https://github.com/holiber/barducks/pull/15`
 
 #### #16 — Email module provider system
@@ -171,7 +171,7 @@ This report lists every merged PR with added/deleted line counts and an explanat
 - **Branch**: `main` <- `cursor/email-module-provider-system-0616`
 - **Added/Deleted**: `+883 / -0` (files: 10)
 - **Why it was important**: Introduced an email provider system, establishing a pattern for extensible integrations.
-- **Commentary**: Another clean merge into main; the project keeps compounding.
+- **Commentary**: Another clean merge; compounding progress.
 - **PR link**: `https://github.com/holiber/barducks/pull/16`
 
 #### #17 — Email gmail provider module
@@ -181,7 +181,7 @@ This report lists every merged PR with added/deleted line counts and an explanat
 - **Branch**: `main` <- `cursor/email-gmail-provider-module-a47e`
 - **Added/Deleted**: `+400 / -0` (files: 4)
 - **Why it was important**: Shipped a Gmail provider as proof the provider contract is real and useful.
-- **Commentary**: Another clean merge into main; the project keeps compounding.
+- **Commentary**: Another clean merge; compounding progress.
 - **PR link**: `https://github.com/holiber/barducks/pull/17`
 
 #### #18 — refactor(ci): migrate to provider-based architecture
@@ -223,7 +223,7 @@ This report lists every merged PR with added/deleted line counts and an explanat
 - **Branch**: `main` <- `cursor/email-module-architecture-alignment-8618`
 - **Added/Deleted**: `+144 / -52` (files: 5)
 - **Why it was important**: Aligned email routing/contracts, reducing ambiguity and integration breakage across providers.
-- **Commentary**: Another clean merge into main; the project keeps compounding.
+- **Commentary**: Another clean merge; compounding progress.
 - **PR link**: `https://github.com/holiber/barducks/pull/22`
 
 #### #23 — Npx new workspace setup
@@ -233,7 +233,7 @@ This report lists every merged PR with added/deleted line counts and an explanat
 - **Branch**: `main` <- `cursor/npx-new-workspace-setup-609b`
 - **Added/Deleted**: `+324 / -35` (files: 6)
 - **Why it was important**: Added `npx ... new` workspace creation, dramatically lowering the time-to-first-success for new users.
-- **Commentary**: Another clean merge into main; the project keeps compounding.
+- **Commentary**: Another clean merge; compounding progress.
 - **PR link**: `https://github.com/holiber/barducks/pull/23`
 
 #### #24 — Cursor and containers checks
@@ -243,7 +243,7 @@ This report lists every merged PR with added/deleted line counts and an explanat
 - **Branch**: `main` <- `cursor/cursor-and-containers-checks-6c2b`
 - **Added/Deleted**: `+62 / -7` (files: 3)
 - **Why it was important**: Introduced optional checks and containers support, acknowledging real-world environments and making installs more robust.
-- **Commentary**: Another clean merge into main; the project keeps compounding.
+- **Commentary**: Another clean merge; compounding progress.
 - **PR link**: `https://github.com/holiber/barducks/pull/24`
 
 #### #25 — add npx support
@@ -253,7 +253,7 @@ This report lists every merged PR with added/deleted line counts and an explanat
 - **Branch**: `cursor/npx-new-workspace-setup-609b` <- `main`
 - **Added/Deleted**: `+386 / -42` (files: 9)
 - **Why it was important**: Extended npx support across branches, keeping workspace creation flow coherent during fast iteration.
-- **Commentary**: Another clean merge into main; the project keeps compounding.
+- **Commentary**: Another clean merge; compounding progress.
 - **PR link**: `https://github.com/holiber/barducks/pull/25`
 
 #### #26 — Documentation devduck npm install
@@ -293,7 +293,7 @@ This report lists every merged PR with added/deleted line counts and an explanat
 - **Branch**: `main` <- `cursor/workspace-initialization-and-install-0247`
 - **Added/Deleted**: `+48 / -0` (files: 1)
 - **Why it was important**: Bootstrapped workspaces with npm install, making setup more automatic and less error-prone.
-- **Commentary**: Another clean merge into main; the project keeps compounding.
+- **Commentary**: Another clean merge; compounding progress.
 - **PR link**: `https://github.com/holiber/barducks/pull/29`
 
 #### #30 — Workspace install token handling
@@ -303,7 +303,7 @@ This report lists every merged PR with added/deleted line counts and an explanat
 - **Branch**: `main` <- `cursor/workspace-install-token-handling-a4be`
 - **Added/Deleted**: `+168 / -89` (files: 3)
 - **Why it was important**: Improved install token handling so credentials are managed predictably across steps.
-- **Commentary**: Another clean merge into main; the project keeps compounding.
+- **Commentary**: Another clean merge; compounding progress.
 - **PR link**: `https://github.com/holiber/barducks/pull/30`
 
 #### #31 — Devduck repo cloning
@@ -313,7 +313,7 @@ This report lists every merged PR with added/deleted line counts and an explanat
 - **Branch**: `main` <- `cursor/devduck-repo-cloning-eb70`
 - **Added/Deleted**: `+73 / -8` (files: 7)
 - **Why it was important**: Improved repo cloning workflow, reducing manual setup and increasing reproducibility.
-- **Commentary**: Another clean merge into main; the project keeps compounding.
+- **Commentary**: Another clean merge; compounding progress.
 - **PR link**: `https://github.com/holiber/barducks/pull/31`
 
 #### #32 — Test workspace fixtures
@@ -393,7 +393,7 @@ This report lists every merged PR with added/deleted line counts and an explanat
 - **Branch**: `main` <- `feature/repo-symlinks-and-check-improvements`
 - **Added/Deleted**: `+746 / -213` (files: 17)
 - **Why it was important**: Improved repo symlinks and check output, reducing duplication and making failures easier to diagnose.
-- **Commentary**: Another clean merge into main; the project keeps compounding.
+- **Commentary**: Another clean merge; compounding progress.
 - **PR link**: `https://github.com/holiber/barducks/pull/40`
 
 #### #42 — Cursor module workspace fixture
@@ -433,7 +433,7 @@ This report lists every merged PR with added/deleted line counts and an explanat
 - **Branch**: `main` <- `feat/cursor-api-key-required`
 - **Added/Deleted**: `+14 / -3` (files: 2)
 - **Why it was important**: Required `CURSOR_API_KEY`, preventing confusing half-configured states.
-- **Commentary**: Another clean merge into main; the project keeps compounding.
+- **Commentary**: Another clean merge; compounding progress.
 - **PR link**: `https://github.com/holiber/barducks/pull/47`
 
 #### #46 — Local dev service integration
@@ -443,7 +443,7 @@ This report lists every merged PR with added/deleted line counts and an explanat
 - **Branch**: `main` <- `cursor/local-dev-service-integration-ade6`
 - **Added/Deleted**: `+1643 / -9` (files: 32)
 - **Why it was important**: Added a local dev service with IPC/supervision, enabling richer, persistent automation workflows.
-- **Commentary**: Another clean merge into main; the project keeps compounding.
+- **Commentary**: Another clean merge; compounding progress.
 - **PR link**: `https://github.com/holiber/barducks/pull/46`
 
 #### #49 — Use tsx directly instead of npm run call for API checks
@@ -453,7 +453,7 @@ This report lists every merged PR with added/deleted line counts and an explanat
 - **Branch**: `main` <- `use-tsx-directly-for-api-checks`
 - **Added/Deleted**: `+106 / -31` (files: 1)
 - **Why it was important**: Ran checks via `tsx` directly, reducing indirection and improving reliability.
-- **Commentary**: Another clean merge into main; the project keeps compounding.
+- **Commentary**: Another clean merge; compounding progress.
 - **PR link**: `https://github.com/holiber/barducks/pull/49`
 
 #### #51 — Generate mcp.json before pre-install checks and include module checks
@@ -463,7 +463,7 @@ This report lists every merged PR with added/deleted line counts and an explanat
 - **Branch**: `main` <- `fix/mcp-config-before-pre-install-checks`
 - **Added/Deleted**: `+31 / -9` (files: 2)
 - **Why it was important**: Generated `mcp.json` before checks, fixing ordering so validation reflects reality.
-- **Commentary**: Another clean merge into main; the project keeps compounding.
+- **Commentary**: Another clean merge; compounding progress.
 - **PR link**: `https://github.com/holiber/barducks/pull/51`
 
 #### #52 — fix: Load external module mcpSettings before generating mcp.json
@@ -493,7 +493,7 @@ This report lists every merged PR with added/deleted line counts and an explanat
 - **Branch**: `main` <- `cursor/messenger-module-with-providers-c8f6`
 - **Added/Deleted**: `+1465 / -7` (files: 15)
 - **Why it was important**: Added a messenger module with providers, extending the integration pattern beyond email.
-- **Commentary**: Another clean merge into main; the project keeps compounding.
+- **Commentary**: Another clean merge; compounding progress.
 - **PR link**: `https://github.com/holiber/barducks/pull/50`
 
 #### #53 — Sync local main
@@ -503,7 +503,7 @@ This report lists every merged PR with added/deleted line counts and an explanat
 - **Branch**: `main` <- `alex/pr-main-sync`
 - **Added/Deleted**: `+55 / -0` (files: 1)
 - **Why it was important**: Improved reliability, usability, or maintainability in the area touched by the PR.
-- **Commentary**: Another clean merge into main; the project keeps compounding.
+- **Commentary**: Another clean merge; compounding progress.
 - **PR link**: `https://github.com/holiber/barducks/pull/53`
 
 ### 2025-12-26
@@ -515,7 +515,7 @@ This report lists every merged PR with added/deleted line counts and an explanat
 - **Branch**: `main` <- `cursor/trinicode-project-setup-c3df`
 - **Added/Deleted**: `+698 / -141` (files: 8)
 - **Why it was important**: Added project setup scaffolding experimentation (Trinicode), exploring faster project onboarding.
-- **Commentary**: Another clean merge into main; the project keeps compounding.
+- **Commentary**: Another clean merge; compounding progress.
 - **PR link**: `https://github.com/holiber/barducks/pull/54`
 
 #### #55 — Revert "Trinicode project setup (#54)"
@@ -547,7 +547,7 @@ This report lists every merged PR with added/deleted line counts and an explanat
 - **Branch**: `main` <- `cursor/installer-tests-playwright-migration-0055`
 - **Added/Deleted**: `+2574 / -226` (files: 35)
 - **Why it was important**: Migrated installer tests to Playwright, improving end-to-end confidence.
-- **Commentary**: Another clean merge into main; the project keeps compounding.
+- **Commentary**: Another clean merge; compounding progress.
 - **PR link**: `https://github.com/holiber/barducks/pull/59`
 
 #### #58 — DevDuck taskfile migration
@@ -557,7 +557,7 @@ This report lists every merged PR with added/deleted line counts and an explanat
 - **Branch**: `main` <- `cursor/devduck-taskfile-migration-da02`
 - **Added/Deleted**: `+1086 / -724` (files: 75)
 - **Why it was important**: Migrated to Taskfile-driven installation, enabling declarative, CI- and agent-friendly setup.
-- **Commentary**: Another clean merge into main; the project keeps compounding.
+- **Commentary**: Another clean merge; compounding progress.
 - **PR link**: `https://github.com/holiber/barducks/pull/58`
 
 #### #65 — Fix MCP tools listing for nested mcpSettings
@@ -577,7 +577,7 @@ This report lists every merged PR with added/deleted line counts and an explanat
 - **Branch**: `main` <- `continue_taskfile`
 - **Added/Deleted**: `+1204 / -299` (files: 40)
 - **Why it was important**: Improved Taskfile install robustness and reduced noise, making automation runs clearer.
-- **Commentary**: Another clean merge into main; the project keeps compounding.
+- **Commentary**: Another clean merge; compounding progress.
 - **PR link**: `https://github.com/holiber/barducks/pull/68`
 
 #### #71 — Devduck workspace modules explanation
@@ -587,7 +587,7 @@ This report lists every merged PR with added/deleted line counts and an explanat
 - **Branch**: `main` <- `cursor/devduck-workspace-modules-explanation-4802`
 - **Added/Deleted**: `+75 / -0` (files: 2)
 - **Why it was important**: Documented workspace modules, accelerating adoption by explaining the mental model.
-- **Commentary**: Another clean merge into main; the project keeps compounding.
+- **Commentary**: Another clean merge; compounding progress.
 - **PR link**: `https://github.com/holiber/barducks/pull/71`
 
 #### #72 — Playwright runner tests
@@ -597,7 +597,7 @@ This report lists every merged PR with added/deleted line counts and an explanat
 - **Branch**: `alex/unified-test-runner` <- `cursor/playwright-runner-tests-d84d`
 - **Added/Deleted**: `+784 / -1244` (files: 27)
 - **Why it was important**: Added Playwright runner tests, protecting the test infrastructure itself.
-- **Commentary**: Another clean merge into main; the project keeps compounding.
+- **Commentary**: Another clean merge; compounding progress.
 - **PR link**: `https://github.com/holiber/barducks/pull/72`
 
 #### #69 — GPT 5.2: Ci metrics and artifacts
@@ -607,7 +607,7 @@ This report lists every merged PR with added/deleted line counts and an explanat
 - **Branch**: `main` <- `cursor/ci-metrics-and-artifacts-3d8b`
 - **Added/Deleted**: `+1223 / -81` (files: 14)
 - **Why it was important**: Added CI metrics + artifacts, turning runs into analyzable evidence.
-- **Commentary**: Another clean merge into main; the project keeps compounding.
+- **Commentary**: Automation gets stricter; the project trades vibes for guarantees.
 - **PR link**: `https://github.com/holiber/barducks/pull/69`
 
 #### #73 — Pr metrics implementation
@@ -617,7 +617,7 @@ This report lists every merged PR with added/deleted line counts and an explanat
 - **Branch**: `main` <- `cursor/pr-metrics-implementation-6709`
 - **Added/Deleted**: `+187 / -9` (files: 4)
 - **Why it was important**: Implemented PR metrics reporting, making quality and performance trends visible.
-- **Commentary**: Another clean merge into main; the project keeps compounding.
+- **Commentary**: Another clean merge; compounding progress.
 - **PR link**: `https://github.com/holiber/barducks/pull/73`
 
 #### #74 — Broken ci metrics link
@@ -627,7 +627,7 @@ This report lists every merged PR with added/deleted line counts and an explanat
 - **Branch**: `main` <- `cursor/broken-ci-metrics-link-ecf2`
 - **Added/Deleted**: `+22 / -5` (files: 1)
 - **Why it was important**: Fixed the metrics dashboard link and formatting, preventing broken feedback loops.
-- **Commentary**: Another clean merge into main; the project keeps compounding.
+- **Commentary**: Automation gets stricter; the project trades vibes for guarantees.
 - **PR link**: `https://github.com/holiber/barducks/pull/74`
 
 #### #76 — New quality metrics
@@ -637,7 +637,7 @@ This report lists every merged PR with added/deleted line counts and an explanat
 - **Branch**: `main` <- `cursor/new-quality-metrics-d50b`
 - **Added/Deleted**: `+2353 / -74` (files: 9)
 - **Why it was important**: Added new quality metrics, giving teams earlier warning on code health drift.
-- **Commentary**: Another clean merge into main; the project keeps compounding.
+- **Commentary**: Another clean merge; compounding progress.
 - **PR link**: `https://github.com/holiber/barducks/pull/76`
 
 #### #75 — Changelog and version update
@@ -647,7 +647,7 @@ This report lists every merged PR with added/deleted line counts and an explanat
 - **Branch**: `main` <- `cursor/changelog-and-version-update-87e1`
 - **Added/Deleted**: `+26 / -4` (files: 3)
 - **Why it was important**: Cut the v0.3.0 release, packaging changes into a coherent public milestone.
-- **Commentary**: Another clean merge into main; the project keeps compounding.
+- **Commentary**: Another clean merge; compounding progress.
 - **PR link**: `https://github.com/holiber/barducks/pull/75`
 
 ### 2025-12-29
@@ -659,7 +659,7 @@ This report lists every merged PR with added/deleted line counts and an explanat
 - **Branch**: `main` <- `cursor/github-pages-status-warning-3849`
 - **Added/Deleted**: `+56 / -6` (files: 3)
 - **Why it was important**: Added a GitHub Pages status warning, making the dashboard link trustworthy.
-- **Commentary**: Another clean merge into main; the project keeps compounding.
+- **Commentary**: Another clean merge; compounding progress.
 - **PR link**: `https://github.com/holiber/barducks/pull/79`
 
 #### #80 — Main ci stability and checks
@@ -669,7 +669,7 @@ This report lists every merged PR with added/deleted line counts and an explanat
 - **Branch**: `main` <- `cursor/main-ci-stability-and-checks-923d`
 - **Added/Deleted**: `+435 / -12` (files: 8)
 - **Why it was important**: Stabilized main CI checks, protecting the project’s source of truth.
-- **Commentary**: Another clean merge into main; the project keeps compounding.
+- **Commentary**: Automation gets stricter; the project trades vibes for guarantees.
 - **PR link**: `https://github.com/holiber/barducks/pull/80`
 
 #### #82 — Project contribution guidelines
@@ -679,7 +679,7 @@ This report lists every merged PR with added/deleted line counts and an explanat
 - **Branch**: `main` <- `cursor/project-contribution-guidelines-d969`
 - **Added/Deleted**: `+51 / -259` (files: 9)
 - **Why it was important**: Added contribution guidelines, making collaboration scalable.
-- **Commentary**: Another clean merge into main; the project keeps compounding.
+- **Commentary**: Another clean merge; compounding progress.
 - **PR link**: `https://github.com/holiber/barducks/pull/82`
 
 #### #81 — Check name correction
@@ -689,7 +689,7 @@ This report lists every merged PR with added/deleted line counts and an explanat
 - **Branch**: `main` <- `cursor/check-name-correction-43e2`
 - **Added/Deleted**: `+267 / -93` (files: 7)
 - **Why it was important**: Corrected check naming, improving CI clarity and reducing confusion.
-- **Commentary**: Another clean merge into main; the project keeps compounding.
+- **Commentary**: Another clean merge; compounding progress.
 - **PR link**: `https://github.com/holiber/barducks/pull/81`
 
 #### #83 — Forked repo setup
@@ -699,7 +699,7 @@ This report lists every merged PR with added/deleted line counts and an explanat
 - **Branch**: `main` <- `cursor/forked-repo-setup-7e70`
 - **Added/Deleted**: `+185 / -121` (files: 9)
 - **Why it was important**: Made CI and repo references fork-safe, a must-have for open-source collaboration.
-- **Commentary**: Another clean merge into main; the project keeps compounding.
+- **Commentary**: Another clean merge; compounding progress.
 - **PR link**: `https://github.com/holiber/barducks/pull/83`
 
 #### #85 — Add new logo
@@ -719,7 +719,7 @@ This report lists every merged PR with added/deleted line counts and an explanat
 - **Branch**: `main` <- `cursor/license-file-updates-9e6a`
 - **Added/Deleted**: `+137 / -21` (files: 5)
 - **Why it was important**: Updated licensing and NOTICE, enabling compliant reuse in organizations.
-- **Commentary**: Another clean merge into main; the project keeps compounding.
+- **Commentary**: Another clean merge; compounding progress.
 - **PR link**: `https://github.com/holiber/barducks/pull/84`
 
 #### #88 — Agent PR workflow discipline
@@ -729,7 +729,7 @@ This report lists every merged PR with added/deleted line counts and an explanat
 - **Branch**: `main` <- `cursor/agent-pr-workflow-discipline-afe1`
 - **Added/Deleted**: `+441 / -1` (files: 7)
 - **Why it was important**: Added agent PR workflow discipline, reducing chaos in agent-driven development.
-- **Commentary**: Another clean merge into main; the project keeps compounding.
+- **Commentary**: Automation gets stricter; the project trades vibes for guarantees.
 - **PR link**: `https://github.com/holiber/barducks/pull/88`
 
 #### #87 — Docs only PR check
@@ -739,7 +739,7 @@ This report lists every merged PR with added/deleted line counts and an explanat
 - **Branch**: `main` <- `cursor/docs-only-pr-check-9c7e`
 - **Added/Deleted**: `+26 / -0` (files: 3)
 - **Why it was important**: Skipped heavy CI on docs-only PRs, cutting wasted compute while keeping safety.
-- **Commentary**: Another clean merge into main; the project keeps compounding.
+- **Commentary**: Another clean merge; compounding progress.
 - **PR link**: `https://github.com/holiber/barducks/pull/87`
 
 #### #89 — Changelog pr rule removal
@@ -749,7 +749,7 @@ This report lists every merged PR with added/deleted line counts and an explanat
 - **Branch**: `main` <- `cursor/changelog-pr-rule-removal-9825`
 - **Added/Deleted**: `+23 / -21` (files: 5)
 - **Why it was important**: Stopped requiring changelog edits per PR, moving to a task-based narrative that scales better.
-- **Commentary**: Another clean merge into main; the project keeps compounding.
+- **Commentary**: Another clean merge; compounding progress.
 - **PR link**: `https://github.com/holiber/barducks/pull/89`
 
 #### #86 — Project name and modules
@@ -759,7 +759,7 @@ This report lists every merged PR with added/deleted line counts and an explanat
 - **Branch**: `main` <- `cursor/project-name-and-modules-8dba`
 - **Added/Deleted**: `+614 / -2492` (files: 191)
 - **Why it was important**: Renamed DevDuck -> Barducks and migrated modules -> extensions, clarifying identity and structure.
-- **Commentary**: Another clean merge into main; the project keeps compounding.
+- **Commentary**: Another clean merge; compounding progress.
 - **PR link**: `https://github.com/holiber/barducks/pull/86`
 
 #### #91 — Code duplication analysis
@@ -769,7 +769,7 @@ This report lists every merged PR with added/deleted line counts and an explanat
 - **Branch**: `main` <- `cursor/code-duplication-analysis-dc20`
 - **Added/Deleted**: `+157 / -9` (files: 2)
 - **Why it was important**: Audited duplication and fixed ignore handling, improving metric accuracy.
-- **Commentary**: Another clean merge into main; the project keeps compounding.
+- **Commentary**: Another clean merge; compounding progress.
 - **PR link**: `https://github.com/holiber/barducks/pull/91`
 
 #### #90 — After merge CI setup
@@ -779,7 +779,7 @@ This report lists every merged PR with added/deleted line counts and an explanat
 - **Branch**: `main` <- `cursor/after-merge-ci-setup-c31b`
 - **Added/Deleted**: `+162 / -38` (files: 4)
 - **Why it was important**: Added after-merge CI workflow, ensuring main produces trusted metrics and deployments.
-- **Commentary**: Another clean merge into main; the project keeps compounding.
+- **Commentary**: Automation gets stricter; the project trades vibes for guarantees.
 - **PR link**: `https://github.com/holiber/barducks/pull/90`
 
 #### #92 — Readme logo update
@@ -789,7 +789,7 @@ This report lists every merged PR with added/deleted line counts and an explanat
 - **Branch**: `main` <- `cursor/readme-logo-update-af70`
 - **Added/Deleted**: `+33 / -15` (files: 6)
 - **Why it was important**: Refined README logo usage, improving first impressions and clarity.
-- **Commentary**: Another clean merge into main; the project keeps compounding.
+- **Commentary**: Another clean merge; compounding progress.
 - **PR link**: `https://github.com/holiber/barducks/pull/92`
 
 #### #93 — After merge stats badge
@@ -799,7 +799,7 @@ This report lists every merged PR with added/deleted line counts and an explanat
 - **Branch**: `main` <- `cursor/after-merge-stats-badge-e555`
 - **Added/Deleted**: `+76 / -0` (files: 3)
 - **Why it was important**: Added a stats badge, surfacing project health at a glance.
-- **Commentary**: Another clean merge into main; the project keeps compounding.
+- **Commentary**: Another clean merge; compounding progress.
 - **PR link**: `https://github.com/holiber/barducks/pull/93`
 
 #### #96 — Readme badge and logo
@@ -809,7 +809,7 @@ This report lists every merged PR with added/deleted line counts and an explanat
 - **Branch**: `main` <- `cursor/readme-badge-and-logo-061c`
 - **Added/Deleted**: `+95 / -6` (files: 3)
 - **Why it was important**: Added README badges/logo polish, improving discoverability and trust.
-- **Commentary**: Another clean merge into main; the project keeps compounding.
+- **Commentary**: Another clean merge; compounding progress.
 - **PR link**: `https://github.com/holiber/barducks/pull/96`
 
 #### #95 — Pr test metrics comparison
@@ -819,7 +819,7 @@ This report lists every merged PR with added/deleted line counts and an explanat
 - **Branch**: `main` <- `cursor/pr-test-metrics-comparison-2c9b`
 - **Added/Deleted**: `+83 / -4` (files: 4)
 - **Why it was important**: Added PR test metrics comparison, making regressions and improvements measurable.
-- **Commentary**: Another clean merge into main; the project keeps compounding.
+- **Commentary**: Another clean merge; compounding progress.
 - **PR link**: `https://github.com/holiber/barducks/pull/95`
 
 #### #94 — Changelog update process
@@ -829,7 +829,7 @@ This report lists every merged PR with added/deleted line counts and an explanat
 - **Branch**: `main` <- `cursor/changelog-update-process-28b6`
 - **Added/Deleted**: `+26 / -4` (files: 2)
 - **Why it was important**: Documented changelog/update process, reducing release friction.
-- **Commentary**: Another clean merge into main; the project keeps compounding.
+- **Commentary**: Another clean merge; compounding progress.
 - **PR link**: `https://github.com/holiber/barducks/pull/94`
 
 #### #97 — Script folder reorganization
@@ -842,19 +842,26 @@ This report lists every merged PR with added/deleted line counts and an explanat
 - **Commentary**: Big diff energy: this is a ‘move fast, but with intent’ kind of merge.
 - **PR link**: `https://github.com/holiber/barducks/pull/97`
 
+### 2025-12-30
+
+#### #99 — Enforce strict agent PR workflow in CI
+
+- **Merged**: 01:14 UTC
+- **Author**: holiber
+- **Branch**: `main` <- `agents_discipine`
+- **Added/Deleted**: `+1121 / -53` (files: 15)
+- **Why it was important**: Enforced strict agent PR workflow checks in CI, preventing process regressions and keeping automation disciplined as the project scales.
+- **Commentary**: Automation gets stricter; the project trades vibes for guarantees.
+- **PR link**: `https://github.com/holiber/barducks/pull/99`
+
 ## Final review: why this project matters
 
-Barducks takes “rubber duck debugging” and turns it into an automation system: a repeatable workflow that can provision a workspace, validate prerequisites, expose tools (including MCP), and run disciplined CI so changes can be shipped safely.
+Barducks turns “rubber duck debugging” into an automation system: it provisions workspaces, validates prerequisites, exposes tools (including MCP), and enforces disciplined CI so changes can be shipped safely.
 
 ### Why it is important to the industry
 
-- **It productizes agent-driven development**: The industry has plenty of code-generation demos; Barducks focuses on the hard part: making AI-assisted changes reproducible, testable, and safe to merge.
-- **It treats setup as a first-class reliability surface**: Most engineering time is lost to environment drift. The project’s emphasis on installers, checks, fixtures, and Taskfile workflows attacks that cost directly.
-- **It provides an extensibility model that enterprises need**: Provider/extension patterns let companies integrate internal systems (email, messaging, CI, proprietary tooling) without forking core infrastructure.
-- **It makes engineering health measurable**: CI artifacts, PR metrics, and quality dashboards turn “how healthy is this?” into an answerable question, enabling data-informed maintenance rather than gut-feel debugging.
-- **It is open-source-ready by design**: Fork-safe CI permissions, contribution rules, and explicit licensing are the difference between a personal project and a tool the industry can adopt and extend.
-
-### What this history suggests about the project’s trajectory
-
-- **Strong fundamentals**: Rapid refactors were paired with increasing test coverage and automation maturity, which is the right pattern for sustainable velocity.
-- **Clear next step**: The fastest path to broader adoption is an extension ecosystem: more reference providers, stricter compatibility guarantees, and tooling for third-party extension testing/publishing.
+- **It productizes agent-driven development**: It focuses on reproducibility, testability, and merge safety rather than one-off code generation demos.
+- **It reduces environment drift costs**: Installer/check/fixture/Taskfile investments attack a major source of lost engineering time across companies.
+- **It enables enterprise integration without forks**: Provider/extension patterns let teams plug in internal systems while keeping the core upgradable.
+- **It makes engineering health measurable**: CI artifacts, PR metrics, and quality dashboards turn maintenance into a data-driven practice.
+- **It is open-source-ready by design**: Fork-safe CI, clear contribution rules, and explicit licensing are prerequisites for industry adoption.

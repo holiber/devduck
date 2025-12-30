@@ -25,7 +25,7 @@ let TextInput: ComponentType<TextInputProps>;
 const { getSnapshot } = await import('./dashboard-snapshot.js');
 const { DashboardSnapshotSchema } = await import('../schemas/dashboard-snapshot.zod.js');
 // TaskStateSchema not available - validation removed
-const { createYargs } = await import('../../../scripts/lib/cli.js');
+const { createYargs } = await import('../../../src/lib/cli.js');
 
 const h = React.createElement;
 

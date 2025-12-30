@@ -3,9 +3,9 @@ import assert from 'node:assert/strict';
 import fs from 'fs';
 import path from 'path';
 
-import { getDevduckServicePaths } from '../../scripts/barducks-service/src/paths.js';
-import { ProcessManager } from '../../scripts/barducks-service/src/process/ProcessManager.js';
-import { isPidAlive } from '../../scripts/barducks-service/src/pids.js';
+import { getDevduckServicePaths } from '../../src/barducks-service/src/paths.js';
+import { ProcessManager } from '../../src/barducks-service/src/process/ProcessManager.js';
+import { isPidAlive } from '../../src/barducks-service/src/pids.js';
 
 function rmCache(rootDir: string) {
   fs.rmSync(rootDir, { recursive: true, force: true });

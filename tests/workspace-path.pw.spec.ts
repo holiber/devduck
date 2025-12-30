@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import path from 'node:path';
 
-import { resolveWorkspaceRoot, _internal } from '../scripts/lib/workspace-path.ts';
+import { resolveWorkspaceRoot, _internal } from '../src/lib/workspace-path.ts';
 
 test.describe('workspace-path resolver', () => {
   test('parses ark:/ links as Arcadia links', () => {

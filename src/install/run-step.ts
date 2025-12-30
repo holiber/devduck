@@ -112,7 +112,7 @@ async function main(argv = process.argv): Promise<void> {
   const { config } = readWorkspaceConfigFromRoot(workspaceRoot);
   const projectRoot =
     (parsed['project-root'] ? path.resolve(invocationCwd, String(parsed['project-root'])) : null) ||
-    // This file lives at <devduckRoot>/scripts/install/run-step.ts => ../.. is <devduckRoot>
+    // This file lives at <devduckRoot>/src/install/run-step.ts => ../.. is <devduckRoot>
     path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 
   const autoYes = Boolean(parsed.y || parsed.yes || parsed['non-interactive'] || parsed.unattended);

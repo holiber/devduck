@@ -15,7 +15,7 @@ import {
   discoverProvidersFromModules,
   getProvider,
   getProvidersByType
-} from '../../scripts/lib/provider-registry.js';
+} from '../../src/lib/provider-registry.js';
 
 describe('ci: smogcheck-provider', () => {
   test('matches CIProvider interface', () => {
