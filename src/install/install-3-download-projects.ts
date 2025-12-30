@@ -8,7 +8,6 @@
 
 import path from 'path';
 import fs from 'fs';
-import { spawnSync } from 'child_process';
 import { readWorkspaceConfigFromRoot } from '../lib/workspace-config.js';
 import { readEnvFile } from '../lib/env.js';
 import { print, symbols } from '../utils.js';
@@ -16,6 +15,7 @@ import { markStepCompleted, type ProjectResult } from './install-state.js';
 import { WorkspaceConfigSchema } from '../schemas/workspace-config.zod.js';
 import { z } from 'zod';
 import type { InstallContext, StepOutcome } from './runner.js';
+import { installWithProvider } from '../../extensions/installer/lib/installer-runtime.js';
 
 type WorkspaceConfig = z.infer<typeof WorkspaceConfigSchema>;
 
@@ -43,123 +43,8 @@ function getProjectName(src: string | undefined): string {
   return path.basename(src);
 }
 
-/**
- * Resolve project src to workspace path
- */
-function resolveProjectSrcToWorkspacePath(projectSrc: string | undefined, workspaceRoot: string): string | null {
-  if (!projectSrc || typeof projectSrc !== 'string') return null;
-  // Treat relative paths as relative to the workspace root
-  return path.isAbsolute(projectSrc) ? projectSrc : path.resolve(workspaceRoot, projectSrc);
-}
-
-/**
- * Check if path is an existing directory
- */
-function isExistingDirectory(dirPath: string | undefined): boolean {
-  try {
-    if (!dirPath) return false;
-    if (!fs.existsSync(dirPath)) return false;
-    return fs.statSync(dirPath).isDirectory();
-  } catch {
-    return false;
-  }
-}
-
-/**
- * Create symlink for Arcadia project
- */
-function createProjectSymlink(
-  projectName: string,
-  pathInArcadia: string,
-  workspaceRoot: string,
-  env: Record<string, string>
-): { success: boolean; path: string; target: string; existed?: boolean; created?: boolean; error?: string } {
-  const projectsDir = path.join(workspaceRoot, 'projects');
-  const symlinkPath = path.join(projectsDir, projectName);
-  
-  // Get ARCADIA path from env
-  let arcadiaPath = env.ARCADIA || process.env.ARCADIA || '~/arcadia';
-  arcadiaPath = arcadiaPath.replace(/^~/, process.env.HOME || '');
-  
-  const targetPath = path.join(arcadiaPath, pathInArcadia);
-  
-  try {
-    // Check if symlink already exists
-    if (fs.existsSync(symlinkPath)) {
-      // Check if it's a symlink
-      if (fs.lstatSync(symlinkPath).isSymbolicLink()) {
-        const existingTarget = fs.readlinkSync(symlinkPath);
-        if (existingTarget === targetPath) {
-          return { success: true, path: symlinkPath, target: targetPath, existed: true };
-        } else {
-          // Remove old symlink
-          fs.unlinkSync(symlinkPath);
-        }
-      } else {
-        // It's a directory, remove it
-        fs.rmSync(symlinkPath, { recursive: true, force: true });
-      }
-    }
-    
-    // Check if target exists
-    if (!fs.existsSync(targetPath)) {
-      return { success: false, path: symlinkPath, target: targetPath, error: 'Target path does not exist' };
-    }
-    
-    // Create symlink
-    fs.symlinkSync(targetPath, symlinkPath);
-    
-    return { success: true, path: symlinkPath, target: targetPath, created: true };
-  } catch (error) {
-    const err = error as Error;
-    return { success: false, path: symlinkPath, target: targetPath, error: err.message };
-  }
-}
-
-/**
- * Create symlink to target folder (for local-folder projects)
- */
-function createProjectSymlinkToTarget(
-  projectName: string,
-  targetPath: string,
-  workspaceRoot: string
-): { success: boolean; path: string; target: string; existed?: boolean; created?: boolean; error?: string } {
-  const projectsDir = path.join(workspaceRoot, 'projects');
-  const symlinkPath = path.join(projectsDir, projectName);
-  const resolvedTarget = path.resolve(targetPath);
-  
-  try {
-    // Check if symlink already exists
-    if (fs.existsSync(symlinkPath)) {
-      if (fs.lstatSync(symlinkPath).isSymbolicLink()) {
-        const existingTarget = fs.readlinkSync(symlinkPath);
-        // readlink may return relative paths; normalize before comparing
-        const existingResolved = path.resolve(path.dirname(symlinkPath), existingTarget);
-        if (existingResolved === resolvedTarget) {
-          return { success: true, path: symlinkPath, target: resolvedTarget, existed: true };
-        }
-        fs.unlinkSync(symlinkPath);
-      } else {
-        // It's a directory or file, remove it
-        fs.rmSync(symlinkPath, { recursive: true, force: true });
-      }
-    }
-    
-    if (!fs.existsSync(resolvedTarget)) {
-      return { success: false, path: symlinkPath, target: resolvedTarget, error: 'Target path does not exist' };
-    }
-    
-    const stats = fs.statSync(resolvedTarget);
-    if (!stats.isDirectory()) {
-      return { success: false, path: symlinkPath, target: resolvedTarget, error: 'Target path is not a directory' };
-    }
-    
-    fs.symlinkSync(resolvedTarget, symlinkPath);
-    return { success: true, path: symlinkPath, target: resolvedTarget, created: true };
-  } catch (error) {
-    const err = error as Error;
-    return { success: false, path: symlinkPath, target: resolvedTarget, error: err.message };
-  }
+function ensureDir(p: string): void {
+  if (!fs.existsSync(p)) fs.mkdirSync(p, { recursive: true });
 }
 
 export interface DownloadProjectsStepResult {
@@ -216,7 +101,6 @@ export async function runStep3DownloadProjects(
     log(`[Step 3] Processing ${config.projects.length} project(s)`);
   }
   
-  const env = readEnvFile(path.join(workspaceRoot, '.env'));
   const projects: ProjectResult[] = [];
   
   for (const project of config.projects) {
@@ -248,139 +132,30 @@ export async function runStep3DownloadProjects(
       continue;
     }
     
-    // Arcadia projects: create symlink into Arcadia checkout
-    if (project.src.startsWith('arc://')) {
-      const existingPath = path.join(projectsDir, projectName);
-      if (fs.existsSync(existingPath)) {
-        print(`    ${symbols.info} Project already exists in projects/${projectName}, skipping (no relink / no cleanup)`, 'cyan');
-        result.symlink = {
-          path: `projects/${projectName}`,
-          target: null,
-          existed: true
-        };
-        projects.push(result);
-        continue;
-      }
-      print(`    Creating symlink...`, 'cyan');
-      // Remove arc:// prefix if present
-      const pathForSymlink = project.src.replace(/^arc:\/\//, '');
-      const symlinkResult = createProjectSymlink(projectName, pathForSymlink, workspaceRoot, env);
-      
-      if (symlinkResult.success) {
-        const action = symlinkResult.existed ? 'exists' : 'created';
-        print(`    ${symbols.success} Symlink ${action}: projects/${projectName} -> ${symlinkResult.target}`, 'green');
-        result.symlink = {
-          path: `projects/${projectName}`,
-          target: symlinkResult.target,
-          created: symlinkResult.created || false
-        };
-      } else {
-        print(`    ${symbols.error} Symlink failed: ${symlinkResult.error}`, 'red');
-        result.symlink = {
-          path: `projects/${projectName}`,
-          target: symlinkResult.target,
-          error: symlinkResult.error
-        };
-      }
-    } else {
-      const resolvedLocalPath = resolveProjectSrcToWorkspacePath(project.src, workspaceRoot);
-      if (project.src && resolvedLocalPath && isExistingDirectory(resolvedLocalPath)) {
-        const existingPath = path.join(projectsDir, projectName);
-        if (fs.existsSync(existingPath)) {
-          print(
-            `    ${symbols.info} Project already exists in projects/${projectName}, skipping (no relink / no cleanup)`,
-            'cyan'
-          );
-          result.symlink = {
-            path: `projects/${projectName}`,
-            target: null,
-            existed: true
-          };
-          projects.push(result);
-          continue;
-        }
-
-        // Local-folder projects - create symlink in projects/ directly to the folder path
-        print(`    Creating symlink...`, 'cyan');
-        const symlinkResult = createProjectSymlinkToTarget(projectName, resolvedLocalPath, workspaceRoot);
-
-        if (symlinkResult.success) {
-          const action = symlinkResult.existed ? 'exists' : 'created';
-          print(`    ${symbols.success} Symlink ${action}: projects/${projectName} -> ${symlinkResult.target}`, 'green');
-          result.symlink = {
-            path: `projects/${projectName}`,
-            target: symlinkResult.target,
-            created: symlinkResult.created || false
-          };
-        } else {
-          print(`    ${symbols.error} Symlink failed: ${symlinkResult.error}`, 'red');
-          result.symlink = {
-            path: `projects/${projectName}`,
-            target: symlinkResult.target,
-            error: symlinkResult.error
-          };
-        }
-      } else if (project.src && (project.src.includes('github.com') || project.src.startsWith('git@'))) {
-        // GitHub projects - clone to projects/ directory
-        const projectPath = path.join(projectsDir, projectName);
-
-        // Never touch existing paths under projects/
-        if (fs.existsSync(projectPath)) {
-          print(
-            `    ${symbols.info} Repository already exists in projects/${projectName}, skipping (no git pull / no reset / no cleanup)`,
-            'cyan'
-          );
-          result.symlink = { path: `projects/${projectName}`, target: projectPath, existed: true };
-        } else {
-        // Clone repository
-        print(`    ${symbols.info} Cloning repository...`, 'cyan');
-        if (log) {
-          log(`[Step 3] Cloning repository: ${project.src} to ${projectPath}`);
-        }
-        
-        // Convert github.com/user/repo to https://github.com/user/repo.git
-        // Use HTTPS for CI compatibility (no SSH keys required)
-        let gitUrl = project.src;
-        if (gitUrl.includes('github.com') && !gitUrl.startsWith('git@') && !gitUrl.startsWith('http')) {
-          gitUrl = `https://github.com/${gitUrl.replace(/^github\.com\//, '').replace(/\.git$/, '')}.git`;
-        }
-        
-        const cloneResult = spawnSync('git', ['clone', gitUrl, projectPath], {
-          encoding: 'utf8',
-          stdio: 'inherit'
-        });
-        
-        if (cloneResult.status === 0) {
-          print(`    ${symbols.success} Repository cloned: projects/${projectName}`, 'green');
-          if (log) {
-            log(`[Step 3] Repository cloned successfully: ${projectPath}`);
-          }
-          result.symlink = {
-            path: `projects/${projectName}`,
-            target: projectPath,
-            created: true
-          };
-        } else {
-          print(`    ${symbols.error} Failed to clone repository: ${cloneResult.stderr || cloneResult.stdout}`, 'red');
-          if (log) {
-            log(`[Step 3] Failed to clone repository: ${cloneResult.stderr || cloneResult.stdout}`);
-          }
-          result.symlink = {
-            path: `projects/${projectName}`,
-            target: projectPath,
-            error: `Failed to clone: ${cloneResult.stderr || cloneResult.stdout}`
-          };
-        }
-      }
-      } else {
-      // Other project types - no action needed
-      print(`    ${symbols.info} Project type not supported for automatic setup`, 'cyan');
+    const projectPath = path.join(projectsDir, projectName);
+    try {
+      ensureDir(projectsDir);
+      await installWithProvider({
+        src: project.src,
+        dest: projectPath,
+        force: false,
+        workspaceRoot,
+        quiet: true
+      });
       result.symlink = {
-        path: null,
-        target: null,
-        error: 'Project type not supported for automatic setup'
+        path: `projects/${projectName}`,
+        target: projectPath,
+        created: !fs.existsSync(projectPath) ? true : undefined
       };
-      }
+      print(`    ${symbols.success} Installed: projects/${projectName}`, 'green');
+    } catch (e) {
+      const err = e as Error;
+      print(`    ${symbols.error} Install failed: ${err.message}`, 'red');
+      result.symlink = {
+        path: `projects/${projectName}`,
+        target: projectPath,
+        error: err.message
+      };
     }
     
     projects.push(result);

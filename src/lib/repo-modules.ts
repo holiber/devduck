@@ -11,9 +11,9 @@
 
 import fs from 'fs';
 import path from 'path';
-import { spawnSync, execSync } from 'child_process';
 import { fileURLToPath } from 'url';
 import { compareVersions } from 'compare-versions';
+import { installWithProvider } from '../../extensions/installer/lib/installer-runtime.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -45,36 +45,11 @@ interface VersionCheckResult {
 
 interface RepoPathInfo {
   barducksPath: string;
-  actualPath: string;
-  needsSymlink: boolean;
   exists: boolean;
 }
 
-/**
- * Find Arcadia root directory
- * @returns Path to Arcadia root or null if not found
- */
-function findArcadiaRoot(): string | null {
-  // First check ARCADIA_ROOT env var (fastest)
-  const envRoot = process.env.ARCADIA_ROOT;
-  if (envRoot && fs.existsSync(path.join(envRoot, '.arcadia.root'))) {
-    return envRoot;
-  }
-
-  // Execute `arc root` command
-  try {
-    const output = execSync('arc root', { encoding: 'utf8', stdio: 'pipe' });
-    const lines = output.trim().split('\n');
-    const arcadiaRoot = lines[lines.length - 1].trim();
-    
-    if (arcadiaRoot && fs.existsSync(path.join(arcadiaRoot, '.arcadia.root'))) {
-      return arcadiaRoot;
-    }
-  } catch (error) {
-    // Command failed, return null
-  }
-
-  return null;
+function ensureDir(p: string): void {
+  if (!fs.existsSync(p)) fs.mkdirSync(p, { recursive: true });
 }
 
 /**
@@ -170,169 +145,13 @@ export function resolveRepoPath(repoUrl: string, workspaceRoot: string): RepoPat
   const repoName = extractRepoName(parsed);
   
   const barducksDir = path.join(workspaceRoot, 'barducks');
-  const projectsDir = path.join(workspaceRoot, 'projects');
   const barducksRepoPath = path.join(barducksDir, repoName);
-  const projectsRepoPath = path.join(projectsDir, repoName);
+  const exists = fs.existsSync(barducksRepoPath);
 
-  // Check if repo exists in projects/ directory
-  if (fs.existsSync(projectsRepoPath)) {
-    const symlinkExists = fs.existsSync(barducksRepoPath);
-    let needsSymlink = false;
-    
-    if (symlinkExists) {
-      try {
-        const stats = fs.lstatSync(barducksRepoPath);
-        if (stats.isSymbolicLink()) {
-          const currentTarget = fs.readlinkSync(barducksRepoPath);
-          const expectedTarget = path.resolve(projectsRepoPath);
-          needsSymlink = path.resolve(currentTarget) !== expectedTarget;
-        } else if (stats.isDirectory()) {
-          // Directory exists, use it
-          needsSymlink = false;
-        }
-      } catch {
-        needsSymlink = true;
-      }
-    } else {
-      needsSymlink = true;
-    }
-
-    return {
-      barducksPath: barducksRepoPath,
-      actualPath: projectsRepoPath,
-      needsSymlink,
-      exists: true
-    };
-  }
-
-  // Handle Arcadia repositories
-  if (parsed.type === 'arc') {
-    let actualRepoPath: string;
-
-    if (path.isAbsolute(parsed.normalized)) {
-      actualRepoPath = parsed.normalized;
-    } else {
-      const arcadiaRoot = findArcadiaRoot();
-      if (!arcadiaRoot) {
-        throw new Error('Cannot determine Arcadia root. Set ARCADIA_ROOT environment variable or run from Arcadia directory.');
-      }
-      actualRepoPath = path.join(arcadiaRoot, parsed.normalized);
-    }
-
-    if (!fs.existsSync(actualRepoPath)) {
-      throw new Error(`Arcadia repository not found: ${actualRepoPath}`);
-    }
-
-    const symlinkExists = fs.existsSync(barducksRepoPath);
-    let needsSymlink = false;
-
-    if (symlinkExists) {
-      try {
-        const stats = fs.lstatSync(barducksRepoPath);
-        if (stats.isSymbolicLink()) {
-          const currentTarget = fs.readlinkSync(barducksRepoPath);
-          const expectedTarget = path.resolve(actualRepoPath);
-          needsSymlink = path.resolve(currentTarget) !== expectedTarget;
-        } else if (stats.isDirectory()) {
-          needsSymlink = false;
-        }
-      } catch {
-        needsSymlink = true;
-      }
-    } else {
-      needsSymlink = true;
-    }
-
-    return {
-      barducksPath: barducksRepoPath,
-      actualPath: actualRepoPath,
-      needsSymlink,
-      exists: true
-    };
-  }
-
-  // Handle Git repositories
-  if (parsed.type === 'git') {
-    const repoPath = barducksRepoPath;
-    const exists = fs.existsSync(repoPath) && fs.existsSync(path.join(repoPath, '.git'));
-
-    return {
-      barducksPath: repoPath,
-      actualPath: repoPath,
-      needsSymlink: false,
-      exists
-    };
-  }
-
-  throw new Error(`Unsupported repository type: ${parsed.type}`);
-}
-
-/**
- * Create symlink from barducks path to actual path
- */
-function createSymlink(barducksPath: string, actualPath: string, repoName: string): void {
-  const barducksDir = path.dirname(barducksPath);
-  fs.mkdirSync(barducksDir, { recursive: true });
-
-  // Remove existing symlink if it points to wrong target
-  if (fs.existsSync(barducksPath)) {
-    try {
-      const stats = fs.lstatSync(barducksPath);
-      if (stats.isSymbolicLink()) {
-        fs.unlinkSync(barducksPath);
-      } else if (stats.isDirectory()) {
-        // Don't overwrite existing directory
-        return;
-      }
-    } catch (error) {
-      // Continue to create symlink
-    }
-  }
-
-  try {
-    fs.symlinkSync(actualPath, barducksPath, 'dir');
-    print(`  ${symbols.info} Created symlink: barducks/${repoName} -> ${path.relative(path.dirname(barducksPath), actualPath)}`, 'cyan');
-  } catch (error) {
-    const err = error as Error;
-    print(`  ${symbols.warning} Failed to create symlink, using path directly: ${err.message}`, 'yellow');
-    throw err;
-  }
-}
-
-/**
- * Clone git repository
- */
-function cloneGitRepository(repoUrl: string, repoPath: string): void {
-  const barducksDir = path.dirname(repoPath);
-  fs.mkdirSync(barducksDir, { recursive: true });
-
-  print(`  ${symbols.info} Cloning repository: ${repoUrl}`, 'cyan');
-  
-  const cloneResult = spawnSync('git', ['clone', repoUrl, repoPath], {
-    encoding: 'utf8',
-    stdio: 'inherit'
-  });
-
-  if (cloneResult.status !== 0) {
-    throw new Error(`Failed to clone repository: ${repoUrl}`);
-  }
-}
-
-/**
- * Update existing git repository
- */
-function updateGitRepository(repoPath: string): void {
-  const repoName = path.basename(repoPath);
-  print(`  ${symbols.info} Updating existing git repository: ${repoName}`, 'cyan');
-  
-  const pullResult = spawnSync('git', ['pull'], {
-    cwd: repoPath,
-    encoding: 'utf8'
-  });
-
-  if (pullResult.status !== 0) {
-    print(`  ${symbols.warning} Failed to update repository, using existing version`, 'yellow');
-  }
+  return {
+    barducksPath: barducksRepoPath,
+    exists
+  };
 }
 
 /**
@@ -347,27 +166,21 @@ export async function ensureRepoAvailable(
   workspaceRoot: string
 ): Promise<string> {
   const pathInfo = resolveRepoPath(repoUrl, workspaceRoot);
-  const parsed = parseRepoUrl(repoUrl);
-  const repoName = extractRepoName(parsed);
+  ensureDir(path.dirname(pathInfo.barducksPath));
 
-  // Handle symlink creation
-  if (pathInfo.needsSymlink) {
-    createSymlink(pathInfo.barducksPath, pathInfo.actualPath, repoName);
-    return pathInfo.barducksPath;
+  if (!pathInfo.exists) {
+    print(`  ${symbols.info} Installing repository via installer: ${repoUrl}`, 'cyan');
+    await installWithProvider({
+      src: repoUrl,
+      dest: pathInfo.barducksPath,
+      force: false,
+      // Avoid recursion: provider discovery uses extension discovery which (for workspaceRoot)
+      // may attempt to load repos via this same module.
+      workspaceRoot: null,
+      quiet: true
+    });
   }
 
-  // Handle git repository cloning/updating
-  if (parsed.type === 'git' && !pathInfo.exists) {
-    cloneGitRepository(parsed.normalized, pathInfo.barducksPath);
-    return pathInfo.barducksPath;
-  }
-
-  if (parsed.type === 'git' && pathInfo.exists) {
-    updateGitRepository(pathInfo.barducksPath);
-    return pathInfo.barducksPath;
-  }
-
-  // Repository already exists and is accessible
   return pathInfo.barducksPath;
 }
 

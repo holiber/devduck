@@ -330,6 +330,14 @@ export function expandModuleNames(selectors: string[], allModules: Module[]): st
 export function resolveModules(workspaceConfig: WorkspaceConfig, allModules: Module[]): Module[] {
   const moduleNames = expandModuleNames(workspaceConfig.extensions || ['*'], allModules);
 
+  // Always include modules tagged as `core` (auto-enabled without explicit config).
+  const coreTagged = allModules.filter((m) => Array.isArray(m.tags) && m.tags.includes('core')).map((m) => m.name);
+  for (const name of coreTagged) {
+    if (!moduleNames.includes(name)) {
+      moduleNames.push(name);
+    }
+  }
+
   // Filter by tags if needed (future feature)
   // For now, just resolve by name
 
