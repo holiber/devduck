@@ -1,42 +1,42 @@
 {
   "meta": {
-    "collectedAt": "2025-12-29T23:03:43.535Z",
+    "collectedAt": "2025-12-30T01:15:44.962Z",
     "repository": "holiber/barducks",
     "eventName": "push",
-    "sha": "09b7969fa7987f735bab2324027dad3f186c23b1",
+    "sha": "4e29980186b22d03fad3bec19f5569e2b768fea8",
     "ref": "refs/heads/main",
-    "runId": "20584578144",
+    "runId": "20586407238",
     "runAttempt": "1",
-    "prNumber": 97,
-    "prUrl": "https://github.com/holiber/barducks/pull/97",
+    "prNumber": 99,
+    "prUrl": "https://github.com/holiber/barducks/pull/99",
     "node": "v24.12.0"
   },
-  "pr": 97,
+  "pr": 99,
   "commands": {
     "npm_test": {
       "name": "npm_test",
       "command": "bash -lc 'npx c8 --reporter=json-summary --report-dir .cache/coverage npm run test:unit || (echo \"⚠️ Unit tests failed, retrying after 60 seconds...\"; sleep 60; npx c8 --reporter=json-summary --report-dir .cache/coverage npm run test:unit)'",
       "exitCode": 0,
-      "durationMs": 29865,
-      "collectedAt": "2025-12-29T23:02:57.834Z"
+      "durationMs": 31414,
+      "collectedAt": "2025-12-30T01:15:00.158Z"
     },
     "pw_installer": {
       "name": "pw_installer",
       "command": "bash -lc 'npx playwright test -c tests/installer/playwright.config.ts || (echo \"⚠️ Playwright installer suite failed, retrying after 60 seconds...\"; sleep 60; npx playwright test -c tests/installer/playwright.config.ts)'",
       "exitCode": 0,
-      "durationMs": 27709,
-      "collectedAt": "2025-12-29T23:03:42.748Z"
+      "durationMs": 28308,
+      "collectedAt": "2025-12-30T01:15:44.412Z"
     },
     "npm_pack": {
       "name": "npm-pack",
       "command": "npm pack --silent",
       "exitCode": 0,
-      "durationMs": 797
+      "durationMs": 816
     }
   },
   "sizes": {
     "npm_pack": {
-      "bytes": 3610993
+      "bytes": 3620228
     }
   },
   "tests": {
@@ -46,15 +46,15 @@
       "passed": 74,
       "failed": 0,
       "skipped": 9,
-      "reportedDurationMs": 27113.871082,
-      "durationMs": 29865,
+      "reportedDurationMs": 28538.183164,
+      "durationMs": 31414,
       "exitCode": 0
     },
     "e2e_installer": {
       "total": 34,
       "passed": 34,
-      "reportedDurationMs": 26400,
-      "durationMs": 27709,
+      "reportedDurationMs": 27000,
+      "durationMs": 28308,
       "exitCode": 0
     },
     "flaky": {
@@ -62,8 +62,8 @@
     }
   },
   "code": {
-    "scriptCodeLines": 35136,
-    "totalTextLines": 45778,
+    "scriptCodeLines": 35667,
+    "totalTextLines": 46851,
     "hugeScripts": 3
   },
   "quality": {
@@ -84,20 +84,20 @@
       }
     },
     "duplication": {
-      "duplicatedPct": 8.92,
+      "duplicatedPct": 8.77,
       "duplicatedLines": 2753,
-      "totalLines": 30870
+      "totalLines": 31395
     }
   },
   "notes": [
     "BUILD_COMMAND not set; build metric skipped.",
     "DEV_COMMAND not set; dev startup metric skipped."
   ],
-  "commit": "09b7969fa7987f735bab2324027dad3f186c23b1",
-  "timestamp": "2025-12-29T23:03:48.187Z",
+  "commit": "4e29980186b22d03fad3bec19f5569e2b768fea8",
+  "timestamp": "2025-12-30T01:15:49.778Z",
   "baseline": {
-    "commit": "09b7969fa7987f735bab2324027dad3f186c23b1",
-    "pr": 97,
-    "timestamp": "2025-12-29T23:03:48.187Z"
+    "commit": "4e29980186b22d03fad3bec19f5569e2b768fea8",
+    "pr": 99,
+    "timestamp": "2025-12-30T01:15:49.778Z"
   }
 }

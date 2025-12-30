@@ -1,21 +1,21 @@
 {
   "meta": {
-    "comparedAt": "2025-12-29T23:03:48.067Z",
-    "currentSha": "09b7969fa7987f735bab2324027dad3f186c23b1",
-    "baselineSha": "bec0d1b49e0ce3ce14e6add1008cc50a2035ced7"
+    "comparedAt": "2025-12-30T01:15:49.646Z",
+    "currentSha": "4e29980186b22d03fad3bec19f5569e2b768fea8",
+    "baselineSha": "09b7969fa7987f735bab2324027dad3f186c23b1"
   },
   "deltas": {
-    "npm_pack_bytes": 1826,
-    "script_code_lines": 158,
-    "total_text_lines": 219,
+    "npm_pack_bytes": 9235,
+    "script_code_lines": 531,
+    "total_text_lines": 1073,
     "huge_scripts": 0,
     "flaky_tests": 0,
     "unit_tests_total": 0,
-    "unit_tests_duration_ms": -1678.5625179999988,
+    "unit_tests_duration_ms": 1424.3120819999967,
     "e2e_installer_tests_total": 0,
-    "e2e_installer_tests_duration_ms": -6000,
-    "coverage_lines_pct": -0.07000000000000028,
+    "e2e_installer_tests_duration_ms": 600,
+    "coverage_lines_pct": 0,
     "slow_tests_over_20s": 0,
-    "duplication_pct": 0.07000000000000028
+    "duplication_pct": -0.15000000000000036
   }
 }
