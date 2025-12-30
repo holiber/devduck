@@ -10,6 +10,7 @@ import type {
   Annotation
 } from '../../../ci/schemas/contract.js';
 import { CI_PROVIDER_PROTOCOL_VERSION } from '../../../ci/schemas/contract.js';
+import { defineProvider } from '../../../../src/lib/define-provider.js';
 
 interface RepoInfo {
   owner: string;
@@ -393,21 +394,7 @@ async function getPRReviews(owner: string, repo: string, prNumber: number): Prom
   return await githubApiGet<GitHubReview[]>(`repos/${owner}/${repo}/pulls/${prNumber}/reviews`, { per_page: 100 });
 }
 
-const provider: CIProvider = {
-  name: 'github-provider',
-  version: '0.1.0',
-  manifest: {
-    type: 'ci',
-    name: 'github-provider',
-    version: '0.1.0',
-    description: 'GitHub provider for CI module (GitHub API)',
-    protocolVersion: CI_PROVIDER_PROTOCOL_VERSION,
-    tools: ['fetchPR', 'fetchCheckStatus', 'fetchComments'],
-    events: { publish: [], subscribe: [] },
-    auth: { type: 'apiKey', requiredTokens: ['GITHUB_TOKEN'] },
-    capabilities: ['pr', 'checks', 'comments']
-  },
-
+const tools = {
   async fetchPR(input: FetchPRInput): Promise<PRInfo> {
     const { owner, repo } = ensureOwnerRepo(input);
 
@@ -545,7 +532,22 @@ const provider: CIProvider = {
     const allComments = [...reviewComments, ...issueComments];
     return allComments.map(toContractComment);
   }
-};
+} satisfies Record<string, unknown>;
+
+const provider: CIProvider = defineProvider({
+  type: 'ci',
+  name: 'github-provider',
+  version: '0.1.0',
+  protocolVersion: CI_PROVIDER_PROTOCOL_VERSION,
+  tools,
+  vendor: {},
+  manifest: {
+    description: 'GitHub provider for CI module (GitHub API)',
+    events: { publish: [], subscribe: [] }
+  },
+  auth: { type: 'apiKey', requiredTokens: ['GITHUB_TOKEN'] },
+  capabilities: ['pr', 'checks', 'comments']
+});
 
 export default provider;
 

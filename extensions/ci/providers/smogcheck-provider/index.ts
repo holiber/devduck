@@ -9,6 +9,7 @@ import type {
   FetchReviewInput
 } from '../../schemas/contract.js';
 import { CI_PROVIDER_PROTOCOL_VERSION } from '../../schemas/contract.js';
+import { defineProvider } from '../../../../src/lib/define-provider.js';
 
 function nowMinusDays(days: number): string {
   const d = new Date();
@@ -253,21 +254,7 @@ function findPRByBranch(branch: string): PRInfo | null {
   return MOCK_PRS.find((pr) => pr.branch?.from === branch) || null;
 }
 
-const provider: CIProvider = {
-  name: 'smogcheck-provider',
-  version: '0.1.0',
-  manifest: {
-    type: 'ci',
-    name: 'smogcheck-provider',
-    version: '0.1.0',
-    description: 'Test provider for CI module',
-    protocolVersion: CI_PROVIDER_PROTOCOL_VERSION,
-    tools: ['fetchPR', 'fetchCheckStatus', 'fetchComments', 'fetchReview'],
-    events: { publish: [], subscribe: [] },
-    auth: { type: 'none', requiredTokens: [] },
-    capabilities: ['pr', 'checks', 'comments']
-  },
-
+const tools = {
   async fetchPR(input: FetchPRInput): Promise<PRInfo> {
     let pr: PRInfo | null = null;
 
@@ -371,7 +358,22 @@ const provider: CIProvider = {
       updatedAt: nowMinusDays(1)
     };
   }
-};
+} satisfies Record<string, unknown>;
+
+const provider: CIProvider = defineProvider({
+  type: 'ci',
+  name: 'smogcheck-provider',
+  version: '0.1.0',
+  protocolVersion: CI_PROVIDER_PROTOCOL_VERSION,
+  tools,
+  vendor: {},
+  manifest: {
+    description: 'Test provider for CI module',
+    events: { publish: [], subscribe: [] }
+  },
+  auth: { type: 'none', requiredTokens: [] },
+  capabilities: ['pr', 'checks', 'comments']
+});
 
 export default provider;
 
