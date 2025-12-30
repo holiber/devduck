@@ -204,6 +204,9 @@ async function main() {
     h1{font-size:1.6rem;margin:0 0 8px}
     .sub{color:#444;margin:0 0 18px}
     .card{background:#fff;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,.06);padding:16px 18px;margin:16px 0}
+    .chartBlock{margin-top:18px}
+    .chartBlock:first-child{margin-top:0}
+    .chartHeader{font-weight:600;margin:0 0 8px}
     table{border-collapse:collapse;width:100%}
     th,td{padding:10px 12px;text-align:left;border-bottom:1px solid #eee;font-size:14px}
     th{background:#f5f5f5}
@@ -303,7 +306,18 @@ async function main() {
   </div>
 
   <div class="card">
-    <canvas id="trend" height="120"></canvas>
+    <div class="chartBlock">
+      <div class="chartHeader">🧪 Unit tests</div>
+      <canvas id="trend-unit" height="120"></canvas>
+    </div>
+    <div class="chartBlock">
+      <div class="chartHeader">🧪 E2E tests</div>
+      <canvas id="trend-e2e" height="120"></canvas>
+    </div>
+    <div class="chartBlock">
+      <div class="chartHeader">🧾 Script code lines</div>
+      <canvas id="trend-script-loc" height="120"></canvas>
+    </div>
   </div>
 
   <div class="card">
@@ -319,29 +333,116 @@ async function main() {
   <script>
     const history = ${JSON.stringify(Array.isArray(history) ? history : [])};
     const labels = history.map(h => (h?.meta?.collectedAt || h?.meta?.timestamp || h?.timestamp || '').toString().slice(0, 10));
-    const build = history.map(h => (h?.commands?.build?.durationMs ?? null));
-    const dev = history.map(h => (h?.commands?.dev_start?.readyAtMs ?? null));
-    const pack = history.map(h => (h?.sizes?.npm_pack?.bytes ?? null));
 
-    const ctx = document.getElementById('trend').getContext('2d');
-    new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels,
-        datasets: [
-          { label: 'Build (ms)', data: build, borderColor: '#3498db', tension: 0.25, spanGaps: true },
-          { label: 'Dev ready (ms)', data: dev, borderColor: '#9b59b6', tension: 0.25, spanGaps: true },
-          { label: 'npm pack (bytes)', data: pack, borderColor: '#2ecc71', tension: 0.25, spanGaps: true, yAxisID: 'y2' }
-        ]
-      },
-      options: {
-        responsive: true,
-        plugins: { legend: { position: 'bottom' } },
-        scales: {
-          y: { type: 'linear', position: 'left', title: { display: true, text: 'ms' } },
-          y2: { type: 'linear', position: 'right', grid: { drawOnChartArea: false }, title: { display: true, text: 'bytes' } }
+    function numOrNull(x) {
+      return (typeof x === 'number' && Number.isFinite(x)) ? x : null;
+    }
+
+    function pickedTestDurationMs(t) {
+      return numOrNull(t?.reportedDurationMs ?? t?.durationMs);
+    }
+
+    function pickedTestTotal(t) {
+      return numOrNull(t?.total);
+    }
+
+    function renderTestChart({ canvasId, durationDatasets, totalDatasets }) {
+      const el = document.getElementById(canvasId);
+      if (!el) return;
+      const ctx = el.getContext('2d');
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [
+            ...durationDatasets.map((d) => ({
+              ...d,
+              yAxisID: 'y',
+              spanGaps: true,
+              tension: 0.25,
+              pointRadius: 0
+            })),
+            ...totalDatasets.map((d) => ({
+              ...d,
+              yAxisID: 'y2',
+              spanGaps: true,
+              tension: 0.25,
+              pointRadius: 0,
+              borderDash: [6, 4],
+              hidden: d.hidden ?? true
+            }))
+          ]
+        },
+        options: {
+          responsive: true,
+          interaction: { mode: 'index', intersect: false },
+          plugins: { legend: { position: 'bottom' } },
+          scales: {
+            y: { type: 'linear', position: 'left', title: { display: true, text: 'duration (ms)' } },
+            y2: { type: 'linear', position: 'right', grid: { drawOnChartArea: false }, title: { display: true, text: 'tests' } }
+          }
         }
-      }
+      });
+    }
+
+    function renderSimpleLineChart({ canvasId, label, data, yTitle, color }) {
+      const el = document.getElementById(canvasId);
+      if (!el) return;
+      const ctx = el.getContext('2d');
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [
+            { label, data, borderColor: color, tension: 0.25, spanGaps: true, pointRadius: 0 }
+          ]
+        },
+        options: {
+          responsive: true,
+          interaction: { mode: 'index', intersect: false },
+          plugins: { legend: { position: 'bottom' } },
+          scales: {
+            y: { type: 'linear', position: 'left', title: { display: true, text: yTitle } }
+          }
+        }
+      });
+    }
+
+    const unitDurationMs = history.map(h => pickedTestDurationMs(h?.tests?.unit));
+    const unitTotal = history.map(h => pickedTestTotal(h?.tests?.unit));
+    renderTestChart({
+      canvasId: 'trend-unit',
+      durationDatasets: [
+        { label: 'Unit duration (ms)', data: unitDurationMs, borderColor: '#3498db' }
+      ],
+      totalDatasets: [
+        { label: 'Unit total (tests)', data: unitTotal, borderColor: '#3498db', hidden: true }
+      ]
+    });
+
+    const e2eInstallerDurationMs = history.map(h => pickedTestDurationMs(h?.tests?.e2e_installer));
+    const e2eInstallerTotal = history.map(h => pickedTestTotal(h?.tests?.e2e_installer));
+    const e2eSmokeDurationMs = history.map(h => pickedTestDurationMs(h?.tests?.e2e_smoke));
+    const e2eSmokeTotal = history.map(h => pickedTestTotal(h?.tests?.e2e_smoke));
+    renderTestChart({
+      canvasId: 'trend-e2e',
+      durationDatasets: [
+        { label: 'Installer duration (ms)', data: e2eInstallerDurationMs, borderColor: '#9b59b6' },
+        { label: 'Smoke duration (ms)', data: e2eSmokeDurationMs, borderColor: '#e67e22' }
+      ],
+      totalDatasets: [
+        { label: 'Installer total (tests)', data: e2eInstallerTotal, borderColor: '#9b59b6', hidden: true },
+        { label: 'Smoke total (tests)', data: e2eSmokeTotal, borderColor: '#e67e22', hidden: true }
+      ]
+    });
+
+    const scriptLoc = history.map(h => numOrNull(h?.code?.scriptCodeLines));
+    renderSimpleLineChart({
+      canvasId: 'trend-script-loc',
+      label: 'Script code lines',
+      data: scriptLoc,
+      yTitle: 'lines',
+      color: '#2ecc71'
     });
   </script>
 </body>
