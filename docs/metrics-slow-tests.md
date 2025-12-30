@@ -10,9 +10,8 @@ The metric is calculated in `src/ci/collect-metrics.mjs` and includes:
 
 1. **Unit tests** - Parsed from Node.js test output in `.cache/logs/npm-test.log`
 2. **E2E installer tests** - Parsed from Playwright JSON report in `.cache/metrics/pw-installer-report.json`
-3. **E2E smoke tests** - Parsed from Playwright JSON report in `.cache/metrics/pw-smoke-report.json`
 
-The total count aggregates slow tests across all test suites.
+The total count aggregates slow tests across both test suites.
 
 ## Data Structure
 
@@ -37,10 +36,6 @@ The metric is stored in `current.json` with the following structure:
           "top": [
             { "name": "e2e test", "durationMs": 20000 }
           ]
-        },
-        "pw_smoke": {
-          "count": 0,
-          "top": []
         }
       }
     }
@@ -55,7 +50,6 @@ The metric is stored in `current.json` with the following structure:
 - **`bySuite`**: Breakdown by test suite type
   - **`unit`**: Slow tests from unit test suite
   - **`pw_installer`**: Slow tests from E2E installer suite
-  - **`pw_smoke`**: Slow tests from E2E smoke suite
   - Each suite contains:
     - **`count`**: Number of slow tests in this suite
     - **`top`**: Array of up to 10 slowest tests with name and duration
@@ -65,8 +59,7 @@ The metric is stored in `current.json` with the following structure:
 When metrics are collected, the CI logs show:
 
 ```
-[metrics] quality: coverage(lines%) 63.28 ; slowTests(>10s, unit+e2e) 3 ; duplication(%) 8.78
-[metrics] slowTests breakdown: unit=2, pw_installer=1, pw_smoke=0
+[metrics] quality: coverage(lines%) 63.28 ; slowTests(>10s) 3 ; duplication(%) 8.78
 ```
 
 ## PR Comment Display

@@ -615,33 +615,15 @@ async function main() {
       const raw = await fsp.readFile(pwInstallerLogPath, 'utf8');
       for (const id of parsePlaywrightFlakyTestIds(raw)) flakyIds.add(id);
     }
-    const pwSmokeLogPath = path.join(LOGS_DIR, 'pw-smoke.log');
-    if (await pathExists(pwSmokeLogPath)) {
-      const raw = await fsp.readFile(pwSmokeLogPath, 'utf8');
-      for (const id of parsePlaywrightFlakyTestIds(raw)) flakyIds.add(id);
-    }
     metrics.tests.flaky = { count: flakyIds.size };
   } catch {
     // ignore
   }
 
-  try {
-    const pwSmokeLogPath = path.join(LOGS_DIR, 'pw-smoke.log');
-    if (await pathExists(pwSmokeLogPath)) {
-      const raw = await fsp.readFile(pwSmokeLogPath, 'utf8');
-      metrics.tests.e2e_smoke = {
-        ...parsePlaywrightSummary(raw),
-        durationMs: metrics.commands?.pw_smoke?.durationMs,
-        exitCode: metrics.commands?.pw_smoke?.exitCode
-      };
-    }
-  } catch {
-    // ignore
-  }
 
   // Slow tests metric (>10s) from available logs/reports (best-effort).
-  // NOTE: This metric includes BOTH Unit tests AND E2E tests (pw_installer, pw_smoke).
-  // The total count aggregates slow tests across all test suites.
+  // NOTE: This metric includes BOTH Unit tests AND E2E tests (pw_installer).
+  // The total count aggregates slow tests across both test suites.
   try {
     const thresholdMs = 10_000;
     const pieces = [];
@@ -669,20 +651,6 @@ async function main() {
       pieces.push({ name: 'pw_installer', ...extractSlowTests(normalized, thresholdMs, 10) });
     }
 
-    // Collect slow tests from E2E smoke suite
-    const pwSmokeJsonPath = path.join(METRICS_DIR, 'pw-smoke-report.json');
-    const pwSmokeReport = readPlaywrightJsonReportOrUndefined(pwSmokeJsonPath);
-    if (pwSmokeReport) {
-      const cases = collectPlaywrightTestsFromJson(pwSmokeReport).map((t) => ({ ...t, status: String(t.status || '').toLowerCase() }));
-      const normalized = cases.map((t) => ({
-        fullTitle: t.fullTitle,
-        title: t.fullTitle,
-        suitePath: [],
-        status: t.status.includes('skipped') ? 'skipped' : 'passed',
-        durationMs: t.durationMs
-      }));
-      pieces.push({ name: 'pw_smoke', ...extractSlowTests(normalized, thresholdMs, 10) });
-    }
 
     // Aggregate total count across all test suites (unit + E2E)
     const totalCount = pieces.reduce((acc, p) => acc + (p?.count ?? 0), 0);
@@ -792,19 +760,11 @@ async function main() {
     '[metrics] quality:',
     'coverage(lines%)',
     metrics.quality?.coverage?.linesPct ?? 'n/a',
-    '; slowTests(>10s, unit+e2e)',
+    '; slowTests(>10s)',
     metrics.quality?.slowTests?.count ?? 'n/a',
     '; duplication(%)',
     metrics.quality?.duplication?.duplicatedPct ?? 'n/a'
   );
-  if (metrics.quality?.slowTests?.bySuite) {
-    const bySuite = metrics.quality.slowTests.bySuite;
-    const breakdown = Object.entries(bySuite)
-      .map(([name, data]) => `${name}=${data.count}`)
-      .join(', ');
-    // eslint-disable-next-line no-console
-    console.log('[metrics] slowTests breakdown:', breakdown);
-  }
 }
 
 main().catch(async (err) => {
