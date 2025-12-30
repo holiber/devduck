@@ -47,9 +47,10 @@ test.describe('Workspace Installer - Workspace-local extensions/', () => {
           '',
           'module.exports = {',
           "  'post-install': async (ctx) => {",
-          "    const outPath = path.join(ctx.workspaceRoot, 'localmod-installed.txt');",
+          "    const outPath = path.join(ctx.cacheDir, 'localmod-installed.txt');",
+          "    fs.mkdirSync(path.dirname(outPath), { recursive: true });",
           "    fs.writeFileSync(outPath, 'ok\\n', 'utf8');",
-          "    return { success: true, createdFiles: ['localmod-installed.txt'] };",
+          "    return { success: true, createdFiles: [path.relative(ctx.workspaceRoot, outPath)] };",
           '  }',
           '};',
           ''
@@ -77,7 +78,7 @@ test.describe('Workspace Installer - Workspace-local extensions/', () => {
       assert.ok(installed, 'Installation should complete');
 
       // Verify the workspace-local extension hook ran.
-      const markerPath = path.join(tempWorkspace, 'localmod-installed.txt');
+      const markerPath = path.join(tempWorkspace, '.cache', 'devduck', 'localmod-installed.txt');
       const marker = await fs.readFile(markerPath, 'utf8');
       assert.strictEqual(marker, 'ok\n', 'Workspace-local extension post-install hook should create marker file');
     } finally {
