@@ -3,6 +3,9 @@ name: AFTER MERGE - Tests & Metrics
 on:
   push:
     branches: [ main ]
+    # Don't run heavy tests/metrics workflow for docs-only pushes.
+    paths-ignore:
+      - "docs/**"
 
 permissions:
   contents: write
