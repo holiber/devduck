@@ -1,6 +1,5 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { parse as parseYaml } from 'yaml';
 
 const repoRoot = '/workspace';
 const extensionsRoot = path.join(repoRoot, 'extensions');
@@ -28,16 +27,164 @@ function stripYamlFrontmatter(md) {
   return { stripped: md.slice(m[0].length), hadFrontmatter: true };
 }
 
+function stripQuotes(s) {
+  const t = s.trim();
+  if ((t.startsWith('"') && t.endsWith('"')) || (t.startsWith("'") && t.endsWith("'"))) {
+    return t.slice(1, -1);
+  }
+  return t;
+}
+
+function parseScalar(raw) {
+  const s = stripQuotes(String(raw ?? '').trim());
+  if (s === 'true') return true;
+  if (s === 'false') return false;
+  if (s === 'null') return null;
+  if (/^-?\d+(\.\d+)?$/.test(s)) return Number(s);
+  return s;
+}
+
+function parseInlineArray(raw) {
+  const s = String(raw ?? '').trim();
+  if (!s.startsWith('[') || !s.endsWith(']')) return null;
+  const inner = s.slice(1, -1).trim();
+  if (inner === '') return [];
+  // Very small subset: split by commas not inside quotes.
+  const parts = [];
+  let cur = '';
+  let q = null;
+  for (let i = 0; i < inner.length; i++) {
+    const ch = inner[i];
+    if (q) {
+      cur += ch;
+      if (ch === q && inner[i - 1] !== '\\') q = null;
+      continue;
+    }
+    if (ch === '"' || ch === "'") {
+      q = ch;
+      cur += ch;
+      continue;
+    }
+    if (ch === ',') {
+      parts.push(cur.trim());
+      cur = '';
+      continue;
+    }
+    cur += ch;
+  }
+  if (cur.trim() !== '') parts.push(cur.trim());
+  return parts.map((p) => parseScalar(p));
+}
+
+function parseSimpleYamlBlock(lines, startIdx, parentIndent) {
+  // Parses a limited YAML subset (enough for our MODULE.md frontmatter).
+  // Returns { value, nextIdx }.
+  /** @type {Record<string, unknown> | unknown[]} */
+  let container = {};
+  let asArray = false;
+
+  let i = startIdx;
+  while (i < lines.length) {
+    const line = lines[i];
+    if (!line.trim()) {
+      i++;
+      continue;
+    }
+    const indent = line.match(/^ */)?.[0].length ?? 0;
+    if (indent <= parentIndent) break;
+
+    const trimmed = line.trim();
+    if (trimmed.startsWith('- ')) {
+      if (!asArray) {
+        asArray = true;
+        container = [];
+      }
+
+      const itemRaw = trimmed.slice(2).trim();
+      if (itemRaw.includes(':')) {
+        // Array item is an object starting on the same line: "- key: value"
+        /** @type {Record<string, unknown>} */
+        const obj = {};
+        const colon = itemRaw.indexOf(':');
+        const k = itemRaw.slice(0, colon).trim();
+        const vRaw = itemRaw.slice(colon + 1).trim();
+        if (vRaw === '') {
+          const nested = parseSimpleYamlBlock(lines, i + 1, indent);
+          obj[k] = nested.value;
+          i = nested.nextIdx;
+        } else {
+          const arr = parseInlineArray(vRaw);
+          obj[k] = arr !== null ? arr : parseScalar(vRaw);
+          i++;
+        }
+
+        // Consume additional sibling keys of this object at the same indent+2
+        while (i < lines.length) {
+          const l2 = lines[i];
+          if (!l2.trim()) {
+            i++;
+            continue;
+          }
+          const ind2 = l2.match(/^ */)?.[0].length ?? 0;
+          if (ind2 <= indent) break;
+          const t2 = l2.trim();
+          if (t2.startsWith('- ')) break;
+          const m2 = t2.match(/^([^:]+):\s*(.*)$/);
+          if (!m2) break;
+          const kk = m2[1].trim();
+          const vv = m2[2].trim();
+          if (vv === '') {
+            const nested2 = parseSimpleYamlBlock(lines, i + 1, ind2);
+            obj[kk] = nested2.value;
+            i = nested2.nextIdx;
+          } else {
+            const arr2 = parseInlineArray(vv);
+            obj[kk] = arr2 !== null ? arr2 : parseScalar(vv);
+            i++;
+          }
+        }
+
+        container.push(obj);
+        continue;
+      }
+
+      // Scalar array item
+      container.push(parseScalar(itemRaw));
+      i++;
+      continue;
+    }
+
+    const m = trimmed.match(/^([^:]+):\s*(.*)$/);
+    if (!m) {
+      i++;
+      continue;
+    }
+
+    const key = m[1].trim();
+    const rest = m[2].trim();
+    if (rest === '') {
+      const nested = parseSimpleYamlBlock(lines, i + 1, indent);
+      container[key] = nested.value;
+      i = nested.nextIdx;
+      continue;
+    }
+
+    const arr = parseInlineArray(rest);
+    container[key] = arr !== null ? arr : parseScalar(rest);
+    i++;
+  }
+
+  return { value: container, nextIdx: i };
+}
+
 function parseModuleMdFrontmatter(md) {
   const fm = md.match(/^---\n([\s\S]*?)\n---/);
   if (!fm) return null;
-  try {
-    const parsed = parseYaml(fm[1]);
-    if (!parsed || typeof parsed !== 'object') return null;
-    return /** @type {Record<string, unknown>} */ (parsed);
-  } catch {
-    return null;
-  }
+  const raw = fm[1];
+  const lines = raw.split('\n');
+  const parsed = parseSimpleYamlBlock(lines, 0, -1).value;
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null;
+  return /** @type {Record<string, unknown>} */ (parsed);
 }
 
 function normalizeStringArray(v) {

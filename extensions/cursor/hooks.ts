@@ -6,9 +6,9 @@
 
 import fs from 'fs';
 import path from 'path';
-import type { HookContext, HookResult } from '../../src/install/module-hooks.js';
-import { replaceVariablesInObject } from '../../src/lib/config.js';
-import { readEnvFile } from '../../src/lib/env.js';
+import type { HookContext, HookResult } from '@barducks/sdk';
+import { replaceVariablesInObject } from '@barducks/sdk';
+import { readEnvFile } from '@barducks/sdk';
 
 export default {
   /**

@@ -7,7 +7,7 @@
 import fs from 'fs';
 import path from 'path';
 import { execSync } from 'child_process';
-import type { HookContext, HookResult } from '../../src/install/module-hooks.js';
+import type { HookContext, HookResult } from '@barducks/sdk';
 
 interface PackageJson {
   name?: string;

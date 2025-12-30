@@ -1,0 +1,26 @@
+{
+  "name": "@barducks/extension-playwright",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Testing utilities and guidelines for barducks modules",
+  "keywords": [
+    "testing",
+    "e2e",
+    "cli"
+  ],
+  "barducks": {
+    "extension": {
+      "name": "playwright",
+      "tags": [
+        "testing",
+        "e2e",
+        "cli"
+      ],
+      "dependencies": [
+        "core"
+      ],
+      "defaultSettings": {}
+    }
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "name": "@barducks/extension-email-gmail",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Gmail provider for the email module",
+  "keywords": [
+    "email",
+    "gmail",
+    "providers"
+  ],
+  "barducks": {
+    "extension": {
+      "name": "email-gmail",
+      "tags": [
+        "email",
+        "gmail",
+        "providers"
+      ],
+      "dependencies": [
+        "email"
+      ],
+      "defaultSettings": {}
+    }
+  }
+}

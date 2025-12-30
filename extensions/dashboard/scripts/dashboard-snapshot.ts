@@ -18,7 +18,7 @@ import { spawnSync } from 'child_process';
 import { fileURLToPath } from 'url';
 // @ts-expect-error - prompt-store may not have types
 import promptStore from '../../core/scripts/prompt-store.js';
-import { createYargs, installEpipeHandler } from '../../../src/lib/cli.js';
+import { createYargs, installEpipeHandler } from '@barducks/sdk';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

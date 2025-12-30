@@ -1,21 +1,3 @@
----
-name: cursor
-version: 0.1.0
-description: Cursor IDE integration (commands, rules, MCP configuration)
-tags: [cursor, ide, integration]
-dependencies: [core]
-checks:
-  - type: "auth"
-    var: "CURSOR_API_KEY"
-    description: "Checks that CURSOR_API_KEY is set"
-    docs: "Get a key at https://cursor.com/dashboard?tab=integrations"
-    test: "sh -c 'test -n \"$CURSOR_API_KEY\"'"
-  - type: "test"
-    name: "cursor-api-key-valid"
-    description: "Probes Cursor API to check the key works"
-    var: "CURSOR_API_KEY"
-    test: "sh -c 'test -n \"$CURSOR_API_KEY\" || exit 1; base=\"${CURSOR_API_BASE_URL:-https://api.cursor.sh}\"; code=\"$(curl -s -o /dev/null -w \"%{http_code}\" \"$base/v1/models\" -H \"Authorization: Bearer $CURSOR_API_KEY\" || echo 000)\"; case \"$code\" in 200|429) echo \"OK (HTTP $code)\"; exit 0 ;; 401|403) echo \"INVALID (HTTP $code)\"; exit 1 ;; 502|503|504|000) echo \"UNAVAILABLE (HTTP $code)\"; exit 0 ;; *) echo \"FAILED (HTTP $code)\"; exit 1 ;; esac'"
----
 # Cursor Module
 
 Module for integrating barducks with Cursor IDE. Handles:

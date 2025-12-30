@@ -1,10 +1,3 @@
----
-name: evolution
-version: 0.1.0
-description: Self-evolution capabilities for barducks
-tags: [meta, evolution]
-dependencies: [core]
----
 # Evolution Module
 
 Module for making changes to barducks itself.

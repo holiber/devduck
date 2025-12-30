@@ -9,8 +9,8 @@ import type {
   FetchReviewInput
 } from '../../schemas/contract.js';
 import { CI_PROVIDER_PROTOCOL_VERSION } from '../../schemas/contract.js';
-import { defineProvider } from '../../../../src/lib/define-provider.js';
-import type { ProviderToolsFromSpec } from '../../../../src/lib/tool-spec.js';
+import { defineProvider } from '@barducks/sdk';
+import type { ProviderToolsFromSpec } from '@barducks/sdk';
 
 function nowMinusDays(days: number): string {
   const d = new Date();

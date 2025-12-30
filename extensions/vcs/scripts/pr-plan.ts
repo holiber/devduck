@@ -13,8 +13,8 @@
 
 import fs from 'fs';
 import path from 'path';
-import { createYargs } from '../../../src/lib/cli.js';
-import { findWorkspaceRoot } from '../../../src/lib/workspace-root.js';
+import { createYargs } from '@barducks/sdk';
+import { findWorkspaceRoot } from '@barducks/sdk';
 
 /**
  * Get PR plan directory path

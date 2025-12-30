@@ -1,0 +1,26 @@
+{
+  "name": "@barducks/extension-messenger-yandex-messenger",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Yandex Messenger provider for the messenger module",
+  "keywords": [
+    "messenger",
+    "yandex",
+    "providers"
+  ],
+  "barducks": {
+    "extension": {
+      "name": "messenger-yandex-messenger",
+      "tags": [
+        "messenger",
+        "yandex",
+        "providers"
+      ],
+      "dependencies": [
+        "messenger"
+      ],
+      "defaultSettings": {}
+    }
+  }
+}

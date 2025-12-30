@@ -1,10 +1,3 @@
----
-name: plan
-version: 0.1.0
-description: Implementation plan creation and management for Tracker issues
-tags: [plan, tracker, implementation]
-dependencies: [core]
----
 # Plan Module
 
 Module for creating and managing implementation plans for Tracker issues.

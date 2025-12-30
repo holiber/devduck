@@ -4,8 +4,8 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { Repo, type RepoStats, type DiffResult, type ChangedFilesResult, type CommitsResult, type BranchResult, type PRStatusResult, type CreatePRResult, type BranchExistsResult } from '../../vcs/scripts/repo.js';
-import { resolveCorePaths } from '../../../src/lib/barducks-paths.js';
-import type { ExecuteCommandResult } from '../../../src/utils.js';
+import { resolveCorePaths } from '@barducks/sdk';
+import type { ExecuteCommandResult } from '@barducks/sdk';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

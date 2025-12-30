@@ -1,12 +1,3 @@
----
-name: issue-tracker
-version: 0.1.0
-description: Issue tracker module with provider system for working with issues, comments, PRs, and resources
-tags: [issues, tracker, providers]
-dependencies: [core]
-defaultSettings:
-  provider: smogcheck-provider
----
 # Issue Tracker Module
 
 Issue tracker module implementing a provider system based on a Zod contract for working with issues, comments, pull requests, and downloading resources.

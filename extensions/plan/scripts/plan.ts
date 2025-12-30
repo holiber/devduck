@@ -62,7 +62,7 @@ async function getTracker() {
   throw new Error('Issue tracker provider not available. Please install an issue tracker provider module.');
 }
 import { getEnv } from '../../core/scripts/lib/env.js';
-import { createYargs, installEpipeHandler } from '../../../src/lib/cli.js';
+import { createYargs, installEpipeHandler } from '@barducks/sdk';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
