@@ -6,7 +6,7 @@ globs: ["**/pr*.md", "**/.cache/tasks/pr/**", "**/templates/pr.plan.md"]
 
 ## Exception: Cursor Cloud Agent (barducks 🦆)
 
-If you are a Cursor Cloud Agent following `docs/agent-workflow.md`, **do not** wait for explicit approval before creating the PR:
+If you are a Cursor Cloud Agent following `docs/for-llm-devs/agent-workflow.md`, **do not** wait for explicit approval before creating the PR:
 
 - Barducks Stage 0 requires the PR to exist immediately.
 

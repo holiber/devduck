@@ -19,7 +19,10 @@ For every task, create and maintain:
 
 Where `<short-task-name>` is a kebab-case slug (example: `ci-pr-workflow-discipline`).
 
-You can use `docs/_task-template.md` as a starting point (copy it into `docs/tasks/` and rename to match the date+slug format).
+You can use this template as a starting point (copy it into `docs/tasks/` and rename to match the date+slug format):
+
+- Template: [`docs/for-llm-devs/_task-template.md`](docs/for-llm-devs/_task-template.md)
+- Example: [`docs/for-llm-devs/llm-dev-taskfile-example.md`](docs/for-llm-devs/llm-dev-taskfile-example.md)
 
 ### 2) Single service status comment (PR)
 
