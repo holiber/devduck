@@ -9,8 +9,8 @@
 
 KrYa!
 
-Barducks is rubber duck debugging — automated.
-Explain the problem, and the duck will write code, close tickets, and ship changes.
+Barducks is rubber duck debugging and more — automated.
+Barduck — talk to a duck, not to ten different APIs.
 
 ## Documentation
 
