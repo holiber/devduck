@@ -7,7 +7,7 @@ import YAML from 'yaml';
 import { createTempWorkspace, cleanupTempWorkspace, runInstaller } from './helpers.js';
 
 test('installer: hook load failure is fatal', async () => {
-  const tempWorkspace = await createTempWorkspace('devduck-hook-fail-');
+  const tempWorkspace = await createTempWorkspace('barducks-hook-fail-');
   try {
     const moduleName = 'badmod';
     const moduleDir = path.join(tempWorkspace, 'extensions', moduleName);
@@ -51,7 +51,7 @@ test('installer: hook load failure is fatal', async () => {
 });
 
 test('installer: .env values are available to shell checks (fill-missing)', async () => {
-  const tempWorkspace = await createTempWorkspace('devduck-dotenv-prop-');
+  const tempWorkspace = await createTempWorkspace('barducks-dotenv-prop-');
   try {
     await fs.writeFile(path.join(tempWorkspace, '.env'), 'ARCADIA_ROOT=from_env_file\n', 'utf8');
 
@@ -60,7 +60,7 @@ test('installer: .env values are available to shell checks (fill-missing)', asyn
       YAML.stringify(
         {
             version: '0.1.0',
-            devduck_path: './projects/devduck',
+            barducks_path: './projects/barducks',
           extensions: ['core'],
           repos: [],
           projects: [],
@@ -91,7 +91,7 @@ test('installer: .env values are available to shell checks (fill-missing)', asyn
 });
 
 test('installer: checks without name do not print "Checking undefined"', async () => {
-  const tempWorkspace = await createTempWorkspace('devduck-check-name-');
+  const tempWorkspace = await createTempWorkspace('barducks-check-name-');
   try {
     await fs.writeFile(path.join(tempWorkspace, '.env'), 'SOME_TOKEN=ok\n', 'utf8');
 
@@ -135,14 +135,14 @@ test('installer: checks without name do not print "Checking undefined"', async (
 });
 
 test('installer summary: prints INSTALLATION FINISHED WITH ERRORS on failures', async () => {
-  const tempWorkspace = await createTempWorkspace('devduck-summary-fail-');
+  const tempWorkspace = await createTempWorkspace('barducks-summary-fail-');
   try {
     await fs.writeFile(
       path.join(tempWorkspace, 'workspace.config.yml'),
       YAML.stringify(
         {
             version: '0.1.0',
-            devduck_path: './projects/devduck',
+            barducks_path: './projects/barducks',
           extensions: ['core'],
           repos: [],
           projects: [],

@@ -1,14 +1,14 @@
-# Devduck Architecture
+# Barducks Architecture
 
 ## Overview
 
-Devduck is a modular AI-powered development tool that helps developers automate routine tasks. The architecture is based on a plugin system where functionality is organized into modules.
+Barducks is a modular AI-powered development tool that helps developers automate routine tasks. The architecture is based on a plugin system where functionality is organized into modules.
 
 ## Module System
 
 ### Module Structure
 
-Each module in `devduck/modules/` follows a standard structure:
+Each module in `barducks/modules/` follows a standard structure:
 
 ```
 module-name/
@@ -124,7 +124,7 @@ checks:
 
 #### Core Module
 - **Name**: `core`
-- **Purpose**: Essential devduck functionality, always available
+- **Purpose**: Essential barducks functionality, always available
 - **Dependencies**: None
 - **Special**: Automatically included in all workspace installations
 
@@ -149,11 +149,11 @@ A workspace is a directory containing:
 ```
 workspace/
 ├── workspace.config.yml   # Workspace configuration
-├── devduck/               # Link or copy to devduck tool
+├── barducks/               # Link or copy to barducks tool
 ├── .cursorignore          # Created by core module hooks
 ├── .arcignore            # Created by external modules (if installed)
 ├── .cache/
-│   └── devduck/          # Temporary files (fixed path)
+│   └── barducks/          # Temporary files (fixed path)
 └── .cursor/
     ├── commands/          # Installed module commands
     ├── rules/             # Merged module rules
@@ -174,13 +174,13 @@ workspace/
 
 ```yaml
 version: "0.1.0"
-devduck_path: "./devduck"
+barducks_path: "./barducks"
 modules: ["core", "cursor"]
 moduleSettings:
   module-name:
     settingName: "override value"
 repos:
-  - "github.com/org/custom-devduck-modules"
+  - "github.com/org/custom-barducks-modules"
 projects:
   - src: "arc://junk/user/my-service"
     checks:
@@ -202,7 +202,7 @@ env:
 
 **Fields:**
 - **`version`**: workspace config version string (currently `0.1.0`)
-- **`devduck_path`**: path to the DevDuck sources (relative to workspace root); used by tooling to locate scripts/modules
+- **`barducks_path`**: path to the Barducks sources (relative to workspace root); used by tooling to locate scripts/modules
 - **`modules`**: list of module names to install; supports `["*"]` to mean "all available modules"
 - **`moduleSettings`**: per-module settings override, merged on top of each module's `defaultSettings`
 - **`repos`**: list of external repositories to load additional modules from (Git or Arcadia URLs)
@@ -265,7 +265,7 @@ Each env entry is an object:
    - **pre-install**: Check prerequisites
    - **install**: Module-specific installation (e.g., create `.cursorignore`, `.arcignore`)
    - **post-install**: Finalize installation (e.g., cursor module copies commands/rules, generates mcp.json)
-9. **Create cache directory** - `.cache/devduck/` (fixed path)
+9. **Create cache directory** - `.cache/barducks/` (fixed path)
 10. **Run checks** - Execute module-specific and workspace checks
 
 **Note**: Cursor IDE integration (commands, rules, mcp.json) is handled by the `cursor` module's `post-install` hook, not by workspace-installer directly.
@@ -311,7 +311,7 @@ const coreUtilsPath = resolveModulePath('core', 'scripts/utils.js');
 
 ## External Module Repositories
 
-DevDuck supports loading modules from external repositories, allowing you to extend functionality with custom modules or use modules from other sources.
+Barducks supports loading modules from external repositories, allowing you to extend functionality with custom modules or use modules from other sources.
 
 ### Repository Formats
 
@@ -334,25 +334,25 @@ repository-root/
 │   └── module-name/
 │       ├── MODULE.md
 │       └── ...
-└── manifest.json (or devduck.manifest.json)
+└── manifest.json (or barducks.manifest.json)
 ```
 
 ### Manifest File
 
-Each external repository must include a `manifest.json` or `devduck.manifest.json` file:
+Each external repository must include a `manifest.json` or `barducks.manifest.json` file:
 
 ```json
 {
-  "devduckVersion": "0.1.0"
+  "barducksVersion": "0.1.0"
 }
 ```
 
-The `devduckVersion` must exactly match the DevDuck version from `package.json`. The installer will check this before loading modules and report an error if versions don't match.
+The `barducksVersion` must exactly match the Barducks version from `package.json`. The installer will check this before loading modules and report an error if versions don't match.
 
 ### Version Compatibility
 
-- Main DevDuck version is read from `package.json.version`
-- External repository version is read from `manifest.json.devduckVersion` or `devduck.manifest.json.devduckVersion`
+- Main Barducks version is read from `package.json.version`
+- External repository version is read from `manifest.json.barducksVersion` or `barducks.manifest.json.barducksVersion`
 - Versions must match exactly (strict comparison)
 - Mismatch results in installation error with clear message
 
@@ -360,7 +360,7 @@ The `devduckVersion` must exactly match the DevDuck version from `package.json`.
 
 The module resolver supports multiple sources:
 
-1. **Default source**: `devduck/modules/` (main repository)
+1. **Default source**: `barducks/modules/` (main repository)
 2. **External sources**: Added via `addModuleSource()` for each external repository
 3. **Conflict detection**: Module names must be unique across all sources
 4. **Search order**: First match wins when searching for modules
@@ -369,9 +369,9 @@ The module resolver supports multiple sources:
 
 1. Parse repository URL to determine type (git/arcadia)
 2. Resolve to local path:
-   - **Git**: Clone to `devduck/{repo-name}/` (reused if exists)
+   - **Git**: Clone to `barducks/{repo-name}/` (reused if exists)
    - **Arcadia**: Use direct filesystem path
-3. Check for `manifest.json` or `devduck.manifest.json`
+3. Check for `manifest.json` or `barducks.manifest.json`
 4. Verify version compatibility
 5. Locate `modules/` directory
 6. Add to module sources via `addModuleSource()`
@@ -459,7 +459,7 @@ The context object passed to hooks contains:
 - `moduleName`: Module name
 - `settings`: Merged module settings (defaultSettings + workspace overrides)
 - `allModules`: Array of all installed modules (for post-install)
-- `cacheDir`: `.cache/devduck` directory
+- `cacheDir`: `.cache/barducks` directory
 - `cursorDir`: `.cursor` directory
 - `commandsDir`: `.cursor/commands` directory
 - `rulesDir`: `.cursor/rules` directory
@@ -471,14 +471,14 @@ Files are created by module hooks, not hardcoded in the installer:
 - **.cursorignore**: Created by `core` module's `install` hook from `settings.cursorignore`
 - **.arcignore**: Created by external modules' `install` hooks from `settings.arcignore` (if configured)
 - **.cursor/commands/**: Created by `cursor` module's `post-install` hook (copies commands from all modules)
-- **.cursor/rules/devduck-rules.md**: Created by `cursor` module's `post-install` hook (merges rules from all modules)
+- **.cursor/rules/barducks-rules.md**: Created by `cursor` module's `post-install` hook (merges rules from all modules)
 - **.cursor/mcp.json**: Created by `cursor` module's `post-install` hook (generates from all module MCP configs)
 
 This allows any module to create files during installation by defining appropriate hooks.
 
 ## Project Scripts Installation
 
-DevDuck automatically installs scripts from project `package.json` files into the workspace `package.json` during installation. This allows you to run project scripts from the workspace root without changing directories.
+Barducks automatically installs scripts from project `package.json` files into the workspace `package.json` during installation. This allows you to run project scripts from the workspace root without changing directories.
 
 ### Default Scripts
 
@@ -527,8 +527,8 @@ When a project is removed from `workspace.config.yml`, all scripts for that proj
 
 ## Cache Management
 
-All temporary files are stored in `.cache/devduck/` directory within the workspace:
-- **Fixed path**: Not configurable, always `.cache/devduck/`
+All temporary files are stored in `.cache/barducks/` directory within the workspace:
+- **Fixed path**: Not configurable, always `.cache/barducks/`
 - **Workspace-aware**: Scripts detect workspace and use workspace cache path
 - **Isolation**: Each workspace has its own cache directory
 
@@ -553,7 +553,7 @@ All temporary files are stored in `.cache/devduck/` directory within the workspa
 
 ## Unified API System
 
-DevDuck provides a unified API system that allows modules to expose their functionality through a tRPC-like router pattern. This enables consistent API access across all modules and automatic CLI generation.
+Barducks provides a unified API system that allows modules to expose their functionality through a tRPC-like router pattern. This enables consistent API access across all modules and automatic CLI generation.
 
 ### Module API Definition
 
@@ -630,5 +630,5 @@ Some modules (like `mcp`) don't require providers. These modules can use `initPr
 
 ## Architecture Evolution
 
-For information about architecture changes and evolution, see `ARCHITECTURE.md` in the project root. The evolution module provides capabilities for self-modification of devduck.
+For information about architecture changes and evolution, see `ARCHITECTURE.md` in the project root. The evolution module provides capabilities for self-modification of barducks.
 

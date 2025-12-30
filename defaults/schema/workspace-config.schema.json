@@ -7,7 +7,7 @@
   "properties": {
     "version": { "type": ["integer", "string"], "description": "Schema version (nadformat)" },
     "name": { "type": "string" },
-    "devduck_path": { "type": "string", "description": "Path to Barducks sources (relative to workspace root)" },
+    "barducks_path": { "type": "string", "description": "Path to Barducks sources (relative to workspace root)" },
     "repos": { "type": "array", "items": { "type": "string" } },
     "extensions": { "type": "array", "items": { "type": "string" } },
     "extensionSettings": { "type": "object", "additionalProperties": true },
@@ -41,7 +41,7 @@
     "extends": {
       "type": "array",
       "items": { "type": "string" },
-      "description": "Optional list of taskfile fragments (not interpreted by DevDuck yet)"
+      "description": "Optional list of taskfile fragments (not interpreted by Barducks yet)"
     }
   },
   "$defs": {

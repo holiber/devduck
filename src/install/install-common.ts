@@ -833,7 +833,7 @@ export function createCheckHttpAccessFunction(
       
       // Build headers
       const headers: Record<string, string> = {
-        'User-Agent': 'devduck-install'
+        'User-Agent': 'barducks-install'
       };
       
       // Check if check has var property and we need to add auth header
@@ -947,17 +947,17 @@ export async function loadModulesForChecks(
   [key: string]: unknown;
 }>> {
   const { getAllModules, getAllModulesFromDirectory, expandModuleNames, resolveDependencies, loadModuleFromPath } = await import('./module-resolver.js');
-  const { loadModulesFromRepo, getDevduckVersion } = await import('../lib/repo-modules.js');
+  const { loadModulesFromRepo, getBarducksVersion } = await import('../lib/repo-modules.js');
   const { loadModuleResources } = await import('./module-loader.js');
   
   // Load external modules from repos
   const externalModules: any[] = [];
   if (config.repos && Array.isArray(config.repos)) {
-    const devduckVersion = getDevduckVersion();
+    const barducksVersion = getBarducksVersion();
     
     for (const repoUrl of config.repos) {
       try {
-        const repoModulesPath = await loadModulesFromRepo(repoUrl, workspaceRoot, devduckVersion);
+        const repoModulesPath = await loadModulesFromRepo(repoUrl, workspaceRoot, barducksVersion);
         if (fs.existsSync(repoModulesPath)) {
           const repoModuleEntries = fs.readdirSync(repoModulesPath, { withFileTypes: true });
           for (const entry of repoModuleEntries) {

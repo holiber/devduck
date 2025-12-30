@@ -70,7 +70,7 @@ test(
   'workspace config launch.dev starts processes, runs smokecheck, and supports smokecheck without args',
   { timeout: 300_000 },
   async () => {
-    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'devduck-launch-config-'));
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'barducks-launch-config-'));
     const port = await getFreePort();
     const baseURL = `http://127.0.0.1:${port}`;
 

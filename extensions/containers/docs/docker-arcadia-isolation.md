@@ -84,7 +84,7 @@ docker run \
   --device /dev/fuse \
   --security-opt apparmor=unconfined \
   -e ARCADIA=/arcadia \
-  devduck-plan:latest \
+  barducks-plan:latest \
   sh -c "arc mount /arcadia --allow-other && ..."
 ```
 

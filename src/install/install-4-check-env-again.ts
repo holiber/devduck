@@ -29,7 +29,7 @@ export async function runStep4CheckEnvAgain(
   projectRoot: string,
   log?: (message: string) => void
 ): Promise<CheckEnvAgainStepResult> {
-  if (process.env.DEVDUCK_SUPPRESS_STEP_HEADER !== '1') {
+  if (process.env.BARDUCKS_SUPPRESS_STEP_HEADER !== '1') {
     print(`\n[Step 4] Checking environment variables again...`, 'cyan');
   }
   if (log) {

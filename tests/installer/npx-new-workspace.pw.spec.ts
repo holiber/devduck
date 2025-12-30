@@ -19,7 +19,7 @@ test.describe('barducks new (npx-friendly bootstrap)', () => {
     try {
       const result = spawnSync(
         'node',
-        [path.join(process.cwd(), 'bin', 'barducks.js'), 'new', workspaceRoot, '--devduck-source', process.cwd()],
+        [path.join(process.cwd(), 'bin', 'barducks.js'), 'new', workspaceRoot, '--barducks-source', process.cwd()],
         {
           cwd: process.cwd(),
           env: { ...process.env, NODE_ENV: 'test' },
@@ -31,7 +31,7 @@ test.describe('barducks new (npx-friendly bootstrap)', () => {
 
       const cfgPath = path.join(workspaceRoot, 'workspace.config.yml');
       const cfg = await readYaml(cfgPath);
-      assert.strictEqual(cfg.devduck_path, './barducks/src', 'devduck_path should point to local barducks/src');
+      assert.strictEqual(cfg.barducks_path, './barducks/src', 'barducks_path should point to local barducks/src');
 
       const clonedPackageJson = path.join(workspaceRoot, 'barducks', 'src', 'package.json');
       const stat = await fs.stat(clonedPackageJson);
@@ -51,7 +51,7 @@ test.describe('barducks new (npx-friendly bootstrap)', () => {
     try {
       const result = spawnSync(
         'node',
-        [path.join(process.cwd(), 'bin', 'barducks.js'), 'new', workspaceName, '--devduck-source', process.cwd()],
+        [path.join(process.cwd(), 'bin', 'barducks.js'), 'new', workspaceName, '--barducks-source', process.cwd()],
         {
           // Simulate npx running inside a temporary package directory
           cwd: fakePkgCwd,
@@ -64,7 +64,7 @@ test.describe('barducks new (npx-friendly bootstrap)', () => {
 
       const cfgPath = path.join(workspaceRoot, 'workspace.config.yml');
       const cfg = await readYaml(cfgPath);
-      assert.strictEqual(cfg.devduck_path, './barducks/src', 'devduck_path should point to local barducks/src');
+      assert.strictEqual(cfg.barducks_path, './barducks/src', 'barducks_path should point to local barducks/src');
 
       const clonedPackageJson = path.join(workspaceRoot, 'barducks', 'src', 'package.json');
       const stat = await fs.stat(clonedPackageJson);

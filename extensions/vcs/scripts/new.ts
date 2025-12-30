@@ -385,7 +385,7 @@ function parseArcStatusFull(output: string): ArcStatusResult {
 export function main(): void {
   const workspaceRoot = findWorkspaceRoot();
   if (!workspaceRoot) {
-    console.error('Error: Workspace root not found. Make sure you are in a devduck workspace.');
+    console.error('Error: Workspace root not found. Make sure you are in a barducks workspace.');
     process.exit(1);
   }
   

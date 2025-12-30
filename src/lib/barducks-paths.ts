@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { findWorkspaceRoot } from './workspace-root.js';
 
-interface ResolveDevduckRootOptions {
+interface ResolveBarducksRootOptions {
   cwd?: string;
   moduleDir?: string;
 }
@@ -12,32 +12,32 @@ interface ResolveCorePathsOptions {
   moduleDir?: string;
 }
 
-interface ResolveDevduckRootResult {
+interface ResolveBarducksRootResult {
   workspaceRoot: string | null;
-  devduckRoot: string;
+  barducksRoot: string;
 }
 
 interface ResolveCorePathsResult {
-  devduckRoot: string;
+  barducksRoot: string;
   coreUtilsPath: string;
   coreEnvPath: string;
 }
 
 /**
- * Resolve where Barducks/DevDuck project root lives for an extension script.
+ * Resolve where Barducks/Barducks project root lives for an extension script.
  *
  * In a full workspace install, the project is usually checked out under:
  *   <workspaceRoot>/projects/barducks (preferred)
- *   <workspaceRoot>/projects/devduck (legacy)
+ *   <workspaceRoot>/projects/barducks (legacy)
  *
  * In this repository (or when running from within the project itself),
  * extension scripts live under:
  *   <projectRoot>/extensions/<extension>/scripts
  *
  * @param opts - Options object
- * @returns Object with workspaceRoot and devduckRoot
+ * @returns Object with workspaceRoot and barducksRoot
  */
-export function resolveDevduckRoot(opts: ResolveDevduckRootOptions = {}): ResolveDevduckRootResult {
+export function resolveBarducksRoot(opts: ResolveBarducksRootOptions = {}): ResolveBarducksRootResult {
   const cwd = opts.cwd || process.cwd();
   const moduleDir = opts.moduleDir || cwd;
 
@@ -45,18 +45,18 @@ export function resolveDevduckRoot(opts: ResolveDevduckRootOptions = {}): Resolv
   if (workspaceRoot) {
     const preferred = path.join(workspaceRoot, 'projects', 'barducks');
     if (fs.existsSync(preferred)) {
-      return { workspaceRoot, devduckRoot: preferred };
+      return { workspaceRoot, barducksRoot: preferred };
     }
 
-    const legacy = path.join(workspaceRoot, 'projects', 'devduck');
+    const legacy = path.join(workspaceRoot, 'projects', 'barducks');
     if (fs.existsSync(legacy)) {
-      return { workspaceRoot, devduckRoot: legacy };
+      return { workspaceRoot, barducksRoot: legacy };
     }
     // Workspace root found but project not present; fall back to module-relative.
   }
 
   // Fallback: assume we're inside the repo and extensions/<name>/scripts.
-  return { workspaceRoot: workspaceRoot || null, devduckRoot: path.resolve(moduleDir, '../../..') };
+  return { workspaceRoot: workspaceRoot || null, barducksRoot: path.resolve(moduleDir, '../../..') };
 }
 
 /**
@@ -67,30 +67,30 @@ export function resolveDevduckRoot(opts: ResolveDevduckRootOptions = {}): Resolv
  * - projectRoot/extensions/core/scripts/... (legacy / external packaging)
  *
  * @param opts - Options object
- * @returns Object with devduckRoot, coreUtilsPath, and coreEnvPath
+ * @returns Object with barducksRoot, coreUtilsPath, and coreEnvPath
  */
 export function resolveCorePaths(opts: ResolveCorePathsOptions = {}): ResolveCorePathsResult {
-  const { devduckRoot } = resolveDevduckRoot(opts);
+  const { barducksRoot } = resolveBarducksRoot(opts);
 
   // Preferred (current repo layout): projectRoot/src/...
-  const srcUtils = path.join(devduckRoot, 'src', 'utils.ts');
-  const srcEnv = path.join(devduckRoot, 'src', 'lib', 'env.ts');
+  const srcUtils = path.join(barducksRoot, 'src', 'utils.ts');
+  const srcEnv = path.join(barducksRoot, 'src', 'lib', 'env.ts');
 
   if (fs.existsSync(srcUtils) && fs.existsSync(srcEnv)) {
-    return { devduckRoot, coreUtilsPath: srcUtils, coreEnvPath: srcEnv };
+    return { barducksRoot, coreUtilsPath: srcUtils, coreEnvPath: srcEnv };
   }
 
   // Backward compatibility: projectRoot/scripts/... (old layout)
-  const scriptsUtils = path.join(devduckRoot, 'scripts', 'utils.ts');
-  const scriptsEnv = path.join(devduckRoot, 'scripts', 'lib', 'env.ts');
+  const scriptsUtils = path.join(barducksRoot, 'scripts', 'utils.ts');
+  const scriptsEnv = path.join(barducksRoot, 'scripts', 'lib', 'env.ts');
   if (fs.existsSync(scriptsUtils) && fs.existsSync(scriptsEnv)) {
-    return { devduckRoot, coreUtilsPath: scriptsUtils, coreEnvPath: scriptsEnv };
+    return { barducksRoot, coreUtilsPath: scriptsUtils, coreEnvPath: scriptsEnv };
   }
 
   return {
-    devduckRoot,
-    coreUtilsPath: path.join(devduckRoot, 'extensions', 'core', 'scripts', 'utils.ts'),
-    coreEnvPath: path.join(devduckRoot, 'extensions', 'core', 'scripts', 'lib', 'env.ts')
+    barducksRoot,
+    coreUtilsPath: path.join(barducksRoot, 'extensions', 'core', 'scripts', 'utils.ts'),
+    coreEnvPath: path.join(barducksRoot, 'extensions', 'core', 'scripts', 'lib', 'env.ts')
   };
 }
 

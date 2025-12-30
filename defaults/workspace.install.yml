@@ -1,9 +1,9 @@
 version: "0.1.0"
 
-# DevDuck baseline installation config.
+# Barducks baseline installation config.
 # Workspaces should extend this file via:
 #   extends:
-#     - devduck:defaults/workspace.install.yml
+#     - barducks:defaults/workspace.install.yml
 #
 # This file defines the canonical Taskfile runtime (generated into .cache/taskfile.generated.yml).
 
@@ -27,37 +27,37 @@ taskfile:
     install:1-check-env:
       desc: "Verify required environment variables"
       cmds:
-        - tsx {{.DEVDUCK_ROOT}}/scripts/install/run-step.ts check-env --workspace-root {{.WORKSPACE_ROOT}} --project-root {{.DEVDUCK_ROOT}} --unattended
+        - tsx {{.BARDUCKS_ROOT}}/scripts/install/run-step.ts check-env --workspace-root {{.WORKSPACE_ROOT}} --project-root {{.BARDUCKS_ROOT}} --unattended
 
     install:2-download-repos:
       desc: "Download external module repositories"
       cmds:
-        - tsx {{.DEVDUCK_ROOT}}/scripts/install/run-step.ts download-repos --workspace-root {{.WORKSPACE_ROOT}} --project-root {{.DEVDUCK_ROOT}} --unattended
+        - tsx {{.BARDUCKS_ROOT}}/scripts/install/run-step.ts download-repos --workspace-root {{.WORKSPACE_ROOT}} --project-root {{.BARDUCKS_ROOT}} --unattended
 
     install:3-download-projects:
       desc: "Clone/link workspace projects"
       cmds:
-        - tsx {{.DEVDUCK_ROOT}}/scripts/install/run-step.ts download-projects --workspace-root {{.WORKSPACE_ROOT}} --project-root {{.DEVDUCK_ROOT}} --unattended
+        - tsx {{.BARDUCKS_ROOT}}/scripts/install/run-step.ts download-projects --workspace-root {{.WORKSPACE_ROOT}} --project-root {{.BARDUCKS_ROOT}} --unattended
 
     install:4-check-env-again:
       desc: "Re-check environment variables"
       cmds:
-        - tsx {{.DEVDUCK_ROOT}}/scripts/install/run-step.ts check-env-again --workspace-root {{.WORKSPACE_ROOT}} --project-root {{.DEVDUCK_ROOT}} --unattended
+        - tsx {{.BARDUCKS_ROOT}}/scripts/install/run-step.ts check-env-again --workspace-root {{.WORKSPACE_ROOT}} --project-root {{.BARDUCKS_ROOT}} --unattended
 
     install:5-setup-modules:
-      desc: "Setup all DevDuck modules"
+      desc: "Setup all Barducks modules"
       cmds:
-        - tsx {{.DEVDUCK_ROOT}}/scripts/install/run-step.ts setup-modules --workspace-root {{.WORKSPACE_ROOT}} --project-root {{.DEVDUCK_ROOT}} --unattended
+        - tsx {{.BARDUCKS_ROOT}}/scripts/install/run-step.ts setup-modules --workspace-root {{.WORKSPACE_ROOT}} --project-root {{.BARDUCKS_ROOT}} --unattended
 
     install:6-setup-projects:
       desc: "Setup all workspace projects"
       cmds:
-        - tsx {{.DEVDUCK_ROOT}}/scripts/install/run-step.ts setup-projects --workspace-root {{.WORKSPACE_ROOT}} --project-root {{.DEVDUCK_ROOT}} --unattended
+        - tsx {{.BARDUCKS_ROOT}}/scripts/install/run-step.ts setup-projects --workspace-root {{.WORKSPACE_ROOT}} --project-root {{.BARDUCKS_ROOT}} --unattended
 
     install:7-verify-installation:
       desc: "Verify installation correctness"
       cmds:
         # Verification can include flaky network checks; do not fail the whole install on it.
-        - cmd: tsx {{.DEVDUCK_ROOT}}/scripts/install/run-step.ts verify-installation --workspace-root {{.WORKSPACE_ROOT}} --project-root {{.DEVDUCK_ROOT}} --unattended
+        - cmd: tsx {{.BARDUCKS_ROOT}}/scripts/install/run-step.ts verify-installation --workspace-root {{.WORKSPACE_ROOT}} --project-root {{.BARDUCKS_ROOT}} --unattended
           ignore_error: true
 

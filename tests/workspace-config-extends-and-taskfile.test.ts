@@ -16,9 +16,9 @@ function writeYaml(filePath: string, data: unknown): void {
   fs.writeFileSync(filePath, YAML.stringify(data), 'utf8');
 }
 
-test('workspace.config.yml supports extends (devduck:) with concat+dedupe merge', () => {
-  const repoRoot = process.cwd(); // projects/devduck
-  const wsRoot = mkTmpDir('devduck-ws-extends-');
+test('workspace.config.yml supports extends (barducks:) with concat+dedupe merge', () => {
+  const repoRoot = process.cwd(); // projects/barducks
+  const wsRoot = mkTmpDir('barducks-ws-extends-');
 
   const basePath = path.join(wsRoot, 'base.yml');
   writeYaml(basePath, {
@@ -34,8 +34,8 @@ test('workspace.config.yml supports extends (devduck:) with concat+dedupe merge'
   const wsConfigPath = path.join(wsRoot, 'workspace.config.yml');
   writeYaml(wsConfigPath, {
     version: '0.1.0',
-    devduck_path: repoRoot,
-    extends: ['./base.yml', 'devduck:defaults/workspace.install.yml'],
+    barducks_path: repoRoot,
+    extends: ['./base.yml', 'barducks:defaults/workspace.install.yml'],
     projects: [{ src: 'github.com/example/foo', description: 'from-workspace' }],
     checks: [{ name: 'check1', test: 'echo workspace' }],
     env: [{ name: 'FOO', default: 'workspace' }]
@@ -67,14 +67,14 @@ test('workspace.config.yml supports extends (devduck:) with concat+dedupe merge'
   assert.equal(fooEnv?.default, 'workspace');
 });
 
-test('devduck-cli sync generates .cache/taskfile.generated.yml from merged config.taskfile', () => {
-  const repoRoot = process.cwd(); // projects/devduck
-  const wsRoot = mkTmpDir('devduck-ws-taskfile-');
+test('barducks-cli sync generates .cache/taskfile.generated.yml from merged config.taskfile', () => {
+  const repoRoot = process.cwd(); // projects/barducks
+  const wsRoot = mkTmpDir('barducks-ws-taskfile-');
 
   writeYaml(path.join(wsRoot, 'workspace.config.yml'), {
     version: '0.1.0',
-    devduck_path: repoRoot,
-    extends: ['devduck:defaults/workspace.install.yml']
+    barducks_path: repoRoot,
+    extends: ['barducks:defaults/workspace.install.yml']
   });
 
   const cliPath = path.join(repoRoot, 'scripts', 'barducks-cli.ts');
@@ -94,7 +94,7 @@ test('devduck-cli sync generates .cache/taskfile.generated.yml from merged confi
   assert.ok(parsed.tasks?.['install:1-check-env'], 'tasks.install:1-check-env should exist');
 
   // Vars injected by generator.
-  assert.equal(parsed.vars?.DEVDUCK_ROOT, repoRoot);
+  assert.equal(parsed.vars?.BARDUCKS_ROOT, repoRoot);
   assert.ok(typeof parsed.vars?.WORKSPACE_ROOT === 'string' && parsed.vars.WORKSPACE_ROOT.includes('default'));
 
   // Baseline command comes from config.taskfile.
@@ -103,14 +103,14 @@ test('devduck-cli sync generates .cache/taskfile.generated.yml from merged confi
 });
 
 test('extends cycle is detected and reported', () => {
-  const repoRoot = process.cwd(); // projects/devduck
-  const wsRoot = mkTmpDir('devduck-ws-cycle-');
+  const repoRoot = process.cwd(); // projects/barducks
+  const wsRoot = mkTmpDir('barducks-ws-cycle-');
 
   writeYaml(path.join(wsRoot, 'a.yml'), { version: '0.1.0', extends: ['./b.yml'] });
   writeYaml(path.join(wsRoot, 'b.yml'), { version: '0.1.0', extends: ['./a.yml'] });
   writeYaml(path.join(wsRoot, 'workspace.config.yml'), {
     version: '0.1.0',
-    devduck_path: repoRoot,
+    barducks_path: repoRoot,
     extends: ['./a.yml']
   });
 

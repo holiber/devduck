@@ -15,7 +15,7 @@ Telegram’s **TDLib** is a good option for stable, low-level access. A producti
 
 - Run TDLib client (native library) and expose a small adapter layer in Node.js
 - Implement `getChatHistory` and `downloadFile`
-- Cache results under `.cache/devduck/messenger/telegram-provider/` to avoid unnecessary traffic
+- Cache results under `.cache/barducks/messenger/telegram-provider/` to avoid unnecessary traffic
 
 ## Current status
 

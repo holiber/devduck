@@ -12,7 +12,7 @@ import { loadInstallState, saveInstallState } from './install-state.js';
 
 type WorkspaceConfig = Record<string, unknown> & {
   version?: string | number;
-  devduck_path?: string;
+  barducks_path?: string;
   repos?: string[];
   extensions?: string[];
   projects?: unknown[];
@@ -21,7 +21,7 @@ type WorkspaceConfig = Record<string, unknown> & {
 };
 
 type WorkspaceConfigLike = Record<string, unknown> & {
-  devduck_path?: string;
+  barducks_path?: string;
   taskfile?: {
     output?: string;
     vars?: Record<string, unknown>;
@@ -32,12 +32,12 @@ type WorkspaceConfigLike = Record<string, unknown> & {
 function ensureGeneratedTaskfile(
   workspaceRoot: string,
   cacheDir: string,
-  devduckPathRel: string,
+  barducksPathRel: string,
   config: WorkspaceConfigLike
 ): void {
   fs.mkdirSync(cacheDir, { recursive: true });
   const generatedPath = path.join(cacheDir, 'taskfile.generated.yml');
-  const generated = buildGeneratedTaskfile({ workspaceRoot, config, devduckPathRel });
+  const generated = buildGeneratedTaskfile({ workspaceRoot, config, barducksPathRel });
   const out = YAML.stringify(generated);
   fs.writeFileSync(generatedPath, out.endsWith('\n') ? out : out + '\n', 'utf8');
 }
@@ -83,16 +83,16 @@ export async function installWorkspace(params: {
   if (!config) {
     const extensions = installModules ? installModules.split(',').map((m) => m.trim()) : ['core', 'cursor'];
 
-    let devduckPath = path.relative(workspaceRoot, projectRoot);
-    if (!devduckPath || devduckPath === '.') {
-      devduckPath = './projects/barducks';
-    } else if (!devduckPath.startsWith('.')) {
-      devduckPath = './' + devduckPath;
+    let barducksPath = path.relative(workspaceRoot, projectRoot);
+    if (!barducksPath || barducksPath === '.') {
+      barducksPath = './projects/barducks';
+    } else if (!barducksPath.startsWith('.')) {
+      barducksPath = './' + barducksPath;
     }
 
     config = {
       version: '0.1.0',
-      devduck_path: devduckPath,
+      barducks_path: barducksPath,
       extensions,
       extensionSettings: {},
       repos: [],
@@ -166,18 +166,18 @@ export async function installWorkspace(params: {
   const resolvedConfig =
     readWorkspaceConfigFromRoot<WorkspaceConfigLike>(workspaceRoot).config || (latestConfig as WorkspaceConfigLike);
   {
-    const devduckPathRel =
-      typeof resolvedConfig.devduck_path === 'string' && resolvedConfig.devduck_path.trim().length > 0
-        ? resolvedConfig.devduck_path.trim()
+    const barducksPathRel =
+      typeof resolvedConfig.barducks_path === 'string' && resolvedConfig.barducks_path.trim().length > 0
+        ? resolvedConfig.barducks_path.trim()
         : './projects/barducks';
     // This is a convenience for Taskfile-based workflows: keep runtime taskfile in .cache updated.
-    ensureGeneratedTaskfile(workspaceRoot, cacheDir, devduckPathRel, resolvedConfig);
+    ensureGeneratedTaskfile(workspaceRoot, cacheDir, barducksPathRel, resolvedConfig);
   }
 
   let moduleChecks: Array<{ name?: string; mcpSettings?: Record<string, unknown> }> = [];
   try {
     const { getAllModules, resolveModules, loadModuleFromPath } = await import('./module-resolver.js');
-    const { loadModulesFromRepo, getDevduckVersion } = await import('../lib/repo-modules.js');
+    const { loadModulesFromRepo, getBarducksVersion } = await import('../lib/repo-modules.js');
 
     const allModules = getAllModules();
     const resolvedModules = resolveModules(latestConfig as WorkspaceConfig, allModules);
@@ -185,10 +185,10 @@ export async function installWorkspace(params: {
 
     const repos = (latestConfig as WorkspaceConfig).repos;
     if (repos && Array.isArray(repos) && repos.length > 0) {
-      const devduckVersion = getDevduckVersion();
+      const barducksVersion = getBarducksVersion();
       for (const repoUrl of repos) {
         try {
-          const repoModulesPath = await loadModulesFromRepo(repoUrl, workspaceRoot, devduckVersion);
+          const repoModulesPath = await loadModulesFromRepo(repoUrl, workspaceRoot, barducksVersion);
           if (fs.existsSync(repoModulesPath)) {
             const repoModuleEntries = fs.readdirSync(repoModulesPath, { withFileTypes: true });
             for (const entry of repoModuleEntries) {
@@ -274,10 +274,10 @@ export async function installWorkspace(params: {
     log(`ERROR: Failed to install API script: ${err.message}\n${err.stack}`);
   }
 
-  // Create .cache/devduck directory
-  const cacheDevduckDir = path.join(workspaceRoot, '.cache', 'devduck');
-  if (!fs.existsSync(cacheDevduckDir)) {
-    fs.mkdirSync(cacheDevduckDir, { recursive: true });
+  // Create .cache/barducks directory
+  const cacheBarducksDir = path.join(workspaceRoot, '.cache', 'barducks');
+  if (!fs.existsSync(cacheBarducksDir)) {
+    fs.mkdirSync(cacheBarducksDir, { recursive: true });
   }
 
   log(`Workspace installation completed at ${new Date().toISOString()}`);

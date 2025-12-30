@@ -20,7 +20,7 @@ export async function showStatus(params: { workspaceRoot: string; cacheDir: stri
 
     const cacheSize = getDirectorySize(cacheDir);
     // Optional dependency: keep `pretty-bytes` for nicer output when installed,
-    // but do not require it for bootstrap scenarios (e.g. `devduck new`).
+    // but do not require it for bootstrap scenarios (e.g. `barducks new`).
     let cacheSizeFormatted: string;
     try {
       const mod = await import('pretty-bytes');

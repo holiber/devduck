@@ -54,10 +54,10 @@ function exitForOutcome(outcome: StepOutcome): never {
 
 async function main(argv = process.argv): Promise<void> {
   const parsed = yargs(hideBin(argv))
-    .scriptName('devduck-install-step')
+    .scriptName('barducks-install-step')
     .command(
       '$0 <stepId>',
-      'Run a single DevDuck installer step',
+      'Run a single Barducks installer step',
       (yy) =>
         yy
           .positional('stepId', {
@@ -72,7 +72,7 @@ async function main(argv = process.argv): Promise<void> {
           })
           .option('project-root', {
             type: 'string',
-            describe: 'DevDuck project root directory (defaults to auto-detected)',
+            describe: 'Barducks project root directory (defaults to auto-detected)',
             default: ''
           })
           .option('y', {
@@ -96,7 +96,7 @@ async function main(argv = process.argv): Promise<void> {
   // Avoid duplicate banners: Taskfile install prints our banner here,
   // and step implementations have their own "[Step N]" console headers.
   // Keep step headers for direct/legacy runs, but suppress them for this launcher.
-  if (process.env.DEVDUCK_SUPPRESS_STEP_HEADER !== '1') process.env.DEVDUCK_SUPPRESS_STEP_HEADER = '1';
+  if (process.env.BARDUCKS_SUPPRESS_STEP_HEADER !== '1') process.env.BARDUCKS_SUPPRESS_STEP_HEADER = '1';
   printStepBanner(stepId);
 
   const invocationCwd = process.env.INIT_CWD ? path.resolve(process.env.INIT_CWD) : process.cwd();
@@ -112,7 +112,7 @@ async function main(argv = process.argv): Promise<void> {
   const { config } = readWorkspaceConfigFromRoot(workspaceRoot);
   const projectRoot =
     (parsed['project-root'] ? path.resolve(invocationCwd, String(parsed['project-root'])) : null) ||
-    // This file lives at <devduckRoot>/src/install/run-step.ts => ../.. is <devduckRoot>
+    // This file lives at <barducksRoot>/src/install/run-step.ts => ../.. is <barducksRoot>
     path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 
   const autoYes = Boolean(parsed.y || parsed.yes || parsed['non-interactive'] || parsed.unattended);

@@ -3,14 +3,14 @@
 /**
  * Step 2: Download Repos
  * 
- * Download/clone external repositories into devduck/repo-name
+ * Download/clone external repositories into barducks/repo-name
  */
 
 import path from 'path';
 import fs from 'fs';
 import { readWorkspaceConfigFromRoot } from '../lib/workspace-config.js';
 import { print, symbols } from '../utils.js';
-import { loadModulesFromRepo, getDevduckVersion } from '../lib/repo-modules.js';
+import { loadModulesFromRepo, getBarducksVersion } from '../lib/repo-modules.js';
 import { markStepCompleted, type RepoResult } from './install-state.js';
 import type { WorkspaceConfig } from '../schemas/workspace-config.zod.js';
 import type { InstallContext, StepOutcome } from './runner.js';
@@ -26,7 +26,7 @@ export async function runStep2DownloadRepos(
   workspaceRoot: string,
   log?: (message: string) => void
 ): Promise<DownloadReposStepResult> {
-  if (process.env.DEVDUCK_SUPPRESS_STEP_HEADER !== '1') {
+  if (process.env.BARDUCKS_SUPPRESS_STEP_HEADER !== '1') {
     print(`\n[Step 2] Downloading repositories...`, 'cyan');
   }
   if (log) {
@@ -62,7 +62,7 @@ export async function runStep2DownloadRepos(
     log(`[Step 2] Downloading ${config.repos.length} repository/repositories`);
   }
   
-  const devduckVersion = getDevduckVersion();
+  const barducksVersion = getBarducksVersion();
   
   for (const repoUrl of config.repos) {
     try {
@@ -71,7 +71,7 @@ export async function runStep2DownloadRepos(
         log(`[Step 2] Loading repository: ${repoUrl}`);
       }
       
-      const repoModulesPath = await loadModulesFromRepo(repoUrl, workspaceRoot, devduckVersion);
+      const repoModulesPath = await loadModulesFromRepo(repoUrl, workspaceRoot, barducksVersion);
       
       if (fs.existsSync(repoModulesPath)) {
         repos.push({

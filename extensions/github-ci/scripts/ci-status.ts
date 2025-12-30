@@ -115,7 +115,7 @@ export function getPRInfoViaAPI(repoPath: string, branch: string, token: string)
         path: apiPath,
         headers: {
           'Authorization': `token ${token}`,
-          'User-Agent': 'devduck-github-ci',
+          'User-Agent': 'barducks-github-ci',
           'Accept': 'application/vnd.github.v3+json'
         }
       },
@@ -194,7 +194,7 @@ export function getChecksViaAPI(owner: string, repo: string, sha: string, token:
         path: apiPath,
         headers: {
           'Authorization': `token ${token}`,
-          'User-Agent': 'devduck-github-ci',
+          'User-Agent': 'barducks-github-ci',
           'Accept': 'application/vnd.github.v3+json'
         }
       },

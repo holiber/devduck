@@ -1,19 +1,19 @@
 ---
 name: evolution
 version: 0.1.0
-description: Self-evolution capabilities for devduck
+description: Self-evolution capabilities for barducks
 tags: [meta, evolution]
 dependencies: [core]
 ---
 # Evolution Module
 
-Module for making changes to devduck itself.
+Module for making changes to barducks itself.
 
 ## Architecture Documentation
 
-All information about devduck architecture, module system, and workspace configuration is documented in `ARCHITECTURE.md` in the project root.
+All information about barducks architecture, module system, and workspace configuration is documented in `ARCHITECTURE.md` in the project root.
 
-When making changes to devduck architecture:
+When making changes to barducks architecture:
 1. Read `ARCHITECTURE.md` to understand current architecture
 2. Plan changes according to architecture principles
 3. Update `ARCHITECTURE.md` to reflect changes

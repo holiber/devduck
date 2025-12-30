@@ -21,7 +21,7 @@ import type { Browser, Page } from 'playwright';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Load .env file from devduck project
+// Load .env file from barducks project
 function loadEnv(): void {
   const envPath = path.join(__dirname, '../../.env');
   if (fs.existsSync(envPath)) {

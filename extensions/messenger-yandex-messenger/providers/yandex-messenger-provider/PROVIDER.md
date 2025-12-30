@@ -27,5 +27,5 @@ To switch to a real implementation, set `YANDEX_MESSENGER_PROVIDER_MODE=http` an
 - `YANDEX_MESSENGER_API_BASE_URL`
 - `YANDEX_MESSENGER_TOKEN`
 
-Providers should cache results under `.cache/devduck/messenger/yandex-messenger-provider/` to avoid unnecessary traffic.
+Providers should cache results under `.cache/barducks/messenger/yandex-messenger-provider/` to avoid unnecessary traffic.
 

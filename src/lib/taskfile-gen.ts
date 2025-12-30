@@ -30,23 +30,23 @@ function extractStringMap(value: unknown): Record<string, string> {
   return out;
 }
 
-function normalizeDevduckRootVarValue(devduckPathRel: string): string {
+function normalizeBarducksRootVarValue(barducksPathRel: string): string {
   // We want absolute-ish paths inside the generated taskfile because it's executed from `.cache/`.
   // This keeps it correct regardless of the current working directory.
-  if (path.isAbsolute(devduckPathRel)) return devduckPathRel;
-  const cleaned = devduckPathRel.replace(/\\/g, '/').trim().replace(/^\.\/+/, '');
-  return cleaned ? `{{.WORKSPACE_ROOT}}/${cleaned}` : '{{.WORKSPACE_ROOT}}/projects/devduck';
+  if (path.isAbsolute(barducksPathRel)) return barducksPathRel;
+  const cleaned = barducksPathRel.replace(/\\/g, '/').trim().replace(/^\.\/+/, '');
+  return cleaned ? `{{.WORKSPACE_ROOT}}/${cleaned}` : '{{.WORKSPACE_ROOT}}/projects/barducks';
 }
 
-function injectedVars(devduckPathRel: string): Record<string, string> {
+function injectedVars(barducksPathRel: string): Record<string, string> {
   return {
     // Taskfile is written to `.cache/` by default, so workspace root is its parent directory.
     WORKSPACE_ROOT: '{{ default (printf "%s/.." .TASKFILE_DIR) .WORKSPACE_ROOT }}',
-    DEVDUCK_ROOT: normalizeDevduckRootVarValue(devduckPathRel),
+    BARDUCKS_ROOT: normalizeBarducksRootVarValue(barducksPathRel),
   };
 }
 
-function buildFromTaskfileSection(taskfile: WorkspaceConfigLike['taskfile'], devduckPathRel: string): GeneratedTaskfile | null {
+function buildFromTaskfileSection(taskfile: WorkspaceConfigLike['taskfile'], barducksPathRel: string): GeneratedTaskfile | null {
   if (!taskfile || !isPlainObject(taskfile) || !isPlainObject(taskfile.tasks)) return null;
   const output =
     typeof taskfile.output === 'string' && taskfile.output.trim().length > 0 ? taskfile.output.trim() : 'interleaved';
@@ -57,16 +57,16 @@ function buildFromTaskfileSection(taskfile: WorkspaceConfigLike['taskfile'], dev
     output,
     vars: {
       ...varsFromConfig,
-      ...injectedVars(devduckPathRel),
+      ...injectedVars(barducksPathRel),
     },
     tasks: taskfile.tasks,
   };
 }
 
-function tryReadBaselineTaskfileSection(params: { workspaceRoot: string; devduckPathRel: string }): WorkspaceConfigLike['taskfile'] | null {
-  const { workspaceRoot, devduckPathRel } = params;
-  const devduckRootAbs = path.resolve(workspaceRoot, devduckPathRel);
-  const baselinePath = path.join(devduckRootAbs, 'defaults', 'workspace.install.yml');
+function tryReadBaselineTaskfileSection(params: { workspaceRoot: string; barducksPathRel: string }): WorkspaceConfigLike['taskfile'] | null {
+  const { workspaceRoot, barducksPathRel } = params;
+  const barducksRootAbs = path.resolve(workspaceRoot, barducksPathRel);
+  const baselinePath = path.join(barducksRootAbs, 'defaults', 'workspace.install.yml');
   try {
     if (!fs.existsSync(baselinePath)) return null;
     const raw = fs.readFileSync(baselinePath, 'utf8');
@@ -83,34 +83,34 @@ function tryReadBaselineTaskfileSection(params: { workspaceRoot: string; devduck
  *
  * Fallback strategy:
  * 1) Use `config.taskfile` if present.
- * 2) Else, use DevDuck baseline defaults from `<devduckRoot>/defaults/workspace.install.yml`.
+ * 2) Else, use Barducks baseline defaults from `<barducksRoot>/defaults/workspace.install.yml`.
  *
  * This keeps installation step definitions in ONE place (the baseline file).
  */
 export function buildGeneratedTaskfile(params: {
   workspaceRoot: string;
   config: WorkspaceConfigLike;
-  devduckPathRel: string;
+  barducksPathRel: string;
 }): GeneratedTaskfile {
-  const { workspaceRoot, config, devduckPathRel } = params;
+  const { workspaceRoot, config, barducksPathRel } = params;
 
-  const fromConfig = buildFromTaskfileSection(config.taskfile, devduckPathRel);
+  const fromConfig = buildFromTaskfileSection(config.taskfile, barducksPathRel);
   if (fromConfig) return fromConfig;
 
-  const baselineTaskfile = tryReadBaselineTaskfileSection({ workspaceRoot, devduckPathRel });
-  const fromBaseline = buildFromTaskfileSection(baselineTaskfile ?? undefined, devduckPathRel);
+  const baselineTaskfile = tryReadBaselineTaskfileSection({ workspaceRoot, barducksPathRel });
+  const fromBaseline = buildFromTaskfileSection(baselineTaskfile ?? undefined, barducksPathRel);
   if (fromBaseline) return fromBaseline;
 
   // Last resort: minimal, to avoid crashing older installs. Prefer adding baseline file instead.
   return {
     version: '3',
     output: 'interleaved',
-    vars: injectedVars(devduckPathRel),
+    vars: injectedVars(barducksPathRel),
     tasks: {
       install: {
         desc: 'Install baseline missing: no tasks defined',
         cmds: [
-          'echo "ERROR: No taskfile config found. Please add extends: devduck:defaults/workspace.install.yml" && exit 1'
+          'echo "ERROR: No taskfile config found. Please add extends: barducks:defaults/workspace.install.yml" && exit 1'
         ],
       },
     },

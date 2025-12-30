@@ -105,7 +105,7 @@ function getCheckAnnotations(owner: string, repo: string, checkRunId: string, to
         path: apiPath,
         headers: {
           'Authorization': `token ${token}`,
-          'User-Agent': 'devduck-github-ci',
+          'User-Agent': 'barducks-github-ci',
           'Accept': 'application/vnd.github.v3+json'
         }
       },
@@ -151,7 +151,7 @@ function getChecksViaAPI(owner: string, repo: string, sha: string, token: string
         path: apiPath,
         headers: {
           'Authorization': `token ${token}`,
-          'User-Agent': 'devduck-github-ci',
+          'User-Agent': 'barducks-github-ci',
           'Accept': 'application/vnd.github.v3+json'
         }
       },

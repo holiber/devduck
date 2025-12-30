@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Unified API collector for DevDuck modules
+ * Unified API collector for Barducks modules
  * 
  * Discovers APIs from scripts/lib/api/ directory and all installed modules with api.ts files,
  * then collects their routers into a unified API structure.
@@ -11,12 +11,12 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import type { ProviderRouter } from './provider-router.js';
-import { resolveDevduckRoot } from './barducks-paths.js';
+import { resolveBarducksRoot } from './barducks-paths.js';
 import { findWorkspaceRoot } from './workspace-root.js';
 import { readJSON } from './config.js';
 import { getWorkspaceConfigFilePath, readWorkspaceConfigFile } from './workspace-config.js';
 import { readEnvFile } from './env.js';
-import { loadModulesFromRepo, getDevduckVersion } from './repo-modules.js';
+import { loadModulesFromRepo, getBarducksVersion } from './repo-modules.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -188,27 +188,27 @@ async function importRouterFromAPI(apiPath: string, apiName: string, quiet: bool
  * @param quiet - If true, suppress warnings and side effects
  */
 export async function collectUnifiedAPI(quiet: boolean = false): Promise<UnifiedAPI> {
-  // Try to resolve devduck root - in CI, we might be running from the repo root
-  let { devduckRoot } = resolveDevduckRoot({ cwd: process.cwd(), moduleDir: __dirname });
+  // Try to resolve barducks root - in CI, we might be running from the repo root
+  let { barducksRoot } = resolveBarducksRoot({ cwd: process.cwd(), moduleDir: __dirname });
   
-  // Verify that devduckRoot actually contains extensions directory (legacy: modules directory)
+  // Verify that barducksRoot actually contains extensions directory (legacy: modules directory)
   // If not, try to resolve from current working directory (for CI environments)
-  const extensionsDir = path.join(devduckRoot, 'extensions');
-  const legacyModulesDir = path.join(devduckRoot, 'modules');
+  const extensionsDir = path.join(barducksRoot, 'extensions');
+  const legacyModulesDir = path.join(barducksRoot, 'modules');
   const mainDir = fs.existsSync(extensionsDir) ? extensionsDir : legacyModulesDir;
   if (!fs.existsSync(mainDir)) {
     // In CI, we might be in the repo root, so try that
     const cwdExtensionsDir = path.join(process.cwd(), 'extensions');
     const cwdLegacyModulesDir = path.join(process.cwd(), 'modules');
     if (fs.existsSync(cwdExtensionsDir) || fs.existsSync(cwdLegacyModulesDir)) {
-      devduckRoot = process.cwd();
+      barducksRoot = process.cwd();
     } else {
       // Last resort: try to find modules relative to this file
       const fileBasedRoot = path.resolve(__dirname, '../..');
       const fileBasedExtensionsDir = path.join(fileBasedRoot, 'extensions');
       const fileBasedLegacyModulesDir = path.join(fileBasedRoot, 'modules');
       if (fs.existsSync(fileBasedExtensionsDir) || fs.existsSync(fileBasedLegacyModulesDir)) {
-        devduckRoot = fileBasedRoot;
+        barducksRoot = fileBasedRoot;
       }
     }
   }
@@ -244,9 +244,9 @@ export async function collectUnifiedAPI(quiet: boolean = false): Promise<Unified
   }
   
   // Then, discover extensions from main project directory (legacy: modules)
-  const mainExtensionsDir = fs.existsSync(path.join(devduckRoot, 'extensions'))
-    ? path.join(devduckRoot, 'extensions')
-    : path.join(devduckRoot, 'modules');
+  const mainExtensionsDir = fs.existsSync(path.join(barducksRoot, 'extensions'))
+    ? path.join(barducksRoot, 'extensions')
+    : path.join(barducksRoot, 'modules');
   const mainModules = await discoverModulesFromDirectory(mainExtensionsDir);
   
   for (const modulePath of mainModules) {
@@ -271,11 +271,11 @@ export async function collectUnifiedAPI(quiet: boolean = false): Promise<Unified
       const config = readWorkspaceConfigFile<{ repos?: string[] }>(configPath) || readJSON<{ repos?: string[] }>(configPath);
       
       if (config && config.repos && Array.isArray(config.repos)) {
-        const devduckVersion = getDevduckVersion();
+        const barducksVersion = getBarducksVersion();
         
         for (const repoUrl of config.repos) {
           try {
-            const repoModulesPath = await loadModulesFromRepo(repoUrl, workspaceRoot, devduckVersion);
+            const repoModulesPath = await loadModulesFromRepo(repoUrl, workspaceRoot, barducksVersion);
             if (fs.existsSync(repoModulesPath)) {
               const repoModules = await discoverModulesFromDirectory(repoModulesPath);
               

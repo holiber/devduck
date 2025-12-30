@@ -104,7 +104,7 @@ export function ipcLink(params: { socketPath: string }): TRPCLink<AppRouter> {
   };
 }
 
-export function createDevduckServiceClient(params: { socketPath: string }) {
+export function createBarducksServiceClient(params: { socketPath: string }) {
   return createTRPCProxyClient<AppRouter>({
     links: [ipcLink({ socketPath: params.socketPath })]
   });

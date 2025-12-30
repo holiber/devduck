@@ -20,14 +20,14 @@ async function getTracker() {
   if (tracker) return tracker;
   try {
     const { discoverProvidersFromModules, getProvider } = await import('../../../src/lib/provider-registry.js');
-    const { resolveDevduckRoot } = await import('../../../src/lib/barducks-paths.js');
+    const { resolveBarducksRoot } = await import('../../../src/lib/barducks-paths.js');
     const { findWorkspaceRoot } = await import('../../../src/lib/workspace-root.js');
     const { getWorkspaceConfigFilePath, readWorkspaceConfigFile } = await import(
       '../../../src/lib/workspace-config.js'
     );
     const workspaceRoot = findWorkspaceRoot(process.cwd());
-    const { devduckRoot } = resolveDevduckRoot({ cwd: process.cwd(), moduleDir: __dirname });
-    await discoverProvidersFromModules({ extensionsDir: path.join(devduckRoot, 'extensions') });
+    const { barducksRoot } = resolveBarducksRoot({ cwd: process.cwd(), moduleDir: __dirname });
+    await discoverProvidersFromModules({ extensionsDir: path.join(barducksRoot, 'extensions') });
     
     // Discover from external repos if workspace config exists
     if (workspaceRoot) {
@@ -35,11 +35,11 @@ async function getTracker() {
       if (fs.existsSync(configPath)) {
         const config = readWorkspaceConfigFile<{ repos?: string[] }>(configPath);
         if (config?.repos) {
-          const { loadModulesFromRepo, getDevduckVersion } = await import('../../../src/lib/repo-modules.js');
-          const devduckVersion = getDevduckVersion();
+          const { loadModulesFromRepo, getBarducksVersion } = await import('../../../src/lib/repo-modules.js');
+          const barducksVersion = getBarducksVersion();
           for (const repoUrl of config.repos) {
             try {
-              const repoModulesPath = await loadModulesFromRepo(repoUrl, workspaceRoot, devduckVersion);
+              const repoModulesPath = await loadModulesFromRepo(repoUrl, workspaceRoot, barducksVersion);
               if (fs.existsSync(repoModulesPath)) {
                 await discoverProvidersFromModules({ extensionsDir: repoModulesPath });
               }

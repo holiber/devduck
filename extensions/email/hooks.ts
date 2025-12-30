@@ -15,7 +15,7 @@ export default {
       fs.mkdirSync(emailCacheDir, { recursive: true });
       return {
         success: true,
-        createdFiles: ['.cache/devduck/email/'],
+        createdFiles: ['.cache/barducks/email/'],
         message: 'Created email cache directory'
       };
     } catch (e) {

@@ -6,7 +6,7 @@ globs: ["**/ARCHITECTURE.md", "**/extensions/**/MODULE.md", "**/workspace.config
 
 ## Rule
 
-When working with devduck architecture, module system, or workspace configuration:
+When working with barducks architecture, module system, or workspace configuration:
 
 - **Always refer to `ARCHITECTURE.md`** in the project root for architectural information
 - The architecture documentation contains:
@@ -31,7 +31,7 @@ When making changes to:
 
 ## Evolution Module
 
-The evolution module enables devduck to make changes to itself. When evolving the architecture:
+The evolution module enables barducks to make changes to itself. When evolving the architecture:
 
 1. Read `ARCHITECTURE.md` to understand current state
 2. Plan changes according to architecture principles

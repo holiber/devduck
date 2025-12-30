@@ -1,5 +1,5 @@
 /**
- * Ink-based terminal dashboard for DevDuck tasks (no JSX, Node-compatible).
+ * Ink-based terminal dashboard for Barducks tasks (no JSX, Node-compatible).
  *
  * Usage:
  *   tsx scripts/dashboard.ts
@@ -176,7 +176,7 @@ function Header(props: HeaderProps) {
   return h(
     Box,
     { flexDirection: 'column' },
-    h(Text, null, 'DevDuck Dashboard  ', h(Text, { dimColor: true }, parts.join(' | '))),
+    h(Text, null, 'Barducks Dashboard  ', h(Text, { dimColor: true }, parts.join(' | '))),
     statusBits.length ? h(Text, { dimColor: true }, statusBits.join('  ')) : null,
   );
 }
@@ -642,7 +642,7 @@ async function main(): Promise<void> {
   const args = await createYargs(process.argv)
     .scriptName('dashboard')
     .strict()
-    .usage('Usage: $0 [--prompt "<text>"]\n\nLaunch DevDuck dashboard (Ink TUI).')
+    .usage('Usage: $0 [--prompt "<text>"]\n\nLaunch Barducks dashboard (Ink TUI).')
     .option('prompt', {
       type: 'string',
       describe: 'Enqueue a prompt before launching the dashboard',

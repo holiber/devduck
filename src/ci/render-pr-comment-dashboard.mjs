@@ -106,7 +106,7 @@ function buildStatusBlock(status, { hasPreviousMetrics }) {
   if (!badge) return [];
 
   const lines = [];
-  lines.push('<!-- devduck-metrics-status:start -->');
+  lines.push('<!-- barducks-metrics-status:start -->');
   lines.push(badge);
   lines.push('');
 
@@ -122,14 +122,14 @@ function buildStatusBlock(status, { hasPreviousMetrics }) {
     );
   }
 
-  lines.push('<!-- devduck-metrics-status:end -->');
+  lines.push('<!-- barducks-metrics-status:end -->');
   lines.push('');
   return lines;
 }
 
 function stripStatusBlock(markdown) {
-  const start = '<!-- devduck-metrics-status:start -->';
-  const end = '<!-- devduck-metrics-status:end -->';
+  const start = '<!-- barducks-metrics-status:start -->';
+  const end = '<!-- barducks-metrics-status:end -->';
   if (!markdown.includes(start)) return markdown;
 
   const before = markdown.split(start)[0];
@@ -185,7 +185,7 @@ async function probeDashboardUrl(url) {
       method: 'GET',
       redirect: 'follow',
       signal: controller.signal,
-      headers: { 'user-agent': 'devduck-ci' },
+      headers: { 'user-agent': 'barducks-ci' },
     });
 
     // Treat 2xx/3xx as reachable.
@@ -237,7 +237,7 @@ async function main() {
     lines.push(...buildStatusBlock(status, { hasPreviousMetrics: false }));
     if (url) lines.push(`- **Workflow run**: ${url}`);
     lines.push('');
-    lines.push('<!-- devduck-metrics-comment -->');
+    lines.push('<!-- barducks-metrics-comment -->');
     lines.push('');
 
     await fsp.mkdir(path.dirname(outPath), { recursive: true });
@@ -307,7 +307,7 @@ async function main() {
     lines.push('- **Artifacts**: logs + Playwright screenshots/video/trace/report + raw metrics JSON are attached to this workflow run.');
   }
   lines.push('');
-  lines.push('<!-- devduck-metrics-comment -->');
+  lines.push('<!-- barducks-metrics-comment -->');
   lines.push('');
 
   await fsp.mkdir(path.dirname(outPath), { recursive: true });

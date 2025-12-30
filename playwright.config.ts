@@ -1,7 +1,7 @@
 import { defineConfig } from '@playwright/test';
 
 /**
- * Playwright Test configuration for DevDuck *installer* tests.
+ * Playwright Test configuration for Barducks *installer* tests.
  *
  * We keep installer tests separate from the legacy node:test runner:
  * - node:test continues to run `*.test.ts`

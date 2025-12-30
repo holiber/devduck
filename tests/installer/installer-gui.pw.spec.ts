@@ -33,7 +33,7 @@ test.describe('Workspace Installer - GUI/Interactive Mode', () => {
 
         const structure = await verifyWorkspaceStructure(tempWorkspace);
         assert.ok(structure.workspaceConfigExists, 'workspace.config.yml should exist');
-        assert.ok(structure.cacheDirExists, '.cache/devduck directory should exist');
+        assert.ok(structure.cacheDirExists, '.cache/barducks directory should exist');
         // In core-only installs, Cursor integration artifacts are optional.
 
         const configVerification = await verifyWorkspaceConfig(tempWorkspace, {
@@ -58,7 +58,7 @@ test.describe('Workspace Installer - GUI/Interactive Mode', () => {
 
     test.beforeAll(async () => {
       tempWorkspace = await createWorkspaceFromFixture('existing-workspace', {
-        prefix: 'devduck-existing-workspace-test-'
+        prefix: 'barducks-existing-workspace-test-'
       });
     });
 

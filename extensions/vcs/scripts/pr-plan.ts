@@ -22,7 +22,7 @@ import { findWorkspaceRoot } from '../../../src/lib/workspace-root.js';
 export function getPlanDir(): string {
   const workspaceRoot = findWorkspaceRoot();
   if (!workspaceRoot) {
-    throw new Error('Workspace root not found. Make sure you are in a devduck workspace.');
+    throw new Error('Workspace root not found. Make sure you are in a barducks workspace.');
   }
   return path.join(workspaceRoot, '.cache', 'pr');
 }
@@ -33,7 +33,7 @@ export function getPlanDir(): string {
 export function getTrashDir(): string {
   const workspaceRoot = findWorkspaceRoot();
   if (!workspaceRoot) {
-    throw new Error('Workspace root not found. Make sure you are in a devduck workspace.');
+    throw new Error('Workspace root not found. Make sure you are in a barducks workspace.');
   }
   return path.join(workspaceRoot, '.cache', 'trash');
 }

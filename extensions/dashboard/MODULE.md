@@ -1,13 +1,13 @@
 ---
 name: dashboard
 version: 0.1.0
-description: Interactive terminal dashboard for monitoring DevDuck tasks
+description: Interactive terminal dashboard for monitoring Barducks tasks
 tags: [dashboard, tui, monitoring]
 dependencies: [core]
 ---
 # Dashboard Module
 
-Module providing interactive terminal dashboard (TUI) for monitoring DevDuck tasks.
+Module providing interactive terminal dashboard (TUI) for monitoring Barducks tasks.
 
 ## Features
 

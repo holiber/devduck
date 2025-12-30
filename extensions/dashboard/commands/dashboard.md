@@ -1,6 +1,6 @@
 # Dashboard
 
-Interactive terminal dashboard (TUI) for DevDuck tasks under `.cache/tasks/`.
+Interactive terminal dashboard (TUI) for Barducks tasks under `.cache/tasks/`.
 
 Usage:
 
@@ -18,7 +18,7 @@ node scripts/dashboard.js
 
 - **Tasks**: read from `.cache/tasks/<taskId>/task.json`
 - **Queue**: `.cache/tasks/.queue/queue.json`, `.cache/tasks/.queue/state.json`, `.cache/tasks/.queue/bg.pid`
-- **Containers**: Docker `devduck-worker-*` and `plan-*` with lightweight live stats
+- **Containers**: Docker `barducks-worker-*` and `plan-*` with lightweight live stats
 - **Events**: derived from recent `task.json.runs[]`
 - **SP / readiness** (optional): derived from `task.json.estimates.*` history (e.g. after running `/task estimate-my <taskId>` multiple times)
 

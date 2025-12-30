@@ -25,7 +25,7 @@ describe('Workspace Installer - Unattended Mode', () => {
   describe('Fresh Workspace Installation', () => {
     test('Unattended Installation from fixture - cursor-only', async () => {
       const tempWorkspace = await createWorkspaceFromFixture('cursor-only', {
-        prefix: 'devduck-cursor-only-fixture-test-'
+        prefix: 'barducks-cursor-only-fixture-test-'
       });
 
       try {
@@ -140,7 +140,7 @@ describe('Workspace Installer - Unattended Mode', () => {
         
         const providedWorkspaceConfig = {
           version: '0.1.0',
-          devduck_path: './devduck',
+          barducks_path: './barducks',
           extensions: ['core', 'cursor'],
           projects: [
             {
@@ -222,10 +222,10 @@ describe('Workspace Installer - Unattended Mode', () => {
 
     test('Unattended Installation with workspace config template seedFiles[] copies seed files/folders', async () => {
       const sourceWorkspace = await createWorkspaceFromFixture('seed-source', {
-        prefix: 'devduck-seed-source-test-'
+        prefix: 'barducks-seed-source-test-'
       });
       const destWorkspace = await createWorkspaceFromFixture('empty', {
-        prefix: 'devduck-seed-dest-test-'
+        prefix: 'barducks-seed-dest-test-'
       });
       const providedWorkspaceConfigPath = path.join(sourceWorkspace, 'workspace.config.yml');
 
@@ -280,7 +280,7 @@ describe('Workspace Installer - Unattended Mode', () => {
         assert.ok(structure.commandsDirExists, '.cursor/commands directory should exist');
         assert.ok(structure.rulesDirExists, '.cursor/rules directory should exist');
         assert.ok(structure.mcpJsonExists, '.cursor/mcp.json should exist');
-        assert.ok(structure.cacheDirExists, '.cache/devduck directory should exist');
+        assert.ok(structure.cacheDirExists, '.cache/barducks directory should exist');
         assert.ok(structure.cursorignoreExists, '.cursorignore should exist');
 
         if (structure.errors.length > 0) {
@@ -562,7 +562,7 @@ describe('Workspace Installer - Unattended Mode', () => {
 
         await fs.writeFile(
           path.join(repoSourceRoot, 'manifest.json'),
-          JSON.stringify({ devduckVersion: '0.1.0' }, null, 2) + '\n',
+          JSON.stringify({ barducksVersion: '0.1.0' }, null, 2) + '\n',
           'utf8'
         );
 
@@ -661,10 +661,10 @@ describe('Workspace Installer - Unattended Mode', () => {
           'Config should include the local external repo path in repos'
         );
 
-        // Repos from workspace config should be cloned under <workspace>/devduck/
+        // Repos from workspace config should be cloned under <workspace>/barducks/
         // (not hidden under .cache/), so users can inspect/edit them easily.
         const expectedRepoName = repoSourceRoot.replace(/\.git$/, '').replace(/[:\/]/g, '_');
-        const repoRoot = path.join(tempWorkspace, 'devduck', expectedRepoName);
+        const repoRoot = path.join(tempWorkspace, 'barducks', expectedRepoName);
 
         // Ensure the repo clone exists and contains the expected extension.
         await fs.access(path.join(repoRoot, '.git'));
@@ -701,15 +701,15 @@ describe('Workspace Installer - Unattended Mode', () => {
         );
 
         // Verify smogcheck rules are merged into .cursor/rules/
-        const rulesPath = path.join(tempWorkspace, '.cursor', 'rules', 'devduck-rules.md');
+        const rulesPath = path.join(tempWorkspace, '.cursor', 'rules', 'barducks-rules.md');
         try {
           const rulesContent = await fs.readFile(rulesPath, 'utf8');
           assert.ok(
             rulesContent.includes('smogcheck'),
-            'devduck-rules.md should contain smogcheck rules'
+            'barducks-rules.md should contain smogcheck rules'
           );
         } catch (e) {
-          throw new Error('devduck-rules.md should exist and contain smogcheck rules');
+          throw new Error('barducks-rules.md should exist and contain smogcheck rules');
         }
 
         assert.strictEqual(result.exitCode, 0, 'Installer should exit with code 0');

@@ -4,7 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import { spawnSync } from 'child_process';
 
-import { getDevduckServicePaths } from '../../src/barducks-service/src/paths.js';
+import { getBarducksServicePaths } from '../../src/barducks-service/src/paths.js';
 import { isPidAlive } from '../../src/barducks-service/src/pids.js';
 
 function runLaunch(args: string[], opts?: { timeoutMs?: number }) {
@@ -17,7 +17,7 @@ function runLaunch(args: string[], opts?: { timeoutMs?: number }) {
 }
 
 async function killService(): Promise<void> {
-  const paths = getDevduckServicePaths(process.cwd());
+  const paths = getBarducksServicePaths(process.cwd());
   const raw = fs.existsSync(paths.lockPath) ? fs.readFileSync(paths.lockPath, 'utf8') : '';
   if (!raw) return;
   const lock = JSON.parse(raw) as { pid?: number };
@@ -40,7 +40,7 @@ test(
   'launch dev starts background processes, runs smokecheck, captures browser console, and allows reuse',
   { timeout: 300_000 },
   async () => {
-  const paths = getDevduckServicePaths(process.cwd());
+  const paths = getBarducksServicePaths(process.cwd());
   fs.rmSync(paths.rootDir, { recursive: true, force: true });
 
   try {

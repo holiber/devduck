@@ -32,7 +32,7 @@ export async function runStep1CheckEnv(
   projectRoot: string,
   log?: (message: string) => void
 ): Promise<CheckEnvStepResult> {
-  if (process.env.DEVDUCK_SUPPRESS_STEP_HEADER !== '1') {
+  if (process.env.BARDUCKS_SUPPRESS_STEP_HEADER !== '1') {
     print(`\n[Step 1] Checking environment variables...`, 'cyan');
   }
   if (log) {

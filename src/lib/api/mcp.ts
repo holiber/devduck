@@ -60,7 +60,7 @@ function normalizeMcpServerConfig(raw: unknown): McpServerConfig {
 
   // Support both shapes:
   // 1) Cursor `.cursor/mcp.json` format: { command, args, env, url, ... }
-  // 2) DevDuck-like/check-like format mistakenly placed into `.cursor/mcp.json`:
+  // 2) Barducks-like/check-like format mistakenly placed into `.cursor/mcp.json`:
   //    { description, install, mcpSettings: { command, args, env, url, ... } }
   const nested =
     obj.mcpSettings && typeof obj.mcpSettings === 'object'
@@ -124,7 +124,7 @@ async function spawnMcpClient(serverName: string, serverConfig: McpServerConfig,
     const url = String(serverConfig.url || '').trim();
     if (url) {
       throw new Error(
-        `MCP server "${serverName}" is URL-based (${url}). devduck CLI currently supports only command-based MCP servers.`
+        `MCP server "${serverName}" is URL-based (${url}). barducks CLI currently supports only command-based MCP servers.`
       );
     }
     throw new Error(`MCP server "${serverName}" is missing command`);
@@ -262,7 +262,7 @@ async function spawnMcpClient(serverName: string, serverConfig: McpServerConfig,
     {
       protocolVersion: '2024-11-05',
       capabilities: {},
-      clientInfo: { name: 'devduck-mcp', version: '1.0.0' }
+      clientInfo: { name: 'barducks-mcp', version: '1.0.0' }
     },
     timeoutMs
   );

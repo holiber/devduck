@@ -2,7 +2,7 @@
 
 Reset all repositories to their base branches and pull latest changes. The script checks for uncommitted changes and untracked files before performing operations.
 
-Usage: `node projects/devduck/modules/vcs/scripts/new.js`
+Usage: `node projects/barducks/modules/vcs/scripts/new.js`
 
 ## Purpose
 
@@ -53,7 +53,7 @@ The script outputs JSON with:
 
 ```bash
 # Check and reset all repositories
-node projects/devduck/modules/vcs/scripts/new.js
+node projects/barducks/modules/vcs/scripts/new.js
 ```
 
 Or via Cursor command:
@@ -68,7 +68,7 @@ If there are uncommitted changes, the output will show:
   "errors": [
     {
       "repo": "git:github.com/<owner>/<repo>",
-      "projectName": "devduck",
+      "projectName": "barducks",
       "type": "uncommitted",
       "files": ["scripts/new.js", "modules/vcs/commands/new.md"]
     },

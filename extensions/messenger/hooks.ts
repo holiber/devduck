@@ -15,7 +15,7 @@ export default {
       fs.mkdirSync(messengerCacheDir, { recursive: true });
       return {
         success: true,
-        createdFiles: ['.cache/devduck/messenger/'],
+        createdFiles: ['.cache/barducks/messenger/'],
         message: 'Created messenger cache directory'
       };
     } catch (e) {

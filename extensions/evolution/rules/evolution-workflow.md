@@ -6,11 +6,11 @@ globs: ["**/barducks/**", "**/extensions/**", "**/ARCHITECTURE.md", "**/migratio
 
 ## Self-Modification Workflow
 
-This module enables devduck to make changes to itself.
+This module enables barducks to make changes to itself.
 
 ## Guidelines
 
-- Changes to devduck core should be carefully reviewed
+- Changes to barducks core should be carefully reviewed
 - Use evolution module for incremental improvements
 - Maintain backward compatibility when possible
 - Document all self-modifications

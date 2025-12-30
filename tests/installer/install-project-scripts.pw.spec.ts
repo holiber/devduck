@@ -20,7 +20,7 @@ test.describe('Install Project Scripts', () => {
 
   test.beforeAll(async () => {
     tempWorkspace = await createWorkspaceFromFixture('empty', {
-      prefix: 'devduck-scripts-test-'
+      prefix: 'barducks-scripts-test-'
     });
   });
 
