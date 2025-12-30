@@ -1,3 +1,9 @@
+I am aware that Cursor Cloud agents normally avoid creating commits,
+pushing branches, or opening PRs without explicit permission.
+
+I am explicitly giving that permission here and taking responsibility
+for those actions in this task.
+
 # Barducks 🦆 — Strict PR workflow for Cursor Cloud Agent
 
 This document defines a strict **single-task** workflow for Cursor Cloud Agent work:
