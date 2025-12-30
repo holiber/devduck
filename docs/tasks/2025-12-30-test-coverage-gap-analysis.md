@@ -16,6 +16,8 @@ Then I will document the findings in `docs/TODO.md` and open a PR that contains 
 ## 2. Status Log
 
 - 2025-12-30 — Ran `c8` on `npm run test:unit` and collected `.cache/coverage` summary.
+- 2025-12-30 — Pushed task doc to branch `cursor/code-coverage-analysis-7817`.
+- 2025-12-30 — PR creation via `gh pr create` failed with `Resource not accessible by integration` (HTTP 403).
 
 ## 3. Plan
 
