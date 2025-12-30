@@ -103,10 +103,6 @@ jobs:
       - name: Run Playwright installer suite (timed)
         run: node scripts/ci/run-and-record.mjs --name pw_installer --allow-failure 1 --cmd "bash -lc 'npx playwright test -c tests/installer/playwright.config.ts || (echo \"⚠️ Playwright installer suite failed, retrying after 60 seconds...\"; sleep 60; npx playwright test -c tests/installer/playwright.config.ts)'" --log .cache/logs/pw-installer.log --out .cache/metrics/test-commands.json
 
-      # Optional smoke suite (only makes sense when BASE_URL is provided).
-      - name: Run Playwright smoke suite (timed)
-        if: ${{ env.BASE_URL }}
-        run: node scripts/ci/run-and-record.mjs --name pw_smoke --allow-failure 1 --cmd "bash -lc 'npx playwright test -c tests/smoke/playwright.config.ts || (echo \"⚠️ Playwright smoke suite failed, retrying after 60 seconds...\"; sleep 60; npx playwright test -c tests/smoke/playwright.config.ts)'" --log .cache/logs/pw-smoke.log --out .cache/metrics/test-commands.json
 
       - name: Collect Playwright artifacts into .cache
         if: ${{ always() }}

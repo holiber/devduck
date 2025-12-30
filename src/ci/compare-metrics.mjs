@@ -52,6 +52,15 @@ async function main() {
   const curE2eInstaller = cur?.tests?.e2e_installer;
   const baseE2eInstaller = base?.tests?.e2e_installer;
 
+  const curSlow = cur?.quality?.slowTests;
+  const baseSlow = base?.quality?.slowTests;
+  const curSlowThresholdMs = num(curSlow?.thresholdMs);
+  const baseSlowThresholdMs = num(baseSlow?.thresholdMs);
+  const slowTestsDelta =
+    curSlowThresholdMs != null && baseSlowThresholdMs != null && curSlowThresholdMs === baseSlowThresholdMs
+      ? delta(num(curSlow?.count), num(baseSlow?.count))
+      : undefined;
+
   const out = {
     meta: {
       comparedAt: new Date().toISOString(),
@@ -80,7 +89,7 @@ async function main() {
 
       // Quality metrics
       coverage_lines_pct: delta(num(cur?.quality?.coverage?.linesPct), num(base?.quality?.coverage?.linesPct)),
-      slow_tests_over_20s: delta(num(cur?.quality?.slowTests?.count), num(base?.quality?.slowTests?.count)),
+      slow_tests_over_10s: slowTestsDelta,
       duplication_pct: delta(num(cur?.quality?.duplication?.duplicatedPct), num(base?.quality?.duplication?.duplicatedPct))
     }
   };
