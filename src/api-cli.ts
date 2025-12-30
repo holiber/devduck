@@ -155,7 +155,8 @@ async function main(argv = process.argv): Promise<void> {
   }
 
   // Get unified API entries (quiet mode to suppress warnings and side effects)
-  const registry = await getUnifiedAPIEntries({ quiet: true });
+  const quiet = true;
+  const registry = await getUnifiedAPIEntries({ quiet });
 
   // Parse command from arguments
   const args = argv.slice(2);
@@ -224,7 +225,7 @@ async function main(argv = process.argv): Promise<void> {
   let getModuleProvider: ((providerName?: string) => unknown | null) | null = null;
 
   if (requiresProvider || !entry.spec) {
-    await ensureProvidersDiscovered(workspaceRoot, __dirname);
+    await ensureProvidersDiscovered(workspaceRoot, __dirname, quiet);
     const { getProvider, providers } = createProviderGetter({ moduleName, workspaceRoot, providerType });
     getModuleProvider = getProvider;
     if (!entry.spec) {

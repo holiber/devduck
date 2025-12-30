@@ -11,7 +11,6 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import type { ProviderRouter } from './provider-router.js';
-import { resolveBarducksRoot } from './barducks-paths.js';
 import { findWorkspaceRoot } from './workspace-root.js';
 import { readEnvFile } from './env.js';
 import { collectExtensionsDirs } from './extensions-discovery.js';

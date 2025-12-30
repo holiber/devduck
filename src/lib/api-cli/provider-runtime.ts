@@ -26,12 +26,17 @@ function pickProviderNameFromConfig(moduleName: string, workspaceRoot: string | 
   return name.trim() || null;
 }
 
-export async function ensureProvidersDiscovered(workspaceRoot: string | null, moduleDir: string): Promise<void> {
+export async function ensureProvidersDiscovered(
+  workspaceRoot: string | null,
+  moduleDir: string,
+  quiet: boolean = false
+): Promise<void> {
   const dirs = await collectExtensionsDirs({
     cwd: process.cwd(),
     moduleDir,
     workspaceRoot,
-    includeLegacyModulesDir: true
+    includeLegacyModulesDir: true,
+    quiet
   });
 
   for (const d of dirs) {

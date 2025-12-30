@@ -43,11 +43,12 @@ This caused drift risk, copy-paste overhead, and unstable CLI help generation.
 
 ### Unified CLI
 
-- Added `src/lib/unified-registry.ts` to collect routers + load `spec.ts` when present.
+- Extended `src/lib/api.ts` with `collectUnifiedAPIEntries/getUnifiedAPIEntries` to collect routers + load `spec.ts` when present.
 - Refactored `src/api-cli.ts`:
   - supports `module + dotted procedure path` (including `vendor.<ns>.<method>`)
   - builds help from spec when available, with fallback for legacy modules
   - uses spec-provided `requiresProvider/providerType` instead of heuristics
+- Added `src/lib/extensions-discovery.ts` (`collectExtensionsDirs`) to centralize repo scanning logic.
 - Added `src/lib/api-cli/provider-runtime.ts` and `src/lib/api-cli/help-formatter.ts` to split responsibilities.
 
 ### Docs
