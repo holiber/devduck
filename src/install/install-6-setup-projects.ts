@@ -15,6 +15,7 @@ import { markStepCompleted, type ProjectResult, getExecutedChecks, trackCheckExe
 import { processCheck } from './process-check.js';
 import type { WorkspaceConfig } from '../schemas/workspace-config.zod.js';
 import type { CheckItem, CheckResult } from './types.js';
+import { getCheckRequirement } from './types.js';
 import type { InstallContext, StepOutcome } from './runner.js';
 
 export interface SetupProjectsStepResult {
@@ -184,6 +185,7 @@ export async function runStep6SetupProjects(
         }
         
         // Run the check using processCheck
+        const requirement = getCheckRequirement(check);
         const checkResult = await processCheck(
           'project',
           projectName,
@@ -199,6 +201,23 @@ export async function runStep6SetupProjects(
         
         // Track check execution
         trackCheckExecution(workspaceRoot, checkId, 'setup-projects', checkResult);
+
+        // Enforce requirement semantics
+        if (checkResult.passed === false) {
+          if (requirement === 'required') {
+            const msg = `Required check failed: ${checkResult.name}`;
+            print(`  ${symbols.error} ${msg}`, 'red');
+            if (log) log(`[Step 6] ERROR: ${msg}`);
+            // Persist partial results for debugging.
+            projects.push(result);
+            markStepCompleted(workspaceRoot, 'setup-projects', projects, msg);
+            return { projects };
+          }
+          if (requirement === 'recomended') {
+            print(`    ${symbols.warning} Recomended check failed (non-blocking): ${checkResult.name}`, 'yellow');
+            if (log) log(`[Step 6] WARNING: Recomended check failed (non-blocking): ${checkResult.name}`);
+          }
+        }
       }
     }
     
@@ -219,6 +238,11 @@ export async function runStep6SetupProjects(
 
 export async function installStep6SetupProjects(ctx: InstallContext): Promise<StepOutcome> {
   await runStep6SetupProjects(ctx.workspaceRoot, ctx.projectRoot, (m) => ctx.logger.info(m), ctx.autoYes);
+  const { loadInstallState } = await import('./install-state.js');
+  const step = loadInstallState(ctx.workspaceRoot).steps['setup-projects'];
+  if (step?.error) {
+    return { status: 'failed', error: step.error };
+  }
   return { status: 'ok' };
 }
 

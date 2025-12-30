@@ -114,6 +114,8 @@ export async function runSelectedChecks(params: {
 
   const passed = results.filter((r) => r.passed === true).length;
   const failed = results.filter((r) => r.passed === false).length;
+  const requiredFailed = results.filter((r) => r.passed === false && (r.requirement ?? 'required') === 'required').length;
+  const recomendedFailed = results.filter((r) => r.passed === false && (r.requirement ?? 'required') === 'recomended').length;
   const skipped = results.filter((r) => r.skipped === true).length;
   const total = results.length;
 
@@ -121,14 +123,18 @@ export async function runSelectedChecks(params: {
   print(`  Total: ${total} check(s)`, 'cyan');
   print(`  Passed: ${passed}`, passed === total ? 'green' : 'yellow');
   if (failed > 0) {
-    print(`  Failed: ${failed}`, 'red');
+    const label =
+      recomendedFailed > 0 && requiredFailed === 0
+        ? `  Failed: ${failed} (all recomended, non-blocking)`
+        : `  Failed: ${failed}`;
+    print(label, requiredFailed > 0 ? 'red' : 'yellow');
   }
   if (skipped > 0) {
     print(`  Skipped: ${skipped}`, 'yellow');
   }
 
   log(`\n=== Check execution completed at ${new Date().toISOString()} ===\n`);
-  process.exit(failed > 0 ? 1 : 0);
+  process.exit(requiredFailed > 0 ? 1 : 0);
 }
 
 

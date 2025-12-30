@@ -43,6 +43,7 @@ export interface CheckResult {
   statusCode?: number;
   error?: string;
   description?: string;
+  requirement?: string;
 }
 
 export function getCheckDisplayName(check: CheckItem): string {

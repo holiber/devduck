@@ -16,6 +16,7 @@ import { loadModulesForChecks, createCheckFunctions } from './install-common.js'
 import { markStepCompleted, type ModuleResult, getExecutedChecks, trackCheckExecution, generateCheckId } from './install-state.js';
 import { loadInstallState } from './install-state.js';
 import { processCheck } from './process-check.js';
+import { getCheckRequirement } from './types.js';
 import { executeHooksForStage, createHookContext } from './module-hooks.js';
 import { loadModuleResources } from './module-loader.js';
 import { getAllModules, getAllModulesFromDirectory, expandModuleNames, resolveDependencies, mergeModuleSettings } from './module-resolver.js';
@@ -264,6 +265,7 @@ export async function runStep5SetupModules(
       }
       
       // Run the check using processCheck
+      const requirement = getCheckRequirement(check);
       const checkResult = await processCheck(
         'module',
         module.name,
@@ -278,6 +280,23 @@ export async function runStep5SetupModules(
       
       // Track check execution
       trackCheckExecution(workspaceRoot, checkId, 'setup-modules', checkResult);
+
+      // Enforce requirement semantics
+      if (checkResult.passed === false) {
+        if (requirement === 'required') {
+          const msg = `Required check failed: ${checkResult.name}`;
+          print(`  ${symbols.error} ${msg}`, 'red');
+          if (log) log(`[Step 5] ERROR: ${msg}`);
+          // Persist partial results for debugging.
+          const result: SetupModulesStepResult = { modules: moduleResults.concat([{ name: module.name, path: module.path, checks: moduleChecks, hooksExecuted: { 'pre-install': true, 'install': true, 'post-install': true } }]) };
+          markStepCompleted(workspaceRoot, 'setup-modules', result.modules, msg);
+          return result;
+        }
+        if (requirement === 'recomended') {
+          print(`  ${symbols.warning} Recomended check failed (non-blocking): ${checkResult.name}`, 'yellow');
+          if (log) log(`[Step 5] WARNING: Recomended check failed (non-blocking): ${checkResult.name}`);
+        }
+      }
     }
     
     moduleResults.push({

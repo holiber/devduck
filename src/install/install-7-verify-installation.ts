@@ -13,13 +13,13 @@ import { loadModulesForChecks, loadProjectsForChecks, createCheckFunctions } fro
 import {
   markStepCompleted,
   type VerificationResult,
-  getExecutedChecks,
   trackCheckExecution,
   generateCheckId
 } from './install-state.js';
 import { processCheck } from './process-check.js';
 import type { WorkspaceConfig } from '../schemas/workspace-config.zod.js';
 import type { CheckItem, CheckResult } from './types.js';
+import { getCheckRequirement } from './types.js';
 import type { InstallContext, StepOutcome } from './runner.js';
 
 export interface VerifyInstallationStepResult {
@@ -111,10 +111,6 @@ export async function runStep7VerifyInstallation(
     return result;
   }
   
-  // Get executed checks to see which ones we should verify
-  const executedChecks = getExecutedChecks(workspaceRoot);
-  const executedCheckIds = new Set(executedChecks.map(c => c.checkId));
-  
   // Create check functions for processCheck
   const checkFunctions = createCheckFunctions(workspaceRoot, projectRoot, log, autoYes);
   
@@ -137,11 +133,14 @@ export async function runStep7VerifyInstallation(
   }
   
   const verificationResults: VerificationResult[] = [];
+  let requiredFailed = 0;
+  let recomendedFailed = 0;
   
   for (const { check, source, sourceName } of checksToVerify) {
     const checkId = generateCheckId(check);
     const contextName = sourceName || null;
     const contextType = source === 'config' ? 'workspace' : source;
+    const requirement = getCheckRequirement(check);
     
     // Run the check using processCheck (with skipInstall=true since we're just verifying)
     const checkResult = await processCheck(
@@ -166,6 +165,12 @@ export async function runStep7VerifyInstallation(
     
     // Track check execution (update existing or create new)
     trackCheckExecution(workspaceRoot, checkId, 'verify-installation', checkResult);
+
+    // Enforce requirement semantics for verification summary.
+    if (checkResult.passed === false) {
+      if (requirement === 'required') requiredFailed += 1;
+      if (requirement === 'recomended') recomendedFailed += 1;
+    }
   }
   
   const passed = verificationResults.filter(r => r.passed === true).length;
@@ -173,22 +178,27 @@ export async function runStep7VerifyInstallation(
   const skipped = verificationResults.filter(r => r.skipped === true).length;
   const total = verificationResults.length;
   
-  if (failed === 0) {
+  if (requiredFailed === 0) {
     print(`  ${symbols.success} All verifications passed (${passed}/${total - skipped} passed, ${skipped} skipped)`, 'green');
   } else {
     print(`  ${symbols.warning} Verification completed: ${passed}/${total - skipped} passed, ${failed} failed, ${skipped} skipped`, 'yellow');
   }
   
   const result: VerifyInstallationStepResult = { results: verificationResults };
-  const errorMsg = failed > 0 ? `${failed} verification check(s) failed` : undefined;
+  const errorMsg =
+    requiredFailed > 0
+      ? `${requiredFailed} required verification check(s) failed`
+      : (recomendedFailed > 0 ? `${recomendedFailed} recomended verification check(s) failed (non-blocking)` : undefined);
   markStepCompleted(workspaceRoot, 'verify-installation', verificationResults, errorMsg);
   
   if (log) {
-    log(`[Step 7] Completed: ${passed} passed, ${failed} failed, ${skipped} skipped`);
+    log(`[Step 7] Completed: ${passed} passed, ${failed} failed (${requiredFailed} required, ${recomendedFailed} recomended), ${skipped} skipped`);
   }
   
-  if (failed > 0) {
-    print(`  ${symbols.warning} Step 7 completed with errors`, 'yellow');
+  if (requiredFailed > 0) {
+    print(`  ${symbols.error} Step 7 failed: ${requiredFailed} required check(s) failed`, 'red');
+  } else if (recomendedFailed > 0) {
+    print(`  ${symbols.warning} Step 7 completed with warnings: ${recomendedFailed} recomended check(s) failed`, 'yellow');
   } else {
     print(`  ${symbols.success} Step 7 completed`, 'green');
   }
@@ -198,9 +208,9 @@ export async function runStep7VerifyInstallation(
 
 export async function installStep7VerifyInstallation(ctx: InstallContext): Promise<StepOutcome> {
   const res = await runStep7VerifyInstallation(ctx.workspaceRoot, ctx.projectRoot, (m) => ctx.logger.info(m), ctx.autoYes);
-  const failed = res.results.filter((r) => r.passed === false).length;
-  if (failed > 0) {
-    return { status: 'failed', error: `${failed} verification check(s) failed`, result: res.results };
+  const requiredFailed = res.results.filter((r) => r.passed === false && (r.requirement ?? 'required') === 'required').length;
+  if (requiredFailed > 0) {
+    return { status: 'failed', error: `${requiredFailed} required verification check(s) failed`, result: res.results };
   }
   return { status: 'ok', result: res.results };
 }

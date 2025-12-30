@@ -23,7 +23,11 @@ export function printInstallSummary(params: { workspaceRoot: string; logFilePath
       : fallbackVerify.filter((c) => c.passed === true).length;
   const checksFailed =
     verificationResults.length > 0
-      ? verificationResults.filter((r: { passed?: boolean | null }) => r.passed === false).length
+      ? verificationResults.filter((r: { passed?: boolean | null; requirement?: string }) => {
+          if (r.passed !== false) return false;
+          const req = (r.requirement || 'required').toLowerCase();
+          return req === 'required';
+        }).length
       : fallbackVerify.filter((c) => c.passed === false).length;
   const checksSkipped =
     verificationResults.length > 0
@@ -37,9 +41,12 @@ export function printInstallSummary(params: { workspaceRoot: string; logFilePath
   const mcpRequiredWorking = mcpServers.filter((m) => !m.optional && m.working).length;
   const mcpOptionalFailed = mcpServers.filter((m) => m.optional && !m.working).length;
 
+  const verifyStepError = state.steps['verify-installation']?.error ? String(state.steps['verify-installation']?.error) : '';
+  const verifyErrorIsBlocking = verifyStepError.length > 0 && !verifyStepError.toLowerCase().includes('non-blocking');
+
   const hasFailures =
     checksFailed > 0 ||
-    (state.steps['verify-installation']?.error && String(state.steps['verify-installation']?.error).length > 0) ||
+    verifyErrorIsBlocking ||
     state.steps['setup-modules']?.error !== undefined ||
     state.steps['setup-projects']?.error !== undefined ||
     (mcpRequiredTotal > 0 && mcpRequiredWorking !== mcpRequiredTotal);
@@ -51,7 +58,7 @@ export function printInstallSummary(params: { workspaceRoot: string; logFilePath
   }
 
   const checksMsg = `  Checks: ${checksPassed}/${checksRan} passed`;
-  const checksColor = checksPassed === checksRan ? 'green' : 'red';
+  const checksColor = checksFailed === 0 ? 'green' : 'red';
   print(checksMsg, checksColor);
 
   if (mcpRequiredTotal > 0) {

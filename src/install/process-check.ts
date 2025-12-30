@@ -17,7 +17,8 @@
 import path from 'path';
 import { readEnvFile } from '../lib/env.js';
 import { replaceVariablesInObject } from '../lib/config.js';
-import { print, symbols } from '../utils.js';
+import { executeCommand, print, symbols } from '../utils.js';
+import { getCheckRequirement } from './types.js';
 import type { CheckItem, CheckResult } from './types.js';
 
 // Simple log function for process-check (can be overridden via options if needed)
@@ -33,6 +34,25 @@ import type {
   IsHttpRequestFunction,
   ReplaceVariablesFunction
 } from './check-functions.js';
+
+function mergeEnvFillMissing(base: NodeJS.ProcessEnv, fromDotEnv: Record<string, string>): NodeJS.ProcessEnv {
+  const merged: NodeJS.ProcessEnv = { ...base };
+  for (const [k, v] of Object.entries(fromDotEnv)) {
+    if (merged[k] === undefined || merged[k] === '') {
+      merged[k] = v;
+    }
+  }
+  // Ensure common bin paths exist even in non-login shells (Cursor/CI/etc).
+  const pathParts = String(merged.PATH || '')
+    .split(path.delimiter)
+    .filter(Boolean);
+  const defaults = ['/opt/homebrew/bin', '/opt/homebrew/sbin', '/usr/local/bin', '/usr/local/sbin'];
+  for (const p of defaults) {
+    if (!pathParts.includes(p)) pathParts.push(p);
+  }
+  merged.PATH = pathParts.join(path.delimiter);
+  return merged;
+}
 
 /**
  * Process a single check
@@ -76,6 +96,24 @@ export async function processCheck(
   const envFile = path.join(workspaceRoot, '.env');
   const env = readEnvFile(envFile);
   
+  const requirement = getCheckRequirement(check);
+
+  // "optional" checks: do not run and do not attempt installs.
+  if (requirement === 'optional') {
+    const contextSuffix = contextName ? ` [${contextName}]` : '';
+    const displayName = check.name || '<unknown-check>';
+    print(`  ${symbols.warning} ${displayName}${contextSuffix}: optional check skipped`, 'yellow');
+    log(`CHECK SKIPPED (optional): ${displayName}${contextSuffix}`);
+    return {
+      name: displayName,
+      description: check.description || '',
+      passed: null,
+      skipped: true,
+      tier: tier,
+      note: 'optional check skipped'
+    };
+  }
+
   // Get check properties BEFORE variable replacement (to preserve type and var)
   const checkType = (check as { type?: string }).type;
   const checkVar = (check as { var?: string }).var;
@@ -160,6 +198,29 @@ export async function processCheck(
   // Replace variables in check item (after token check)
   const checkWithVars = replaceVars(check, env) as CheckItem;
   
+  // Evaluate `when` condition after variable replacement.
+  if (typeof checkWithVars.when === 'string' && checkWithVars.when.trim() !== '') {
+    const whenExpr = checkWithVars.when.trim();
+    const contextSuffix = contextName ? ` [${contextName}]` : '';
+    const displayName = checkWithVars.name || check.name || '<unknown-check>';
+
+    // Execute as bash condition: non-zero => skip.
+    const envForCommand = mergeEnvFillMissing(process.env, env);
+    const res = executeCommand(whenExpr, { shell: '/bin/bash', env: envForCommand, cwd: checkWithVars._execCwd });
+    if (!res.success) {
+      print(`  ${symbols.warning} ${displayName}${contextSuffix}: skipped (when condition not met)`, 'yellow');
+      log(`CHECK SKIPPED (when=false): ${displayName}${contextSuffix} | when="${whenExpr}"`);
+      return {
+        name: displayName,
+        description: checkWithVars.description || '',
+        passed: null,
+        skipped: true,
+        tier: tier,
+        note: 'when condition not met'
+      };
+    }
+  }
+
   // Skip check if skip=true in config
   if (checkWithVars.skip === true) {
     const contextSuffix = contextName ? ` [${contextName}]` : '';
@@ -188,6 +249,14 @@ export async function processCheck(
   // Add tier info to result if provided
   if (tier) {
     checkResult.tier = tier;
+  }
+
+  // Always attach normalized requirement for summary / step logic.
+  checkResult.requirement = requirement;
+
+  // Attach note for non-required failures to help upstream logic (optional is already skipped above).
+  if (checkResult.passed === false && requirement === 'recomended') {
+    checkResult.note = checkResult.note ? `${checkResult.note} (recomended)` : 'recomended';
   }
   
   return checkResult;
