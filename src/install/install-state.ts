@@ -57,23 +57,23 @@ export interface VerificationResult extends CheckResult {
   executedAt: string;
 }
 
-export interface StepResult<T = unknown> {
+export interface StepResult {
   completed: boolean;
   completedAt?: string;
-  result?: T;
+  result?: unknown;
   error?: string;
 }
 
 export interface InstallState {
   // Step completion
   steps: {
-    'check-env': StepResult<CheckEnvResult>;
-    'download-repos': StepResult<RepoResult[]>;
-    'download-projects': StepResult<ProjectResult[]>;
-    'check-env-again': StepResult<CheckEnvResult>;
-    'setup-modules': StepResult<ModuleResult[]>;
-    'setup-projects': StepResult<ProjectResult[]>;
-    'verify-installation': StepResult<VerificationResult[]>;
+    'check-env': StepResult;
+    'download-repos': StepResult;
+    'download-projects': StepResult;
+    'check-env-again': StepResult;
+    'setup-modules': StepResult;
+    'setup-projects': StepResult;
+    'verify-installation': StepResult;
   };
   
   // Check execution tracking
@@ -168,7 +168,7 @@ export function saveInstallState(workspaceRoot: string, state: InstallState): vo
 export function markStepCompleted<T>(
   workspaceRoot: string,
   stepName: keyof InstallState['steps'],
-  result?: T,
+  result?: unknown,
   error?: string
 ): void {
   const state = loadInstallState(workspaceRoot);
@@ -176,7 +176,7 @@ export function markStepCompleted<T>(
   state.steps[stepName] = {
     completed: true,
     completedAt: new Date().toISOString(),
-    result: result as unknown,
+    result,
     error
   };
   

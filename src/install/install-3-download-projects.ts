@@ -13,8 +13,11 @@ import { readWorkspaceConfigFromRoot } from '../lib/workspace-config.js';
 import { readEnvFile } from '../lib/env.js';
 import { print, symbols } from '../utils.js';
 import { markStepCompleted, type ProjectResult } from './install-state.js';
-import type { WorkspaceConfig } from '../schemas/workspace-config.zod.js';
+import { WorkspaceConfigSchema } from '../schemas/workspace-config.zod.js';
+import { z } from 'zod';
 import type { InstallContext, StepOutcome } from './runner.js';
+
+type WorkspaceConfig = z.infer<typeof WorkspaceConfigSchema>;
 
 /**
  * Get project name from src
@@ -184,9 +187,9 @@ export async function runStep3DownloadProjects(
     if (log) {
       log(`[Step 3] ERROR: Cannot read workspace config (${configFile})`);
     }
-    const result: DownloadProjectsStepResult = { projects: [] };
-    markStepCompleted(workspaceRoot, 'download-projects', result, `Cannot read ${path.basename(configFile)}`);
-    return result;
+    const projects: ProjectResult[] = [];
+    markStepCompleted(workspaceRoot, 'download-projects', projects, `Cannot read ${path.basename(configFile)}`);
+    return { projects };
   }
   
   if (!config.projects || !Array.isArray(config.projects) || config.projects.length === 0) {
@@ -194,9 +197,9 @@ export async function runStep3DownloadProjects(
     if (log) {
       log(`[Step 3] No projects configured`);
     }
-    const result: DownloadProjectsStepResult = { projects: [] };
-    markStepCompleted(workspaceRoot, 'download-projects', result);
-    return result;
+    const projects: ProjectResult[] = [];
+    markStepCompleted(workspaceRoot, 'download-projects', projects);
+    return { projects };
   }
   
   // Ensure projects directory exists
@@ -247,6 +250,17 @@ export async function runStep3DownloadProjects(
     
     // Arcadia projects: create symlink into Arcadia checkout
     if (project.src.startsWith('arc://')) {
+      const existingPath = path.join(projectsDir, projectName);
+      if (fs.existsSync(existingPath)) {
+        print(`    ${symbols.info} Project already exists in projects/${projectName}, skipping (no relink / no cleanup)`, 'cyan');
+        result.symlink = {
+          path: `projects/${projectName}`,
+          target: null,
+          existed: true
+        };
+        projects.push(result);
+        continue;
+      }
       print(`    Creating symlink...`, 'cyan');
       // Remove arc:// prefix if present
       const pathForSymlink = project.src.replace(/^arc:\/\//, '');
@@ -268,68 +282,56 @@ export async function runStep3DownloadProjects(
           error: symlinkResult.error
         };
       }
-    } else if (project.src && isExistingDirectory(resolveProjectSrcToWorkspacePath(project.src, workspaceRoot))) {
-      // Local-folder projects - create symlink in projects/ directly to the folder path
+    } else {
       const resolvedLocalPath = resolveProjectSrcToWorkspacePath(project.src, workspaceRoot);
-      print(`    Creating symlink...`, 'cyan');
-      const symlinkResult = createProjectSymlinkToTarget(projectName, resolvedLocalPath, workspaceRoot);
-      
-      if (symlinkResult.success) {
-        const action = symlinkResult.existed ? 'exists' : 'created';
-        print(`    ${symbols.success} Symlink ${action}: projects/${projectName} -> ${symlinkResult.target}`, 'green');
-        result.symlink = {
-          path: `projects/${projectName}`,
-          target: symlinkResult.target,
-          created: symlinkResult.created || false
-        };
-      } else {
-        print(`    ${symbols.error} Symlink failed: ${symlinkResult.error}`, 'red');
-        result.symlink = {
-          path: `projects/${projectName}`,
-          target: symlinkResult.target,
-          error: symlinkResult.error
-        };
-      }
-    } else if (project.src && (project.src.includes('github.com') || project.src.startsWith('git@'))) {
-      // GitHub projects - clone to projects/ directory
-      const projectPath = path.join(projectsDir, projectName);
-      
-      // Check if already cloned
-      if (fs.existsSync(projectPath) && fs.existsSync(path.join(projectPath, '.git'))) {
-        // Update existing clone
-        print(`    ${symbols.info} Updating existing git repository...`, 'cyan');
-        if (log) {
-          log(`[Step 3] Updating existing git repository: ${projectPath}`);
-        }
-        const pullResult = spawnSync('git', ['pull'], {
-          cwd: projectPath,
-          encoding: 'utf8'
-        });
-        
-        if (pullResult.status === 0) {
-          print(`    ${symbols.success} Repository updated: projects/${projectName}`, 'green');
-          if (log) {
-            log(`[Step 3] Repository updated successfully: ${projectPath}`);
-          }
+      if (project.src && resolvedLocalPath && isExistingDirectory(resolvedLocalPath)) {
+        const existingPath = path.join(projectsDir, projectName);
+        if (fs.existsSync(existingPath)) {
+          print(
+            `    ${symbols.info} Project already exists in projects/${projectName}, skipping (no relink / no cleanup)`,
+            'cyan'
+          );
           result.symlink = {
             path: `projects/${projectName}`,
-            target: projectPath,
-            exists: true,
-            updated: pullResult.status === 0
+            target: null,
+            existed: true
+          };
+          projects.push(result);
+          continue;
+        }
+
+        // Local-folder projects - create symlink in projects/ directly to the folder path
+        print(`    Creating symlink...`, 'cyan');
+        const symlinkResult = createProjectSymlinkToTarget(projectName, resolvedLocalPath, workspaceRoot);
+
+        if (symlinkResult.success) {
+          const action = symlinkResult.existed ? 'exists' : 'created';
+          print(`    ${symbols.success} Symlink ${action}: projects/${projectName} -> ${symlinkResult.target}`, 'green');
+          result.symlink = {
+            path: `projects/${projectName}`,
+            target: symlinkResult.target,
+            created: symlinkResult.created || false
           };
         } else {
-          print(`    ${symbols.warning} Failed to update repository, using existing version`, 'yellow');
-          if (log) {
-            log(`[Step 3] Failed to update repository: ${pullResult.stderr || pullResult.stdout}`);
-          }
+          print(`    ${symbols.error} Symlink failed: ${symlinkResult.error}`, 'red');
           result.symlink = {
             path: `projects/${projectName}`,
-            target: projectPath,
-            exists: true,
-            updated: false
+            target: symlinkResult.target,
+            error: symlinkResult.error
           };
         }
-      } else {
+      } else if (project.src && (project.src.includes('github.com') || project.src.startsWith('git@'))) {
+        // GitHub projects - clone to projects/ directory
+        const projectPath = path.join(projectsDir, projectName);
+
+        // Never touch existing paths under projects/
+        if (fs.existsSync(projectPath)) {
+          print(
+            `    ${symbols.info} Repository already exists in projects/${projectName}, skipping (no git pull / no reset / no cleanup)`,
+            'cyan'
+          );
+          result.symlink = { path: `projects/${projectName}`, target: projectPath, existed: true };
+        } else {
         // Clone repository
         print(`    ${symbols.info} Cloning repository...`, 'cyan');
         if (log) {
@@ -370,14 +372,15 @@ export async function runStep3DownloadProjects(
           };
         }
       }
-    } else {
+      } else {
       // Other project types - no action needed
       print(`    ${symbols.info} Project type not supported for automatic setup`, 'cyan');
       result.symlink = {
         path: null,
         target: null,
-        note: 'Project type not supported for automatic setup'
+        error: 'Project type not supported for automatic setup'
       };
+      }
     }
     
     projects.push(result);
