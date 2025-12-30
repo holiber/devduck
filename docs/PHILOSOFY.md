@@ -1,4 +1,4 @@
-![Barducks philosophy draft banner](../media/philosoph-draft-banner.svg)
+![Barducks philosophy draft banner](../media/philosoph-draft-banner.png)
 
 TODO
 
