@@ -224,6 +224,9 @@ async function main() {
     body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Arial,sans-serif;margin:40px;background:#fafafa;color:#111}
     h1{font-size:1.6rem;margin:0 0 8px}
     .sub{color:#444;margin:0 0 18px}
+    .hero{display:flex;align-items:center;gap:18px;margin:0 0 18px}
+    .hero img{width:140px;height:auto;border-radius:18px;box-shadow:0 10px 24px rgba(0,0,0,.10);background:#fff}
+    .heroText{min-width:0}
     .card{background:#fff;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,.06);padding:16px 18px;margin:16px 0}
     .chartBlock{margin-top:18px}
     .chartBlock:first-child{margin-top:0}
@@ -237,8 +240,13 @@ async function main() {
   </style>
 </head>
 <body>
-  <h1>Barducks Metrics Dashboard</h1>
-  <p class="sub"><strong>Generated:</strong> ${new Date().toLocaleString()} &nbsp; <strong>SHA:</strong> <code>${current?.meta?.sha ?? 'n/a'}</code></p>
+  <div class="hero">
+    <img src="./good-duck.png" alt="Good duck" />
+    <div class="heroText">
+      <h1>Barducks Metrics Dashboard</h1>
+      <p class="sub"><strong>Generated:</strong> ${new Date().toLocaleString()} &nbsp; <strong>SHA:</strong> <code>${current?.meta?.sha ?? 'n/a'}</code></p>
+    </div>
+  </div>
 
   <div class="card">
     <table>
@@ -486,6 +494,21 @@ async function main() {
   const metricsOutDir = path.join(outDir, 'metrics');
   await fsp.mkdir(metricsOutDir, { recursive: true });
   await writeFileEnsuringDir(path.join(metricsOutDir, 'index.html'), html);
+
+  // Optional hero image on the dashboard.
+  // Expected file (preferred): `media/good-duck.png` (repo root).
+  // Fallback: `media/logo.png` (keeps the dashboard stable if the preferred asset isn't present).
+  // The deployed filename is fixed to keep the HTML stable.
+  const heroDst = path.join(metricsOutDir, 'good-duck.png');
+  const heroCandidates = [path.resolve('media/good-duck.png'), path.resolve('media/logo.png')];
+  for (const src of heroCandidates) {
+    try {
+      await fsp.copyFile(src, heroDst);
+      break;
+    } catch {
+      // ignore missing/invalid candidate and try the next one
+    }
+  }
 
   // Project stats badge (published to GitHub Pages alongside the dashboard).
   const badgeSvg = makeSimpleBadgeSvg({
