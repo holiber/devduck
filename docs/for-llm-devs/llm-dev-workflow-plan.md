@@ -80,7 +80,7 @@ Each agent PR must add **exactly one** new task file:
 
 ```
 
-docs/tasks/YYYY-MM-DD-<short-task-name>.md
+docs/tasks/YYYY-MM-DD-HHMM-<short-task-name>.md
 
 ```
 
