@@ -4,8 +4,8 @@
 
 - Date: 2025-12-30
 - Agent: 🦆 GPT-5.2
-- Branch: <branch-name>
-- PR: <link>
+- Branch: chore/clean-up-project-2025-12-30
+- PR: https://github.com/holiber/barducks/pull/116
 - Related: <none>
 
 ## 1. Intake
@@ -34,7 +34,20 @@ The working tree contains a set of tracked files that were removed locally. The 
 
 ### What changed
 
-- Deleted a set of tracked files as part of repository cleanup.
+- Deleted a set of tracked files as part of repository cleanup:
+  - `docs/workspace-and-extensions.md`
+  - `extensions/evolution/MODULE.md`
+  - `extensions/evolution/rules/architecture.md`
+  - `extensions/evolution/rules/evolution-workflow.md`
+  - `extensions/plan/MODULE.md`
+  - `extensions/plan/commands/plan.md`
+  - `extensions/plan/scripts/plan-finalize.ts`
+  - `extensions/plan/scripts/plan-generate.ts`
+  - `extensions/plan/scripts/plan-status.ts`
+  - `extensions/plan/scripts/plan.js`
+  - `extensions/plan/scripts/plan.ts`
+  - `media/841B125C-B9C6-40C2-8316-A87167F078E5.jpeg`
+  - `todo/test-coverage-gaps-2025-12-30.md`
 
 ### How to verify
 
