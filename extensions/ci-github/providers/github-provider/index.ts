@@ -541,13 +541,10 @@ const provider: CIProvider = defineProvider({
   type: 'ci',
   name: 'github-provider',
   version: '0.1.0',
+  description: 'GitHub provider for CI module (GitHub API)',
   protocolVersion: CI_PROVIDER_PROTOCOL_VERSION,
   tools,
-  vendor: {},
-  manifest: {
-    description: 'GitHub provider for CI module (GitHub API)',
-    events: { publish: [], subscribe: [] }
-  },
+  // vendor defaults to {}
   auth: { type: 'apiKey', requiredTokens: ['GITHUB_TOKEN'] },
   capabilities: ['pr', 'checks', 'comments']
 });

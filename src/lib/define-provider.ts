@@ -8,6 +8,7 @@ export type DefineProviderArgs<
   type: TType;
   name: string;
   version: string;
+  description?: string;
   protocolVersion: string;
   tools: TTools;
   vendor?: TVendor;
@@ -34,17 +35,18 @@ export function defineProvider<
   const toolsList = Object.keys(args.tools);
 
   const vendorTools: Record<string, string[]> = {};
-  if (args.vendor) {
-    for (const [ns, methods] of Object.entries(args.vendor)) {
+  const vendorObj = (args.vendor || {}) as Record<string, Record<string, unknown>>;
+  for (const [ns, methods] of Object.entries(vendorObj)) {
       vendorTools[ns] = Object.keys(methods || {});
-    }
   }
 
   const manifest: ProviderManifestBase = {
+    events: { publish: [], subscribe: [] },
     ...(args.manifest || {}),
     type: args.type,
     name: args.name,
     version: args.version,
+    description: (args.manifest as any)?.description ?? args.description,
     protocolVersion: args.protocolVersion,
     tools: toolsList,
     vendorTools,

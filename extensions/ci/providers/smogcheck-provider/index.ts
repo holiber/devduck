@@ -373,13 +373,10 @@ const provider: CIProvider = defineProvider({
   type: 'ci',
   name: 'smogcheck-provider',
   version: '0.1.0',
+  description: 'Test provider for CI module',
   protocolVersion: CI_PROVIDER_PROTOCOL_VERSION,
   tools,
   vendor,
-  manifest: {
-    description: 'Test provider for CI module',
-    events: { publish: [], subscribe: [] }
-  },
   auth: { type: 'none', requiredTokens: [] },
   capabilities: ['pr', 'checks', 'comments']
 });

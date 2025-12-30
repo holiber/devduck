@@ -251,47 +251,7 @@ async function importRouterFromAPI(apiPath: string, apiName: string, quiet: bool
  * @param quiet - If true, suppress warnings and side effects
  */
 export async function collectUnifiedAPI(quiet: boolean = false): Promise<UnifiedAPI> {
-  // Try to resolve barducks root - in CI, we might be running from the repo root
-  let { barducksRoot } = resolveBarducksRoot({ cwd: process.cwd(), moduleDir: __dirname });
-  
-  // Verify that barducksRoot actually contains extensions directory (legacy: modules directory)
-  // If not, try to resolve from current working directory (for CI environments)
-  const extensionsDir = path.join(barducksRoot, 'extensions');
-  const legacyModulesDir = path.join(barducksRoot, 'modules');
-  const mainDir = fs.existsSync(extensionsDir) ? extensionsDir : legacyModulesDir;
-  if (!fs.existsSync(mainDir)) {
-    // In CI, we might be in the repo root, so try that
-    const cwdExtensionsDir = path.join(process.cwd(), 'extensions');
-    const cwdLegacyModulesDir = path.join(process.cwd(), 'modules');
-    if (fs.existsSync(cwdExtensionsDir) || fs.existsSync(cwdLegacyModulesDir)) {
-      barducksRoot = process.cwd();
-    } else {
-      // Last resort: try to find modules relative to this file
-      const fileBasedRoot = path.resolve(__dirname, '../..');
-      const fileBasedExtensionsDir = path.join(fileBasedRoot, 'extensions');
-      const fileBasedLegacyModulesDir = path.join(fileBasedRoot, 'modules');
-      if (fs.existsSync(fileBasedExtensionsDir) || fs.existsSync(fileBasedLegacyModulesDir)) {
-        barducksRoot = fileBasedRoot;
-      }
-    }
-  }
-  
-  const workspaceRoot = findWorkspaceRoot(process.cwd());
-  
-  // Load environment variables from .env file in workspace root
-  // This ensures env vars are available when modules are imported
-  if (workspaceRoot) {
-    const envPath = path.join(workspaceRoot, '.env');
-    const env = readEnvFile(envPath);
-    // Set environment variables from .env (don't override existing ones)
-    for (const [key, value] of Object.entries(env)) {
-      if (!process.env[key]) {
-        process.env[key] = value;
-      }
-    }
-  }
-  
-  const entries = await collectUnifiedAPIEntries({ quiet, loadEnv: true });
+  const entries = await collectUnifiedAPIEntries({ quiet });
   const unifiedAPI: UnifiedAPI = {};
   for (const [name, entry] of Object.entries(entries)) {
     unifiedAPI[name] = entry.router;
@@ -301,41 +261,14 @@ export async function collectUnifiedAPI(quiet: boolean = false): Promise<Unified
 
 export async function collectUnifiedAPIEntries(args?: {
   quiet?: boolean;
-  loadEnv?: boolean;
 }): Promise<UnifiedAPIEntries> {
   const quiet = !!args?.quiet;
-  const loadEnv = args?.loadEnv !== false;
 
-  // Try to resolve barducks root - in CI, we might be running from the repo root
-  let { barducksRoot } = resolveBarducksRoot({ cwd: process.cwd(), moduleDir: __dirname });
-  
-  // Verify that barducksRoot actually contains extensions directory (legacy: modules directory)
-  // If not, try to resolve from current working directory (for CI environments)
-  const extensionsDir = path.join(barducksRoot, 'extensions');
-  const legacyModulesDir = path.join(barducksRoot, 'modules');
-  const mainDir = fs.existsSync(extensionsDir) ? extensionsDir : legacyModulesDir;
-  if (!fs.existsSync(mainDir)) {
-    // In CI, we might be in the repo root, so try that
-    const cwdExtensionsDir = path.join(process.cwd(), 'extensions');
-    const cwdLegacyModulesDir = path.join(process.cwd(), 'modules');
-    if (fs.existsSync(cwdExtensionsDir) || fs.existsSync(cwdLegacyModulesDir)) {
-      barducksRoot = process.cwd();
-    } else {
-      // Last resort: try to find modules relative to this file
-      const fileBasedRoot = path.resolve(__dirname, '../..');
-      const fileBasedExtensionsDir = path.join(fileBasedRoot, 'extensions');
-      const fileBasedLegacyModulesDir = path.join(fileBasedRoot, 'modules');
-      if (fs.existsSync(fileBasedExtensionsDir) || fs.existsSync(fileBasedLegacyModulesDir)) {
-        barducksRoot = fileBasedRoot;
-      }
-    }
-  }
-  
   const workspaceRoot = findWorkspaceRoot(process.cwd());
   
   // Load environment variables from .env file in workspace root
   // This ensures env vars are available when modules are imported
-  if (loadEnv && workspaceRoot) {
+  if (workspaceRoot) {
     const envPath = path.join(workspaceRoot, '.env');
     const env = readEnvFile(envPath);
     // Set environment variables from .env (don't override existing ones)
@@ -373,7 +306,8 @@ export async function collectUnifiedAPIEntries(args?: {
     cwd: process.cwd(),
     moduleDir: __dirname,
     workspaceRoot,
-    includeLegacyModulesDir: true
+    includeLegacyModulesDir: true,
+    quiet
   });
 
   for (const extensionsDir of extensionDirs) {
@@ -418,7 +352,7 @@ export async function getUnifiedAPI(quiet: boolean = false): Promise<UnifiedAPI>
 
 let cachedEntries: UnifiedAPIEntries | null = null;
 
-export async function getUnifiedAPIEntries(args?: { quiet?: boolean; loadEnv?: boolean }): Promise<UnifiedAPIEntries> {
+export async function getUnifiedAPIEntries(args?: { quiet?: boolean }): Promise<UnifiedAPIEntries> {
   if (!cachedEntries) {
     cachedEntries = await collectUnifiedAPIEntries(args);
   }

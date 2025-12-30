@@ -155,8 +155,7 @@ async function main(argv = process.argv): Promise<void> {
   }
 
   // Get unified API entries (quiet mode to suppress warnings and side effects)
-  // NOTE: CLI already loads env above, so keep `loadEnv: false` to avoid duplication.
-  const registry = await getUnifiedAPIEntries({ quiet: true, loadEnv: false });
+  const registry = await getUnifiedAPIEntries({ quiet: true });
 
   // Parse command from arguments
   const args = argv.slice(2);

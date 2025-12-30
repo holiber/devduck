@@ -18,7 +18,23 @@ export type CollectExtensionsDirsArgs = {
   moduleDir: string;
   workspaceRoot: string | null;
   includeLegacyModulesDir?: boolean;
+  quiet?: boolean;
 };
+
+function hasExtensionsOrModules(root: string): boolean {
+  return fs.existsSync(path.join(root, 'extensions')) || fs.existsSync(path.join(root, 'modules'));
+}
+
+function pickBarducksRootWithFallback(cwd: string, moduleDir: string): string {
+  let { barducksRoot } = resolveBarducksRoot({ cwd, moduleDir });
+  if (hasExtensionsOrModules(barducksRoot)) return barducksRoot;
+  if (hasExtensionsOrModules(cwd)) return cwd;
+
+  const fileBasedRoot = path.resolve(moduleDir, '../..');
+  if (hasExtensionsOrModules(fileBasedRoot)) return fileBasedRoot;
+
+  return barducksRoot;
+}
 
 /**
  * Returns directories that contain extensions/modules to scan (built-in + workspace repos).
@@ -27,7 +43,7 @@ export type CollectExtensionsDirsArgs = {
 export async function collectExtensionsDirs(args: CollectExtensionsDirsArgs): Promise<string[]> {
   const { cwd, moduleDir, workspaceRoot } = args;
 
-  const { barducksRoot } = resolveBarducksRoot({ cwd, moduleDir });
+  const barducksRoot = pickBarducksRootWithFallback(cwd, moduleDir);
   const baseDirs = [
     path.join(barducksRoot, 'extensions'),
     args.includeLegacyModulesDir ? path.join(barducksRoot, 'modules') : null
@@ -51,8 +67,12 @@ export async function collectExtensionsDirs(args: CollectExtensionsDirsArgs): Pr
       if (fs.existsSync(repoModulesPath)) {
         dirs.push(repoModulesPath);
       }
-    } catch {
-      // Keep discovery best-effort; callers decide whether to log.
+    } catch (error) {
+      if (!args.quiet) {
+        const err = error as Error;
+        // eslint-disable-next-line no-console
+        console.warn(`Warning: Failed to load repo extensions from ${repoUrl}: ${err.message}`);
+      }
     }
   }
 

@@ -10,14 +10,17 @@ function listToolsFromSpec(spec: { tools?: Record<string, ToolDef>; vendorTools?
   const out: Array<{ procedurePath: string; def: ToolDef }> = [];
 
   if (spec.tools) {
-    for (const [name, def] of Object.entries(spec.tools)) {
+    for (const name of Object.keys(spec.tools).sort()) {
+      const def = spec.tools[name]!;
       out.push({ procedurePath: name, def });
     }
   }
 
   if (spec.vendorTools) {
-    for (const [ns, tools] of Object.entries(spec.vendorTools)) {
-      for (const [name, def] of Object.entries(tools)) {
+    for (const ns of Object.keys(spec.vendorTools).sort()) {
+      const tools = spec.vendorTools[ns]!;
+      for (const name of Object.keys(tools).sort()) {
+        const def = tools[name]!;
         out.push({ procedurePath: `vendor.${ns}.${name}`, def });
       }
     }
@@ -50,7 +53,8 @@ export function formatAvailableMethods(registry: UnifiedAPIEntries): string {
     // Fallback for legacy modules: we don't have a spec yet.
     const procedures = (entry.router as any).procedures as Record<string, any> | undefined;
     if (!procedures) continue;
-    for (const [procedureName, procedure] of Object.entries(procedures)) {
+    for (const procedureName of Object.keys(procedures).sort()) {
+      const procedure = procedures[procedureName];
       const p = procedure as any;
       const d = String(p.meta?.description || p.meta?.title || '').trim();
       output += `    ${moduleName}.${procedureName}${d ? `  - ${d}` : ''}\n`;
