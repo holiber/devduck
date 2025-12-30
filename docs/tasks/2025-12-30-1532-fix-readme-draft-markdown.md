@@ -5,7 +5,7 @@
 - Date: 2025-12-30
 - Agent: 🦆 GPT-5.2
 - Branch: docs/readme-draft-markdown-2025-12-30
-- PR: <link>
+- PR: https://github.com/holiber/barducks/pull/117
 - Related: <none>
 
 ## 1. Intake
