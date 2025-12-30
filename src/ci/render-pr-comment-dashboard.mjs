@@ -71,6 +71,12 @@ function fmtDeltaPct(p) {
   return `${sign}${fmtPct(p)}`;
 }
 
+function fmtThresholdMs(ms) {
+  if (ms == null || !Number.isFinite(ms)) return 'n/a';
+  if (ms % 1000 === 0) return `${(ms / 1000).toFixed(0)}s`;
+  return `${ms.toFixed(0)}ms`;
+}
+
 function fmtTestDelta({ deltaTotal, deltaDurationMs }) {
   const parts = [];
   if (deltaTotal != null && Number.isFinite(deltaTotal)) parts.push(`${fmtDeltaInt(deltaTotal)} tests`);
@@ -211,6 +217,7 @@ async function main() {
   const pr = current?.pr ?? {};
   const deltas = diff?.deltas ?? {};
   const url = runUrl();
+  const slowThresholdMs = current?.quality?.slowTests?.thresholdMs;
 
   const defaultDashboardUrl = defaultPagesDashboardUrl();
   const dashboardUrl = process.env.METRICS_DASHBOARD_URL ?? defaultDashboardUrl;
@@ -261,7 +268,11 @@ async function main() {
   lines.push(`| 📜 Huge scripts (>1000 LOC) | ${fmtInt(current?.code?.hugeScripts)} | ${fmtDeltaInt(deltas.huge_scripts)} |`);
   lines.push(`| 🎲 Flaky tests (retried) | ${fmtInt(current?.tests?.flaky?.count)} | ${fmtDeltaInt(deltas.flaky_tests)} |`);
   lines.push(`| 🧪 Coverage (lines) | ${fmtPct(current?.quality?.coverage?.linesPct)} | ${fmtDeltaPct(deltas.coverage_lines_pct)} |`);
-  lines.push(`| 🐢 Slow tests (>20s) | ${fmtInt(current?.quality?.slowTests?.count)} | ${fmtDeltaInt(deltas.slow_tests_over_20s)} |`);
+  lines.push(
+    `| 🐢 Slow tests (>${fmtThresholdMs(slowThresholdMs)}) | ${fmtInt(current?.quality?.slowTests?.count)} | ${fmtDeltaInt(
+      deltas.slow_tests_over_10s
+    )} |`
+  );
   lines.push(`| 🧬 Duplication (copy/paste) | ${fmtPct(current?.quality?.duplication?.duplicatedPct)} | ${fmtDeltaPct(deltas.duplication_pct)} |`);
   lines.push(
     `| 🧪 Unit tests | ${current?.tests?.unit?.total ?? 'n/a'} tests / ${fmtMs(

@@ -639,9 +639,9 @@ async function main() {
     // ignore
   }
 
-  // Slow tests metric (>20s) from available logs/reports (best-effort).
+  // Slow tests metric (>10s) from available logs/reports (best-effort).
   try {
-    const thresholdMs = 20_000;
+    const thresholdMs = 10_000;
     const pieces = [];
 
     const unitLogPath = path.join(LOGS_DIR, 'npm-test.log');
@@ -786,7 +786,7 @@ async function main() {
     '[metrics] quality:',
     'coverage(lines%)',
     metrics.quality?.coverage?.linesPct ?? 'n/a',
-    '; slowTests(>20s)',
+    '; slowTests(>10s)',
     metrics.quality?.slowTests?.count ?? 'n/a',
     '; duplication(%)',
     metrics.quality?.duplication?.duplicatedPct ?? 'n/a'

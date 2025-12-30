@@ -136,6 +136,12 @@ function fmtDeltaMs(ms) {
   return `${sign}${fmtMs(ms)}`;
 }
 
+function fmtThresholdMs(ms) {
+  if (ms == null || !Number.isFinite(ms)) return 'n/a';
+  if (ms % 1000 === 0) return `${(ms / 1000).toFixed(0)}s`;
+  return `${ms.toFixed(0)}ms`;
+}
+
 function fmtDeltaInt(n) {
   if (n == null || !Number.isFinite(n)) return 'n/a';
   const sign = n > 0 ? '+' : '';
@@ -189,7 +195,8 @@ async function main() {
   const hugeScripts = current?.code?.hugeScripts;
   const flakyTests = current?.tests?.flaky?.count;
   const coverageLinesPct = current?.quality?.coverage?.linesPct;
-  const slowTestsOver20s = current?.quality?.slowTests?.count;
+  const slowTestsThresholdMs = current?.quality?.slowTests?.thresholdMs;
+  const slowTestsOver10s = current?.quality?.slowTests?.count;
   const duplicationPct = current?.quality?.duplication?.duplicatedPct;
 
   const html = `<!DOCTYPE html>
@@ -292,9 +299,9 @@ async function main() {
           <td class="${clsForDeltaInverted(diff?.deltas?.coverage_lines_pct)}">${fmtPct(diff?.deltas?.coverage_lines_pct)}</td>
         </tr>
         <tr>
-          <td>🐢 Slow tests (&gt;20s)</td>
-          <td>${fmtInt(slowTestsOver20s)}</td>
-          <td class="${clsForDelta(diff?.deltas?.slow_tests_over_20s)}">${fmtInt(diff?.deltas?.slow_tests_over_20s)}</td>
+          <td>🐢 Slow tests (&gt;${fmtThresholdMs(slowTestsThresholdMs)})</td>
+          <td>${fmtInt(slowTestsOver10s)}</td>
+          <td class="${clsForDelta(diff?.deltas?.slow_tests_over_10s)}">${fmtInt(diff?.deltas?.slow_tests_over_10s)}</td>
         </tr>
         <tr>
           <td>🧬 Duplication (copy/paste)</td>
