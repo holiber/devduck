@@ -208,13 +208,13 @@ describe('Workspace Installer - Unattended Mode', () => {
         const structure = await verifyWorkspaceStructure(tempWorkspace);
         assert.ok(structure.workspaceConfigExists, 'workspace.config.yml should exist');
 
-        // Verify symlink was created in projects/
-        const symlinkPath = path.join(tempWorkspace, 'projects', 'my-local-project');
-        const st = await fs.lstat(symlinkPath);
-        assert.ok(st.isSymbolicLink(), 'projects/my-local-project should be a symlink');
-        const linkTarget = await fs.readlink(symlinkPath);
-        const resolvedTarget = path.resolve(path.dirname(symlinkPath), linkTarget);
-        assert.strictEqual(resolvedTarget, path.resolve(localProjectPath), 'symlink should point to the local project folder');
+        // Verify local folder project was installed into projects/ (copy, not symlink)
+        const projectPath = path.join(tempWorkspace, 'projects', 'my-local-project');
+        const st = await fs.lstat(projectPath);
+        assert.ok(st.isDirectory(), 'projects/my-local-project should be a directory');
+        assert.ok(!st.isSymbolicLink(), 'projects/my-local-project should not be a symlink');
+        const readme = await fs.readFile(path.join(projectPath, 'README.md'), 'utf8');
+        assert.strictEqual(readme, '# local project\n', 'README.md should be copied into projects/my-local-project');
       } finally {
         await cleanupTempWorkspace(tempWorkspace);
       }

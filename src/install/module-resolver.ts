@@ -239,6 +239,15 @@ export function resolveDependencies(moduleNames: string[], allModules: Module[])
     toResolve.push(GIT_MODULE_NAME);
   }
 
+  // Always include modules tagged as `core`.
+  // This allows shipping built-in "core feature" modules without requiring users
+  // to explicitly list them in `workspace.config.yml`.
+  for (const m of moduleMap.values()) {
+    if (Array.isArray(m.tags) && m.tags.includes('core') && !toResolve.includes(m.name)) {
+      toResolve.push(m.name);
+    }
+  }
+
   while (toResolve.length > 0) {
     const moduleName = toResolve.shift();
     if (!moduleName) continue;

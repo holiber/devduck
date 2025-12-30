@@ -87,6 +87,20 @@ export interface InstallState {
   
   // Additional data
   installedModules?: Record<string, string>;
+  /**
+   * Records how specific destinations were installed (provider pinning).
+   * Keyed by absolute destination path for stable lookup.
+   */
+  installedSources?: Record<
+    string,
+    {
+      src: string;
+      dest: string;
+      provider: string;
+      kind: 'project' | 'repo';
+      installedAt: string;
+    }
+  >;
   installedAt?: string;
   mcpServers?: unknown[];
   checks?: CheckResult[];
@@ -160,6 +174,30 @@ export function saveInstallState(workspaceRoot: string, state: InstallState): vo
   }
   
   writeJSON(statePath, state);
+}
+
+export type InstalledSourceRecord = NonNullable<InstallState['installedSources']>[string];
+
+export function getInstalledSource(workspaceRoot: string, destAbsPath: string): InstalledSourceRecord | null {
+  const state = loadInstallState(workspaceRoot);
+  const key = String(destAbsPath || '').trim();
+  if (!key) return null;
+  return (state.installedSources && state.installedSources[key]) || null;
+}
+
+export function setInstalledSource(workspaceRoot: string, record: InstalledSourceRecord): void {
+  const state = loadInstallState(workspaceRoot);
+  const dest = String(record?.dest || '').trim();
+  if (!dest) return;
+  if (!state.installedSources) state.installedSources = {};
+  state.installedSources[dest] = {
+    src: String(record.src || ''),
+    dest,
+    provider: String(record.provider || ''),
+    kind: record.kind,
+    installedAt: String(record.installedAt || new Date().toISOString())
+  };
+  saveInstallState(workspaceRoot, state);
 }
 
 /**
