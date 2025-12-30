@@ -1,6 +1,6 @@
 # Task: <human title>
 
-> File name: `docs/tasks/YYYY-MM-DD-<short-task-name>.md` (kebab-case slug)
+> File name: `docs/tasks/YYYY-MM-DD-HHMM-<short-task-name>.md` (kebab-case slug, 24h time)
 
 ## 0. Meta
 

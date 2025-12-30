@@ -6,7 +6,7 @@
 - Agent: 🦆 GPT-5.2
 - Branch: cursor/readme-badge-and-logo-061c
 - PR: (pending)
-- Related: `docs/tasks/2025-12-29-after-merge-ci-workflow-name-and-badge.md`, `docs/tasks/2025-12-29-project-stats-badge.md`, `docs/tasks/2025-12-29-readme-logo-rounded.md`
+- Related: `docs/tasks/2025-12-30-0034-after-merge-ci-workflow-name-and-badge.md`, `docs/tasks/2025-12-30-0048-project-stats-badge.md`, `docs/tasks/2025-12-30-0040-readme-logo-rounded.md`
 
 ## 1. Task
 

@@ -15,7 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed - 2025-12-30
 
 - 🖼️ **README logo** - Updated the README logo to use `media/barducks-logo-rounded.jpg`.
-- 🗂️ **Task file convention** - Updated agent workflow docs/templates and Cursor rules to use `docs/tasks/YYYY-MM-DD-<slug>.md` (instead of `docs/<slug>.md`).
+- 🗂️ **Task file convention** - Updated agent workflow docs/templates and Cursor rules to use `docs/tasks/YYYY-MM-DD-HHMM-<slug>.md` (instead of `docs/<slug>.md`).
 
 ### Fixed - 2025-12-30
 

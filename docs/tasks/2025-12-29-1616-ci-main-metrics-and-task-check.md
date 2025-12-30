@@ -8,7 +8,7 @@ This change enforces contribution rules and hardens `main` CI:
 - Tests are retried once on failure to reduce flaky noise.
 - Metrics **history/baseline/pages are updated only on successful `main` runs**, so graphs reflect verified results.
 - A PR merge check enforces:
-  - at least one new task file under `docs/tasks/` matching `YYYY-MM-DD-*.md`
+  - at least one new task file under `docs/tasks/` matching `YYYY-MM-DD-HHMM-*.md`
 
 ## Rationale
 

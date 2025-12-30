@@ -6,7 +6,7 @@
  *
  * Verified rules (see docs task spec):
  * - Agent PR detection by title prefix
- * - Exactly one new task file added under docs/tasks/YYYY-MM-DD-<short-task-name>.md
+ * - Exactly one new task file added under docs/tasks/YYYY-MM-DD-HHMM-<short-task-name>.md
  * - Task file has Stage: 0..6 in "## 0. Meta"
  * - Required sections by stage + forbidden "## 1. Intake" for stage >= 1
  * - Required CHECKPOINT lines in "## 2. Status Log" up to declared stage
@@ -430,13 +430,13 @@ function findAddedTaskFile(prFiles) {
   const added = prFiles.filter((f) => f?.status === 'added' && typeof f?.filename === 'string').map((f) => f.filename);
 
   const addedTasks = added.filter((p) => p.startsWith('docs/tasks/'));
-  const validTaskPattern = /^docs\/tasks\/\d{4}-\d{2}-\d{2}-[a-z0-9][a-z0-9-]*\.md$/i;
+  const validTaskPattern = /^docs\/tasks\/\d{4}-\d{2}-\d{2}-([01]\d|2[0-3])[0-5]\d-[a-z0-9][a-z0-9-]*\.md$/i;
   const valid = addedTasks.filter((p) => validTaskPattern.test(p));
 
   const errors = [];
   if (valid.length !== 1) {
     errors.push(
-      `Agent PR must add exactly one new task file matching "docs/tasks/YYYY-MM-DD-<short-task-name>.md". Found: ${valid.length}.`
+      `Agent PR must add exactly one new task file matching "docs/tasks/YYYY-MM-DD-HHMM-<short-task-name>.md". Found: ${valid.length}.`
     );
   }
   if (addedTasks.length !== valid.length) {

@@ -42,9 +42,10 @@ jobs:
           fi
 
           added="$(git diff --name-status origin/main...HEAD | awk '$1=="A"{print $2}')"
-          if ! echo "${added}" | grep -qE '^docs/tasks/[0-9]{4}-[0-9]{2}-[0-9]{2}-.*\.md$'; then
+          # Task files must include date + 24h time (HHMM) for stable ordering.
+          if ! echo "${added}" | grep -qE '^docs/tasks/[0-9]{4}-[0-9]{2}-[0-9]{2}-([01][0-9]|2[0-3])[0-5][0-9]-.*\.md$'; then
             echo "❌ Missing new task file."
-            echo "Add at least one file matching: docs/tasks/YYYY-MM-DD-*.md"
+            echo "Add at least one file matching: docs/tasks/YYYY-MM-DD-HHMM-*.md"
             echo ""
             echo "Added files in this PR:"
             echo "${added:-<none>}"

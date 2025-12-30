@@ -21,7 +21,7 @@ This is **not** a task queue system. It is execution discipline for one task.
 
 For every task, create and maintain:
 
-- `docs/tasks/YYYY-MM-DD-<short-task-name>.md`
+- `docs/tasks/YYYY-MM-DD-HHMM-<short-task-name>.md`
 
 Where `<short-task-name>` is a kebab-case slug (example: `ci-pr-workflow-discipline`).
 
@@ -66,7 +66,7 @@ Goal: as soon as the agent receives the task, the PR exists and shows “work in
 Checklist:
 
 1. Generate `<short-task-name>` (kebab-case slug).
-2. Create `docs/tasks/YYYY-MM-DD-<short-task-name>.md` with a minimal skeleton:
+2. Create `docs/tasks/YYYY-MM-DD-HHMM-<short-task-name>.md` with a minimal skeleton:
    - `# <title>`
    - `## 0. Meta` (date, agent 🦆, links/ids if any)
    - `## 1. Intake` (2–5 sentences: how you understood the task)
@@ -74,7 +74,7 @@ Checklist:
 3. Commit + push **only this file**.
 4. Create the PR immediately:
    - Title: `[🦆 <short-task-name>] <human title>`
-   - Description: link to `docs/tasks/YYYY-MM-DD-<short-task-name>.md`
+   - Description: link to `docs/tasks/YYYY-MM-DD-HHMM-<short-task-name>.md`
 5. Create the single service status comment and set status to `intake…`.
 
 Hard rule: Stage 0 MUST end with **PR created** + **service status comment present**.
@@ -202,7 +202,7 @@ Replace placeholders, keep the marker line unchanged.
 
 <1–2 short paragraphs: what I did in this step, and what I’m doing next.>
 
-Task doc: `docs/tasks/YYYY-MM-DD-<short-task-name>.md`
+Task doc: `docs/tasks/YYYY-MM-DD-HHMM-<short-task-name>.md`
 
 <!-- barducks-agent-status -->
 ```
@@ -260,7 +260,7 @@ gh pr comment "$PR_NUMBER" --body "$(cat <<'EOF'
 
 Bootstrapped task doc + opened PR. Next: clarify the task into a verifiable DoD and write a short plan.
 
-Task doc: `docs/tasks/YYYY-MM-DD-<short-task-name>.md`
+Task doc: `docs/tasks/YYYY-MM-DD-HHMM-<short-task-name>.md`
 
 <!-- barducks-agent-status -->
 EOF
@@ -280,7 +280,7 @@ gh api "repos/$OWNER/$REPO/issues/comments/$COMMENT_ID" -X PATCH \
 
 Clarified the task and wrote concrete acceptance criteria in the task doc. Next: write an ordered implementation plan and start coding in small batches.
 
-Task doc: `docs/tasks/YYYY-MM-DD-<short-task-name>.md`
+Task doc: `docs/tasks/YYYY-MM-DD-HHMM-<short-task-name>.md`
 
 <!-- barducks-agent-status -->
 EOF
