@@ -176,30 +176,6 @@ export const FetchReviewInputSchema = z.object({
 });
 export type FetchReviewInput = z.infer<typeof FetchReviewInputSchema>;
 
-// Tool names type
-export type CIToolName = 'fetchPR' | 'fetchCheckStatus' | 'fetchComments' | 'fetchReview';
-
-/**
- * Mapping of tool names to their input schemas
- * This is automatically used to generate CLI commands
- */
-export const CIToolInputSchemas: Record<CIToolName, z.ZodObject<any>> = {
-  fetchPR: FetchPRInputSchema,
-  fetchCheckStatus: FetchCheckStatusInputSchema,
-  fetchComments: FetchCommentsInputSchema,
-  fetchReview: FetchReviewInputSchema
-};
-
-/**
- * Descriptions for tools (used in CLI help)
- */
-export const CIToolDescriptions: Record<CIToolName, string> = {
-  fetchPR: 'Fetch PR information',
-  fetchCheckStatus: 'Fetch check status with annotations',
-  fetchComments: 'Fetch PR comments and reactions',
-  fetchReview: 'Fetch Arcanum review information by review ID or URL'
-};
-
 // Provider manifest (metadata)
 export const CIProviderManifestSchema = z
   .object({
@@ -208,7 +184,7 @@ export const CIProviderManifestSchema = z
     version: z.string().min(1),
     description: z.string().optional(),
     protocolVersion: z.literal(CI_PROVIDER_PROTOCOL_VERSION),
-    tools: z.array(z.enum(['fetchPR', 'fetchCheckStatus', 'fetchComments', 'fetchReview'])),
+    tools: z.array(z.string().min(1)),
     events: z
       .object({
         publish: z.array(z.string()).default([]),
@@ -234,9 +210,15 @@ export interface CIProvider {
   name: string;
   version: string;
   manifest: CIProviderManifest;
+  tools?: Record<string, unknown>;
+  vendor?: Record<string, unknown>;
   fetchPR(input: FetchPRInput): Promise<PRInfo>;
   fetchCheckStatus(input: FetchCheckStatusInput): Promise<CheckStatus[]>;
   fetchComments(input: FetchCommentsInput): Promise<Comment[]>;
-  fetchReview(input: FetchReviewInput): Promise<PRInfo>;
+  /**
+   * Legacy/compat method. Review fetching is vendor-specific and should be exposed via
+   * `ci.vendor.<namespace>.*` (e.g. `ci.vendor.arcanum.fetchReview`).
+   */
+  fetchReview?: (input: FetchReviewInput) => Promise<PRInfo>;
 }
 

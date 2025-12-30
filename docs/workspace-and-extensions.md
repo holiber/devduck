@@ -68,3 +68,6 @@ You can create extensions directly in the workspace by putting them under:
 
 Important: **workspace-local extensions take precedence** over built-in ones — great for customization and extension development.
 
+## Writing your own extension
+
+See `docs/how-to-write-an-extension.md`.
