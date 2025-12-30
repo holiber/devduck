@@ -234,6 +234,11 @@ async function main() {
     .pos{color:#c0392b}
     .neg{color:#27ae60}
     code{background:#f3f3f3;padding:2px 6px;border-radius:6px}
+    @media (max-width: 768px) {
+      body{margin:16px}
+      .card{padding:12px 14px}
+      th,td{padding:8px 10px;font-size:13px}
+    }
   </style>
 </head>
 <body>
@@ -329,15 +334,15 @@ async function main() {
   <div class="card">
     <div class="chartBlock">
       <div class="chartHeader">🧪 Unit tests</div>
-      <canvas id="trend-unit" height="120"></canvas>
+      <canvas id="trend-unit" height="200"></canvas>
     </div>
     <div class="chartBlock">
       <div class="chartHeader">🧪 E2E tests</div>
-      <canvas id="trend-e2e" height="120"></canvas>
+      <canvas id="trend-e2e" height="200"></canvas>
     </div>
     <div class="chartBlock">
       <div class="chartHeader">🧾 Script code lines</div>
-      <canvas id="trend-script-loc" height="120"></canvas>
+      <canvas id="trend-script-loc" height="200"></canvas>
     </div>
   </div>
 
