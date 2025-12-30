@@ -48,11 +48,14 @@ The working tree contains a set of tracked files that were removed locally. The 
   - `extensions/plan/scripts/plan.ts`
   - `media/841B125C-B9C6-40C2-8316-A87167F078E5.jpeg`
   - `todo/test-coverage-gaps-2025-12-30.md`
+- Added a cleaned-up Markdown draft:
+  - `docs/README-DRAFT.md`
 
 ### How to verify
 
 - Run: `npm run test:unit`
 - Ensure removed files are no longer present in the repo tree.
+- Open `docs/README-DRAFT.md` in GitHub and ensure headings, lists, and code blocks render correctly.
 
 ### Risks / Follow-ups
 
