@@ -15,7 +15,6 @@ import { resolveBarducksRoot } from './barducks-paths.js';
 import { findWorkspaceRoot } from './workspace-root.js';
 import { readJSON } from './config.js';
 import { getWorkspaceConfigFilePath, readWorkspaceConfigFile } from './workspace-config.js';
-import { readEnvFile } from './env.js';
 import { loadModulesFromRepo, getBarducksVersion } from './repo-modules.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -91,8 +90,9 @@ async function importRouterFromFile(entryPath: string, name: string, quiet: bool
 
 async function importSpecFromModule(modulePath: string, moduleName: string, quiet: boolean): Promise<ExtensionSpecLike | null> {
   try {
-    const specPath = path.join(modulePath, 'spec.ts');
-    if (!existsFile(specPath)) return null;
+    const candidates = [path.join(modulePath, 'spec.ts'), path.join(modulePath, 'spec.js')];
+    const specPath = candidates.find((p) => existsFile(p));
+    if (!specPath) return null;
     const moduleExports = await import(pathToFileURL(specPath).href);
     const candidate =
       (moduleExports && (moduleExports.default || moduleExports.spec || moduleExports[`${moduleName}Spec`])) as unknown;
@@ -155,13 +155,8 @@ export async function collectUnifiedRegistry(quiet: boolean = false): Promise<Un
   }
 
   const workspaceRoot = findWorkspaceRoot(process.cwd());
-  if (workspaceRoot) {
-    const envPath = path.join(workspaceRoot, '.env');
-    const env = readEnvFile(envPath);
-    for (const [key, value] of Object.entries(env)) {
-      if (!process.env[key]) process.env[key] = value;
-    }
-  }
+  // NOTE: Keep this collector "pure": env loading should happen at the CLI/runtime boundary.
+  void workspaceRoot;
 
   const registry: UnifiedRegistry = {};
 

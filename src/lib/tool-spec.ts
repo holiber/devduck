@@ -39,6 +39,10 @@ export function defineTools<const TTools extends ToolsSpec>(tools: TTools): TToo
   return tools;
 }
 
+export function defineVendorTools<const TVendor extends VendorToolsSpec>(vendorTools: TVendor): TVendor {
+  return vendorTools;
+}
+
 type ToolHandlerFromDef<T extends ToolDef> = (
   input: z.input<T['input']>
 ) => Promise<z.output<T['output']>>;

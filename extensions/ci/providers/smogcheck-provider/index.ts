@@ -10,6 +10,7 @@ import type {
 } from '../../schemas/contract.js';
 import { CI_PROVIDER_PROTOCOL_VERSION } from '../../schemas/contract.js';
 import { defineProvider } from '../../../../src/lib/define-provider.js';
+import type { ProviderToolsFromSpec } from '../../../../src/lib/tool-spec.js';
 
 function nowMinusDays(days: number): string {
   const d = new Date();
@@ -254,6 +255,9 @@ function findPRByBranch(branch: string): PRInfo | null {
   return MOCK_PRS.find((pr) => pr.branch?.from === branch) || null;
 }
 
+type CIToolsSpec = typeof import('../../spec.js').ciTools;
+type CIVendorToolsSpec = typeof import('../../spec.js').ciVendorTools;
+
 const tools = {
   async fetchPR(input: FetchPRInput): Promise<PRInfo> {
     let pr: PRInfo | null = null;
@@ -322,43 +326,48 @@ const tools = {
     return comments;
   },
 
-  async fetchReview(input: FetchReviewInput): Promise<PRInfo> {
-    // For smogcheck provider, treat review as PR
-    let reviewId: string | number | null = null;
+} satisfies ProviderToolsFromSpec<CIToolsSpec>;
 
-    if (input.reviewUrl) {
-      // Extract review ID from URL like https://a.yandex-team.ru/review/10930804
-      const match = input.reviewUrl.match(/review\/(\d+)/);
-      if (match) {
-        reviewId = Number.parseInt(match[1], 10);
+const vendor = {
+  arcanum: {
+    async fetchReview(input: FetchReviewInput): Promise<PRInfo> {
+      // For smogcheck provider, treat review as PR
+      let reviewId: string | number | null = null;
+
+      if (input.reviewUrl) {
+        // Extract review ID from URL like https://a.yandex-team.ru/review/10930804
+        const match = input.reviewUrl.match(/review\/(\d+)/);
+        if (match) {
+          reviewId = Number.parseInt(match[1], 10);
+        }
+      } else if (input.reviewId) {
+        reviewId = typeof input.reviewId === 'string' ? Number.parseInt(input.reviewId, 10) : input.reviewId;
       }
-    } else if (input.reviewId) {
-      reviewId = typeof input.reviewId === 'string' ? Number.parseInt(input.reviewId, 10) : input.reviewId;
-    }
 
-    if (!reviewId) {
-      throw new Error(`Review not found: ${input.reviewId || input.reviewUrl || 'unknown'}`);
-    }
+      if (!reviewId) {
+        throw new Error(`Review not found: ${input.reviewId || input.reviewUrl || 'unknown'}`);
+      }
 
-    // For mock provider, return a mock PR based on review ID
-    const pr = findPRById(reviewId);
-    if (pr) {
-      return pr;
-    }
+      // For mock provider, return a mock PR based on review ID
+      const pr = findPRById(reviewId);
+      if (pr) {
+        return pr;
+      }
 
-    // Return a default mock PR for review
-    return {
-      id: `review-${reviewId}`,
-      number: reviewId,
-      title: `Review ${reviewId}`,
-      status: 'open',
-      commentCount: 0,
-      url: input.reviewUrl || `https://a.yandex-team.ru/review/${reviewId}`,
-      createdAt: nowMinusDays(1),
-      updatedAt: nowMinusDays(1)
-    };
+      // Return a default mock PR for review
+      return {
+        id: `review-${reviewId}`,
+        number: reviewId,
+        title: `Review ${reviewId}`,
+        status: 'open',
+        commentCount: 0,
+        url: input.reviewUrl || `https://a.yandex-team.ru/review/${reviewId}`,
+        createdAt: nowMinusDays(1),
+        updatedAt: nowMinusDays(1)
+      };
+    }
   }
-} satisfies Record<string, unknown>;
+} satisfies { arcanum: ProviderToolsFromSpec<CIVendorToolsSpec['arcanum']> };
 
 const provider: CIProvider = defineProvider({
   type: 'ci',
@@ -366,7 +375,7 @@ const provider: CIProvider = defineProvider({
   version: '0.1.0',
   protocolVersion: CI_PROVIDER_PROTOCOL_VERSION,
   tools,
-  vendor: {},
+  vendor,
   manifest: {
     description: 'Test provider for CI module',
     events: { publish: [], subscribe: [] }

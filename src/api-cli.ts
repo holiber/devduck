@@ -22,6 +22,56 @@ import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+function failUnsupportedProviderMethod(args: {
+  providerName: string;
+  moduleName: string;
+  procedurePath: string;
+  supported: string[];
+}): never {
+  const supportedList = args.supported.length > 0 ? `\nSupported methods:\n  - ${args.supported.join('\n  - ')}` : '';
+  throw new Error(
+    `Provider '${args.providerName}' does not support '${args.moduleName}.${args.procedurePath}'.${supportedList}`
+  );
+}
+
+function assertProviderSupportsProcedure(args: {
+  provider: any;
+  moduleName: string;
+  procedurePath: string;
+}): void {
+  const { provider, moduleName, procedurePath } = args;
+  const providerName = String(provider?.name || provider?.manifest?.name || 'unknown');
+
+  const tools = (provider?.manifest?.tools || []) as string[];
+  const vendorTools = (provider?.manifest?.vendorTools || {}) as Record<string, string[] | undefined>;
+
+  if (procedurePath.startsWith('vendor.')) {
+    const parts = procedurePath.split('.');
+    const ns = parts[1] || '';
+    const method = parts.slice(2).join('.');
+    const supported = (vendorTools[ns] || []).slice().sort();
+    if (!supported.includes(method)) {
+      failUnsupportedProviderMethod({
+        providerName,
+        moduleName,
+        procedurePath,
+        supported: supported.map((m) => `${moduleName}.vendor.${ns}.${m}`)
+      });
+    }
+    return;
+  }
+
+  const supported = tools.slice().sort().map((t) => `${moduleName}.${t}`);
+  if (!tools.includes(procedurePath)) {
+    failUnsupportedProviderMethod({
+      providerName,
+      moduleName,
+      procedurePath,
+      supported
+    });
+  }
+}
+
 /**
  * Parse dot-notation command (e.g., "ci.fetchPR", "ci.vendor.github.fetchX")
  */
@@ -237,6 +287,9 @@ async function main(argv = process.argv): Promise<void> {
     // Only require provider if module requires one
     if (requiresProvider && !provider) {
       throw new Error(`Provider not found${providerName ? `: ${providerName}` : ''}`);
+    }
+    if (requiresProvider && provider) {
+      assertProviderSupportsProcedure({ provider, moduleName, procedurePath });
     }
 
     // Build input from args

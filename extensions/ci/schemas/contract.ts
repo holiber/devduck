@@ -215,6 +215,10 @@ export interface CIProvider {
   fetchPR(input: FetchPRInput): Promise<PRInfo>;
   fetchCheckStatus(input: FetchCheckStatusInput): Promise<CheckStatus[]>;
   fetchComments(input: FetchCommentsInput): Promise<Comment[]>;
-  fetchReview(input: FetchReviewInput): Promise<PRInfo>;
+  /**
+   * Legacy/compat method. Review fetching is vendor-specific and should be exposed via
+   * `ci.vendor.<namespace>.*` (e.g. `ci.vendor.arcanum.fetchReview`).
+   */
+  fetchReview?: (input: FetchReviewInput) => Promise<PRInfo>;
 }
 

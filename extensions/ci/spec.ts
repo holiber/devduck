@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { defineTools, tool, type VendorToolsSpec } from '../../src/lib/tool-spec.js';
+import { defineTools, defineVendorTools, tool } from '../../src/lib/tool-spec.js';
 import {
   FetchPRInputSchema,
   FetchCheckStatusInputSchema,
@@ -45,22 +45,24 @@ export const ciTools = defineTools({
       timeoutMs: 10_000,
       examples: [{ command: 'api-cli ci.fetchComments --prId 123' }]
     }
-  }),
-
-  fetchReview: tool({
-    input: FetchReviewInputSchema,
-    output: PRInfoSchema,
-    meta: {
-      title: 'Fetch Arcanum review information',
-      description: 'Fetch Arcanum review information by review ID or URL',
-      idempotent: true,
-      timeoutMs: 10_000,
-      examples: [{ command: 'api-cli ci.fetchReview --reviewId 10930804' }]
-    }
   })
 } as const);
 
-export const ciVendorTools: VendorToolsSpec = {} as const;
+export const ciVendorTools = defineVendorTools({
+  arcanum: defineTools({
+    fetchReview: tool({
+      input: FetchReviewInputSchema,
+      output: PRInfoSchema,
+      meta: {
+        title: 'Fetch Arcanum review information',
+        description: 'Fetch Arcanum review information by review ID or URL',
+        idempotent: true,
+        timeoutMs: 10_000,
+        examples: [{ command: 'api-cli ci.vendor.arcanum.fetchReview --reviewId 10930804' }]
+      }
+    })
+  })
+} as const);
 
 export const ciSpec = {
   name: 'ci',
