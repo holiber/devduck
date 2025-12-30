@@ -14,7 +14,7 @@
 import { createYargs, installEpipeHandler } from './lib/cli.js';
 import { findWorkspaceRoot } from './lib/workspace-root.js';
 import { readEnvFile } from './lib/env.js';
-import { getUnifiedRegistry } from './lib/unified-registry.js';
+import { getUnifiedAPIEntries } from './lib/api.js';
 import { ensureProvidersDiscovered, createProviderGetter } from './lib/api-cli/provider-runtime.js';
 import { formatAvailableMethods, resolveProcedureFromSpec } from './lib/api-cli/help-formatter.js';
 import path from 'path';
@@ -154,8 +154,9 @@ async function main(argv = process.argv): Promise<void> {
     }
   }
 
-  // Get unified registry (quiet mode to suppress warnings and side effects)
-  const registry = await getUnifiedRegistry(true);
+  // Get unified API entries (quiet mode to suppress warnings and side effects)
+  // NOTE: CLI already loads env above, so keep `loadEnv: false` to avoid duplication.
+  const registry = await getUnifiedAPIEntries({ quiet: true, loadEnv: false });
 
   // Parse command from arguments
   const args = argv.slice(2);

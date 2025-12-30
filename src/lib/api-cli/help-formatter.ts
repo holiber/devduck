@@ -1,6 +1,6 @@
 import type { z } from 'zod';
 
-import type { UnifiedRegistry } from '../unified-registry.js';
+import type { UnifiedAPIEntries } from '../api.js';
 import type { ToolDef } from '../tool-spec.js';
 
 function listToolsFromSpec(spec: { tools?: Record<string, ToolDef>; vendorTools?: Record<string, Record<string, ToolDef>> }): Array<{
@@ -30,7 +30,7 @@ function shortDesc(def: ToolDef): string {
   return String(def.meta?.description || def.meta?.title || '').trim();
 }
 
-export function formatAvailableMethods(registry: UnifiedRegistry): string {
+export function formatAvailableMethods(registry: UnifiedAPIEntries): string {
   let output = '';
 
   for (const moduleName of Object.keys(registry).sort()) {

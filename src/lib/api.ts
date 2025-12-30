@@ -13,10 +13,8 @@ import { fileURLToPath } from 'url';
 import type { ProviderRouter } from './provider-router.js';
 import { resolveBarducksRoot } from './barducks-paths.js';
 import { findWorkspaceRoot } from './workspace-root.js';
-import { readJSON } from './config.js';
-import { getWorkspaceConfigFilePath, readWorkspaceConfigFile } from './workspace-config.js';
 import { readEnvFile } from './env.js';
-import { loadModulesFromRepo, getBarducksVersion } from './repo-modules.js';
+import { collectExtensionsDirs } from './extensions-discovery.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -25,6 +23,29 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
  */
 export interface UnifiedAPI {
   [moduleName: string]: ProviderRouter<any, any>;
+}
+
+export type ExtensionSpecLike = {
+  name?: string;
+  description?: string;
+  requiresProvider?: boolean;
+  providerType?: string;
+  tools?: Record<string, unknown>;
+  vendorTools?: Record<string, unknown>;
+};
+
+export interface UnifiedAPIEntry {
+  moduleName: string;
+  modulePath: string | null;
+  router: ProviderRouter<any, any>;
+  spec: ExtensionSpecLike | null;
+  description: string | null;
+  requiresProvider: boolean;
+  providerType: string | null;
+}
+
+export interface UnifiedAPIEntries {
+  [moduleName: string]: UnifiedAPIEntry;
 }
 
 /**
@@ -50,6 +71,48 @@ async function discoverModulesFromDirectory(modulesDir: string): Promise<string[
   }
 
   return modules;
+}
+
+function existsFile(p: string): boolean {
+  try {
+    return fs.existsSync(p) && fs.statSync(p).isFile();
+  } catch {
+    return false;
+  }
+}
+
+function readModuleDescription(modulePath: string): string | null {
+  try {
+    const moduleMdPath = path.join(modulePath, 'MODULE.md');
+    if (!existsFile(moduleMdPath)) return null;
+    const content = fs.readFileSync(moduleMdPath, 'utf8');
+    const frontmatterMatch = content.match(/^---\n([\s\S]*?)\n---/);
+    if (!frontmatterMatch) return null;
+    const frontmatter = frontmatterMatch[1];
+    const descriptionMatch = frontmatter.match(/^description:\s*(.+)$/m);
+    return descriptionMatch ? descriptionMatch[1].trim() : null;
+  } catch {
+    return null;
+  }
+}
+
+async function importSpecFromModule(modulePath: string, moduleName: string, quiet: boolean): Promise<ExtensionSpecLike | null> {
+  try {
+    const candidates = [path.join(modulePath, 'spec.ts'), path.join(modulePath, 'spec.js')];
+    const specPath = candidates.find((p) => existsFile(p));
+    if (!specPath) return null;
+    const moduleExports = await import(pathToFileURL(specPath).href);
+    const candidate =
+      (moduleExports && (moduleExports.default || moduleExports.spec || moduleExports[`${moduleName}Spec`])) as unknown;
+    if (!candidate || typeof candidate !== 'object') return null;
+    return candidate as ExtensionSpecLike;
+  } catch (error) {
+    if (!quiet) {
+      const err = error as Error;
+      console.warn(`Warning: Failed to import spec for ${moduleName} from ${modulePath}: ${err.stack || err.message}`);
+    }
+    return null;
+  }
 }
 
 /**
@@ -228,7 +291,62 @@ export async function collectUnifiedAPI(quiet: boolean = false): Promise<Unified
     }
   }
   
+  const entries = await collectUnifiedAPIEntries({ quiet, loadEnv: true });
   const unifiedAPI: UnifiedAPI = {};
+  for (const [name, entry] of Object.entries(entries)) {
+    unifiedAPI[name] = entry.router;
+  }
+  return unifiedAPI;
+}
+
+export async function collectUnifiedAPIEntries(args?: {
+  quiet?: boolean;
+  loadEnv?: boolean;
+}): Promise<UnifiedAPIEntries> {
+  const quiet = !!args?.quiet;
+  const loadEnv = args?.loadEnv !== false;
+
+  // Try to resolve barducks root - in CI, we might be running from the repo root
+  let { barducksRoot } = resolveBarducksRoot({ cwd: process.cwd(), moduleDir: __dirname });
+  
+  // Verify that barducksRoot actually contains extensions directory (legacy: modules directory)
+  // If not, try to resolve from current working directory (for CI environments)
+  const extensionsDir = path.join(barducksRoot, 'extensions');
+  const legacyModulesDir = path.join(barducksRoot, 'modules');
+  const mainDir = fs.existsSync(extensionsDir) ? extensionsDir : legacyModulesDir;
+  if (!fs.existsSync(mainDir)) {
+    // In CI, we might be in the repo root, so try that
+    const cwdExtensionsDir = path.join(process.cwd(), 'extensions');
+    const cwdLegacyModulesDir = path.join(process.cwd(), 'modules');
+    if (fs.existsSync(cwdExtensionsDir) || fs.existsSync(cwdLegacyModulesDir)) {
+      barducksRoot = process.cwd();
+    } else {
+      // Last resort: try to find modules relative to this file
+      const fileBasedRoot = path.resolve(__dirname, '../..');
+      const fileBasedExtensionsDir = path.join(fileBasedRoot, 'extensions');
+      const fileBasedLegacyModulesDir = path.join(fileBasedRoot, 'modules');
+      if (fs.existsSync(fileBasedExtensionsDir) || fs.existsSync(fileBasedLegacyModulesDir)) {
+        barducksRoot = fileBasedRoot;
+      }
+    }
+  }
+  
+  const workspaceRoot = findWorkspaceRoot(process.cwd());
+  
+  // Load environment variables from .env file in workspace root
+  // This ensures env vars are available when modules are imported
+  if (loadEnv && workspaceRoot) {
+    const envPath = path.join(workspaceRoot, '.env');
+    const env = readEnvFile(envPath);
+    // Set environment variables from .env (don't override existing ones)
+    for (const [key, value] of Object.entries(env)) {
+      if (!process.env[key]) {
+        process.env[key] = value;
+      }
+    }
+  }
+  
+  const out: UnifiedAPIEntries = {};
   
   // First, load APIs from scripts/lib/api/ directory
   const libApiDir = path.join(__dirname, 'api');
@@ -239,74 +357,50 @@ export async function collectUnifiedAPI(quiet: boolean = false): Promise<Unified
     const router = await importRouterFromAPI(apiPath, apiName, quiet);
     
     if (router) {
-      unifiedAPI[apiName] = router;
+      out[apiName] = {
+        moduleName: apiName,
+        modulePath: null,
+        router,
+        spec: null,
+        description: apiName,
+        requiresProvider: false,
+        providerType: null
+      };
     }
   }
   
-  // Then, discover extensions from main project directory (legacy: modules)
-  const mainExtensionsDir = fs.existsSync(path.join(barducksRoot, 'extensions'))
-    ? path.join(barducksRoot, 'extensions')
-    : path.join(barducksRoot, 'modules');
-  const mainModules = await discoverModulesFromDirectory(mainExtensionsDir);
-  
-  for (const modulePath of mainModules) {
-    const moduleName = path.basename(modulePath);
-    
-    // Skip if already added from lib APIs
-    if (moduleName in unifiedAPI) {
-      continue;
-    }
-    
-    const router = await importRouterFromModule(modulePath, moduleName, quiet);
-    
-    if (router) {
-      unifiedAPI[moduleName] = router;
-    }
-  }
-  
-  // Discover modules from external repositories
-  if (workspaceRoot) {
-    const configPath = getWorkspaceConfigFilePath(workspaceRoot);
-    if (fs.existsSync(configPath)) {
-      const config = readWorkspaceConfigFile<{ repos?: string[] }>(configPath) || readJSON<{ repos?: string[] }>(configPath);
-      
-      if (config && config.repos && Array.isArray(config.repos)) {
-        const barducksVersion = getBarducksVersion();
-        
-        for (const repoUrl of config.repos) {
-          try {
-            const repoModulesPath = await loadModulesFromRepo(repoUrl, workspaceRoot, barducksVersion);
-            if (fs.existsSync(repoModulesPath)) {
-              const repoModules = await discoverModulesFromDirectory(repoModulesPath);
-              
-              for (const modulePath of repoModules) {
-                const moduleName = path.basename(modulePath);
-                
-                // Skip if already added from lib APIs or main modules
-                if (moduleName in unifiedAPI) {
-                  continue;
-                }
-                
-                const router = await importRouterFromModule(modulePath, moduleName, quiet);
-                
-                if (router) {
-                  unifiedAPI[moduleName] = router;
-                }
-              }
-            }
-          } catch (error) {
-            // Skip failed repos, but log warning (only if not in quiet mode)
-            if (!quiet) {
-              const err = error as Error;
-              console.warn(`Warning: Failed to load modules from ${repoUrl}: ${err.message}`);
-            }
-          }
-        }
-      }
+  const extensionDirs = await collectExtensionsDirs({
+    cwd: process.cwd(),
+    moduleDir: __dirname,
+    workspaceRoot,
+    includeLegacyModulesDir: true
+  });
+
+  for (const extensionsDir of extensionDirs) {
+    const modules = await discoverModulesFromDirectory(extensionsDir);
+    for (const modulePath of modules) {
+      const moduleName = path.basename(modulePath);
+      if (moduleName in out) continue;
+      const router = await importRouterFromModule(modulePath, moduleName, quiet);
+      if (!router) continue;
+      const spec = await importSpecFromModule(modulePath, moduleName, quiet);
+      const description = (spec && spec.description) || readModuleDescription(modulePath) || moduleName;
+      const requiresProvider = !!(spec && spec.requiresProvider);
+      const providerType = (spec && typeof spec.providerType === 'string' ? spec.providerType : moduleName) || moduleName;
+
+      out[moduleName] = {
+        moduleName,
+        modulePath,
+        router,
+        spec,
+        description,
+        requiresProvider,
+        providerType
+      };
     }
   }
-  
-  return unifiedAPI;
+
+  return out;
 }
 
 /**
@@ -320,4 +414,13 @@ export async function getUnifiedAPI(quiet: boolean = false): Promise<UnifiedAPI>
     cachedAPI = await collectUnifiedAPI(quiet);
   }
   return cachedAPI;
+}
+
+let cachedEntries: UnifiedAPIEntries | null = null;
+
+export async function getUnifiedAPIEntries(args?: { quiet?: boolean; loadEnv?: boolean }): Promise<UnifiedAPIEntries> {
+  if (!cachedEntries) {
+    cachedEntries = await collectUnifiedAPIEntries(args);
+  }
+  return cachedEntries;
 }
