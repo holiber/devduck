@@ -6,3 +6,4 @@
 - describe the 3 ways of install and test them
 - need to write more See detailed analysis in `/todo/test-coverage-gaps-2025-12-30.md`
 - Make a package from @barducks/core and simplify relative imports
+- add a market provider for skills in https://github.com/OpenHands/skills/tree/main/skills
