@@ -3,7 +3,7 @@ import path from 'path';
 
 import { resolveBarducksRoot } from './barducks-paths.js';
 import { getWorkspaceConfigFilePath, readWorkspaceConfigFile } from './workspace-config.js';
-import { loadModulesFromRepo, getBarducksVersion } from './repo-modules.js';
+import { parseRepoUrl } from './repo-modules.js';
 
 type WorkspaceConfigLike = {
   repos?: string[];
@@ -60,18 +60,24 @@ export async function collectExtensionsDirs(args: CollectExtensionsDirsArgs): Pr
   const repos = (cfg && Array.isArray(cfg.repos) ? cfg.repos : []) || [];
   if (repos.length === 0) return uniq(dirs);
 
-  const barducksVersion = getBarducksVersion();
   for (const repoUrl of repos) {
     try {
-      const repoModulesPath = await loadModulesFromRepo(repoUrl, workspaceRoot, barducksVersion);
-      if (fs.existsSync(repoModulesPath)) {
-        dirs.push(repoModulesPath);
-      }
+      // IMPORTANT: no side effects during discovery.
+      // Repos should be installed explicitly by installer steps (Step 2),
+      // not implicitly by extension discovery.
+      const parsed = parseRepoUrl(repoUrl);
+      const repoName =
+        parsed.type === 'arc'
+          ? path.basename(parsed.normalized)
+          : parsed.normalized.replace(/^git@/, '').replace(/\.git$/, '').replace(/[:\/]/g, '_');
+      const repoRoot = path.join(workspaceRoot, 'barducks', repoName);
+      const repoExtensions = path.join(repoRoot, 'extensions');
+      if (fs.existsSync(repoExtensions)) dirs.push(repoExtensions);
     } catch (error) {
       if (!args.quiet) {
         const err = error as Error;
         // eslint-disable-next-line no-console
-        console.warn(`Warning: Failed to load repo extensions from ${repoUrl}: ${err.message}`);
+        console.warn(`Warning: Failed to resolve repo extensions dir for ${repoUrl}: ${err.message}`);
       }
     }
   }

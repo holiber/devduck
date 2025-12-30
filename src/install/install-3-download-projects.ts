@@ -15,7 +15,7 @@ import { markStepCompleted, type ProjectResult } from './install-state.js';
 import { WorkspaceConfigSchema } from '../schemas/workspace-config.zod.js';
 import { z } from 'zod';
 import type { InstallContext, StepOutcome } from './runner.js';
-import { installWithProvider } from '../../extensions/installer/lib/installer-runtime.js';
+import { installWithProvider } from '../lib/extension/installer-runtime.js';
 
 type WorkspaceConfig = z.infer<typeof WorkspaceConfigSchema>;
 
@@ -138,6 +138,7 @@ export async function runStep3DownloadProjects(
       await installWithProvider({
         src: project.src,
         dest: projectPath,
+        kind: 'project',
         force: false,
         workspaceRoot,
         quiet: true

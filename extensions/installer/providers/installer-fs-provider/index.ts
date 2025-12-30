@@ -39,14 +39,6 @@ function resolveSrcToPath(src: string): string | null {
   return path.resolve(expandHome(s));
 }
 
-function isLocalGitRepo(dir: string): boolean {
-  try {
-    return fs.existsSync(path.join(dir, '.git')) && fs.statSync(path.join(dir, '.git')).isDirectory();
-  } catch {
-    return false;
-  }
-}
-
 function listFilesRecursive(root: string): string[] {
   const out: string[] = [];
   const stack: string[] = [root];
@@ -58,7 +50,7 @@ function listFilesRecursive(root: string): string[] {
       const abs = path.join(cur, e.name);
       if (e.isDirectory()) {
         // Skip common large dirs
-        if (e.name === '.git' || e.name === 'node_modules') continue;
+        if (e.name === 'node_modules') continue;
         stack.push(abs);
         continue;
       }
@@ -75,7 +67,7 @@ function copyDirRecursive(srcDir: string, destDir: string): void {
   fs.mkdirSync(destDir, { recursive: true });
   const entries = fs.readdirSync(srcDir, { withFileTypes: true });
   for (const e of entries) {
-    if (e.name === '.git' || e.name === 'node_modules') {
+    if (e.name === 'node_modules') {
       continue;
     }
     const srcAbs = path.join(srcDir, e.name);
@@ -142,10 +134,7 @@ const tools = {
     const resolved = resolveSrcToPath(src);
     if (!resolved) return false;
     try {
-      if (!fs.existsSync(resolved) || !fs.statSync(resolved).isDirectory()) return false;
-      // Prefer git provider for local git repos (so `.git` is preserved via clone).
-      if (isLocalGitRepo(resolved)) return false;
-      return true;
+      return fs.existsSync(resolved) && fs.statSync(resolved).isDirectory();
     } catch {
       return false;
     }

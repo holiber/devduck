@@ -13,7 +13,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { compareVersions } from 'compare-versions';
-import { installWithProvider } from '../../extensions/installer/lib/installer-runtime.js';
+import { installWithProvider } from './extension/installer-runtime.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -174,9 +174,8 @@ export async function ensureRepoAvailable(
       src: repoUrl,
       dest: pathInfo.barducksPath,
       force: false,
-      // Avoid recursion: provider discovery uses extension discovery which (for workspaceRoot)
-      // may attempt to load repos via this same module.
-      workspaceRoot: null,
+      kind: 'repo',
+      workspaceRoot,
       quiet: true
     });
   }

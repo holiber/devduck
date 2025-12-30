@@ -5,7 +5,7 @@ import { fileURLToPath } from 'url';
 import { initProviderContract } from '../../src/lib/provider-router.js';
 import { installerTools } from './spec.js';
 import { findWorkspaceRoot } from '../../src/lib/workspace-root.js';
-import { installWithProvider, pickProviderForSrc } from './lib/installer-runtime.js';
+import { installWithProvider, pickProviderForSrc } from '../../src/lib/extension/installer-runtime.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -23,7 +23,7 @@ export const installerRouter = t.router({
     .meta(installerTools.pickProviderForSrc.meta as any)
     .handler(async ({ input }) => {
       const workspaceRoot = findWorkspaceRoot(process.cwd());
-      const provider = await pickProviderForSrc({ src: input.src, workspaceRoot, moduleDir, quiet: true });
+      const provider = await pickProviderForSrc({ src: input.src, kind: 'project', workspaceRoot, moduleDir, quiet: true });
       return { provider };
     }),
 
@@ -36,6 +36,7 @@ export const installerRouter = t.router({
       const { provider } = await installWithProvider({
         src: input.src,
         dest: input.dest,
+        kind: 'project',
         force: input.force,
         workspaceRoot,
         moduleDir,
