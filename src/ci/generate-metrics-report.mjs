@@ -192,144 +192,11 @@ async function writeNoJekyll(outDir) {
 
 async function write404Page(outDir) {
   const assetDir = path.join(outDir, 'assets');
-  const svgPath = path.join(assetDir, '404-duck.svg');
   const pngPath = path.join(assetDir, '404-duck.png');
 
-  // A lightweight SVG illustration (text-only asset) so we don't need binary files in the repo.
-  // The provided reference image already includes the "404 - Page not Found" text; this SVG keeps that text.
-  const svg = `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" role="img" aria-label="404 - Page not Found">
-  <defs>
-    <radialGradient id="bg" cx="45%" cy="35%" r="80%">
-      <stop offset="0%" stop-color="#ffe876"/>
-      <stop offset="55%" stop-color="#a88b16"/>
-      <stop offset="100%" stop-color="#0b0b0b"/>
-    </radialGradient>
-    <filter id="softGlow" x="-20%" y="-20%" width="140%" height="140%">
-      <feGaussianBlur stdDeviation="8" result="blur"/>
-      <feMerge>
-        <feMergeNode in="blur"/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
-    </filter>
-    <filter id="textShadow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="6" stdDeviation="6" flood-color="#000" flood-opacity="0.55"/>
-    </filter>
-  </defs>
-
-  <!-- Background -->
-  <rect width="1024" height="1024" fill="url(#bg)"/>
-
-  <!-- Duck (simple stylized outline matching the reference vibe) -->
-  <g transform="translate(80,90)" filter="url(#softGlow)">
-    <!-- Body -->
-    <path d="M271,518
-             C236,433 253,334 340,274
-             C414,222 516,230 586,279
-             C655,328 718,357 824,372
-             C888,381 912,419 889,456
-             C868,489 829,486 790,482
-             C792,550 752,615 673,656
-             C594,697 488,708 410,675
-             C341,646 296,596 271,518Z"
-          fill="#ffef63" stroke="#0c0c0c" stroke-width="10" stroke-linejoin="round"/>
-
-    <!-- Wing -->
-    <path d="M560,520
-             C494,474 420,482 372,530
-             C332,571 334,625 378,652
-             C426,681 492,683 547,650
-             C590,623 599,563 560,520Z"
-          fill="#ffe84d" stroke="#0c0c0c" stroke-width="10" stroke-linejoin="round"/>
-
-    <!-- Head -->
-    <path d="M314,368
-             C290,320 302,270 344,240
-             C391,206 463,208 504,244
-             C539,276 546,326 524,369
-             C498,418 438,447 382,436
-             C348,429 327,406 314,368Z"
-          fill="#ffef63" stroke="#0c0c0c" stroke-width="10" stroke-linejoin="round"/>
-
-    <!-- Eye -->
-    <circle cx="402" cy="312" r="18" fill="#0b0b0b"/>
-    <circle cx="486" cy="306" r="18" fill="#0b0b0b"/>
-
-    <!-- Beak -->
-    <path d="M282,335
-             C215,330 150,354 126,381
-             C113,396 118,416 137,420
-             C197,432 260,419 312,402
-             C326,397 336,387 337,376
-             C339,358 318,342 282,335Z"
-          fill="#ffae2e" stroke="#0c0c0c" stroke-width="10" stroke-linejoin="round"/>
-    <path d="M300,386
-             C238,394 170,418 133,445
-             C115,458 117,480 140,484
-             C214,497 279,479 336,452
-             C350,445 358,433 358,421
-             C358,403 335,383 300,386Z"
-          fill="#ff8d00" stroke="#0c0c0c" stroke-width="10" stroke-linejoin="round"/>
-    <path d="M188,423
-             C226,411 264,406 298,408
-             C306,409 312,415 311,423
-             C309,450 283,471 239,479
-             C205,485 176,474 162,458
-             C150,444 158,432 188,423Z"
-          fill="#8a0000" stroke="#0c0c0c" stroke-width="8" stroke-linejoin="round"/>
-
-    <!-- Legs -->
-    <path d="M452,707 L452,822 L400,822 L400,719 Z"
-          fill="#ff8d00" stroke="#0c0c0c" stroke-width="10" stroke-linejoin="round"/>
-    <path d="M560,707 L560,822 L508,822 L508,719 Z"
-          fill="#ff8d00" stroke="#0c0c0c" stroke-width="10" stroke-linejoin="round"/>
-
-    <!-- Feet -->
-    <path d="M380,826
-             C350,834 318,855 302,876
-             C296,885 304,896 315,893
-             C342,887 374,882 408,884
-             C422,885 428,876 426,866
-             C423,848 404,835 380,826Z"
-          fill="#ff8d00" stroke="#0c0c0c" stroke-width="10" stroke-linejoin="round"/>
-    <path d="M528,826
-             C498,834 466,855 450,876
-             C444,885 452,896 463,893
-             C490,887 522,882 556,884
-             C570,885 576,876 574,866
-             C571,848 552,835 528,826Z"
-          fill="#ff8d00" stroke="#0c0c0c" stroke-width="10" stroke-linejoin="round"/>
-  </g>
-
-  <!-- Text (matching the reference: bold red with white + black outline) -->
-  <g transform="translate(0,0)" filter="url(#textShadow)">
-    <text x="512" y="950" text-anchor="middle"
-          font-family="system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Arial,sans-serif"
-          font-size="96" font-weight="900">
-      <tspan fill="#000000" stroke="#000000" stroke-width="18" paint-order="stroke">404 - Page not Found</tspan>
-      <tspan fill="#ffffff" stroke="#ffffff" stroke-width="10" paint-order="stroke">404 - Page not Found</tspan>
-      <tspan fill="#e01616">404 - Page not Found</tspan>
-    </text>
-  </g>
-</svg>
-`;
-
-  // If the repository contains the (user-provided) 404 PNG in `media/`, copy it into the published output.
-  // The HTML uses the PNG by default and falls back to the SVG if the PNG isn't present.
-  const pngCandidates = [
-    path.join(process.cwd(), 'media', '404.png'),
-    path.join(process.cwd(), 'media', '404-page-not-found.png'),
-    path.join(process.cwd(), 'media', 'gh-pages-404.png')
-  ];
-  for (const src of pngCandidates) {
-    try {
-      await fsp.mkdir(path.dirname(pngPath), { recursive: true });
-      await fsp.copyFile(src, pngPath);
-      break;
-    } catch {
-      // Ignore missing files.
-    }
-  }
+  // The custom 404 image is stored in the repo and copied into the published output.
+  await fsp.mkdir(path.dirname(pngPath), { recursive: true });
+  await fsp.copyFile(path.join(process.cwd(), 'media', 'gh-pages-404.png'), pngPath);
 
   const html = `<!doctype html>
 <html lang="en">
@@ -371,11 +238,7 @@ async function write404Page(outDir) {
   </head>
   <body>
     <div class="wrap">
-      <img
-        src="./assets/404-duck.png"
-        onerror="this.onerror=null;this.src='./assets/404-duck.svg';"
-        alt="404 - Page not Found"
-      />
+      <img src="./assets/404-duck.png" alt="404 - Page not Found" />
       <div class="links">
         <a href="./metrics/">Open metrics dashboard</a>
         ·
@@ -386,7 +249,6 @@ async function write404Page(outDir) {
 </html>
 `;
 
-  await writeFileEnsuringDir(svgPath, svg);
   await writeFileEnsuringDir(path.join(outDir, '404.html'), html);
 }
 
