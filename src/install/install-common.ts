@@ -76,8 +76,26 @@ export interface EnvCheckResult {
 export function collectAllEnvRequirements(
   _workspaceRoot: string,
   config: Record<string, unknown>,
-  loadedModules: Array<{ name: string; checks?: Array<{ type?: string; var?: string; description?: string; optional?: boolean }> }>,
-  loadedProjects: Array<{ src?: string; checks?: Array<{ type?: string; var?: string; description?: string; optional?: boolean }> }>
+  loadedModules: Array<{
+    name: string;
+    checks?: Array<{
+      type?: string;
+      var?: string;
+      description?: string;
+      requirement?: string;
+      optional?: boolean;
+    }>;
+  }>,
+  loadedProjects: Array<{
+    src?: string;
+    checks?: Array<{
+      type?: string;
+      var?: string;
+      description?: string;
+      requirement?: string;
+      optional?: boolean;
+    }>;
+  }>
 ): Map<string, EnvRequirement> {
   const requirements = new Map<string, EnvRequirement>();
   
@@ -106,12 +124,15 @@ export function collectAllEnvRequirements(
           const varName = check.var;
           // Don't override if already exists (config takes precedence)
           if (!requirements.has(varName)) {
+            const req =
+              typeof check.requirement === 'string' ? check.requirement.trim().toLowerCase() : (check.optional ? 'optional' : '');
+            const isOptional = req === 'optional';
             requirements.set(varName, {
               name: varName,
               source: 'module',
               sourceName: module.name,
               description: check.description,
-              optional: check.optional === true
+              optional: isOptional
             });
           }
         }
@@ -128,12 +149,15 @@ export function collectAllEnvRequirements(
           const varName = check.var;
           // Don't override if already exists (config and modules take precedence)
           if (!requirements.has(varName)) {
+            const req =
+              typeof check.requirement === 'string' ? check.requirement.trim().toLowerCase() : (check.optional ? 'optional' : '');
+            const isOptional = req === 'optional';
             requirements.set(varName, {
               name: varName,
               source: 'project',
               sourceName: projectName,
               description: check.description,
-              optional: check.optional === true
+              optional: isOptional
             });
           }
         }

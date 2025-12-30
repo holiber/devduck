@@ -56,8 +56,14 @@
           "description": { "type": "string" },
           "tier": { "type": "string" },
           "skip": { "type": "boolean" },
+          "when": { "type": "string", "description": "Shell condition to decide whether to run the check (non-zero => skip)" },
           "test": { "type": "string" },
           "install": { "type": "string" },
+          "requirement": {
+            "type": "string",
+            "description": "Check requirement level: required (default), recomended, optional",
+            "enum": ["required", "recomended", "optional"]
+          },
           "mcpSettings": { "type": "object", "additionalProperties": true }
         }
       }
