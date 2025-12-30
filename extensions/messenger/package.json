@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Messenger module with provider system (Telegram, Yandex Messenger, etc.)",
+  "description": "Messenger module with provider system (e.g. Telegram, IM, etc.)",
   "keywords": [
     "messenger",
     "chat",

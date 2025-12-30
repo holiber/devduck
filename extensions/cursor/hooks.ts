@@ -136,7 +136,7 @@ export default {
         const isOptional =
           config.optional === true ||
           mcpSettings?.optional === true ||
-          // Devtools MCP is frequently absent in non-Arcadia environments; treat it as optional by default.
+          // Devtools MCP is frequently absent in many environments; treat it as optional by default.
           serverName === 'devtools-mcp';
         
         // Check for command in both direct config and nested mcpSettings

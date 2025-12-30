@@ -20,7 +20,7 @@ const __dirname = path.dirname(__filename);
 const DEFAULT_SCRIPTS = ['test', 'dev', 'build', 'start', 'lint'];
 
 interface Project {
-  path_in_arcadia?: string;
+  path_in_repo?: string;
   src?: string;
   [key: string]: unknown;
 }
@@ -37,7 +37,7 @@ interface PackageJson {
 }
 
 /**
- * Get project name from path_in_arcadia or src
+ * Get project name from path_in_repo or src
  * e.g., "crm/frontend/services/shell" -> "shell"
  * e.g., "github.com/<owner>/<repo>" -> "<repo>"
  * e.g., "arc://junk/user/project" -> "project"
@@ -131,7 +131,7 @@ export function installProjectScripts(
   // Get list of current project names from config
   const currentProjectNames = new Set<string>();
   for (const project of projects) {
-    const projectSrcOrPath = project.path_in_arcadia || project.src;
+    const projectSrcOrPath = project.path_in_repo || project.src;
     const projectName = getProjectName(projectSrcOrPath);
     currentProjectNames.add(projectName);
   }
@@ -161,7 +161,7 @@ export function installProjectScripts(
 
   // Process each project
   for (const project of projects) {
-    const projectSrcOrPath = project.path_in_arcadia || project.src;
+    const projectSrcOrPath = project.path_in_repo || project.src;
     const projectName = getProjectName(projectSrcOrPath);
     const projectPath = path.join(projectsDir, projectName);
     const projectPackageJsonPath = path.join(projectPath, 'package.json');

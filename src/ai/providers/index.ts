@@ -11,7 +11,6 @@ export {
   cursorAgentCli,
   // placeholders:
   // cline: require('./cline'),
-  // yandexGpt: require('./yandex-gpt'),
   // continue: require('./continue'),
   // roocode: require('./roocode'),
 };

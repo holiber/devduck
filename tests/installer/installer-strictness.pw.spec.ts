@@ -53,7 +53,7 @@ test('installer: hook load failure is fatal', async () => {
 test('installer: .env values are available to shell checks (fill-missing)', async () => {
   const tempWorkspace = await createTempWorkspace('barducks-dotenv-prop-');
   try {
-    await fs.writeFile(path.join(tempWorkspace, '.env'), 'ARCADIA_ROOT=from_env_file\n', 'utf8');
+    await fs.writeFile(path.join(tempWorkspace, '.env'), 'ARC_ROOT=from_env_file\n', 'utf8');
 
     await fs.writeFile(
       path.join(tempWorkspace, 'workspace.config.yml'),
@@ -69,7 +69,7 @@ test('installer: .env values are available to shell checks (fill-missing)', asyn
               type: 'test',
               name: 'dotenv-propagation',
               description: 'Ensures shell checks can read vars from .env when not in process.env',
-              test: "sh -c 'test \"$ARCADIA_ROOT\" = \"from_env_file\"'"
+              test: "sh -c 'test \"$ARC_ROOT\" = \"from_env_file\"'"
             }
           ],
           env: []

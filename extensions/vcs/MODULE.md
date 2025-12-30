@@ -12,5 +12,5 @@ This module provides:
 
 ## Note
 
-VCS-specific implementations (like `arc` commands for Arcadia) are provided by external modules.
+VCS-specific implementations (like `arc` commands for an arc working copy) are provided by external modules.
 

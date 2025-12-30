@@ -68,18 +68,11 @@ function parseRepoUrl(repoUrl: string): RepoUrlParseResult {
 
   const trimmed = repoUrl.trim();
 
-  // Arcadia formats
+  // Arc working copy formats
   if (trimmed.startsWith('arc://')) {
     return {
       type: 'arc',
       normalized: trimmed.replace(/^arc:\/\//, '')
-    };
-  }
-
-  if (trimmed.startsWith('a.yandex-team.ru/arc/')) {
-    return {
-      type: 'arc',
-      normalized: trimmed.replace(/^a\.yandex-team\.ru\/arc\//, '')
     };
   }
 

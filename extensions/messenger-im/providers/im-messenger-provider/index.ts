@@ -25,8 +25,8 @@ function envInt(name: string, fallback: number): number {
 
 function mockChats(): Chat[] {
   return [
-    { id: 'ya-chat-1', title: 'Mock Yandex Messenger Chat 1', type: 'private' },
-    { id: 'ya-chat-2', title: 'Mock Yandex Messenger Chat 2', type: 'group', participantsCount: 5 }
+    { id: 'im-chat-1', title: 'Mock IM Chat 1', type: 'private' },
+    { id: 'im-chat-2', title: 'Mock IM Chat 2', type: 'group', participantsCount: 5 }
   ];
 }
 
@@ -52,19 +52,19 @@ function mockPageDescending(chatId: string, beforeNumExclusive: number, count: n
   for (let i = 0; i < count; i++) {
     const num = upperExclusive - 1 - i;
     if (num <= 0) break;
-    const id = `ya-${chatId}-${num}`;
+    const id = `im-${chatId}-${num}`;
     out.push({
       id,
       chatId,
       date: new Date(now - (latest - num) * 45_000).toISOString(),
-      from: { id: 'ya-user-1', username: 'yandex_user', displayName: 'Yandex User' },
-      text: `Mock Yandex Messenger message #${num} in chat ${chatId}`,
+      from: { id: 'im-user-1', username: 'im_user', displayName: 'IM User' },
+      text: `Mock IM message #${num} in chat ${chatId}`,
       files:
         num === latest - 1
           ? [
               {
-                id: `ya-file-${chatId}-1`,
-                providerFileId: `yandex:${98765}`,
+                id: `im-file-${chatId}-1`,
+                providerFileId: `im:${98765}`,
                 filename: 'image.png',
                 mimeType: 'image/png'
               }
@@ -76,16 +76,16 @@ function mockPageDescending(chatId: string, beforeNumExclusive: number, count: n
 }
 
 async function httpNotImplemented(): Promise<never> {
-  const baseUrl = String(process.env.YANDEX_MESSENGER_API_BASE_URL || '').trim();
-  const token = String(process.env.YANDEX_MESSENGER_TOKEN || '').trim();
+  const baseUrl = String(process.env.IM_MESSENGER_API_BASE_URL || '').trim();
+  const token = String(process.env.IM_MESSENGER_TOKEN || '').trim();
   throw new Error(
-    'yandex-messenger-provider: YANDEX_MESSENGER_PROVIDER_MODE=http is selected, but HTTP API integration is not implemented yet. ' +
+    'im-messenger-provider: IM_MESSENGER_PROVIDER_MODE=http is selected, but HTTP API integration is not implemented yet. ' +
       `Provided baseUrl=${baseUrl ? 'yes' : 'no'}, token=${token ? 'yes' : 'no'}. ` +
       'Implement API calls + response mapping for getChatHistory/downloadFile.'
   );
 }
 
-const providerName = 'yandex-messenger-provider';
+const providerName = 'im-messenger-provider';
 const cacheDir = getMessengerCacheDir({ providerName });
 const chatsTtlMs = envInt('MESSENGER_CHATS_TTL_MS', 30_000);
 const historyTtlMs = envInt('MESSENGER_CHAT_HISTORY_TTL_MS', 30_000);
@@ -99,17 +99,17 @@ const provider: MessengerProvider = {
     type: 'messenger',
     name: providerName,
     version: '0.1.0',
-    description: 'Yandex Messenger provider for messenger module (mock; HTTP API scaffold)',
+    description: 'IM provider for messenger module (mock; HTTP API scaffold)',
     protocolVersion: MESSENGER_PROVIDER_PROTOCOL_VERSION,
     tools: ['listChats', 'getChatHistory', 'downloadFile'],
     events: { publish: [], subscribe: [] },
-    auth: { type: 'apiKey', requiredTokens: ['YANDEX_MESSENGER_TOKEN'] },
+    auth: { type: 'apiKey', requiredTokens: ['IM_MESSENGER_TOKEN'] },
     capabilities: ['history', 'files', 'cache', 'mock']
   },
 
   async listChats(input: ListChatsInput): Promise<Chat[]> {
-    const mode = String(process.env.YANDEX_MESSENGER_PROVIDER_MODE || 'mock').trim().toLowerCase();
-    const cacheKey = `yandex:listChats:${input.limit}:${input.offset}:${input.query || ''}`;
+    const mode = String(process.env.IM_MESSENGER_PROVIDER_MODE || 'mock').trim().toLowerCase();
+    const cacheKey = `im:listChats:${input.limit}:${input.offset}:${input.query || ''}`;
 
     return await getOrSetJsonCache({
       dir: cacheDir,
@@ -129,7 +129,7 @@ const provider: MessengerProvider = {
   },
 
   async getChatHistory(input: GetChatHistoryInput): Promise<ChatMessage[]> {
-    const mode = String(process.env.YANDEX_MESSENGER_PROVIDER_MODE || 'mock').trim().toLowerCase();
+    const mode = String(process.env.IM_MESSENGER_PROVIDER_MODE || 'mock').trim().toLowerCase();
     const sinceMs = input.since ? Date.parse(input.since) : Number.NaN;
 
     const out: ChatMessage[] = [];
@@ -140,7 +140,7 @@ const provider: MessengerProvider = {
       if (seenCursors.has(cursorKey)) break;
       seenCursors.add(cursorKey);
 
-      const pageKey = `yandex:getChatHistoryPage:${input.chatId}:${pageSize}:${cursorKey}`;
+      const pageKey = `im:getChatHistoryPage:${input.chatId}:${pageSize}:${cursorKey}`;
       const page = await getOrSetJsonCache({
         dir: cacheDir,
         key: pageKey,
@@ -174,12 +174,12 @@ const provider: MessengerProvider = {
   },
 
   async downloadFile(input: DownloadFileInput): Promise<DownloadFileResult> {
-    const mode = String(process.env.YANDEX_MESSENGER_PROVIDER_MODE || 'mock').trim().toLowerCase();
-    const cacheKey = `yandex:downloadFile:${input.fileId}`;
+    const mode = String(process.env.IM_MESSENGER_PROVIDER_MODE || 'mock').trim().toLowerCase();
+    const cacheKey = `im:downloadFile:${input.fileId}`;
 
     const compute = async (): Promise<{ buffer: Buffer; mimeType?: string; originalFileId?: string }> => {
       if (mode === 'mock') {
-        const body = `Mock Yandex Messenger file content for fileId=${input.fileId}\n`;
+        const body = `Mock IM file content for fileId=${input.fileId}\n`;
         return { buffer: Buffer.from(body, 'utf8'), mimeType: 'application/octet-stream', originalFileId: input.fileId };
       }
       return await httpNotImplemented();

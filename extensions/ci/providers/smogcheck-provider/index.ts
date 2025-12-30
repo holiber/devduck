@@ -335,7 +335,7 @@ const vendor = {
       let reviewId: string | number | null = null;
 
       if (input.reviewUrl) {
-        // Extract review ID from URL like https://a.yandex-team.ru/review/10930804
+        // Extract review ID from URL like https://code-review.example.com/review/10930804
         const match = input.reviewUrl.match(/review\/(\d+)/);
         if (match) {
           reviewId = Number.parseInt(match[1], 10);
@@ -361,7 +361,7 @@ const vendor = {
         title: `Review ${reviewId}`,
         status: 'open',
         commentCount: 0,
-        url: input.reviewUrl || `https://a.yandex-team.ru/review/${reviewId}`,
+        url: input.reviewUrl || `https://code-review.example.com/review/${reviewId}`,
         createdAt: nowMinusDays(1),
         updatedAt: nowMinusDays(1)
       };

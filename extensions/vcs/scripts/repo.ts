@@ -2,7 +2,7 @@
  * Abstract base class for repository operations
  * 
  * This class defines the interface for working with different types of repositories
- * (Git, Arcadia, etc.). Subclasses must implement all abstract methods.
+ * (Git, arc working copy, etc.). Subclasses must implement all abstract methods.
  */
 
 export interface RepoStats {
@@ -112,7 +112,7 @@ export abstract class Repo {
   abstract getCurrentBranch(): Promise<BranchResult>;
 
   /**
-   * Get base branch name (main/master for Git, trunk for Arcadia)
+   * Get base branch name (main/master for Git, trunk for arc working copy)
    * @returns Object with ok, branch, error fields
    */
   abstract getBaseBranch(): Promise<BranchResult>;

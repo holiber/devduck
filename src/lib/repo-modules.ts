@@ -5,7 +5,7 @@
  *
  * Handles loading modules from external repositories:
  * - Git repositories (github.com, git@github.com)
- * - Arcadia repositories (arc://)
+ * - Arc working copy repositories (arc://)
  * - Version checking via barducks.manifest.json
  */
 
@@ -51,30 +51,22 @@ interface RepoPathInfo {
 }
 
 /**
- * Find Arcadia root directory
- * @returns Path to Arcadia root or null if not found
+ * Find arc working copy root directory.
+ *
+ * This is intentionally lightweight and avoids relying on any workspace-specific marker files.
  */
-function findArcadiaRoot(): string | null {
-  // First check ARCADIA_ROOT env var (fastest)
-  const envRoot = process.env.ARCADIA_ROOT;
-  if (envRoot && fs.existsSync(path.join(envRoot, '.arcadia.root'))) {
-    return envRoot;
-  }
+function findArcRoot(): string | null {
+  const envRoot = process.env.ARC_ROOT;
+  if (envRoot && envRoot.trim()) return envRoot.trim();
 
-  // Execute `arc root` command
   try {
     const output = execSync('arc root', { encoding: 'utf8', stdio: 'pipe' });
     const lines = output.trim().split('\n');
-    const arcadiaRoot = lines[lines.length - 1].trim();
-    
-    if (arcadiaRoot && fs.existsSync(path.join(arcadiaRoot, '.arcadia.root'))) {
-      return arcadiaRoot;
-    }
-  } catch (error) {
-    // Command failed, return null
+    const arcRoot = lines[lines.length - 1].trim();
+    return arcRoot ? arcRoot : null;
+  } catch {
+    return null;
   }
-
-  return null;
 }
 
 /**
@@ -89,7 +81,7 @@ export function parseRepoUrl(repoUrl: string): RepoUrlParseResult {
 
   const trimmed = repoUrl.trim();
 
-  // Arcadia formats
+  // Arc working copy formats
   if (trimmed.startsWith('arc://')) {
     return {
       type: 'arc',
@@ -205,22 +197,22 @@ export function resolveRepoPath(repoUrl: string, workspaceRoot: string): RepoPat
     };
   }
 
-  // Handle Arcadia repositories
+  // Handle arc working copy repositories
   if (parsed.type === 'arc') {
     let actualRepoPath: string;
 
     if (path.isAbsolute(parsed.normalized)) {
       actualRepoPath = parsed.normalized;
     } else {
-      const arcadiaRoot = findArcadiaRoot();
-      if (!arcadiaRoot) {
-        throw new Error('Cannot determine Arcadia root. Set ARCADIA_ROOT environment variable or run from Arcadia directory.');
+      const arcRoot = findArcRoot();
+      if (!arcRoot) {
+        throw new Error('Cannot determine arc root. Set ARC_ROOT environment variable or run from an arc working copy.');
       }
-      actualRepoPath = path.join(arcadiaRoot, parsed.normalized);
+      actualRepoPath = path.join(arcRoot, parsed.normalized);
     }
 
     if (!fs.existsSync(actualRepoPath)) {
-      throw new Error(`Arcadia repository not found: ${actualRepoPath}`);
+      throw new Error(`Repository not found: ${actualRepoPath}`);
     }
 
     const symlinkExists = fs.existsSync(barducksRepoPath);

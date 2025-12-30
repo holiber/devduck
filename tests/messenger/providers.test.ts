@@ -3,7 +3,7 @@ import assert from 'node:assert';
 import path from 'node:path';
 
 import telegramProvider from '../../extensions/messenger-telegram/providers/telegram-provider/index.js';
-import yandexProvider from '../../extensions/messenger-yandex-messenger/providers/yandex-messenger-provider/index.js';
+import imProvider from '../../extensions/messenger-im/providers/im-messenger-provider/index.js';
 import {
   ChatMessageSchema,
   ChatSchema,
@@ -59,20 +59,20 @@ describe('messenger: telegram-provider', () => {
   });
 });
 
-describe('messenger: yandex-messenger-provider', () => {
+describe('messenger: im-messenger-provider', () => {
   test('matches MessengerProvider contract schema', () => {
-    const p = yandexProvider as MessengerProvider;
+    const p = imProvider as MessengerProvider;
     const parsed = MessengerProviderSchema.safeParse(p);
     assert.ok(parsed.success, parsed.success ? '' : parsed.error.message);
     assert.strictEqual(p.manifest.type, 'messenger');
-    assert.strictEqual(p.manifest.name, 'yandex-messenger-provider');
+    assert.strictEqual(p.manifest.name, 'im-messenger-provider');
     assert.ok(p.manifest.tools.includes('listChats'));
     assert.ok(p.manifest.tools.includes('getChatHistory'));
     assert.ok(p.manifest.tools.includes('downloadFile'));
   });
 
   test('listChats returns chats that match Chat schema', async () => {
-    const chats = await yandexProvider.listChats({ limit: 10, offset: 0 });
+    const chats = await imProvider.listChats({ limit: 10, offset: 0 });
     assert.ok(Array.isArray(chats));
     for (const c of chats) {
       const parsed = ChatSchema.safeParse(c);
@@ -81,7 +81,7 @@ describe('messenger: yandex-messenger-provider', () => {
   });
 
   test('getChatHistory returns messages that match ChatMessage schema', async () => {
-    const msgs = await yandexProvider.getChatHistory({ chatId: 'ya-chat-1', limit: 5 });
+    const msgs = await imProvider.getChatHistory({ chatId: 'im-chat-1', limit: 5 });
     assert.ok(Array.isArray(msgs));
     assert.ok(msgs.length > 0);
     for (const m of msgs) {
@@ -91,7 +91,7 @@ describe('messenger: yandex-messenger-provider', () => {
   });
 
   test('downloadFile returns a descriptor that matches DownloadFileResult schema', async () => {
-    const res = await yandexProvider.downloadFile({ fileId: 'ya-file-ya-chat-1-1', preferCache: true });
+    const res = await imProvider.downloadFile({ fileId: 'im-file-im-chat-1-1', preferCache: true });
     const parsed = DownloadFileResultSchema.safeParse(res);
     assert.ok(parsed.success, parsed.success ? '' : parsed.error.message);
     assert.ok(res.path);
@@ -110,7 +110,7 @@ describe('messenger: provider registry discovery', () => {
 
     const providers = getProvidersByType('messenger');
     assert.ok(providers.some((p) => p.name === 'telegram-provider'));
-    assert.ok(providers.some((p) => p.name === 'yandex-messenger-provider'));
+    assert.ok(providers.some((p) => p.name === 'im-messenger-provider'));
 
     const tg = getProvider('messenger', 'telegram-provider');
     assert.ok(tg);

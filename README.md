@@ -14,8 +14,8 @@ Barduck — talk to a duck, not to ten different APIs.
 
 ## Documentation
 
-- **Workspace & extensions**: `docs/workspace-and-extensions.md`
 - **Architecture (EN)**: `docs/ARCHITECTURE.md`
+- **Docs**: `docs/`
 
 ## Quick Start
 
@@ -143,7 +143,7 @@ node install.js --repos git@github.com:user/repo.git,github.com/user/repo2
 
 Supported URL formats:
 - Git repositories: `git@github.com:user/repo.git`, `github.com/user/repo`
-- Arcadia repositories: `arc://path/to/folder`
+- Arc working copy repositories: `arc://path/to/folder`
 
 Modules from external repositories must include `manifest.json` (or `barducks.manifest.json`) with `barducksVersion` matching the main repository version.
 
