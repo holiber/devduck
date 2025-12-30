@@ -42,6 +42,7 @@
 
 - The slow-tests UI labels now derive from `current.quality.slowTests.thresholdMs`, avoiding duplicated hardcoded text.
 - The slow-tests delta is only computed when baseline and current use the same slow-tests threshold, preventing noisy PR deltas during the transition.
+- **The slow-tests metric includes BOTH Unit tests AND E2E tests** (pw_installer, pw_smoke). The total count aggregates slow tests across all test suites, with a breakdown available in `bySuite`.
 
 ## 5. CI Attempts
 

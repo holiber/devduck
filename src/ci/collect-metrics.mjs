@@ -640,10 +640,13 @@ async function main() {
   }
 
   // Slow tests metric (>10s) from available logs/reports (best-effort).
+  // NOTE: This metric includes BOTH Unit tests AND E2E tests (pw_installer, pw_smoke).
+  // The total count aggregates slow tests across all test suites.
   try {
     const thresholdMs = 10_000;
     const pieces = [];
 
+    // Collect slow tests from Unit tests
     const unitLogPath = path.join(LOGS_DIR, 'npm-test.log');
     if (await pathExists(unitLogPath)) {
       const raw = await fsp.readFile(unitLogPath, 'utf8');
@@ -651,6 +654,7 @@ async function main() {
       pieces.push({ name: 'unit', ...extractSlowTests(cases, thresholdMs, 10) });
     }
 
+    // Collect slow tests from E2E installer suite
     const pwInstallerJsonPath = path.join(METRICS_DIR, 'pw-installer-report.json');
     const pwInstallerReport = readPlaywrightJsonReportOrUndefined(pwInstallerJsonPath);
     if (pwInstallerReport) {
@@ -665,6 +669,7 @@ async function main() {
       pieces.push({ name: 'pw_installer', ...extractSlowTests(normalized, thresholdMs, 10) });
     }
 
+    // Collect slow tests from E2E smoke suite
     const pwSmokeJsonPath = path.join(METRICS_DIR, 'pw-smoke-report.json');
     const pwSmokeReport = readPlaywrightJsonReportOrUndefined(pwSmokeJsonPath);
     if (pwSmokeReport) {
@@ -679,6 +684,7 @@ async function main() {
       pieces.push({ name: 'pw_smoke', ...extractSlowTests(normalized, thresholdMs, 10) });
     }
 
+    // Aggregate total count across all test suites (unit + E2E)
     const totalCount = pieces.reduce((acc, p) => acc + (p?.count ?? 0), 0);
     metrics.quality.slowTests = {
       thresholdMs,
@@ -786,11 +792,19 @@ async function main() {
     '[metrics] quality:',
     'coverage(lines%)',
     metrics.quality?.coverage?.linesPct ?? 'n/a',
-    '; slowTests(>10s)',
+    '; slowTests(>10s, unit+e2e)',
     metrics.quality?.slowTests?.count ?? 'n/a',
     '; duplication(%)',
     metrics.quality?.duplication?.duplicatedPct ?? 'n/a'
   );
+  if (metrics.quality?.slowTests?.bySuite) {
+    const bySuite = metrics.quality.slowTests.bySuite;
+    const breakdown = Object.entries(bySuite)
+      .map(([name, data]) => `${name}=${data.count}`)
+      .join(', ');
+    // eslint-disable-next-line no-console
+    console.log('[metrics] slowTests breakdown:', breakdown);
+  }
 }
 
 main().catch(async (err) => {
