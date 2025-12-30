@@ -16,3 +16,9 @@ We no longer require updating `CHANGELOG.md` in every PR (it causes frequent mer
 
 - Run `npm test` locally before pushing.
 
+## CI notes (facts)
+
+- The PR workflow **enforces** adding a task file under `docs/tasks/` (see `.github/workflows/follow-guidelines.yml`).
+- Exception: if the only changed file is `CHANGELOG.md`, CI skips the task-file requirement.
+- PR CI runs on Node.js **24**.
+
