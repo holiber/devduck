@@ -4,6 +4,10 @@
   "description": "AI assistant integration for Cursor IDE in Yandex Arcadia",
   "private": true,
   "type": "module",
+  "workspaces": [
+    "packages/*",
+    "extensions/*"
+  ],
   "bin": {
     "barducks": "./bin/barducks.js",
     "create-barducks-workspace": "./bin/barducks.js"

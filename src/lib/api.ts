@@ -82,6 +82,19 @@ function existsFile(p: string): boolean {
 
 function readModuleDescription(modulePath: string): string | null {
   try {
+    const pkgJsonPath = path.join(modulePath, 'package.json');
+    if (existsFile(pkgJsonPath)) {
+      try {
+        const raw = fs.readFileSync(pkgJsonPath, 'utf8');
+        const pkg = JSON.parse(raw) as { description?: unknown };
+        if (typeof pkg?.description === 'string' && pkg.description.trim().length > 0) {
+          return pkg.description.trim();
+        }
+      } catch {
+        // ignore JSON parse errors and fall back to MODULE.md
+      }
+    }
+
     const moduleMdPath = path.join(modulePath, 'MODULE.md');
     if (!existsFile(moduleMdPath)) return null;
     const content = fs.readFileSync(moduleMdPath, 'utf8');

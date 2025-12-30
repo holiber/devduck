@@ -1,0 +1,14 @@
+{
+  "name": "@barducks/test-utils",
+  "version": "0.3.0",
+  "private": true,
+  "type": "module",
+  "description": "Barducks test utilities (workspace package placeholder)",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  }
+}
+

@@ -98,6 +98,59 @@ function parseModuleFrontmatter(modulePath: string): ModuleMetadata | null {
   }
 }
 
+type PackageJsonLike = {
+  name?: string;
+  version?: string;
+  description?: string;
+  keywords?: unknown;
+  barducks?: { extension?: Record<string, unknown> } | undefined;
+  barducksExtension?: Record<string, unknown> | undefined;
+};
+
+function parseModulePackageJson(modulePath: string): ModuleMetadata | null {
+  const pkgPath = path.join(modulePath, 'package.json');
+  if (!fs.existsSync(pkgPath)) return null;
+
+  try {
+    const raw = fs.readFileSync(pkgPath, 'utf8');
+    const pkg = JSON.parse(raw) as PackageJsonLike;
+
+    const extRaw = (pkg?.barducks?.extension || pkg?.barducksExtension) as Record<string, unknown> | undefined;
+    // Workspaces may include folders that are not Barducks extensions.
+    // Only treat a folder as a Barducks module if it explicitly declares extension metadata.
+    if (!extRaw || typeof extRaw !== 'object') return null;
+
+    const ext = extRaw;
+    const keywords = Array.isArray(pkg?.keywords) ? (pkg.keywords as unknown[]) : [];
+
+    const metadata: ModuleMetadata = {
+      // Prefer Barducks extension metadata if present; otherwise fall back to folder name later.
+      name: (typeof ext.name === 'string' ? ext.name : undefined) || undefined,
+      version: (typeof pkg?.version === 'string' ? pkg.version : undefined) || undefined,
+      description: (typeof pkg?.description === 'string' ? pkg.description : undefined) || undefined,
+      tags: Array.isArray(ext.tags)
+        ? (ext.tags as string[])
+        : keywords.filter((k) => typeof k === 'string') as string[],
+      dependencies: Array.isArray(ext.dependencies) ? (ext.dependencies as string[]) : undefined,
+      defaultSettings:
+        ext.defaultSettings && typeof ext.defaultSettings === 'object' && !Array.isArray(ext.defaultSettings)
+          ? (ext.defaultSettings as Record<string, unknown>)
+          : undefined,
+      checks: Array.isArray(ext.checks) ? (ext.checks as ModuleCheck[]) : undefined,
+      mcpSettings:
+        ext.mcpSettings && typeof ext.mcpSettings === 'object' && !Array.isArray(ext.mcpSettings)
+          ? (ext.mcpSettings as Record<string, unknown>)
+          : undefined
+    };
+
+    return metadata;
+  } catch (error) {
+    const err = error as Error;
+    console.warn(`Warning: Failed to parse package.json for module at ${modulePath}: ${err.message}`);
+    return null;
+  }
+}
+
 /**
  * Load module metadata
  */
@@ -107,7 +160,7 @@ export function loadModule(moduleName: string): Module | null {
     return null;
   }
 
-  const metadata = parseModuleFrontmatter(modulePath);
+  const metadata = parseModulePackageJson(modulePath) || parseModuleFrontmatter(modulePath);
   if (!metadata) {
     return null;
   }
@@ -136,7 +189,7 @@ export function loadModuleFromPath(modulePath: string, fallbackName: string | nu
     return null;
   }
 
-  const metadata = parseModuleFrontmatter(modulePath);
+  const metadata = parseModulePackageJson(modulePath) || parseModuleFrontmatter(modulePath);
   if (!metadata) {
     return null;
   }

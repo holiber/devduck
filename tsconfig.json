@@ -21,7 +21,7 @@
     "noFallthroughCasesInSwitch": true,
     "forceConsistentCasingInFileNames": true
   },
-  "include": ["src/**/*", "scripts/**/*", "extensions/**/*", "tests/**/*"],
+  "include": ["src/**/*", "scripts/**/*", "extensions/**/*", "packages/**/*", "tests/**/*"],
   "exclude": ["node_modules", "dist", "**/*.test.js"]
 }
 
