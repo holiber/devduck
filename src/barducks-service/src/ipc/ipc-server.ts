@@ -21,7 +21,7 @@ function toTRPCErrorResponse(id: TRPCRequestMessage['id'], err: unknown): TRPCRe
   };
 }
 
-export function startDevduckIpcServer(params: {
+export function startBarducksIpcServer(params: {
   socketPath: string;
   service: BarducksService;
 }): net.Server {

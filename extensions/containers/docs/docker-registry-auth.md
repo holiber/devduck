@@ -38,7 +38,7 @@ node scripts/docker.js install
 Or when building the image:
 
 ```bash
-docker build --build-arg BASE_IMAGE=registry.yandex.net/<your-image>:<tag> -f Dockerfile.plan -t devduck-plan:latest .
+docker build --build-arg BASE_IMAGE=registry.yandex.net/<your-image>:<tag> -f Dockerfile.plan -t barducks-plan:latest .
 ```
 
 ### Finding Available Images

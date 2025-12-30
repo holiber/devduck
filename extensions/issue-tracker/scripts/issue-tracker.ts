@@ -4,7 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { createYargs, installEpipeHandler } from '../../../src/lib/cli.js';
-import { resolveDevduckRoot } from '../../../src/lib/barducks-paths.js';
+import { resolveBarducksRoot } from '../../../src/lib/barducks-paths.js';
 import { findWorkspaceRoot } from '../../../src/lib/workspace-root.js';
 import { readEnvFile } from '../../../src/lib/env.js';
 import { getWorkspaceConfigFilePath, readWorkspaceConfigFile } from '../../../src/lib/workspace-config.js';
@@ -49,10 +49,10 @@ function pickProviderNameFromConfig(workspaceRoot: string | null): string | null
 async function initializeProviders(workspaceRoot: string | null): Promise<{
   getProvider: (providerName?: string) => IssueTrackerProvider | null;
 }> {
-  const { devduckRoot } = resolveDevduckRoot({ cwd: process.cwd(), moduleDir: __dirname });
+  const { barducksRoot } = resolveBarducksRoot({ cwd: process.cwd(), moduleDir: __dirname });
 
-  // Discover providers from devduck modules
-  await discoverProvidersFromModules({ extensionsDir: path.join(devduckRoot, 'extensions') });
+  // Discover providers from barducks modules
+  await discoverProvidersFromModules({ extensionsDir: path.join(barducksRoot, 'extensions') });
 
   // Discover providers from external repositories
   if (workspaceRoot) {
@@ -60,12 +60,12 @@ async function initializeProviders(workspaceRoot: string | null): Promise<{
     if (fs.existsSync(configPath)) {
       const config = readWorkspaceConfigFile<WorkspaceConfigLike>(configPath);
       if (config && config.repos && Array.isArray(config.repos)) {
-        const { loadModulesFromRepo, getDevduckVersion } = await import('../../../src/lib/repo-modules.js');
-        const devduckVersion = getDevduckVersion();
+        const { loadModulesFromRepo, getBarducksVersion } = await import('../../../src/lib/repo-modules.js');
+        const barducksVersion = getBarducksVersion();
         
         for (const repoUrl of config.repos) {
           try {
-            const repoModulesPath = await loadModulesFromRepo(repoUrl, workspaceRoot, devduckVersion);
+            const repoModulesPath = await loadModulesFromRepo(repoUrl, workspaceRoot, barducksVersion);
             if (fs.existsSync(repoModulesPath)) {
               await discoverProvidersFromModules({ extensionsDir: repoModulesPath });
             }

@@ -4,7 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { createYargs, installEpipeHandler } from '../../../src/lib/cli.js';
-import { resolveDevduckRoot } from '../../../src/lib/barducks-paths.js';
+import { resolveBarducksRoot } from '../../../src/lib/barducks-paths.js';
 import { findWorkspaceRoot } from '../../../src/lib/workspace-root.js';
 import { getWorkspaceConfigFilePath, readWorkspaceConfigFile } from '../../../src/lib/workspace-config.js';
 import {
@@ -94,11 +94,11 @@ async function main(argv = process.argv): Promise<void> {
     .option('json', { type: 'boolean', describe: 'Output JSON instead of table', default: false })
     .parseAsync();
 
-  const { devduckRoot } = resolveDevduckRoot({ cwd: process.cwd(), moduleDir: __dirname });
+  const { barducksRoot } = resolveBarducksRoot({ cwd: process.cwd(), moduleDir: __dirname });
   const workspaceRoot = findWorkspaceRoot(process.cwd());
 
   // Discover providers from extensions (legacy: modules).
-  await discoverProvidersFromModules({ extensionsDir: path.join(devduckRoot, 'extensions') });
+  await discoverProvidersFromModules({ extensionsDir: path.join(barducksRoot, 'extensions') });
 
   const providers = getProvidersByType('email');
   if (providers.length === 0) {

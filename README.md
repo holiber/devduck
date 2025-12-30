@@ -145,7 +145,7 @@ Supported URL formats:
 - Git repositories: `git@github.com:user/repo.git`, `github.com/user/repo`
 - Arcadia repositories: `arc://path/to/folder`
 
-Modules from external repositories must include `manifest.json` (or `devduck.manifest.json`) with `devduckVersion` matching the main repository version.
+Modules from external repositories must include `manifest.json` (or `barducks.manifest.json`) with `barducksVersion` matching the main repository version.
 
 ## Troubleshooting
 

@@ -183,7 +183,7 @@ async function githubApiGet<T>(
     headers: {
       Authorization: `token ${token}`,
       Accept: 'application/vnd.github.v3+json',
-      'User-Agent': 'devduck-github-provider'
+      'User-Agent': 'barducks-github-provider'
     }
   });
 
@@ -531,7 +531,7 @@ const provider: IssueTrackerProvider = {
         try {
           // Download resource - follow redirects for GitHub user-attachments
           const headers: Record<string, string> = {
-            'User-Agent': 'devduck-github-provider'
+            'User-Agent': 'barducks-github-provider'
           };
           const token = process.env.GITHUB_TOKEN;
           if (token) {

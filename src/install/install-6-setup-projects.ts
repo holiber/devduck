@@ -54,7 +54,7 @@ export async function runStep6SetupProjects(
   log?: (message: string) => void,
   autoYes = false
 ): Promise<SetupProjectsStepResult> {
-  if (process.env.DEVDUCK_SUPPRESS_STEP_HEADER !== '1') {
+  if (process.env.BARDUCKS_SUPPRESS_STEP_HEADER !== '1') {
     print(`\n[Step 6] Setting up projects...`, 'cyan');
   }
   if (log) {

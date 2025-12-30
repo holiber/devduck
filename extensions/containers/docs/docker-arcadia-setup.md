@@ -46,7 +46,7 @@ arc pull trunk
 arc co trunk
 
 # 4. Navigate to project directory
-cd ~/arcadia/junk/alex-nazarov/devduck
+cd ~/arcadia/junk/alex-nazarov/barducks
 ```
 
 ## Docker Compose and Testing
@@ -166,7 +166,7 @@ docker run -it \
   bash -c "
     echo 'user_allow_other' >> /etc/fuse.conf && \
     arc mount ~/arcadia --allow-other && \
-    cd ~/arcadia/junk/alex-nazarov/devduck && \
+    cd ~/arcadia/junk/alex-nazarov/barducks && \
     node scripts/install.js --yes
   "
 ```

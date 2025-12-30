@@ -19,7 +19,7 @@ import { processCheck } from './process-check.js';
 import { executeHooksForStage, createHookContext } from './module-hooks.js';
 import { loadModuleResources } from './module-loader.js';
 import { getAllModules, getAllModulesFromDirectory, expandModuleNames, resolveDependencies, mergeModuleSettings } from './module-resolver.js';
-import { loadModulesFromRepo, getDevduckVersion } from '../lib/repo-modules.js';
+import { loadModulesFromRepo, getBarducksVersion } from '../lib/repo-modules.js';
 import type { WorkspaceConfig } from '../schemas/workspace-config.zod.js';
 import type { CheckItem, CheckResult } from './types.js';
 import type { InstallContext, StepOutcome } from './runner.js';
@@ -37,7 +37,7 @@ export async function runStep5SetupModules(
   log?: (message: string) => void,
   autoYes = false
 ): Promise<SetupModulesStepResult> {
-  if (process.env.DEVDUCK_SUPPRESS_STEP_HEADER !== '1') {
+  if (process.env.BARDUCKS_SUPPRESS_STEP_HEADER !== '1') {
     print(`\n[Step 5] Setting up extensions...`, 'cyan');
   }
   if (log) {
@@ -69,11 +69,11 @@ export async function runStep5SetupModules(
     // Load external modules from repos
     const externalModules: Array<{ name: string; path: string; checks?: unknown[]; [key: string]: unknown }> = [];
     if (config.repos && Array.isArray(config.repos)) {
-      const devduckVersion = getDevduckVersion();
+      const barducksVersion = getBarducksVersion();
       
       for (const repoUrl of config.repos) {
         try {
-          const repoModulesPath = await loadModulesFromRepo(repoUrl, workspaceRoot, devduckVersion);
+          const repoModulesPath = await loadModulesFromRepo(repoUrl, workspaceRoot, barducksVersion);
           const { loadModuleFromPath } = await import('./module-resolver.js');
           if (fs.existsSync(repoModulesPath)) {
             const repoModuleEntries = fs.readdirSync(repoModulesPath, { withFileTypes: true });

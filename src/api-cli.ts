@@ -20,7 +20,7 @@ import {
   getProvidersByType,
   getProvider
 } from './lib/provider-registry.js';
-import { resolveDevduckRoot } from './lib/barducks-paths.js';
+import { resolveBarducksRoot } from './lib/barducks-paths.js';
 import { readJSON } from './lib/config.js';
 import { getWorkspaceConfigFilePath, readWorkspaceConfigFile } from './lib/workspace-config.js';
 import path from 'path';
@@ -64,10 +64,10 @@ async function initializeProviders(
 ): Promise<{
   getProvider: (providerName?: string) => unknown | null;
 }> {
-  const { devduckRoot } = resolveDevduckRoot({ cwd: process.cwd(), moduleDir: __dirname });
+  const { barducksRoot } = resolveBarducksRoot({ cwd: process.cwd(), moduleDir: __dirname });
 
   // Discover providers from built-in extensions (legacy: modules)
-  await discoverProvidersFromModules({ extensionsDir: path.join(devduckRoot, 'extensions') });
+  await discoverProvidersFromModules({ extensionsDir: path.join(barducksRoot, 'extensions') });
 
   // Discover providers from external repositories
   if (workspaceRoot) {
@@ -75,12 +75,12 @@ async function initializeProviders(
     if (fs.existsSync(configPath)) {
       const config = readWorkspaceConfigFile<WorkspaceConfigLike>(configPath);
       if (config && config.repos && Array.isArray(config.repos)) {
-        const { loadModulesFromRepo, getDevduckVersion } = await import('./lib/repo-modules.js');
-        const devduckVersion = getDevduckVersion();
+        const { loadModulesFromRepo, getBarducksVersion } = await import('./lib/repo-modules.js');
+        const barducksVersion = getBarducksVersion();
         
         for (const repoUrl of config.repos) {
           try {
-            const repoModulesPath = await loadModulesFromRepo(repoUrl, workspaceRoot, devduckVersion);
+            const repoModulesPath = await loadModulesFromRepo(repoUrl, workspaceRoot, barducksVersion);
             if (fs.existsSync(repoModulesPath)) {
               await discoverProvidersFromModules({ extensionsDir: repoModulesPath });
             }
@@ -212,7 +212,7 @@ async function generateExample(moduleName: string, procedureName: string, proced
 /**
  * Format available API methods for display
  */
-async function formatAvailableMethods(unifiedAPI: any, devduckRoot: string): Promise<string> {
+async function formatAvailableMethods(unifiedAPI: any, barducksRoot: string): Promise<string> {
   let output = '';
   
   for (const [moduleName, router] of Object.entries(unifiedAPI)) {
@@ -222,7 +222,7 @@ async function formatAvailableMethods(unifiedAPI: any, devduckRoot: string): Pro
     }
     
   // Get extension description
-  const modulePath = path.join(devduckRoot, 'extensions', moduleName);
+  const modulePath = path.join(barducksRoot, 'extensions', moduleName);
     const moduleDescription = readModuleDescription(modulePath) || moduleName;
     
     output += `\n  ${moduleDescription}:\n`;
@@ -281,11 +281,11 @@ async function main(argv = process.argv): Promise<void> {
   const isHelpRequested = args.length === 0 || args[0] === '--help' || args[0] === '-h';
   
   if (isHelpRequested) {
-    const { devduckRoot } = resolveDevduckRoot({ cwd: process.cwd(), moduleDir: __dirname });
+    const { barducksRoot } = resolveBarducksRoot({ cwd: process.cwd(), moduleDir: __dirname });
     
     console.log('Usage: api-cli <module>.<procedure> [options]');
     console.log('\nAvailable API methods:');
-    const methodsOutput = await formatAvailableMethods(unifiedAPI, devduckRoot);
+    const methodsOutput = await formatAvailableMethods(unifiedAPI, barducksRoot);
     console.log(methodsOutput);
     console.log('For detailed help on a specific method, use:');
     console.log('  api-cli <module>.<procedure> --help');
@@ -452,8 +452,8 @@ async function main(argv = process.argv): Promise<void> {
     });
 
   // Add epilogue with available methods - this will show at the end of general help
-  const { devduckRoot: devduckRootForHelp } = resolveDevduckRoot({ cwd: process.cwd(), moduleDir: __dirname });
-  const methodsList = await formatAvailableMethods(unifiedAPI, devduckRootForHelp);
+  const { barducksRoot: barducksRootForHelp } = resolveBarducksRoot({ cwd: process.cwd(), moduleDir: __dirname });
+  const methodsList = await formatAvailableMethods(unifiedAPI, barducksRootForHelp);
   if (methodsList) {
     yargsInstance.epilogue('\nAvailable API methods:\n' + methodsList);
   }

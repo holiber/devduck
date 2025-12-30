@@ -70,9 +70,9 @@ export default {
     }
     
     if (rulesContent.length > 0) {
-      const rulesPath = path.join(context.rulesDir, 'devduck-rules.md');
+      const rulesPath = path.join(context.rulesDir, 'barducks-rules.md');
       fs.writeFileSync(rulesPath, rulesContent.join('\n'), 'utf8');
-      createdFiles.push('.cursor/rules/devduck-rules.md');
+      createdFiles.push('.cursor/rules/barducks-rules.md');
     }
     
     // 3. Generate mcp.json from all modules

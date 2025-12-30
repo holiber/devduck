@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Module loader for devduck
+ * Module loader for barducks
  * 
  * Loads modules and collects their scripts, commands, rules, apps, and agents.
  */

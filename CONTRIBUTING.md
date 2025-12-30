@@ -1,4 +1,4 @@
-# Contributing to DevDuck
+# Contributing to Barducks
 
 ## Pull request requirements
 

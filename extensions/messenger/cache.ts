@@ -24,9 +24,9 @@ function sha256Hex(input: string): string {
 
 function cacheBaseDir(cwd: string): string {
   const root = findWorkspaceRoot(cwd);
-  if (root) return path.join(root, '.cache', 'devduck');
+  if (root) return path.join(root, '.cache', 'barducks');
   // Fallback: avoid writing outside current FS permissions.
-  return path.join(os.tmpdir(), 'devduck-cache');
+  return path.join(os.tmpdir(), 'barducks-cache');
 }
 
 export function getMessengerCacheDir(opts: { providerName: string; cwd?: string }): string {
@@ -71,7 +71,7 @@ export function writeTempBufferFile(opts: { providerName: string; key: string; b
   sizeBytes: number;
   sha256: string;
 } {
-  const base = path.join(os.tmpdir(), 'devduck-messenger-ephemeral', String(opts.providerName || 'unknown-provider'));
+  const base = path.join(os.tmpdir(), 'barducks-messenger-ephemeral', String(opts.providerName || 'unknown-provider'));
   safeMkdir(base);
   maybeGcEphemeralDir(base);
   const name = `${sha256Hex(`${opts.key}:${Date.now()}:${process.pid}`)}.bin`;

@@ -32,7 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed - 2025-12-29
 
-- 🦆➡️🦢 **Project rename** - Renamed DevDuck to Barducks across CLI, docs, and service paths.
+- 🦆➡️🦢 **Project rename** - Renamed Barducks to Barducks across CLI, docs, and service paths.
 - 🧩 **Extensions naming** - Renamed `modules/` to `extensions/` and removed legacy `modules`/`moduleSettings` support (see migration guide in `docs/tasks/`).
 - 🧭 **Cursor Cloud rules** - Stopped ignoring `.cursor/` and committed repository rules so Cursor Cloud agents can follow project guidelines.
 - 🔔 **PR metrics comment** - Added a **gh-pages / GitHub Pages disabled** warning under the dashboard link (warns when the dashboard URL returns `404`).
@@ -59,7 +59,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed - 2025-12-28
 
 - 🧰 **Installer CLI refactor** - Moved CLI argument parsing + workspace path resolution into `scripts/install/cli-runtime.ts`, keeping installer steps visible near the top of `scripts/install.ts`.
-- 🔌 **DevduckService socket fallback** - On macOS, when the default Unix socket path is too long, DevduckService now falls back to a short `/tmp/devduck-<hash>.sock` path to avoid `EINVAL` on `listen()`.
+- 🔌 **BarducksService socket fallback** - On macOS, when the default Unix socket path is too long, BarducksService now falls back to a short `/tmp/barducks-<hash>.sock` path to avoid `EINVAL` on `listen()`.
 - 🧾 **Taskfile install improvements** - Quieter output and more robust checks during Taskfile-driven installation (PR #68)
 - 🧪 **Installer tests migrated to Playwright** (PR #59)
 - 📦 **CI metrics and artifacts recording** (PR #69)
@@ -94,12 +94,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Ensures every workspace with github-ci module gets a proper `.gitignore` file automatically
   - Similar to how ya-arc module handles `.arcignore` files
 
-- 🦆 **DevduckService (local dev service) MVP** - Added a local background service for dev + AI agents with IPC control plane and file-based logs
-  - tRPC API over Unix domain socket: `.cache/devduck-service/ipc/devduck.sock`
-  - Process supervision (start/stop/status) with persistent session: `.cache/devduck-service/session.json`
-  - Per-process stdout/stderr logs in `.cache/devduck-service/logs/` (e.g. `server.out.log`, `client.err.log`)
-  - Playwright smokecheck runner with browser console capture to `.cache/devduck-service/logs/browser-console.log`
-  - New npm scripts: `devduck:service` and `devduck:launch`
+- 🦆 **BarducksService (local dev service) MVP** - Added a local background service for dev + AI agents with IPC control plane and file-based logs
+  - tRPC API over Unix domain socket: `.cache/barducks-service/ipc/barducks.sock`
+  - Process supervision (start/stop/status) with persistent session: `.cache/barducks-service/session.json`
+  - Per-process stdout/stderr logs in `.cache/barducks-service/logs/` (e.g. `server.out.log`, `client.err.log`)
+  - Playwright smokecheck runner with browser console capture to `.cache/barducks-service/logs/browser-console.log`
+  - New npm scripts: `barducks:service` and `barducks:launch`
   - Added CI-friendly tests covering process lifecycle, readiness, smokecheck, browser console capture, session reuse, and stop semantics
 
 ### Changed - 2025-12-25
@@ -109,13 +109,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Updated MODULE.md files to use generic "external modules" instead of specific ya-* module names
   - Refactored plan module to use dynamic provider discovery instead of hardcoded imports
   - Generalize example paths and registry references
-  - Ensures the public DevDuck repository remains focused on core framework features
+  - Ensures the public Barducks repository remains focused on core framework features
 
 ### Changed - 2025-12-25
 
 - 🔗 **Symlink support for external repositories** - External repositories from `workspace.config.yml.repos` now create symlinks when the same repo exists in `projects/`
-  - Repositories appear in `devduck/%repo_name%` directory
-  - If the same repo is listed in `projects`, a symlink is created from `devduck/%repo_name%` to `projects/%repo_name%`
+  - Repositories appear in `barducks/%repo_name%` directory
+  - If the same repo is listed in `projects`, a symlink is created from `barducks/%repo_name%` to `projects/%repo_name%`
   - For Arcadia repos not in projects, symlinks are created to the actual Arcadia path
   - Eliminates duplication and ensures consistency between repos and projects
 
@@ -144,11 +144,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed - 2025-12-25
 
-- 📦 **External repositories clone location** - Git repositories listed in `workspace.config.yml.repos` are now cloned under `<workspace>/devduck/` (instead of `.cache/...`).
+- 📦 **External repositories clone location** - Git repositories listed in `workspace.config.yml.repos` are now cloned under `<workspace>/barducks/` (instead of `.cache/...`).
 - 🧭 **Module resolution priority** - When installing a module by name, resolution now prefers:
   - `<workspace>/modules/`
   - `<workspace>/projects/*/modules/`
-  - DevDuck built-in `modules/`
+  - Barducks built-in `modules/`
 - 🗂️ **Persist resolved module paths** - Installer now records installed module name → path mapping in `.cache/install-state.json` (`installedModules`) for downstream tooling.
 
 ### Added - 2025-12-24
@@ -175,10 +175,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed - 2025-12-24
 
-- 🔄 **Improved version compatibility check for external modules** - Modules with older `devduckVersion` can now be loaded (backward compatibility)
-  - Modules are compatible if their `devduckVersion <= current devduck version`
-  - Error is only raised if module requires newer devduck version than currently installed
-  - Allows using old modules with newer devduck versions
+- 🔄 **Improved version compatibility check for external modules** - Modules with older `barducksVersion` can now be loaded (backward compatibility)
+  - Modules are compatible if their `barducksVersion <= current barducks version`
+  - Error is only raised if module requires newer barducks version than currently installed
+  - Allows using old modules with newer barducks versions
 
 ### Added - 2025-12-24
 
@@ -251,6 +251,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed - 2025-12-23
 
 - 🔧 Migrated module CLIs to `yargs` for consistent interface (PR #9)
-  - Added shared utilities: `scripts/lib/cli.js`, `scripts/lib/workspace-root.js`, `scripts/lib/devduck-paths.js`
+  - Added shared utilities: `scripts/lib/cli.js`, `scripts/lib/workspace-root.js`, `scripts/lib/barducks-paths.js`
 
 ---

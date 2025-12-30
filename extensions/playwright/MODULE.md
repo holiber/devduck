@@ -1,13 +1,13 @@
 ---
 name: playwright
 version: 0.1.0
-description: Testing utilities and guidelines for devduck modules
+description: Testing utilities and guidelines for barducks modules
 tags: [testing, e2e, cli]
 dependencies: [core]
 ---
 # Playwright Module
 
-Module providing testing utilities and guidelines for devduck modules and installer.
+Module providing testing utilities and guidelines for barducks modules and installer.
 
 ## Automatic Setup
 

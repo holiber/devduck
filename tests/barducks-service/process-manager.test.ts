@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'fs';
 import path from 'path';
 
-import { getDevduckServicePaths } from '../../src/barducks-service/src/paths.js';
+import { getBarducksServicePaths } from '../../src/barducks-service/src/paths.js';
 import { ProcessManager } from '../../src/barducks-service/src/process/ProcessManager.js';
 import { isPidAlive } from '../../src/barducks-service/src/pids.js';
 
@@ -35,7 +35,7 @@ async function waitForContent(filePath: string, re: RegExp, timeoutMs: number) {
 }
 
 test('ProcessManager writes stdout/stderr logs', async () => {
-  const paths = getDevduckServicePaths(process.cwd());
+  const paths = getBarducksServicePaths(process.cwd());
   rmCache(paths.rootDir);
 
   const pm = new ProcessManager({ sessionPath: paths.sessionPath, logsDir: paths.logsDir });
@@ -58,7 +58,7 @@ test('ProcessManager writes stdout/stderr logs', async () => {
 });
 
 test('stop kills a process group (parent + child)', async () => {
-  const paths = getDevduckServicePaths(process.cwd());
+  const paths = getBarducksServicePaths(process.cwd());
   rmCache(paths.rootDir);
   fs.mkdirSync(paths.rootDir, { recursive: true });
 

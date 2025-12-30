@@ -2,7 +2,7 @@ import path from 'path';
 import os from 'os';
 import crypto from 'crypto';
 
-export type DevduckServicePaths = {
+export type BarducksServicePaths = {
   rootDir: string;
   logsDir: string;
   ipcDir: string;
@@ -11,7 +11,7 @@ export type DevduckServicePaths = {
   lockPath: string;
 };
 
-export function getDevduckServicePaths(cwd: string = process.cwd()): DevduckServicePaths {
+export function getBarducksServicePaths(cwd: string = process.cwd()): BarducksServicePaths {
   const rootDir = path.join(cwd, '.cache', 'barducks-service');
   const logsDir = path.join(rootDir, 'logs');
   const ipcDir = path.join(rootDir, 'ipc');

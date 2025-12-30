@@ -35,7 +35,7 @@ export async function runStep7VerifyInstallation(
   log?: (message: string) => void,
   autoYes = false
 ): Promise<VerifyInstallationStepResult> {
-  if (process.env.DEVDUCK_SUPPRESS_STEP_HEADER !== '1') {
+  if (process.env.BARDUCKS_SUPPRESS_STEP_HEADER !== '1') {
     print(`\n[Step 7] Verifying installation...`, 'cyan');
   }
   if (log) {

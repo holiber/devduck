@@ -139,12 +139,12 @@ function deepMergeWithRules(base: unknown, override: unknown, keyPath: string[] 
   return override;
 }
 
-function resolveExtendsEntry(entry: string, opts: { fromFile: string; devduckRoot: string }): string {
+function resolveExtendsEntry(entry: string, opts: { fromFile: string; barducksRoot: string }): string {
   const trimmed = entry.trim();
   if (!trimmed) return trimmed;
-  if (trimmed.startsWith('devduck:')) {
-    const rel = trimmed.slice('devduck:'.length).replace(/^\/+/, '');
-    return path.resolve(opts.devduckRoot, rel);
+  if (trimmed.startsWith('barducks:')) {
+    const rel = trimmed.slice('barducks:'.length).replace(/^\/+/, '');
+    return path.resolve(opts.barducksRoot, rel);
   }
   if (path.isAbsolute(trimmed)) return trimmed;
   // Relative to the file that declares the extends (supports nested baselines).
@@ -161,7 +161,7 @@ function readYamlConfigObject(filePath: string): WorkspaceConfigObject {
 
 function resolveConfigWithExtends(params: {
   entryFile: string;
-  devduckRoot: string;
+  barducksRoot: string;
   maxDepth?: number;
 }): WorkspaceConfigObject {
   const maxDepth = Number.isFinite(params.maxDepth) ? Number(params.maxDepth) : 20;
@@ -191,7 +191,7 @@ function resolveConfigWithExtends(params: {
       // Start from the first base, apply next bases, then finally apply this file.
       let baseAcc: WorkspaceConfigObject | null = null;
       for (const ent of extendsList) {
-        const resolved = resolveExtendsEntry(ent, { fromFile: abs, devduckRoot: params.devduckRoot });
+        const resolved = resolveExtendsEntry(ent, { fromFile: abs, barducksRoot: params.barducksRoot });
         if (!resolved) continue;
         const baseCfg = load(resolved, depth + 1);
         baseAcc = (baseAcc ? (deepMergeWithRules(baseAcc, baseCfg) as WorkspaceConfigObject) : baseCfg);
@@ -216,13 +216,13 @@ export function readResolvedWorkspaceConfigFromRoot<T = Record<string, unknown>>
   const raw = readWorkspaceConfigFile<WorkspaceConfigObject>(configFile);
   if (!raw) return { config: null, configFile };
 
-  const devduckPathRel =
-    typeof raw.devduck_path === 'string' && raw.devduck_path.trim().length > 0
-      ? raw.devduck_path.trim()
-      : './projects/devduck';
-  const devduckRoot = path.resolve(workspaceRoot, devduckPathRel);
+  const barducksPathRel =
+    typeof raw.barducks_path === 'string' && raw.barducks_path.trim().length > 0
+      ? raw.barducks_path.trim()
+      : './projects/barducks';
+  const barducksRoot = path.resolve(workspaceRoot, barducksPathRel);
 
-  const resolved = resolveConfigWithExtends({ entryFile: configFile, devduckRoot });
+  const resolved = resolveConfigWithExtends({ entryFile: configFile, barducksRoot });
   return { config: resolved as unknown as T, configFile };
 }
 

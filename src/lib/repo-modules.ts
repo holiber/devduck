@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 
 /**
- * Repository modules loader for devduck
+ * Repository modules loader for barducks
  *
  * Handles loading modules from external repositories:
  * - Git repositories (github.com, git@github.com)
  * - Arcadia repositories (arc://)
- * - Version checking via devduck.manifest.json
+ * - Version checking via barducks.manifest.json
  */
 
 import fs from 'fs';
@@ -44,7 +44,7 @@ interface VersionCheckResult {
 }
 
 interface RepoPathInfo {
-  devduckPath: string;
+  barducksPath: string;
   actualPath: string;
   needsSymlink: boolean;
   exists: boolean;
@@ -169,21 +169,21 @@ export function resolveRepoPath(repoUrl: string, workspaceRoot: string): RepoPat
   const parsed = parseRepoUrl(repoUrl);
   const repoName = extractRepoName(parsed);
   
-  const devduckDir = path.join(workspaceRoot, 'devduck');
+  const barducksDir = path.join(workspaceRoot, 'barducks');
   const projectsDir = path.join(workspaceRoot, 'projects');
-  const devduckRepoPath = path.join(devduckDir, repoName);
+  const barducksRepoPath = path.join(barducksDir, repoName);
   const projectsRepoPath = path.join(projectsDir, repoName);
 
   // Check if repo exists in projects/ directory
   if (fs.existsSync(projectsRepoPath)) {
-    const symlinkExists = fs.existsSync(devduckRepoPath);
+    const symlinkExists = fs.existsSync(barducksRepoPath);
     let needsSymlink = false;
     
     if (symlinkExists) {
       try {
-        const stats = fs.lstatSync(devduckRepoPath);
+        const stats = fs.lstatSync(barducksRepoPath);
         if (stats.isSymbolicLink()) {
-          const currentTarget = fs.readlinkSync(devduckRepoPath);
+          const currentTarget = fs.readlinkSync(barducksRepoPath);
           const expectedTarget = path.resolve(projectsRepoPath);
           needsSymlink = path.resolve(currentTarget) !== expectedTarget;
         } else if (stats.isDirectory()) {
@@ -198,7 +198,7 @@ export function resolveRepoPath(repoUrl: string, workspaceRoot: string): RepoPat
     }
 
     return {
-      devduckPath: devduckRepoPath,
+      barducksPath: barducksRepoPath,
       actualPath: projectsRepoPath,
       needsSymlink,
       exists: true
@@ -223,14 +223,14 @@ export function resolveRepoPath(repoUrl: string, workspaceRoot: string): RepoPat
       throw new Error(`Arcadia repository not found: ${actualRepoPath}`);
     }
 
-    const symlinkExists = fs.existsSync(devduckRepoPath);
+    const symlinkExists = fs.existsSync(barducksRepoPath);
     let needsSymlink = false;
 
     if (symlinkExists) {
       try {
-        const stats = fs.lstatSync(devduckRepoPath);
+        const stats = fs.lstatSync(barducksRepoPath);
         if (stats.isSymbolicLink()) {
-          const currentTarget = fs.readlinkSync(devduckRepoPath);
+          const currentTarget = fs.readlinkSync(barducksRepoPath);
           const expectedTarget = path.resolve(actualRepoPath);
           needsSymlink = path.resolve(currentTarget) !== expectedTarget;
         } else if (stats.isDirectory()) {
@@ -244,7 +244,7 @@ export function resolveRepoPath(repoUrl: string, workspaceRoot: string): RepoPat
     }
 
     return {
-      devduckPath: devduckRepoPath,
+      barducksPath: barducksRepoPath,
       actualPath: actualRepoPath,
       needsSymlink,
       exists: true
@@ -253,11 +253,11 @@ export function resolveRepoPath(repoUrl: string, workspaceRoot: string): RepoPat
 
   // Handle Git repositories
   if (parsed.type === 'git') {
-    const repoPath = devduckRepoPath;
+    const repoPath = barducksRepoPath;
     const exists = fs.existsSync(repoPath) && fs.existsSync(path.join(repoPath, '.git'));
 
     return {
-      devduckPath: repoPath,
+      barducksPath: repoPath,
       actualPath: repoPath,
       needsSymlink: false,
       exists
@@ -268,18 +268,18 @@ export function resolveRepoPath(repoUrl: string, workspaceRoot: string): RepoPat
 }
 
 /**
- * Create symlink from devduck path to actual path
+ * Create symlink from barducks path to actual path
  */
-function createSymlink(devduckPath: string, actualPath: string, repoName: string): void {
-  const devduckDir = path.dirname(devduckPath);
-  fs.mkdirSync(devduckDir, { recursive: true });
+function createSymlink(barducksPath: string, actualPath: string, repoName: string): void {
+  const barducksDir = path.dirname(barducksPath);
+  fs.mkdirSync(barducksDir, { recursive: true });
 
   // Remove existing symlink if it points to wrong target
-  if (fs.existsSync(devduckPath)) {
+  if (fs.existsSync(barducksPath)) {
     try {
-      const stats = fs.lstatSync(devduckPath);
+      const stats = fs.lstatSync(barducksPath);
       if (stats.isSymbolicLink()) {
-        fs.unlinkSync(devduckPath);
+        fs.unlinkSync(barducksPath);
       } else if (stats.isDirectory()) {
         // Don't overwrite existing directory
         return;
@@ -290,8 +290,8 @@ function createSymlink(devduckPath: string, actualPath: string, repoName: string
   }
 
   try {
-    fs.symlinkSync(actualPath, devduckPath, 'dir');
-    print(`  ${symbols.info} Created symlink: devduck/${repoName} -> ${path.relative(path.dirname(devduckPath), actualPath)}`, 'cyan');
+    fs.symlinkSync(actualPath, barducksPath, 'dir');
+    print(`  ${symbols.info} Created symlink: barducks/${repoName} -> ${path.relative(path.dirname(barducksPath), actualPath)}`, 'cyan');
   } catch (error) {
     const err = error as Error;
     print(`  ${symbols.warning} Failed to create symlink, using path directly: ${err.message}`, 'yellow');
@@ -303,8 +303,8 @@ function createSymlink(devduckPath: string, actualPath: string, repoName: string
  * Clone git repository
  */
 function cloneGitRepository(repoUrl: string, repoPath: string): void {
-  const devduckDir = path.dirname(repoPath);
-  fs.mkdirSync(devduckDir, { recursive: true });
+  const barducksDir = path.dirname(repoPath);
+  fs.mkdirSync(barducksDir, { recursive: true });
 
   print(`  ${symbols.info} Cloning repository: ${repoUrl}`, 'cyan');
   
@@ -352,36 +352,36 @@ export async function ensureRepoAvailable(
 
   // Handle symlink creation
   if (pathInfo.needsSymlink) {
-    createSymlink(pathInfo.devduckPath, pathInfo.actualPath, repoName);
-    return pathInfo.devduckPath;
+    createSymlink(pathInfo.barducksPath, pathInfo.actualPath, repoName);
+    return pathInfo.barducksPath;
   }
 
   // Handle git repository cloning/updating
   if (parsed.type === 'git' && !pathInfo.exists) {
-    cloneGitRepository(parsed.normalized, pathInfo.devduckPath);
-    return pathInfo.devduckPath;
+    cloneGitRepository(parsed.normalized, pathInfo.barducksPath);
+    return pathInfo.barducksPath;
   }
 
   if (parsed.type === 'git' && pathInfo.exists) {
-    updateGitRepository(pathInfo.devduckPath);
-    return pathInfo.devduckPath;
+    updateGitRepository(pathInfo.barducksPath);
+    return pathInfo.barducksPath;
   }
 
   // Repository already exists and is accessible
-  return pathInfo.devduckPath;
+  return pathInfo.barducksPath;
 }
 
 /**
  * Check repository version compatibility
  * @param repoPath - Local path to repository
- * @param devduckVersion - Expected devduck version
+ * @param barducksVersion - Expected barducks version
  * @returns Version check result
  */
-export async function checkRepoVersion(repoPath: string, devduckVersion: string): Promise<VersionCheckResult> {
+export async function checkRepoVersion(repoPath: string, barducksVersion: string): Promise<VersionCheckResult> {
   // Backward compatibility:
-  // - New format: devduck.manifest.json
+  // - New format: barducks.manifest.json
   // - Legacy/test format: manifest.json
-  const manifestPath = path.join(repoPath, 'devduck.manifest.json');
+  const manifestPath = path.join(repoPath, 'barducks.manifest.json');
   const legacyManifestPath = path.join(repoPath, 'manifest.json');
   const effectiveManifestPath = fs.existsSync(manifestPath)
     ? manifestPath
@@ -390,24 +390,24 @@ export async function checkRepoVersion(repoPath: string, devduckVersion: string)
   if (effectiveManifestPath) {
     try {
       const manifest = JSON.parse(fs.readFileSync(effectiveManifestPath, 'utf8'));
-      const repoVersion = manifest.devduckVersion;
+      const repoVersion = manifest.barducksVersion;
 
       if (!repoVersion) {
         return {
           compatible: false,
           version: null,
-          error: `${path.basename(effectiveManifestPath)} found but devduckVersion is missing`
+          error: `${path.basename(effectiveManifestPath)} found but barducksVersion is missing`
         };
       }
 
-      // Compare versions: module is compatible if its devduckVersion <= current devduck version
-      const versionComparison = compareVersions(repoVersion, devduckVersion);
+      // Compare versions: module is compatible if its barducksVersion <= current barducks version
+      const versionComparison = compareVersions(repoVersion, barducksVersion);
       
       if (versionComparison > 0) {
         return {
           compatible: false,
           version: repoVersion,
-          error: `Module requires devduck version ${repoVersion} or higher, but current version is ${devduckVersion}`
+          error: `Module requires barducks version ${repoVersion} or higher, but current version is ${barducksVersion}`
         };
       }
 
@@ -429,7 +429,7 @@ export async function checkRepoVersion(repoPath: string, devduckVersion: string)
   return {
     compatible: false,
     version: null,
-    error: 'No manifest found (devduck.manifest.json or manifest.json)'
+    error: 'No manifest found (barducks.manifest.json or manifest.json)'
   };
 }
 
@@ -437,18 +437,18 @@ export async function checkRepoVersion(repoPath: string, devduckVersion: string)
  * Load modules from repository
  * @param repoUrl - Repository URL
  * @param workspaceRoot - Workspace root directory
- * @param devduckVersion - Expected devduck version
+ * @param barducksVersion - Expected barducks version
  * @returns Path to extensions directory (legacy: modules directory)
  */
 export async function loadModulesFromRepo(
   repoUrl: string,
   workspaceRoot: string,
-  devduckVersion: string
+  barducksVersion: string
 ): Promise<string> {
   const repoPath = await ensureRepoAvailable(repoUrl, workspaceRoot);
 
   // Check version compatibility
-  const versionCheck = await checkRepoVersion(repoPath, devduckVersion);
+  const versionCheck = await checkRepoVersion(repoPath, barducksVersion);
 
   if (!versionCheck.compatible) {
     throw new Error(`Repository ${repoUrl} is not compatible: ${versionCheck.error}`);
@@ -463,10 +463,10 @@ export async function loadModulesFromRepo(
 }
 
 /**
- * Get devduck version from package.json
- * @returns Devduck version
+ * Get barducks version from package.json
+ * @returns Barducks version
  */
-export function getDevduckVersion(): string {
+export function getBarducksVersion(): string {
   const packageJsonPath = path.join(PROJECT_ROOT, 'package.json');
 
   if (!fs.existsSync(packageJsonPath)) {

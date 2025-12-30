@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Module hooks executor for devduck
+ * Module hooks executor for barducks
  * 
  * Executes hooks defined by modules during workspace installation.
  * Hooks allow modules to define their own installation steps without
@@ -31,7 +31,7 @@ export interface HookContext {
   cursorDir: string;
   commandsDir: string;
   rulesDir: string;
-  devduckRoot?: string;
+  barducksRoot?: string;
 }
 
 export interface HookResult {
@@ -228,25 +228,22 @@ export function createHookContext(
   module: { path: string; name: string; settings?: Record<string, unknown> },
   allModules: Array<{ name: string; path: string; settings?: Record<string, unknown> }> = []
 ): HookContext {
-  // Resolve devduck root for external modules to use
-  // Try to find devduck relative to this file first (for built-in modules)
-  let devduckRoot: string | undefined = path.resolve(__dirname, '../..');
+  // Resolve barducks root for external modules to use
+  // Try to find barducks relative to this file first (for built-in modules)
+  let barducksRoot: string | undefined = path.resolve(__dirname, '../..');
   
-  // If we're in a workspace, try to find project in projects/barducks (legacy: projects/devduck)
+  // If we're in a workspace, try to find project in projects/barducks
   const workspaceBarducks = path.join(workspaceRoot, 'projects', 'barducks');
-  const workspaceDevduck = path.join(workspaceRoot, 'projects', 'devduck');
   if (fs.existsSync(workspaceBarducks)) {
-    devduckRoot = workspaceBarducks;
-  } else if (fs.existsSync(workspaceDevduck)) {
-    devduckRoot = workspaceDevduck;
+    barducksRoot = workspaceBarducks;
   } else {
-    // Try to find devduck relative to workspace config
+    // Try to find barducks relative to workspace config
     const configPath = getWorkspaceConfigFilePath(workspaceRoot);
-    const config = readWorkspaceConfigFile<{ devduck_path?: string }>(configPath);
-    const devduckPath = config?.devduck_path;
-    if (devduckPath) {
-      const resolvedDevduck = path.resolve(workspaceRoot, devduckPath);
-      if (fs.existsSync(resolvedDevduck)) devduckRoot = resolvedDevduck;
+    const config = readWorkspaceConfigFile<{ barducks_path?: string }>(configPath);
+    const barducksPath = config?.barducks_path;
+    if (barducksPath) {
+      const resolvedBarducks = path.resolve(workspaceRoot, barducksPath);
+      if (fs.existsSync(resolvedBarducks)) barducksRoot = resolvedBarducks;
     }
   }
   
@@ -260,11 +257,11 @@ export function createHookContext(
       path: m.path,
       settings: m.settings
     })),
-    cacheDir: path.join(workspaceRoot, '.cache', 'devduck'),
+    cacheDir: path.join(workspaceRoot, '.cache', 'barducks'),
     cursorDir: path.join(workspaceRoot, '.cursor'),
     commandsDir: path.join(workspaceRoot, '.cursor', 'commands'),
     rulesDir: path.join(workspaceRoot, '.cursor', 'rules'),
-    devduckRoot
+    barducksRoot
   };
 }
 

@@ -50,7 +50,7 @@ export async function main(): Promise<void> {
 
   const repoPath = fs.existsSync(path.join(workspaceRoot, 'projects', 'barducks'))
     ? path.join(workspaceRoot, 'projects', 'barducks')
-    : path.join(workspaceRoot, 'projects', 'devduck');
+    : path.join(workspaceRoot, 'projects', 'barducks');
   if (!fs.existsSync(path.join(repoPath, '.git'))) {
     console.error('Error: Not a git repository');
     process.exit(1);

@@ -11,7 +11,7 @@ import { buildGeneratedTaskfile } from './lib/taskfile-gen.js';
 
 type WorkspaceConfigLike = {
   version?: string | number;
-  devduck_path?: string;
+  barducks_path?: string;
   extensions?: string[];
   extensionSettings?: Record<string, unknown>;
   // Backward compatibility
@@ -88,22 +88,22 @@ function runNpmInstall(workspaceRoot: string): void {
   }
 }
 
-function isDevduckProjectSrc(src: string): boolean {
+function isBarducksProjectSrc(src: string): boolean {
   const s = src.trim();
 
-  // github.com/<org>/devduck or https://github.com/<org>/devduck(.git)
-  if (/github\.com/i.test(s) && /\/(devduck|barducks)(\.git)?$/i.test(s)) return true;
+  // github.com/<org>/barducks or https://github.com/<org>/barducks(.git)
+  if (/github\.com/i.test(s) && /\/(barducks|barducks)(\.git)?$/i.test(s)) return true;
 
-  // git@github.com:<org>/devduck(.git)
-  if (/git@github\.com:/i.test(s) && /\/(devduck|barducks)(\.git)?$/i.test(s.replace(':', '/'))) return true;
+  // git@github.com:<org>/barducks(.git)
+  if (/git@github\.com:/i.test(s) && /\/(barducks|barducks)(\.git)?$/i.test(s.replace(':', '/'))) return true;
 
-  // local paths: .../devduck or .../devduck/src
+  // local paths: .../barducks or .../barducks/src
   const norm = path.posix.normalize(s.replace(/\\/g, '/'));
   if (
     norm.endsWith('/barducks') ||
     norm.endsWith('/barducks/src') ||
-    norm.endsWith('/devduck') ||
-    norm.endsWith('/devduck/src')
+    norm.endsWith('/barducks') ||
+    norm.endsWith('/barducks/src')
   ) {
     return true;
   }
@@ -111,15 +111,15 @@ function isDevduckProjectSrc(src: string): boolean {
   return false;
 }
 
-function configListsDevduckAsProject(config: WorkspaceConfigLike | null): boolean {
+function configListsBarducksAsProject(config: WorkspaceConfigLike | null): boolean {
   const projects = config?.projects;
   if (!Array.isArray(projects) || projects.length === 0) return false;
-  return projects.some((p) => typeof p?.src === 'string' && isDevduckProjectSrc(p.src));
+  return projects.some((p) => typeof p?.src === 'string' && isBarducksProjectSrc(p.src));
 }
 
 function copyDirSync(srcDir: string, destDir: string): void {
   // Avoid fs.cpSync: it can hit Node internal assertions on some Node versions.
-  // This is a small, predictable copy tailored for "copy this repo into workspace/devduck/src".
+  // This is a small, predictable copy tailored for "copy this repo into workspace/barducks/src".
   const skipDirNames = new Set(['node_modules', '.cache']);
 
   function copyEntry(src: string, dest: string): void {
@@ -170,33 +170,33 @@ function cloneGitRepoSync(repoUrl: string, destDir: string, ref?: string): void 
   }
 }
 
-function ensureDevduckInWorkspace(params: {
+function ensureBarducksInWorkspace(params: {
   workspaceRoot: string;
   config: WorkspaceConfigLike;
-  devduckRepo: string;
-  devduckRef?: string;
-  devduckSource?: string;
+  barducksRepo: string;
+  barducksRef?: string;
+  barducksSource?: string;
 }): WorkspaceConfigLike {
-  const { workspaceRoot, devduckRepo, devduckRef, devduckSource } = params;
+  const { workspaceRoot, barducksRepo, barducksRef, barducksSource } = params;
   const config = params.config;
 
-  const devduckDest = path.join(workspaceRoot, 'barducks', 'src');
-  const shouldMaterialize = !configListsDevduckAsProject(config);
+  const barducksDest = path.join(workspaceRoot, 'barducks', 'src');
+  const shouldMaterialize = !configListsBarducksAsProject(config);
 
   if (!shouldMaterialize) {
     return config;
   }
 
-  if (!fs.existsSync(devduckDest)) {
-    if (devduckSource) {
-      copyDirSync(devduckSource, devduckDest);
+  if (!fs.existsSync(barducksDest)) {
+    if (barducksSource) {
+      copyDirSync(barducksSource, barducksDest);
     } else {
-      cloneGitRepoSync(devduckRepo, devduckDest, devduckRef);
+      cloneGitRepoSync(barducksRepo, barducksDest, barducksRef);
     }
   }
 
-  if (!config.devduck_path) {
-    config.devduck_path = './barducks/src';
+  if (!config.barducks_path) {
+    config.barducks_path = './barducks/src';
   }
 
   return config;
@@ -206,7 +206,7 @@ function buildDefaultWorkspaceConfig(): WorkspaceConfigLike {
   const defaultExtensions = process.env.NODE_ENV === 'test' ? ['core'] : ['core', 'cursor'];
   return {
     version: '0.1.0',
-    devduck_path: './barducks/src',
+    barducks_path: './barducks/src',
     extensions: defaultExtensions,
     extensionSettings: {},
     repos: [],
@@ -237,15 +237,15 @@ async function main(argv = process.argv): Promise<void> {
           throw new Error(`Cannot read workspace config: ${configFile}`);
         }
 
-        const devduckPathRel =
-          typeof config.devduck_path === 'string' && config.devduck_path.trim().length > 0
-            ? config.devduck_path.trim()
-            : './devduck/src';
+        const barducksPathRel =
+          typeof config.barducks_path === 'string' && config.barducks_path.trim().length > 0
+            ? config.barducks_path.trim()
+            : './barducks/src';
 
         const cacheDir = path.join(workspaceRoot, '.cache');
         fs.mkdirSync(cacheDir, { recursive: true });
 
-        const generated = buildGeneratedTaskfile({ workspaceRoot, config, devduckPathRel });
+        const generated = buildGeneratedTaskfile({ workspaceRoot, config, barducksPathRel });
         const generatedPath = path.join(cacheDir, 'taskfile.generated.yml');
         const out = YAML.stringify(generated);
         fs.writeFileSync(generatedPath, out.endsWith('\n') ? out : out + '\n', 'utf8');
@@ -268,23 +268,23 @@ async function main(argv = process.argv): Promise<void> {
             type: 'string',
             describe: 'Path to a template workspace.config.yml to start from'
           })
-          .option('devduck-repo', {
+          .option('barducks-repo', {
             type: 'string',
             describe: 'Git URL for Barducks repository',
             default: 'https://github.com/holiber/barducks.git'
           })
-          .option('devduck-ref', {
+          .option('barducks-ref', {
             type: 'string',
             describe: 'Optional git ref (branch/tag/sha) to checkout after clone'
           })
-          .option('devduck-source', {
+          .option('barducks-source', {
             type: 'string',
             describe:
               'Local folder to copy Barducks from (no git clone). Intended for offline/CI tests.'
           }),
       (args) => {
         // When invoked via npm/npx, process.cwd() may point to a temporary package folder
-        // (e.g. ~/.npm/_npx/.../node_modules/devduck). INIT_CWD is the directory where the user
+        // (e.g. ~/.npm/_npx/.../node_modules/barducks). INIT_CWD is the directory where the user
         // ran the command from, so resolve relative paths from there.
         const invocationCwd = process.env.INIT_CWD ? path.resolve(process.env.INIT_CWD) : process.cwd();
 
@@ -302,13 +302,13 @@ async function main(argv = process.argv): Promise<void> {
           ...(templateCfg || {})
         };
 
-        ensureDevduckInWorkspace({
+        ensureBarducksInWorkspace({
           workspaceRoot,
           config,
-          devduckRepo: String(args['devduck-repo']),
-          devduckRef: args['devduck-ref'] ? String(args['devduck-ref']) : undefined,
-          devduckSource: args['devduck-source']
-            ? path.resolve(invocationCwd, String(args['devduck-source']))
+          barducksRepo: String(args['barducks-repo']),
+          barducksRef: args['barducks-ref'] ? String(args['barducks-ref']) : undefined,
+          barducksSource: args['barducks-source']
+            ? path.resolve(invocationCwd, String(args['barducks-source']))
             : undefined
         });
 

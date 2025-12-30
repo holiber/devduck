@@ -42,7 +42,7 @@ jobs:
         uses: peter-evans/find-comment@v3
         with:
           issue-number: ${{ github.event.pull_request.number }}
-          body-includes: "<!-- devduck-metrics-comment -->"
+          body-includes: "<!-- barducks-metrics-comment -->"
 
       - name: Save previous metrics comment body (if exists)
         if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && steps.find_comment.outputs.comment-id != ''

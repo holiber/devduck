@@ -87,7 +87,7 @@ async function githubApiGet<T>(
     headers: {
       Authorization: `token ${token}`,
       Accept: 'application/vnd.github.v3+json',
-      'User-Agent': 'devduck-github-provider'
+      'User-Agent': 'barducks-github-provider'
     }
   });
 

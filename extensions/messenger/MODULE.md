@@ -19,7 +19,7 @@ Messenger module implementing a provider system for chat history and file downlo
 
 ## Caching
 
-Providers are expected to cache results in `.cache/devduck/messenger/` to avoid unnecessary traffic.
+Providers are expected to cache results in `.cache/barducks/messenger/` to avoid unnecessary traffic.
 
 ## Provider selection
 

@@ -72,7 +72,7 @@ interface ModuleVerificationResult {
  * Create a temporary directory for testing
  * @returns {Promise<string>} Path to temporary directory
  */
-export async function createTempWorkspace(prefix = 'devduck-test-'): Promise<string> {
+export async function createTempWorkspace(prefix = 'barducks-test-'): Promise<string> {
   const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), prefix));
   return tmpDir;
 }
@@ -85,8 +85,8 @@ export async function cleanupTempWorkspace(workspacePath: string): Promise<void>
   // Keep this strict: only allow cleanup of our temp test dirs under OS tmpdir.
   // (Do not delete developer paths by accident.)
   const base = path.basename(workspacePath);
-  if (!workspacePath || !workspacePath.startsWith(os.tmpdir()) || !base.startsWith('devduck-')) {
-    throw new Error('Safety check: Only cleaning up devduck-* temp test directories');
+  if (!workspacePath || !workspacePath.startsWith(os.tmpdir()) || !base.startsWith('barducks-')) {
+    throw new Error('Safety check: Only cleaning up barducks-* temp test directories');
   }
   try {
     await fs.rm(workspacePath, { recursive: true, force: true });
@@ -390,13 +390,13 @@ export async function verifyWorkspaceStructure(workspacePath: string): Promise<V
       results.errors.push('.cursor/mcp.json not found');
     }
 
-    // Check .cache/devduck
-    const cacheDir = path.join(workspacePath, '.cache', 'devduck');
+    // Check .cache/barducks
+    const cacheDir = path.join(workspacePath, '.cache', 'barducks');
     try {
       await fs.access(cacheDir);
       results.cacheDirExists = true;
     } catch (e) {
-      results.errors.push('.cache/devduck directory not found');
+      results.errors.push('.cache/barducks directory not found');
     }
 
     // Check .cursorignore
@@ -450,8 +450,8 @@ export async function verifyWorkspaceConfig(workspacePath: string, expectedConfi
       }
     }
 
-    if (expectedConfig.devduck_path && config.devduck_path !== expectedConfig.devduck_path) {
-      results.errors.push(`devduck_path mismatch: expected ${expectedConfig.devduck_path}, got ${config.devduck_path}`);
+    if (expectedConfig.barducks_path && config.barducks_path !== expectedConfig.barducks_path) {
+      results.errors.push(`barducks_path mismatch: expected ${expectedConfig.barducks_path}, got ${config.barducks_path}`);
     }
 
     results.valid = results.errors.length === 0;
@@ -486,12 +486,12 @@ export async function verifyModuleInstallation(workspacePath: string, expectedMo
     }
 
     // Check rules file
-    const rulesPath = path.join(workspacePath, '.cursor', 'rules', 'devduck-rules.md');
+    const rulesPath = path.join(workspacePath, '.cursor', 'rules', 'barducks-rules.md');
     try {
       await fs.access(rulesPath);
       results.rulesFound = true;
     } catch (e) {
-      results.errors.push('devduck-rules.md not found');
+      results.errors.push('barducks-rules.md not found');
     }
 
     // Check MCP config
@@ -524,7 +524,7 @@ export async function verifyModuleInstallation(workspacePath: string, expectedMo
 export async function waitForInstallation(workspacePath: string, timeout = 30000, checkInterval = 100): Promise<boolean> {
   const startTime = Date.now();
   const configPath = path.join(workspacePath, 'workspace.config.yml');
-  const cacheDir = path.join(workspacePath, '.cache', 'devduck');
+  const cacheDir = path.join(workspacePath, '.cache', 'barducks');
 
   while (Date.now() - startTime < timeout) {
     try {
@@ -545,7 +545,7 @@ export async function waitForInstallation(workspacePath: string, timeout = 30000
 export async function createMockWorkspace(workspacePath: string, config: Record<string, unknown> = {}): Promise<void> {
   const defaultConfig = {
     version: '0.1.0',
-    devduck_path: './devduck',
+    barducks_path: './barducks',
     extensions: ['core', 'cursor'],
     extensionSettings: {}
   };

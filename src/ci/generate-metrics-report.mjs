@@ -197,7 +197,7 @@ async function main() {
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Devduck Metrics Dashboard</title>
+  <title>Barducks Metrics Dashboard</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <style>
     body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Arial,sans-serif;margin:40px;background:#fafafa;color:#111}
@@ -213,7 +213,7 @@ async function main() {
   </style>
 </head>
 <body>
-  <h1>Devduck Metrics Dashboard</h1>
+  <h1>Barducks Metrics Dashboard</h1>
   <p class="sub"><strong>Generated:</strong> ${new Date().toLocaleString()} &nbsp; <strong>SHA:</strong> <code>${current?.meta?.sha ?? 'n/a'}</code></p>
 
   <div class="card">

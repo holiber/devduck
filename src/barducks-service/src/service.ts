@@ -5,9 +5,9 @@ import net from 'net';
 import path from 'path';
 import { BarducksService } from './BarducksService.js';
 import { ensureDirSync, readJsonIfExistsSync, safeUnlinkSync, writeJsonAtomicSync } from './fs-utils.js';
-import { getDevduckServicePaths } from './paths.js';
+import { getBarducksServicePaths } from './paths.js';
 import { isPidAlive } from './pids.js';
-import { startDevduckIpcServer } from './ipc/ipc-server.js';
+import { startBarducksIpcServer } from './ipc/ipc-server.js';
 
 type LockFile = { pid: number; startedAt: string };
 
@@ -35,7 +35,7 @@ async function acquireSingletonLock(lockPath: string, socketPath: string): Promi
 }
 
 async function main(): Promise<void> {
-  const paths = getDevduckServicePaths(process.cwd());
+  const paths = getBarducksServicePaths(process.cwd());
   ensureDirSync(paths.rootDir);
   ensureDirSync(paths.logsDir);
   ensureDirSync(paths.ipcDir);
@@ -53,7 +53,7 @@ async function main(): Promise<void> {
   }
 
   const service = new BarducksService(paths);
-  const server = startDevduckIpcServer({ socketPath: paths.socketPath, service });
+  const server = startBarducksIpcServer({ socketPath: paths.socketPath, service });
 
   const shutdown = () => {
     try {

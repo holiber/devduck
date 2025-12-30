@@ -1,12 +1,12 @@
 /**
- * Snapshot collector for DevDuck dashboard.
+ * Snapshot collector for Barducks dashboard.
  *
  * Reads task state from:
  * - .cache/tasks/<taskId>/task.json
  * - .cache/tasks/.queue/queue.json, state.json, bg.pid
  *
  * And container stats from Docker:
- * - docker ps (workers: devduck-worker-*, plans: plan-*)
+ * - docker ps (workers: barducks-worker-*, plans: plan-*)
  * - docker stats --no-stream
  *
  * Outputs a single JSON snapshot for consumption by the Ink TUI.
@@ -178,7 +178,7 @@ function listDockerContainers(): ListContainersResult {
   const r = runDocker([
     'ps',
     '--filter',
-    'name=devduck-worker-',
+    'name=barducks-worker-',
     '--filter',
     'name=plan-',
     '--filter',
@@ -194,7 +194,7 @@ function listDockerContainers(): ListContainersResult {
   for (const line of lines) {
     const [name, status, image] = line.split('\t');
     if (!name) continue;
-    const kind = name.startsWith('devduck-worker-')
+    const kind = name.startsWith('barducks-worker-')
       ? 'worker'
       : name.startsWith('plan-')
         ? 'plan'

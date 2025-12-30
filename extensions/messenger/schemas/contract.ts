@@ -118,7 +118,7 @@ export const DownloadFileResultSchema = z
     originalFileId: z.string().min(1).optional(),
     cached: z.boolean(),
     /**
-     * File path on disk. Providers are expected to store files under `.cache/devduck/messenger/`.
+     * File path on disk. Providers are expected to store files under `.cache/barducks/messenger/`.
      * May be in a temporary location if caching is explicitly disabled.
      */
     path: z.string().min(1),

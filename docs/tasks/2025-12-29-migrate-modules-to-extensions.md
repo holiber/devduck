@@ -35,7 +35,7 @@ Example:
 
 ```yaml
 version: "0.1.0"
-devduck_path: "./projects/barducks"
+barducks_path: "./projects/barducks"
 
 extensions:
   - core

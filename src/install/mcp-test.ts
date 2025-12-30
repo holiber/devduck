@@ -183,7 +183,7 @@ export async function testMcpServer(
           protocolVersion: '2024-11-05',
           capabilities: {},
           clientInfo: {
-            name: 'devduck-mcp-test',
+            name: 'barducks-mcp-test',
             version: '1.0.0'
           }
         }

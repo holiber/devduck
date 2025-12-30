@@ -11,7 +11,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { resolveDevduckRoot } from '../lib/barducks-paths.js';
+import { resolveBarducksRoot } from '../lib/barducks-paths.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -224,7 +224,7 @@ export function installApiScript(
   log: (message: string) => void = () => {}
 ): void {
   const workspacePackageJsonPath = path.join(workspaceRoot, 'package.json');
-  const { devduckRoot } = resolveDevduckRoot({ cwd: workspaceRoot, moduleDir: __dirname });
+  const { barducksRoot } = resolveBarducksRoot({ cwd: workspaceRoot, moduleDir: __dirname });
 
   // Read workspace package.json
   const workspacePackageJson = readJSON(workspacePackageJsonPath);
@@ -261,8 +261,8 @@ export function installApiScript(
     log(`Removed old API script: ${scriptName}`);
   }
 
-  // Calculate relative path from workspace root to devduck scripts
-  const apiCliPath = path.relative(workspaceRoot, path.join(devduckRoot, 'scripts', 'api-cli.ts'));
+  // Calculate relative path from workspace root to barducks scripts
+  const apiCliPath = path.relative(workspaceRoot, path.join(barducksRoot, 'scripts', 'api-cli.ts'));
   const apiCliCommand = apiCliPath.startsWith('.') ? apiCliPath : `./${apiCliPath}`;
 
   // Add or update the "api" script

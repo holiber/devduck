@@ -6,8 +6,8 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
 import { createRequire } from 'module';
-import { getDevduckServicePaths } from './paths.js';
-import { createDevduckServiceClient } from './ipc/ipc-client.js';
+import { getBarducksServicePaths } from './paths.js';
+import { createBarducksServiceClient } from './ipc/ipc-client.js';
 import { getWorkspaceConfigFilePath, readWorkspaceConfigFile } from '../../lib/workspace-config.js';
 
 const require = createRequire(import.meta.url);
@@ -32,7 +32,7 @@ async function ensureServiceRunning(socketPath: string): Promise<void> {
   if (await canConnect(socketPath)) return;
 
   // Start service in the background.
-  const paths = getDevduckServicePaths(process.cwd());
+  const paths = getBarducksServicePaths(process.cwd());
   fs.mkdirSync(paths.logsDir, { recursive: true });
   const outLogPath = path.join(paths.logsDir, 'service.out.log');
   const errLogPath = path.join(paths.logsDir, 'service.err.log');
@@ -113,7 +113,7 @@ async function runCommandToLogs(params: {
   env: Record<string, string | undefined>;
   logBaseName: string;
 }): Promise<{ exitCode: number; stdoutLogPath: string; stderrLogPath: string }> {
-  const paths = getDevduckServicePaths(process.cwd());
+  const paths = getBarducksServicePaths(process.cwd());
   fs.mkdirSync(paths.logsDir, { recursive: true });
   const stdoutLogPath = path.join(paths.logsDir, `${params.logBaseName}.out.log`);
   const stderrLogPath = path.join(paths.logsDir, `${params.logBaseName}.err.log`);
@@ -173,7 +173,7 @@ function tryReadLaunchDevFromWorkspaceConfig(cwd: string): LaunchDev | null {
 }
 
 async function cmdDev(
-  client: ReturnType<typeof createDevduckServiceClient>,
+  client: ReturnType<typeof createBarducksServiceClient>,
   opts?: { skipSmokecheck?: boolean }
 ) {
   const launchDev = tryReadLaunchDevFromWorkspaceConfig(process.cwd());
@@ -376,7 +376,7 @@ async function cmdDev(
   );
 }
 
-async function cmdSmokecheck(client: ReturnType<typeof createDevduckServiceClient>, testFile: string) {
+async function cmdSmokecheck(client: ReturnType<typeof createBarducksServiceClient>, testFile: string) {
   const session = await client.process.readSession.query();
   const baseURL = session.baseURL;
   if (!baseURL) throw new Error('No baseURL in session (run `dev` first)');
@@ -390,7 +390,7 @@ async function cmdSmokecheck(client: ReturnType<typeof createDevduckServiceClien
   process.exitCode = result.exitCode;
 }
 
-async function cmdSmokecheckFromConfig(client: ReturnType<typeof createDevduckServiceClient>) {
+async function cmdSmokecheckFromConfig(client: ReturnType<typeof createBarducksServiceClient>) {
   const session = await client.process.readSession.query();
   if (!session.baseURL) {
     await cmdDev(client, { skipSmokecheck: true });
@@ -431,14 +431,14 @@ async function cmdSmokecheckFromConfig(client: ReturnType<typeof createDevduckSe
   process.exitCode = res.exitCode;
 }
 
-async function cmdStatus(client: ReturnType<typeof createDevduckServiceClient>) {
+async function cmdStatus(client: ReturnType<typeof createBarducksServiceClient>) {
   const status = await client.process.status.query();
   const session = await client.process.readSession.query();
   // eslint-disable-next-line no-console
   console.log(JSON.stringify({ status, session }, null, 2));
 }
 
-async function cmdStop(client: ReturnType<typeof createDevduckServiceClient>, name?: string) {
+async function cmdStop(client: ReturnType<typeof createBarducksServiceClient>, name?: string) {
   const session = await client.process.readSession.query();
   const targets = name ? [name] : session.processes.map(p => p.name);
   for (const t of targets) {
@@ -447,12 +447,12 @@ async function cmdStop(client: ReturnType<typeof createDevduckServiceClient>, na
 }
 
 async function main(argv = process.argv): Promise<void> {
-  const paths = getDevduckServicePaths(process.cwd());
+  const paths = getBarducksServicePaths(process.cwd());
   const args = argv.slice(2);
   const command = args[0] || '';
 
   await ensureServiceRunning(paths.socketPath);
-  const client = createDevduckServiceClient({ socketPath: paths.socketPath });
+  const client = createBarducksServiceClient({ socketPath: paths.socketPath });
 
   if (command === 'dev') {
     await cmdDev(client);

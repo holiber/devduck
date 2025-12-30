@@ -173,7 +173,7 @@ export async function runStep3DownloadProjects(
   workspaceRoot: string,
   log?: (message: string) => void
 ): Promise<DownloadProjectsStepResult> {
-  if (process.env.DEVDUCK_SUPPRESS_STEP_HEADER !== '1') {
+  if (process.env.BARDUCKS_SUPPRESS_STEP_HEADER !== '1') {
     print(`\n[Step 3] Downloading projects...`, 'cyan');
   }
   if (log) {
