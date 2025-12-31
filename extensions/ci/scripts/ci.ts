@@ -13,8 +13,9 @@ import {
   getProvidersByType,
   getProvider
 } from '@barducks/sdk';
+import { createExtensionRouter } from '@barducks/sdk';
 import type { CIProvider } from '../schemas/contract.js';
-import { ciRouter } from '../api.js';
+import ciExtension from '../index.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -49,7 +50,7 @@ async function initializeProviders(workspaceRoot: string | null): Promise<{
 }> {
   const { barducksRoot } = resolveBarducksRoot({ cwd: process.cwd(), moduleDir: __dirname });
 
-  // Discover providers from built-in extensions (legacy: modules)
+  // Discover providers from built-in extensions
   await discoverProvidersFromModules({ extensionsDir: path.join(barducksRoot, 'extensions') });
   // Discover providers from external repositories
   if (workspaceRoot) {
@@ -111,6 +112,10 @@ async function main(argv = process.argv): Promise<void> {
   }
   
   const { getProvider: getCIProvider } = await initializeProviders(workspaceRoot);
+
+  // Create router from extension with provider context
+  const provider = getCIProvider();
+  const ciRouter = createExtensionRouter(ciExtension, 'ci', { provider });
 
   // Build yargs with commands generated from router
   const yargsInstance = ciRouter.toCli(

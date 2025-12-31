@@ -10,7 +10,6 @@ import type {
 } from '../../schemas/contract.js';
 import { CI_PROVIDER_PROTOCOL_VERSION } from '../../schemas/contract.js';
 import { defineProvider } from '@barducks/sdk';
-import type { ProviderToolsFromSpec } from '@barducks/sdk';
 
 function nowMinusDays(days: number): string {
   const d = new Date();
@@ -255,9 +254,6 @@ function findPRByBranch(branch: string): PRInfo | null {
   return MOCK_PRS.find((pr) => pr.branch?.from === branch) || null;
 }
 
-type CIToolsSpec = typeof import('../../spec.js').ciTools;
-type CIVendorToolsSpec = typeof import('../../spec.js').ciVendorTools;
-
 const tools = {
   async fetchPR(input: FetchPRInput): Promise<PRInfo> {
     let pr: PRInfo | null = null;
@@ -280,7 +276,7 @@ const tools = {
 
     if (input.checkId) {
       // If checkId is provided, find the check directly
-      for (const [pid, checks] of Object.entries(MOCK_CHECKS)) {
+      for (const [, checks] of Object.entries(MOCK_CHECKS)) {
         const check = checks.find((c) => c.id === input.checkId);
         if (check) {
           return [check];
@@ -325,8 +321,7 @@ const tools = {
     const comments = MOCK_COMMENTS[prId] || [];
     return comments;
   },
-
-} satisfies ProviderToolsFromSpec<CIToolsSpec>;
+};
 
 const vendor = {
   arcanum: {
@@ -361,15 +356,16 @@ const vendor = {
         title: `Review ${reviewId}`,
         status: 'open',
         commentCount: 0,
+        reviewers: [],
         url: input.reviewUrl || `https://code-review.example.com/review/${reviewId}`,
         createdAt: nowMinusDays(1),
         updatedAt: nowMinusDays(1)
       };
     }
   }
-} satisfies { arcanum: ProviderToolsFromSpec<CIVendorToolsSpec['arcanum']> };
+};
 
-const provider: CIProvider = defineProvider({
+const provider = defineProvider({
   type: 'ci',
   name: 'smogcheck-provider',
   version: '0.1.0',
@@ -379,7 +375,7 @@ const provider: CIProvider = defineProvider({
   vendor,
   auth: { type: 'none', requiredTokens: [] },
   capabilities: ['pr', 'checks', 'comments']
-});
+}) as unknown as CIProvider;
 
 export default provider;
 
