@@ -3,6 +3,13 @@
     "target": "ES2022",
     "module": "ESNext",
     "moduleResolution": "bundler",
+    "baseUrl": ".",
+    "paths": {
+      "@barducks/sdk": ["packages/sdk/src/index.ts"],
+      "@barducks/core": ["packages/core/src/index.ts"],
+      "@barducks/cli": ["packages/cli/src/index.ts"],
+      "@barducks/test-utils": ["packages/test-utils/src/index.ts"]
+    },
     "lib": ["ES2022"],
     "outDir": "./dist",
     "rootDir": "./",

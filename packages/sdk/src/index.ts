@@ -26,3 +26,8 @@ export * from '../../../src/lib/define-provider.js';
 export * from '../../../src/install/module-hooks.js';
 export * from '../../../src/utils.js';
 
+// Extension protocol contracts (stable types/constants for external modules).
+export * from '../../../extensions/ci/schemas/contract.ts';
+export * from '../../../extensions/issue-tracker/schemas/contract.ts';
+export * from '../../../extensions/email/schemas/contract.ts';
+export * from '../../../extensions/messenger/schemas/contract.ts';

@@ -1,8 +1,43 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-const repoRoot = '/workspace';
-const extensionsRoot = path.join(repoRoot, 'extensions');
+/**
+ * Migration helper: generate per-extension package.json metadata, strip MODULE.md YAML frontmatter,
+ * and rewrite brittle relative imports to '@barducks/sdk'.
+ *
+ * This script supports running against any repository that follows the `extensions/<name>/...` layout.
+ *
+ * Usage:
+ *   node scripts/_migrate-npm-workspaces.mjs --repo-root <path> --extensions-dir <path>
+ *
+ * Defaults:
+ *   --repo-root       = process.cwd()
+ *   --extensions-dir  = <repo-root>/extensions
+ */
+
+function parseArgs(argv) {
+  /** @type {Record<string, string | boolean>} */
+  const out = {};
+  for (let i = 2; i < argv.length; i++) {
+    const a = argv[i];
+    if (!a.startsWith('--')) continue;
+    const key = a.slice(2);
+    const next = argv[i + 1];
+    if (!next || next.startsWith('--')) {
+      out[key] = true;
+      continue;
+    }
+    out[key] = next;
+    i++;
+  }
+  return out;
+}
+
+const args = parseArgs(process.argv);
+const repoRoot = path.resolve(typeof args['repo-root'] === 'string' ? args['repo-root'] : process.cwd());
+const extensionsRoot = path.resolve(
+  typeof args['extensions-dir'] === 'string' ? args['extensions-dir'] : path.join(repoRoot, 'extensions')
+);
 
 function readFileIfExists(p) {
   try {
@@ -251,6 +286,21 @@ function migrateExtension(dirName) {
   const moduleMdPath = path.join(modulePath, 'MODULE.md');
   const pkgPath = path.join(modulePath, 'package.json');
 
+  // If the extension already declares barducks.extension metadata in package.json,
+  // do NOT overwrite it. This makes the script safe to re-run.
+  const existingPkgRaw = readFileIfExists(pkgPath);
+  if (existingPkgRaw) {
+    try {
+      const existingPkg = JSON.parse(existingPkgRaw);
+      const extMeta = existingPkg?.barducks?.extension || existingPkg?.barducksExtension;
+      if (extMeta && typeof extMeta === 'object') {
+        return { wrotePkg: false, stripped: false, skipped: true };
+      }
+    } catch {
+      // ignore and continue with migration attempt
+    }
+  }
+
   const moduleMd = readFileIfExists(moduleMdPath);
   const frontmatter = moduleMd ? parseModuleMdFrontmatter(moduleMd) : null;
 
@@ -291,12 +341,33 @@ function migrateExtension(dirName) {
     }
   }
 
-  return { wrotePkg, stripped };
+  return { wrotePkg, stripped, skipped: false };
 }
 
 function migrateExtensionImports() {
-  const importRe1 = /from\s+(['"])(?:\.\.\/)+src\/(?:lib|install)\/[^'"]+\.js\1/g;
-  const importRe2 = /from\s+(['"])(?:\.\.\/)+src\/utils\.js\1/g;
+  // Rewrite known brittle relative imports to monorepo internals / contracts.
+  // Keep this conservative: only rewrite clearly cross-repo paths.
+  const rules = [
+    // Old built-in style: "../../../src/lib/..." or "../../../src/install/..." or "../../../src/utils.js"
+    { re: /from\s+(['"])(?:\.\.\/)+src\/(?:lib|install)\/[^'"]+\.js\1/g, to: "from '@barducks/sdk'" },
+    { re: /from\s+(['"])(?:\.\.\/)+src\/utils\.js\1/g, to: "from '@barducks/sdk'" },
+
+    // External repos sometimes hardcode workspace layout:
+    // "../../../../projects/barducks/..." or "../../../../projects/devduck/..."
+    // Map known contracts/hooks paths into @barducks/sdk.
+    {
+      re: /from\s+(['"])(?:\.\.\/)+projects\/(?:barducks|devduck)\/scripts\/install\/module-hooks\.js\1/g,
+      to: "from '@barducks/sdk'"
+    },
+    {
+      re: /from\s+(['"])(?:\.\.\/)+projects\/(?:barducks|devduck)\/extensions\/ci\/schemas\/contract\.ts\1/g,
+      to: "from '@barducks/sdk'"
+    },
+    {
+      re: /from\s+(['"])(?:\.\.\/)+projects\/(?:barducks|devduck)\/extensions\/issue-tracker\/schemas\/contract\.ts\1/g,
+      to: "from '@barducks/sdk'"
+    }
+  ];
 
   /** @param {string} dir */
   function walk(dir) {
@@ -315,7 +386,8 @@ function migrateExtensionImports() {
   for (const f of files) {
     const txt = readFileIfExists(f);
     if (!txt) continue;
-    const next = txt.replace(importRe1, "from '@barducks/sdk'").replace(importRe2, "from '@barducks/sdk'");
+    let next = txt;
+    for (const r of rules) next = next.replace(r.re, r.to);
     if (next !== txt) {
       writeFileIfChanged(f, next);
       changed++;
