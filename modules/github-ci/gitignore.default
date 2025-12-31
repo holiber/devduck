@@ -40,3 +40,5 @@ build/
 # Workspace projects directory
 projects/
 
+# External tooling repo (has its own VCS / PR flow)
+devduck/
