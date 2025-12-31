@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>404 - Page not Found</title>
+    <meta name="robots" content="noindex" />
+    <style>
+      :root { color-scheme: dark; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        background: #0b0b0b;
+        color: #fff;
+        font-family: system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Arial,sans-serif;
+      }
+      .wrap {
+        width: min(960px, calc(100vw - 32px));
+        text-align: center;
+      }
+      img {
+        width: 100%;
+        height: auto;
+        border-radius: 18px;
+        box-shadow: 0 18px 60px rgba(0,0,0,.6);
+        background: #000;
+      }
+      .links {
+        margin-top: 16px;
+        font-size: 14px;
+        opacity: .92;
+      }
+      a { color: #8ab4f8; text-decoration: none; }
+      a:hover { text-decoration: underline; }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <img src="./assets/404-duck.png" alt="404 - Page not Found" />
+      <div class="links">
+        <a href="./metrics/">Open metrics dashboard</a>
+        ·
+        <a href="./">Home</a>
+      </div>
+    </div>
+  </body>
+</html>
