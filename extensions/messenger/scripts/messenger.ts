@@ -14,9 +14,10 @@ import {
   getProvidersByType,
   getProvider
 } from '@barducks/sdk';
+import { createExtensionRouter } from '@barducks/sdk';
 
 import type { MessengerProvider } from '../schemas/contract.js';
-import { messengerRouter } from '../api.js';
+import messengerExtension from '../index.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -111,6 +112,10 @@ async function main(argv = process.argv): Promise<void> {
   }
 
   const { getProvider: getMessengerProvider } = await initializeProviders(workspaceRoot);
+
+  // Create router from extension with provider context
+  const provider = getMessengerProvider();
+  const messengerRouter = createExtensionRouter(messengerExtension, 'messenger', { provider });
 
   const yargsInstance = messengerRouter.toCli(
     createYargs(argv).scriptName('messenger').strict().usage('Usage: $0 <command> [options]'),

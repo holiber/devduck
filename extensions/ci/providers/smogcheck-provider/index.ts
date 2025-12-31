@@ -10,7 +10,6 @@ import type {
 } from '../../schemas/contract.js';
 import { CI_PROVIDER_PROTOCOL_VERSION } from '../../schemas/contract.js';
 import { defineProvider } from '@barducks/sdk';
-import type { ProviderToolsFromSpec } from '@barducks/sdk';
 
 function nowMinusDays(days: number): string {
   const d = new Date();
@@ -255,9 +254,6 @@ function findPRByBranch(branch: string): PRInfo | null {
   return MOCK_PRS.find((pr) => pr.branch?.from === branch) || null;
 }
 
-type CIToolsSpec = typeof import('../../spec.js').ciTools;
-type CIVendorToolsSpec = typeof import('../../spec.js').ciVendorTools;
-
 const tools = {
   async fetchPR(input: FetchPRInput): Promise<PRInfo> {
     let pr: PRInfo | null = null;
@@ -361,13 +357,14 @@ const vendor = {
         title: `Review ${reviewId}`,
         status: 'open',
         commentCount: 0,
+        reviewers: [],
         url: input.reviewUrl || `https://code-review.example.com/review/${reviewId}`,
         createdAt: nowMinusDays(1),
         updatedAt: nowMinusDays(1)
       };
     }
   }
-} satisfies { arcanum: ProviderToolsFromSpec<CIVendorToolsSpec['arcanum']> };
+};
 
 const provider: CIProvider = defineProvider({
   type: 'ci',
