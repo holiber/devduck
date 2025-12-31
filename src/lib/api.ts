@@ -14,6 +14,7 @@ import type { ProviderRouter } from './provider-router.js';
 import { findWorkspaceRoot } from './workspace-root.js';
 import { readEnvFile } from './env.js';
 import { collectExtensionsDirs } from './extensions-discovery.js';
+import { createRouterFromExtensionFactory } from './extension.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -130,7 +131,12 @@ async function importSpecFromModule(modulePath: string, moduleName: string, quie
 /**
  * Import router from a module's api.ts file
  */
-async function importRouterFromModule(modulePath: string, moduleName: string, quiet: boolean = false): Promise<ProviderRouter<any, any> | null> {
+async function importRouterFromModule(
+  modulePath: string,
+  moduleName: string,
+  workspace: Record<string, unknown>,
+  quiet: boolean = false
+): Promise<ProviderRouter<any, any> | null> {
   try {
     const apiPath = path.join(modulePath, 'api.ts');
     
@@ -143,6 +149,15 @@ async function importRouterFromModule(modulePath: string, moduleName: string, qu
     // We expect exports like: ciRouter, emailRouter, etc.
     const moduleUrl = pathToFileURL(apiPath).href;
     const moduleExports = await import(moduleUrl);
+
+    // New-style extension definition (factory function).
+    if (typeof moduleExports?.default === 'function') {
+      return createRouterFromExtensionFactory({
+        moduleName,
+        factory: moduleExports.default,
+        workspace
+      });
+    }
     
     // Try common router export patterns
     const routerName = `${moduleName}Router`;
@@ -212,7 +227,12 @@ async function discoverAPIsFromLibDirectory(libApiDir: string): Promise<string[]
 /**
  * Import router from an API file in scripts/lib/api/
  */
-async function importRouterFromAPI(apiPath: string, apiName: string, quiet: boolean = false): Promise<ProviderRouter<any, any> | null> {
+async function importRouterFromAPI(
+  apiPath: string,
+  apiName: string,
+  workspace: Record<string, unknown>,
+  quiet: boolean = false
+): Promise<ProviderRouter<any, any> | null> {
   try {
     // Check if API file exists
     if (!fs.existsSync(apiPath)) {
@@ -222,6 +242,15 @@ async function importRouterFromAPI(apiPath: string, apiName: string, quiet: bool
     // Try to import the module
     const moduleUrl = pathToFileURL(apiPath).href;
     const moduleExports = await import(moduleUrl);
+
+    // New-style extension definition (factory function).
+    if (typeof moduleExports?.default === 'function') {
+      return createRouterFromExtensionFactory({
+        moduleName: apiName,
+        factory: moduleExports.default,
+        workspace
+      });
+    }
     
     // Try common router export patterns
     const routerName = `${apiName}Router`;
@@ -277,6 +306,7 @@ export async function collectUnifiedAPIEntries(args?: {
   const quiet = !!args?.quiet;
 
   const workspaceRoot = findWorkspaceRoot(process.cwd());
+  const workspace: Record<string, unknown> = { workspaceRoot };
   
   // Load environment variables from .env file in workspace root
   // This ensures env vars are available when modules are imported
@@ -299,7 +329,7 @@ export async function collectUnifiedAPIEntries(args?: {
   
   for (const apiPath of apiFiles) {
     const apiName = path.basename(apiPath, '.ts');
-    const router = await importRouterFromAPI(apiPath, apiName, quiet);
+    const router = await importRouterFromAPI(apiPath, apiName, workspace, quiet);
     
     if (router) {
       out[apiName] = {
@@ -327,7 +357,7 @@ export async function collectUnifiedAPIEntries(args?: {
     for (const modulePath of modules) {
       const moduleName = path.basename(modulePath);
       if (moduleName in out) continue;
-      const router = await importRouterFromModule(modulePath, moduleName, quiet);
+      const router = await importRouterFromModule(modulePath, moduleName, workspace, quiet);
       if (!router) continue;
       const spec = await importSpecFromModule(modulePath, moduleName, quiet);
       const description = (spec && spec.description) || readModuleDescription(modulePath) || moduleName;

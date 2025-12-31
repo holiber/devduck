@@ -14,7 +14,8 @@ import {
   getProvider
 } from '@barducks/sdk';
 import type { IssueTrackerProvider } from '../schemas/contract.js';
-import { issueTrackerRouter } from '../api.js';
+import issueTrackerExtension from '../api.js';
+import { createRouterFromExtensionFactory } from '@barducks/sdk';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -114,6 +115,12 @@ async function main(argv = process.argv): Promise<void> {
   }
   
   const { getProvider: getIssueTrackerProvider } = await initializeProviders(workspaceRoot);
+
+  const issueTrackerRouter = createRouterFromExtensionFactory({
+    moduleName: 'issue-tracker',
+    factory: issueTrackerExtension as any,
+    workspace: { workspaceRoot }
+  });
 
   // Build yargs with commands generated from router
   const yargsInstance = issueTrackerRouter.toCli(
