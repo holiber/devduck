@@ -1,5 +1,4 @@
 import type { z } from 'zod';
-import type { Argv } from 'yargs';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 
 export interface ProcedureMeta {
@@ -173,8 +172,11 @@ function zodSchemaToYargsOptions(schema: z.ZodType<any> | undefined): Record<str
 
 export interface ExtensionRouterOptions<TProvider> {
   getProvider: (providerName?: string) => TProvider | null;
-  commonOptions?: Record<string, any>;
+  commonOptions?: Record<string, unknown>;
 }
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type YargsInstance = any;
 
 export class ExtensionRouter<TProvider = unknown> {
   constructor(
@@ -182,7 +184,7 @@ export class ExtensionRouter<TProvider = unknown> {
     private readonly name: string
   ) {}
 
-  toCli(yargs: Argv, options: ExtensionRouterOptions<TProvider>): Argv {
+  toCli(yargs: YargsInstance, options: ExtensionRouterOptions<TProvider>): YargsInstance {
     const { getProvider, commonOptions = {} } = options;
 
     for (const [procedureName, procedure] of Object.entries(this.api)) {
@@ -193,23 +195,23 @@ export class ExtensionRouter<TProvider = unknown> {
       yargs = yargs.command(
         commandName,
         description,
-        (y) => {
+        (y: YargsInstance) => {
           for (const [optName, optConfig] of Object.entries({ ...commonOptions, ...inputOptions })) {
             y = y.option(optName, optConfig);
           }
           return y;
         },
-        async (argv) => {
-          const provider = getProvider((argv as any).provider);
+        async (argv: Record<string, unknown>) => {
+          const provider = getProvider(argv.provider as string | undefined);
           if (!provider) {
             throw new Error(`No provider available for ${this.name}`);
           }
 
           // Build input from argv
-          const input: Record<string, any> = {};
+          const input: Record<string, unknown> = {};
           for (const key of Object.keys(inputOptions)) {
-            if ((argv as any)[key] !== undefined) {
-              input[key] = (argv as any)[key];
+            if (argv[key] !== undefined) {
+              input[key] = argv[key];
             }
           }
 
