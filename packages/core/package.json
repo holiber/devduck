@@ -1,0 +1,14 @@
+{
+  "name": "@barducks/core",
+  "version": "0.3.0",
+  "private": true,
+  "type": "module",
+  "description": "Barducks core runtime (workspace package placeholder)",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  }
+}
+

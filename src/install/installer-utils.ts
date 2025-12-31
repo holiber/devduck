@@ -186,22 +186,22 @@ export function createProjectSymlinkToTarget(
 }
 
 /**
- * Create symlink for a project into an Arcadia checkout.
+ * Create symlink for a project into an arc working copy.
  */
 export function createProjectSymlink(
   projectsDir: string,
   projectName: string,
-  pathInArcadia: string,
+  pathInRepo: string,
   env: Record<string, string>,
   log: (message: string) => void
 ): SymlinkResult {
   const symlinkPath = path.join(projectsDir, projectName);
 
-  // Get ARCADIA path from env
-  let arcadiaPath = env.ARCADIA || process.env.ARCADIA || '~/arcadia';
-  arcadiaPath = arcadiaPath.replace(/^~/, process.env.HOME || '');
+  // Get arc working copy path from env
+  let repoRoot = env.ARC_WORKDIR || process.env.ARC_WORKDIR || '~/repo';
+  repoRoot = repoRoot.replace(/^~/, process.env.HOME || '');
 
-  const targetPath = path.join(arcadiaPath, pathInArcadia);
+  const targetPath = path.join(repoRoot, pathInRepo);
 
   try {
     // Check if symlink already exists

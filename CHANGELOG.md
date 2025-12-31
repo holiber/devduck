@@ -116,7 +116,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 🔗 **Symlink support for external repositories** - External repositories from `workspace.config.yml.repos` now create symlinks when the same repo exists in `projects/`
   - Repositories appear in `barducks/%repo_name%` directory
   - If the same repo is listed in `projects`, a symlink is created from `barducks/%repo_name%` to `projects/%repo_name%`
-  - For Arcadia repos not in projects, symlinks are created to the actual Arcadia path
+  - For arc working copy repos not in projects, symlinks are created to the actual checkout path
   - Eliminates duplication and ensures consistency between repos and projects
 
 - 📊 **Improved pre-install check output** - Reduced information duplication in check results
@@ -131,10 +131,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added - 2025-12-25
 
 - 🔧 **Automatic environment variable installation from install commands** - Pre-install checks now automatically run install commands when required environment variables are missing
-  - When a test check requires a variable (e.g., `ARCADIA_ROOT`) and has an `install` field, the install command is executed automatically
+  - When a test check requires a variable (e.g., `ARC_ROOT`) and has an `install` field, the install command is executed automatically
   - The install command output is captured and used to set the variable for the test execution
   - Variables are automatically written to `.env` file to persist them for future runs
-  - Eliminates the need to manually set variables that can be derived from commands (e.g., `arc root` for `ARCADIA_ROOT`)
+  - Eliminates the need to manually set variables that can be derived from commands (e.g., `arc root` for `ARC_ROOT`)
   - See `ARCHITECTURE.md` for configuration details
 
 - 📚 **Documentation links in auth check failures** - Auth checks can now include a `docs` field that provides helpful links when checks fail
@@ -165,11 +165,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 🔌 **CI module provider discovery from external repositories** - CI module now discovers providers from external repositories defined in `workspace.config.yml`
   - Providers from `repos` in workspace config are automatically loaded
   - Enables using providers from external module repositories
-  - Works with both Arcadia (`arc://`) and Git repository URLs
+  - Works with both arc (`arc://`) and Git repository URLs
 
-- 📁 **Workspace repository resolution** - Improved repository path resolution for Arcadia repositories
+- 📁 **Workspace repository resolution** - Improved repository path resolution for arc working copy repositories
   - First checks if repository exists in workspace `projects/` directory
-  - Falls back to Arcadia root detection if not found in workspace
+  - Falls back to arc root detection if not found in workspace
   - Supports both relative paths (e.g., `arc://junk/user/repo`) and absolute paths
   - Allows using same `workspace.config.yml` across different developer machines
 

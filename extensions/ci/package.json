@@ -1,0 +1,30 @@
+{
+  "name": "@barducks/extension-ci",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "description": "CI module with provider system for continuous integration systems",
+  "keywords": [
+    "ci",
+    "testing",
+    "integration",
+    "providers"
+  ],
+  "barducks": {
+    "extension": {
+      "name": "ci",
+      "tags": [
+        "ci",
+        "testing",
+        "integration",
+        "providers"
+      ],
+      "dependencies": [
+        "core"
+      ],
+      "defaultSettings": {
+        "provider": "smogcheck-provider"
+      }
+    }
+  }
+}

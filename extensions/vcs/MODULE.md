@@ -1,10 +1,3 @@
----
-name: vcs
-version: 0.1.0
-description: Version control system rules and conventions (commit and PR formatting)
-tags: [vcs, git, arc]
-dependencies: [core]
----
 # VCS Module
 
 Module providing common rules and conventions for version control systems (VCS).
@@ -19,5 +12,5 @@ This module provides:
 
 ## Note
 
-VCS-specific implementations (like `arc` commands for Arcadia) are provided by external modules.
+VCS-specific implementations (like `arc` commands for an arc working copy) are provided by external modules.
 

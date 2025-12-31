@@ -18,7 +18,7 @@ import { spawnSync } from 'child_process';
 import { fileURLToPath } from 'url';
 // @ts-expect-error - prompt-store may not have types
 import promptStore from '../../core/scripts/prompt-store.js';
-import { createYargs, installEpipeHandler } from '../../../src/lib/cli.js';
+import { createYargs, installEpipeHandler } from '@barducks/sdk';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -299,11 +299,12 @@ interface NormalizedTicket {
 function normalizeTicket(taskState: { ticket?: { key?: string; summary?: string; statusType?: { display?: string; key?: string }; status?: { display?: string; key?: string } } | null } | null): NormalizedTicket | null {
   const t = taskState && taskState.ticket ? taskState.ticket : null;
   if (!t) return null;
+  const base = String(process.env.TASK_TRACKER_BASE_URL || 'https://tracker.example.com').replace(/\/+$/, '');
   return {
     key: t.key || null,
     summary: t.summary || null,
     status: (t.statusType && (t.statusType.display || t.statusType.key)) || (t.status && (t.status.display || t.status.key)) || null,
-    url: t.key ? `https://st.yandex-team.ru/${t.key}` : null,
+    url: t.key ? `${base}/${t.key}` : null,
   };
 }
 

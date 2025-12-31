@@ -1,0 +1,28 @@
+{
+  "name": "@barducks/extension-issue-tracker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Issue tracker module with provider system for working with issues, comments, PRs, and resources",
+  "keywords": [
+    "issues",
+    "tracker",
+    "providers"
+  ],
+  "barducks": {
+    "extension": {
+      "name": "issue-tracker",
+      "tags": [
+        "issues",
+        "tracker",
+        "providers"
+      ],
+      "dependencies": [
+        "core"
+      ],
+      "defaultSettings": {
+        "provider": "smogcheck-provider"
+      }
+    }
+  }
+}

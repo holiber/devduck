@@ -249,7 +249,7 @@ Workspaces can load extensions from external repositories via `workspace.config.
 Repository formats:
 
 - Git URLs (including `https://github.com/...` and `git@github.com:...`)
-- Arcadia paths using `arc://...` (resolved via `ARCADIA_ROOT` or `arc root`)
+- Arc working copy paths using `arc://...` (resolved via `ARC_ROOT` or `arc root`)
 
 Each external repository must contain:
 

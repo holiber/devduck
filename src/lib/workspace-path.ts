@@ -7,7 +7,7 @@ interface ResolveWorkspaceRootOptions {
   projectRoot?: string;
   findWorkspaceRoot?: (startPath: string) => string | null;
   getGitRoot?: (cwd: string) => string | null;
-  getArcadiaRoot?: () => string | null;
+  getArcRoot?: () => string | null;
   fsExistsSync?: (path: string) => boolean;
 }
 
@@ -38,7 +38,7 @@ export function getGitRoot(cwd: string): string | null {
   return out ? out : null;
 }
 
-export function getArcadiaRoot(): string | null {
+export function getArcRoot(): string | null {
   const res = spawnSync('arc', ['root'], {
     encoding: 'utf8',
     stdio: ['ignore', 'pipe', 'pipe']
@@ -74,7 +74,7 @@ export function parseGithubSubpath(url: URL): string | null {
 }
 
 export function parseArkSubpath(url: URL): string {
-  // Supported link format (Arcadia):
+  // Supported link format:
   // - ark:/<path>
   // The path is treated as relative to `arc root`.
   // Keep it permissive: strip leading slashes; decode percent-encoding.
@@ -83,7 +83,7 @@ export function parseArkSubpath(url: URL): string {
   return decoded.replace(/^\/+/, '');
 }
 
-export function isLikelyArcadiaUrl(url: URL): boolean {
+export function isLikelyArkUrl(url: URL): boolean {
   return (url.protocol || '').toLowerCase() === 'ark:';
 }
 
@@ -98,7 +98,7 @@ export function isLikelyGithubUrl(url: URL): boolean {
  * Supports:
  * - Regular filesystem paths
  * - GitHub "file links" (mapped to local git checkout root)
- * - Arcadia "file links" (mapped to local arcadia root via `arc root`)
+ * - ark: "file links" (mapped to local `arc root`)
  *
  * @param workspacePathInput - Input workspace path
  * @param opts - Options object
@@ -112,7 +112,7 @@ export function resolveWorkspaceRoot(
   const findWorkspaceRoot = opts.findWorkspaceRoot || (() => null);
   const fsExistsSync = opts.fsExistsSync || fs.existsSync;
   const gitRootFn = opts.getGitRoot || getGitRoot;
-  const arcRootFn = opts.getArcadiaRoot || getArcadiaRoot;
+  const arcRootFn = opts.getArcRoot || getArcRoot;
 
   const input = typeof workspacePathInput === 'string' ? workspacePathInput.trim() : '';
   if (!input) return path.resolve(projectRoot);
@@ -125,15 +125,15 @@ export function resolveWorkspaceRoot(
     return path.resolve(findWorkspaceRoot(start) || start);
   }
 
-  if (parsedUrl && isLikelyArcadiaUrl(parsedUrl)) {
+  if (parsedUrl && isLikelyArkUrl(parsedUrl)) {
     const arcRoot = arcRootFn();
     const fallback = arcRoot ? path.resolve(arcRoot) : path.resolve(projectRoot);
     const subpath = parseArkSubpath(parsedUrl);
 
     if (arcRoot && subpath) {
-      // Some ark: links may include "arcadia/" prefix; normalize it away if present,
-      // because `arc root` already points at the Arcadia checkout root.
-      const normalizedSubpath = subpath.startsWith('arcadia/') ? subpath.slice('arcadia/'.length) : subpath;
+      // Some ark: links may include "repo/" prefix; normalize it away if present,
+      // because `arc root` already points at the checkout root.
+      const normalizedSubpath = subpath.startsWith('repo/') ? subpath.slice('repo/'.length) : subpath;
       const local = path.join(arcRoot, normalizedSubpath);
       const start = fsExistsSync(local) ? path.dirname(local) : arcRoot;
       return path.resolve(findWorkspaceRoot(start) || arcRoot);
@@ -164,7 +164,7 @@ export const _internal = {
   parseGithubSubpath,
   parseArkSubpath,
   isLikelyGithubUrl,
-  isLikelyArcadiaUrl,
+  isLikelyArkUrl,
   tryParseUrl
 };
 

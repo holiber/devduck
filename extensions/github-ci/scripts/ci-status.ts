@@ -4,10 +4,10 @@ import path from 'path';
 import https from 'https';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
-import { resolveCorePaths } from '../../../src/lib/barducks-paths.js';
-import { findWorkspaceRoot } from '../../../src/lib/workspace-root.js';
-import { getWorkspaceConfigFilePath, readWorkspaceConfigFile } from '../../../src/lib/workspace-config.js';
-import type { ExecuteCommandResult } from '../../../src/utils.js';
+import { resolveCorePaths } from '@barducks/sdk';
+import { findWorkspaceRoot } from '@barducks/sdk';
+import { getWorkspaceConfigFilePath, readWorkspaceConfigFile } from '@barducks/sdk';
+import type { ExecuteCommandResult } from '@barducks/sdk';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

@@ -1,0 +1,26 @@
+{
+  "name": "@barducks/extension-vcs",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Version control system rules and conventions (commit and PR formatting)",
+  "keywords": [
+    "vcs",
+    "git",
+    "arc"
+  ],
+  "barducks": {
+    "extension": {
+      "name": "vcs",
+      "tags": [
+        "vcs",
+        "git",
+        "arc"
+      ],
+      "dependencies": [
+        "core"
+      ],
+      "defaultSettings": {}
+    }
+  }
+}

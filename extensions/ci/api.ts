@@ -6,7 +6,7 @@
  * NOTE: The source of truth is `extensions/ci/spec.ts`.
  */
 
-import { makeProviderRouter } from '../../src/lib/make-provider-router.js';
+import { makeProviderRouter } from '@barducks/sdk';
 import { ciTools, ciVendorTools } from './spec.js';
 
 export const ciRouter = makeProviderRouter({

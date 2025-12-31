@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { defineTools, defineVendorTools, tool } from '../../src/lib/tool-spec.js';
+import { defineTools, defineVendorTools, tool } from '@barducks/sdk';
 import {
   FetchPRInputSchema,
   FetchCheckStatusInputSchema,

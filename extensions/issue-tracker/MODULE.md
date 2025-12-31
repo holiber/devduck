@@ -1,12 +1,3 @@
----
-name: issue-tracker
-version: 0.1.0
-description: Issue tracker module with provider system for working with issues, comments, PRs, and resources
-tags: [issues, tracker, providers]
-dependencies: [core]
-defaultSettings:
-  provider: smogcheck-provider
----
 # Issue Tracker Module
 
 Issue tracker module implementing a provider system based on a Zod contract for working with issues, comments, pull requests, and downloading resources.
@@ -16,7 +7,7 @@ Issue tracker module implementing a provider system based on a Zod contract for 
 This module provides:
 - Provider-based architecture for issue tracker operations
 - Common interface for fetching issue information, comments, PRs, and downloading resources
-- Support for different issue tracking systems (GitHub Issues, Yandex Tracker, etc.) via providers
+- Support for different issue tracking systems (e.g. GitHub Issues and other trackers) via providers
 - Resource management with distance-based downloading and caching
 
 ## Architecture

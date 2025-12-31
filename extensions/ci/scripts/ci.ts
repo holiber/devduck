@@ -3,16 +3,16 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { createYargs, installEpipeHandler } from '../../../src/lib/cli.js';
-import { resolveBarducksRoot } from '../../../src/lib/barducks-paths.js';
-import { findWorkspaceRoot } from '../../../src/lib/workspace-root.js';
-import { readEnvFile } from '../../../src/lib/env.js';
-import { getWorkspaceConfigFilePath, readWorkspaceConfigFile } from '../../../src/lib/workspace-config.js';
+import { createYargs, installEpipeHandler } from '@barducks/sdk';
+import { resolveBarducksRoot } from '@barducks/sdk';
+import { findWorkspaceRoot } from '@barducks/sdk';
+import { readEnvFile } from '@barducks/sdk';
+import { getWorkspaceConfigFilePath, readWorkspaceConfigFile } from '@barducks/sdk';
 import {
   discoverProvidersFromModules,
   getProvidersByType,
   getProvider
-} from '../../../src/lib/provider-registry.js';
+} from '@barducks/sdk';
 import type { CIProvider } from '../schemas/contract.js';
 import { ciRouter } from '../api.js';
 

@@ -1,0 +1,26 @@
+{
+  "name": "@barducks/extension-dashboard",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Interactive terminal dashboard for monitoring Barducks tasks",
+  "keywords": [
+    "dashboard",
+    "tui",
+    "monitoring"
+  ],
+  "barducks": {
+    "extension": {
+      "name": "dashboard",
+      "tags": [
+        "dashboard",
+        "tui",
+        "monitoring"
+      ],
+      "dependencies": [
+        "core"
+      ],
+      "defaultSettings": {}
+    }
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "name": "@barducks/cli",
+  "version": "0.3.0",
+  "private": true,
+  "type": "module",
+  "description": "Barducks CLI (workspace package placeholder)",
+  "bin": {
+    "barducks": "./bin/barducks.js",
+    "create-barducks-workspace": "./bin/barducks.js"
+  }
+}
+

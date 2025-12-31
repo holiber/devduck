@@ -66,22 +66,22 @@ function isExistingDirectory(dirPath: string | undefined): boolean {
 }
 
 /**
- * Create symlink for Arcadia project
+ * Create symlink for arc working copy project
  */
 function createProjectSymlink(
   projectName: string,
-  pathInArcadia: string,
+  pathInRepo: string,
   workspaceRoot: string,
   env: Record<string, string>
 ): { success: boolean; path: string; target: string; existed?: boolean; created?: boolean; error?: string } {
   const projectsDir = path.join(workspaceRoot, 'projects');
   const symlinkPath = path.join(projectsDir, projectName);
   
-  // Get ARCADIA path from env
-  let arcadiaPath = env.ARCADIA || process.env.ARCADIA || '~/arcadia';
-  arcadiaPath = arcadiaPath.replace(/^~/, process.env.HOME || '');
+  // Get arc working copy path from env
+  let repoRoot = env.ARC_WORKDIR || process.env.ARC_WORKDIR || '~/repo';
+  repoRoot = repoRoot.replace(/^~/, process.env.HOME || '');
   
-  const targetPath = path.join(arcadiaPath, pathInArcadia);
+  const targetPath = path.join(repoRoot, pathInRepo);
   
   try {
     // Check if symlink already exists
@@ -248,7 +248,7 @@ export async function runStep3DownloadProjects(
       continue;
     }
     
-    // Arcadia projects: create symlink into Arcadia checkout
+    // Arc working copy projects: create symlink into the checkout
     if (project.src.startsWith('arc://')) {
       const existingPath = path.join(projectsDir, projectName);
       if (fs.existsSync(existingPath)) {

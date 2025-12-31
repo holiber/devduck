@@ -1,0 +1,14 @@
+{
+  "name": "@barducks/sdk",
+  "version": "0.3.0",
+  "private": true,
+  "type": "module",
+  "description": "Barducks SDK for writing extensions",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  }
+}
+
