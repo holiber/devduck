@@ -1,0 +1,24 @@
+{
+  "name": "@barducks/extension-messenger-im",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "IM provider for the messenger module",
+  "keywords": [
+    "messenger",
+    "providers"
+  ],
+  "barducks": {
+    "extension": {
+      "name": "messenger-im",
+      "tags": [
+        "messenger",
+        "providers"
+      ],
+      "dependencies": [
+        "messenger"
+      ],
+      "defaultSettings": {}
+    }
+  }
+}

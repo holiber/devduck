@@ -1,12 +1,3 @@
----
-name: ci
-version: 0.2.0
-description: CI module with provider system for continuous integration systems
-tags: [ci, testing, integration, providers]
-dependencies: [core]
-defaultSettings:
-  provider: smogcheck-provider
----
 # CI Module
 
 CI module implementing a provider system based on a Zod contract for working with pull requests, merge checks, and comments.

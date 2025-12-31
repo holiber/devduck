@@ -1,0 +1,26 @@
+{
+  "name": "@barducks/extension-email",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Email module with provider system (AsyncAPI/MCP-ready contract)",
+  "keywords": [
+    "email",
+    "providers"
+  ],
+  "barducks": {
+    "extension": {
+      "name": "email",
+      "tags": [
+        "email",
+        "providers"
+      ],
+      "dependencies": [
+        "core"
+      ],
+      "defaultSettings": {
+        "provider": "smogcheck-provider"
+      }
+    }
+  }
+}

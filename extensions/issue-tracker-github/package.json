@@ -1,0 +1,34 @@
+{
+  "name": "@barducks/extension-issue-tracker-github",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "GitHub provider for the issue tracker module",
+  "keywords": [
+    "issue-tracker",
+    "github",
+    "providers"
+  ],
+  "barducks": {
+    "extension": {
+      "name": "issue-tracker-github",
+      "tags": [
+        "issue-tracker",
+        "github",
+        "providers"
+      ],
+      "dependencies": [
+        "issue-tracker"
+      ],
+      "defaultSettings": {},
+      "checks": [
+        {
+          "type": "auth",
+          "var": "GITHUB_TOKEN",
+          "description": "GitHub API token",
+          "test": "curl -H 'Authorization: token $GITHUB_TOKEN' -H 'Accept: application/vnd.github.v3+json' -s -o /dev/null -w '%{http_code}' https://api.github.com/user"
+        }
+      ]
+    }
+  }
+}

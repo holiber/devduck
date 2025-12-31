@@ -10,8 +10,8 @@ import type {
   Annotation
 } from '../../../ci/schemas/contract.js';
 import { CI_PROVIDER_PROTOCOL_VERSION } from '../../../ci/schemas/contract.js';
-import { defineProvider } from '../../../../src/lib/define-provider.js';
-import type { ProviderToolsFromSpec } from '../../../../src/lib/tool-spec.js';
+import { defineProvider } from '@barducks/sdk';
+import type { ProviderToolsFromSpec } from '@barducks/sdk';
 
 interface RepoInfo {
   owner: string;

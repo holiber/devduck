@@ -156,10 +156,10 @@ const WorkspaceConfigSchema = z
     // Per-extension override settings. Merge behavior is implemented in resolver.
     extensionSettings: z.record(z.string(), z.any()).optional(),
 
-    // External module repositories to load (git / arcadia formats).
+    // External module repositories to load (git / arc formats).
     repos: z.array(z.string()).optional(),
 
-    // Workspace projects (Arcadia, GitHub/Git, local folders).
+    // Workspace projects (arc working copy, GitHub/Git, local folders).
     projects: z.array(WorkspaceProjectSchema).optional(),
 
     // Additional script names to import from projects (default: test, dev, build, start, lint).

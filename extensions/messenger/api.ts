@@ -6,7 +6,7 @@
  */
 
 import { z } from 'zod';
-import { initProviderContract } from '../../src/lib/provider-router.js';
+import { initProviderContract } from '@barducks/sdk';
 import type { MessengerProvider } from './schemas/contract.js';
 import {
   ListChatsInputSchema,

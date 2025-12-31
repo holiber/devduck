@@ -8,7 +8,7 @@ Usage: `node scripts/pr.js [-y|--yes] [git|arc]`
 
 - `-y`, `--yes` — Auto-create PR / push without asking for confirmation (only if no warnings detected and there are no uncommitted changes)
 - `git` — Create PR plan only for Git repositories (GitHub, etc.)
-- `arc` — Create PR plan only for Arcadia repositories
+- `arc` — Create PR plan only for arc working copy repositories
 
 ## Safety rules (must follow)
 
@@ -33,7 +33,7 @@ Execute `node scripts/pr.js` to get the current state.
 
 **Repository filtering:**
 - Use `node scripts/pr.js git` to create PR plan only for Git repositories
-- Use `node scripts/pr.js arc` to create PR plan only for Arcadia repositories
+- Use `node scripts/pr.js arc` to create PR plan only for arc working copy repositories
 - Use `node scripts/pr.js` (no filter) to create PR plan for all repositories
 
 ### 2. Handle uncommitted changes
@@ -52,7 +52,7 @@ If the user wants to **create a PR** or **update an existing PR**, after the ana
   - **Plan structure for multi-repository workspaces:**
     - First line: summary indicating how many PRs will be created (e.g., "You are going to create N PR(s) in: repo1, repo2, ...")
     - For each repository that will have a PR:
-      - Section header: `## PR N: Repository Name (Git/Arcadia)`
+      - Section header: `## PR N: Repository Name (Git/Arc)`
       - Branch information: `**Branch**: branch-name`
       - Repository information: `**Repository**: repo-name`
       - PR Description section with:
@@ -62,7 +62,7 @@ If the user wants to **create a PR** or **update an existing PR**, after the ana
     - Finally: Warnings section (if any warnings exist)
   - **Repository grouping rules:**
     - Each Git repository gets its own separate PR
-    - All Arcadia changes are grouped into a single PR (regardless of which files changed)
+    - All arc working copy changes are grouped into a single PR (regardless of which files changed)
     - The plan must list ALL PRs that will be created
   - The plan MUST NOT include extra technical sections (e.g. `## Changed Files`, `## Affected Areas`, commit lists).
   - The plan may include up to 3 additional sections only:
@@ -75,7 +75,7 @@ If the user wants to **create a PR** or **update an existing PR**, after the ana
   - and explicitly approve continuing work on the PR via chat message (`ok` / `approve` / `продолжай`).
 
 Important:
-- Plan generation requires **diff vs trunk** (via `arc diff trunk`). If diff is unavailable, the AI must stop and surface the `diff_unavailable` warning, asking to remount Arcadia working copy and rerun `/pr`.
+- Plan generation requires **diff vs trunk** (via `arc diff trunk`). If diff is unavailable, the AI must stop and surface the `diff_unavailable` warning and ask the user to re-mount the arc working copy and rerun `/pr`.
 
 Next:
 - If **no additional code changes are needed** — proceed with PR creation/update.
@@ -117,5 +117,5 @@ node scripts/pr.js --update-description --from-plan ".cache/pr/<pr-name>.plan.md
 
 After successful PR create/update:
 - move the current plan file to `.cache/trash/` and append timestamp to the filename (done by `--archive-plan`)
-- always show the PR URL in the output (e.g. `https://a.yandex-team.ru/review/<id>`)
+- always show the PR URL in the output (e.g. `https://code-review.example.com/review/<id>`)
 

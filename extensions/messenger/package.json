@@ -1,0 +1,28 @@
+{
+  "name": "@barducks/extension-messenger",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Messenger module with provider system (e.g. Telegram, IM, etc.)",
+  "keywords": [
+    "messenger",
+    "chat",
+    "providers"
+  ],
+  "barducks": {
+    "extension": {
+      "name": "messenger",
+      "tags": [
+        "messenger",
+        "chat",
+        "providers"
+      ],
+      "dependencies": [
+        "core"
+      ],
+      "defaultSettings": {
+        "provider": "telegram-provider"
+      }
+    }
+  }
+}

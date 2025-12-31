@@ -3,10 +3,10 @@
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
-import { resolveCorePaths } from '../../../src/lib/barducks-paths.js';
-import { findWorkspaceRoot } from '../../../src/lib/workspace-root.js';
-import { getWorkspaceConfigFilePath, readWorkspaceConfigFile } from '../../../src/lib/workspace-config.js';
-import type { ExecuteCommandResult } from '../../../src/utils.js';
+import { resolveCorePaths } from '@barducks/sdk';
+import { findWorkspaceRoot } from '@barducks/sdk';
+import { getWorkspaceConfigFilePath, readWorkspaceConfigFile } from '@barducks/sdk';
+import type { ExecuteCommandResult } from '@barducks/sdk';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -68,18 +68,11 @@ function parseRepoUrl(repoUrl: string): RepoUrlParseResult {
 
   const trimmed = repoUrl.trim();
 
-  // Arcadia formats
+  // Arc working copy formats
   if (trimmed.startsWith('arc://')) {
     return {
       type: 'arc',
       normalized: trimmed.replace(/^arc:\/\//, '')
-    };
-  }
-
-  if (trimmed.startsWith('a.yandex-team.ru/arc/')) {
-    return {
-      type: 'arc',
-      normalized: trimmed.replace(/^a\.yandex-team\.ru\/arc\//, '')
     };
   }
 

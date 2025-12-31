@@ -6,9 +6,9 @@
 
 import fs from 'fs';
 import path from 'path';
-import type { HookContext, HookResult } from '../../src/install/module-hooks.js';
-import { replaceVariablesInObject } from '../../src/lib/config.js';
-import { readEnvFile } from '../../src/lib/env.js';
+import type { HookContext, HookResult } from '@barducks/sdk';
+import { replaceVariablesInObject } from '@barducks/sdk';
+import { readEnvFile } from '@barducks/sdk';
 
 export default {
   /**
@@ -136,7 +136,7 @@ export default {
         const isOptional =
           config.optional === true ||
           mcpSettings?.optional === true ||
-          // Devtools MCP is frequently absent in non-Arcadia environments; treat it as optional by default.
+          // Devtools MCP is frequently absent in many environments; treat it as optional by default.
           serverName === 'devtools-mcp';
         
         // Check for command in both direct config and nested mcpSettings

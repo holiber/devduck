@@ -1,0 +1,28 @@
+{
+  "name": "@barducks/extension-git",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Git integration - generates .gitignore for projects",
+  "keywords": [
+    "git",
+    "vcs",
+    "essential"
+  ],
+  "barducks": {
+    "extension": {
+      "name": "git",
+      "tags": [
+        "git",
+        "vcs",
+        "essential"
+      ],
+      "dependencies": [
+        "core"
+      ],
+      "defaultSettings": {
+        "gitignore": "|"
+      }
+    }
+  }
+}

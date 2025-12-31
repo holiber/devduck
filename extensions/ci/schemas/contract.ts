@@ -172,7 +172,7 @@ export type FetchCommentsInput = z.infer<typeof FetchCommentsInputSchema>;
 
 export const FetchReviewInputSchema = z.object({
   reviewId: z.union([IdSchema, z.number().int().positive()]).optional(),
-  reviewUrl: z.string().url().optional() // For Arcanum: review URL like https://a.yandex-team.ru/review/10930804
+  reviewUrl: z.string().url().optional() // For Arcanum: review URL like https://code-review.example.com/review/10930804
 });
 export type FetchReviewInput = z.infer<typeof FetchReviewInputSchema>;
 

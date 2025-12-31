@@ -6,42 +6,42 @@ import path from 'node:path';
 import { resolveWorkspaceRoot, _internal } from '../src/lib/workspace-path.js';
 
 describe('workspace-path resolver', () => {
-  test('parses ark:/ links as Arcadia links', () => {
+  test('parses ark:/ links as ark links', () => {
     const url = _internal.tryParseUrl('ark:/some/path/file.txt');
     assert.ok(url, 'should parse as URL');
     assert.strictEqual(url.protocol, 'ark:');
-    assert.strictEqual(_internal.isLikelyArcadiaUrl(url), true);
+    assert.strictEqual(_internal.isLikelyArkUrl(url), true);
     assert.strictEqual(_internal.parseArkSubpath(url), 'some/path/file.txt');
   });
 
   test('resolves ark:/ links using arc root (fallback to arc root)', () => {
     const res = resolveWorkspaceRoot('ark:/some/path/file.txt', {
       projectRoot: '/project',
-      getArcadiaRoot: () => '/arcadia-root',
+      getArcRoot: () => '/repo-root',
       getGitRoot: () => null,
       fsExistsSync: () => false,
       findWorkspaceRoot: () => null
     });
 
-    assert.strictEqual(res, path.resolve('/arcadia-root'));
+    assert.strictEqual(res, path.resolve('/repo-root'));
   });
 
-  test('resolves ark:/ links using arc root and strips arcadia/ prefix', () => {
-    const res = resolveWorkspaceRoot('ark:/arcadia/some/path/file.txt', {
+  test('resolves ark:/ links using arc root and strips repo/ prefix', () => {
+    const res = resolveWorkspaceRoot('ark:/repo/some/path/file.txt', {
       projectRoot: '/project',
-      getArcadiaRoot: () => '/arcadia-root',
+      getArcRoot: () => '/repo-root',
       getGitRoot: () => null,
       fsExistsSync: () => true,
       findWorkspaceRoot: () => null
     });
 
-    assert.strictEqual(res, path.resolve('/arcadia-root'));
+    assert.strictEqual(res, path.resolve('/repo-root'));
   });
 
   test('if arc root is unavailable, ark:/ falls back to projectRoot', () => {
     const res = resolveWorkspaceRoot('ark:/some/path/file.txt', {
       projectRoot: '/project',
-      getArcadiaRoot: () => null,
+      getArcRoot: () => null,
       getGitRoot: () => null,
       fsExistsSync: () => false,
       findWorkspaceRoot: () => null

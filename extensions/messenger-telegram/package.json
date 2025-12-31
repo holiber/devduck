@@ -1,0 +1,26 @@
+{
+  "name": "@barducks/extension-messenger-telegram",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Telegram provider for the messenger module",
+  "keywords": [
+    "messenger",
+    "telegram",
+    "providers"
+  ],
+  "barducks": {
+    "extension": {
+      "name": "messenger-telegram",
+      "tags": [
+        "messenger",
+        "telegram",
+        "providers"
+      ],
+      "dependencies": [
+        "messenger"
+      ],
+      "defaultSettings": {}
+    }
+  }
+}

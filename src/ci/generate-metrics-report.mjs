@@ -186,6 +186,72 @@ async function writeFileEnsuringDir(filePath, content) {
   await fsp.writeFile(filePath, content, 'utf8');
 }
 
+async function writeNoJekyll(outDir) {
+  await writeFileEnsuringDir(path.join(outDir, '.nojekyll'), '\n');
+}
+
+async function write404Page(outDir) {
+  const assetDir = path.join(outDir, 'assets');
+  const pngPath = path.join(assetDir, '404-duck.png');
+
+  // The custom 404 image is stored in the repo and copied into the published output.
+  await fsp.mkdir(path.dirname(pngPath), { recursive: true });
+  await fsp.copyFile(path.join(process.cwd(), 'media', 'gh-pages-404.png'), pngPath);
+
+  const html = `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>404 - Page not Found</title>
+    <meta name="robots" content="noindex" />
+    <style>
+      :root { color-scheme: dark; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        background: #0b0b0b;
+        color: #fff;
+        font-family: system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Arial,sans-serif;
+      }
+      .wrap {
+        width: min(960px, calc(100vw - 32px));
+        text-align: center;
+      }
+      img {
+        width: 100%;
+        height: auto;
+        border-radius: 18px;
+        box-shadow: 0 18px 60px rgba(0,0,0,.6);
+        background: #000;
+      }
+      .links {
+        margin-top: 16px;
+        font-size: 14px;
+        opacity: .92;
+      }
+      a { color: #8ab4f8; text-decoration: none; }
+      a:hover { text-decoration: underline; }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <img src="./assets/404-duck.png" alt="404 - Page not Found" />
+      <div class="links">
+        <a href="./metrics/">Open metrics dashboard</a>
+        ·
+        <a href="./">Home</a>
+      </div>
+    </div>
+  </body>
+</html>
+`;
+
+  await writeFileEnsuringDir(path.join(outDir, '404.html'), html);
+}
+
 async function main() {
   const metricsDir = readArg('--metrics-dir') ?? '.cache/metrics';
   const outDir = readArg('--out-dir') ?? '.cache/metrics-pages';
@@ -224,6 +290,9 @@ async function main() {
     body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Arial,sans-serif;margin:40px;background:#fafafa;color:#111}
     h1{font-size:1.6rem;margin:0 0 8px}
     .sub{color:#444;margin:0 0 18px}
+    .hero{display:flex;align-items:center;gap:18px;margin:0 0 18px}
+    .hero img{width:140px;height:auto;border-radius:18px;box-shadow:0 10px 24px rgba(0,0,0,.10);background:#fff}
+    .heroText{min-width:0}
     .card{background:#fff;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,.06);padding:16px 18px;margin:16px 0}
     .chartBlock{margin-top:18px}
     .chartBlock:first-child{margin-top:0}
@@ -242,8 +311,13 @@ async function main() {
   </style>
 </head>
 <body>
-  <h1>Barducks Metrics Dashboard</h1>
-  <p class="sub"><strong>Generated:</strong> ${new Date().toLocaleString()} &nbsp; <strong>SHA:</strong> <code>${current?.meta?.sha ?? 'n/a'}</code></p>
+  <div class="hero">
+    <img src="./good-duck.png" alt="Good duck" />
+    <div class="heroText">
+      <h1>Barducks Metrics Dashboard</h1>
+      <p class="sub"><strong>Generated:</strong> ${new Date().toLocaleString()} &nbsp; <strong>SHA:</strong> <code>${current?.meta?.sha ?? 'n/a'}</code></p>
+    </div>
+  </div>
 
   <div class="card">
     <table>
@@ -492,6 +566,21 @@ async function main() {
   await fsp.mkdir(metricsOutDir, { recursive: true });
   await writeFileEnsuringDir(path.join(metricsOutDir, 'index.html'), html);
 
+  // Optional hero image on the dashboard.
+  // Expected file (preferred): `media/good-duck.png` (repo root).
+  // Fallback: `media/logo.png` (keeps the dashboard stable if the preferred asset isn't present).
+  // The deployed filename is fixed to keep the HTML stable.
+  const heroDst = path.join(metricsOutDir, 'good-duck.png');
+  const heroCandidates = [path.resolve('media/good-duck.png'), path.resolve('media/logo.png')];
+  for (const src of heroCandidates) {
+    try {
+      await fsp.copyFile(src, heroDst);
+      break;
+    } catch {
+      // ignore missing/invalid candidate and try the next one
+    }
+  }
+
   // Project stats badge (published to GitHub Pages alongside the dashboard).
   const badgeSvg = makeSimpleBadgeSvg({
     label: 'project stats',
@@ -513,6 +602,12 @@ async function main() {
       await writeFileEnsuringDir(dst, f === 'history.json' ? '[]\n' : '{}\n');
     }
   }
+
+  // GitHub Pages behavior depends on root-level files.
+  // - `.nojekyll` disables Jekyll processing.
+  // - `404.html` is used as the custom not-found page.
+  await writeNoJekyll(outDir);
+  await write404Page(outDir);
 
   // eslint-disable-next-line no-console
   console.log('[metrics] dashboard wrote', path.join(metricsOutDir, 'index.html'));

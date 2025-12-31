@@ -2,7 +2,7 @@
 
 You are going to create N PR(s) in: repo1, repo2, ...
 
-## PR 1: Repository Name (Git/Arcadia)
+## PR 1: Repository Name (Git/Arc)
 
 **Branch**: branch-name
 **Repository**: repo-name
@@ -20,7 +20,7 @@ You are going to create N PR(s) in: repo1, repo2, ...
 
 ---
 
-## PR 2: Repository Name (Git/Arcadia)
+## PR 2: Repository Name (Git/Arc)
 
 **Branch**: branch-name
 **Repository**: repo-name

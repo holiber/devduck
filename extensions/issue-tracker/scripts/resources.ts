@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { findWorkspaceRoot } from '../../../src/lib/workspace-root.js';
+import { findWorkspaceRoot } from '@barducks/sdk';
 import type { ResourceMetadata } from '../schemas/contract.js';
 
 export interface ResourcesJson {

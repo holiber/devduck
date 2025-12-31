@@ -76,7 +76,7 @@ After switching to a single comma-separated ignore string (and enabling `.gitign
 Top duplicated file pairs by total duplicated lines (from the corrected jscpd report):
 
 - `extensions/dashboard/schemas/dashboard-snapshot.zod.ts` ↔ `scripts/schemas/dashboard-snapshot.zod.ts` (**152 lines**, 1:1 copy)
-- `extensions/messenger-telegram/providers/telegram-provider/index.ts` ↔ `extensions/messenger-yandex-messenger/providers/yandex-messenger-provider/index.ts` (**145 lines**)
+- `extensions/messenger-telegram/providers/telegram-provider/index.ts` ↔ `extensions/messenger-im/providers/im-messenger-provider/index.ts` (**145 lines**)
 - `extensions/github-ci/scripts/ci-status.ts` ↔ `extensions/github-ci/scripts/github-ci.ts` (**131 lines**)
 - `tests/ci/smogcheck-provider.pw.spec.ts` ↔ `tests/ci/smogcheck-provider.test.ts` (**117 lines**)
 - `extensions/ci-github/providers/github-provider/index.ts` ↔ `extensions/issue-tracker-github/providers/github-provider/index.ts` (**84 lines**)
@@ -101,7 +101,7 @@ Top duplicated file pairs by total duplicated lines (from the corrected jscpd re
 
 ### C) Introduce shared provider scaffolding for “mock providers” (medium effort, high payoff)
 
-- **Messenger providers** (Telegram vs Yandex Messenger):
+- **Messenger providers** (Telegram vs IM):
   - Both implement the same caching/page-walk pattern (`listChats`, `getChatHistory` paging, `downloadFile` caching).
   - Recommendation: create a shared factory/helper (e.g. `extensions/messenger/providers/mock-provider-kit.ts`) to centralise:
     - env parsing (`envInt`)

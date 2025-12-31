@@ -6,7 +6,7 @@
 
 import fs from 'fs';
 import path from 'path';
-import type { HookContext, HookResult } from '../../src/install/module-hooks.js';
+import type { HookContext, HookResult } from '@barducks/sdk';
 
 export default {
   async install(context: HookContext): Promise<HookResult> {

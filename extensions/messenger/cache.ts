@@ -3,7 +3,7 @@ import path from 'node:path';
 import os from 'node:os';
 import crypto from 'node:crypto';
 
-import { findWorkspaceRoot } from '../../src/lib/workspace-root.js';
+import { findWorkspaceRoot } from '@barducks/sdk';
 
 export function isMessengerCacheDisabled(): boolean {
   const v = String(process.env.MESSENGER_CACHE_DISABLE || '').trim().toLowerCase();

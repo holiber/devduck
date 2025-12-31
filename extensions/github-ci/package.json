@@ -1,0 +1,28 @@
+{
+  "name": "@barducks/extension-github-ci",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "GitHub CI setup and status checking for GitHub repositories",
+  "keywords": [
+    "ci",
+    "github",
+    "testing"
+  ],
+  "barducks": {
+    "extension": {
+      "name": "github-ci",
+      "tags": [
+        "ci",
+        "github",
+        "testing"
+      ],
+      "dependencies": [
+        "core"
+      ],
+      "defaultSettings": {
+        "gitignore": "|"
+      }
+    }
+  }
+}

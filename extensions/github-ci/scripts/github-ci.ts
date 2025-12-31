@@ -5,8 +5,8 @@ import fs from 'fs';
 import https from 'https';
 import { fileURLToPath } from 'url';
 import { CI, type CISetupOptions, type CISetupResult, type CICheckResult } from '../../ci/scripts/ci.js';
-import { resolveCorePaths } from '../../../src/lib/barducks-paths.js';
-import type { ExecuteCommandResult } from '../../../src/utils.js';
+import { resolveCorePaths } from '@barducks/sdk';
+import type { ExecuteCommandResult } from '@barducks/sdk';
 import type { Repo } from '../../vcs/scripts/repo.js';
 
 const __filename = fileURLToPath(import.meta.url);
