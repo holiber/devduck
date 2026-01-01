@@ -1,45 +1,45 @@
 {
   "meta": {
-    "collectedAt": "2025-12-31T00:07:09.448Z",
+    "collectedAt": "2026-01-01T17:58:41.887Z",
     "repository": "holiber/barducks",
     "eventName": "push",
-    "sha": "d6c85f650ab5974efa3ec54725cd5d897643ed8d",
+    "sha": "a12cd30660cc6d0cda39312bd57e41966f61864b",
     "ref": "refs/heads/main",
-    "runId": "20608646521",
+    "runId": "20642978188",
     "runAttempt": "1",
-    "prNumber": 120,
-    "prUrl": "https://github.com/holiber/barducks/pull/120",
+    "prNumber": 131,
+    "prUrl": "https://github.com/holiber/barducks/pull/131",
     "node": "v24.12.0"
   },
   "pr": {
-    "number": 120,
-    "url": "https://github.com/holiber/barducks/pull/120"
+    "number": 131,
+    "url": "https://github.com/holiber/barducks/pull/131"
   },
   "commands": {
     "npm_test": {
       "name": "npm_test",
       "command": "bash -lc 'npx c8 --reporter=json-summary --report-dir .cache/coverage npm run test:unit || (echo \"⚠️ Unit tests failed, retrying after 60 seconds...\"; sleep 60; npx c8 --reporter=json-summary --report-dir .cache/coverage npm run test:unit)'",
       "exitCode": 0,
-      "durationMs": 32954,
-      "collectedAt": "2025-12-31T00:06:24.123Z"
+      "durationMs": 32388,
+      "collectedAt": "2026-01-01T17:57:54.831Z"
     },
     "pw_installer": {
       "name": "pw_installer",
       "command": "bash -lc 'npx playwright test -c tests/installer/playwright.config.ts || (echo \"⚠️ Playwright installer suite failed, retrying after 60 seconds...\"; sleep 60; npx playwright test -c tests/installer/playwright.config.ts)'",
       "exitCode": 0,
-      "durationMs": 28413,
-      "collectedAt": "2025-12-31T00:07:08.865Z"
+      "durationMs": 28287,
+      "collectedAt": "2026-01-01T17:58:40.895Z"
     },
     "npm_pack": {
       "name": "npm-pack",
       "command": "npm pack --silent",
       "exitCode": 0,
-      "durationMs": 970
+      "durationMs": 1069
     }
   },
   "sizes": {
     "npm_pack": {
-      "bytes": 6401994
+      "bytes": 8935797
     }
   },
   "tests": {
@@ -49,15 +49,15 @@
       "passed": 74,
       "failed": 0,
       "skipped": 9,
-      "reportedDurationMs": 30040.410931,
-      "durationMs": 32954,
+      "reportedDurationMs": 29430.560073,
+      "durationMs": 32388,
       "exitCode": 0
     },
     "e2e_installer": {
       "total": 34,
       "passed": 34,
-      "reportedDurationMs": 27100,
-      "durationMs": 28413,
+      "reportedDurationMs": 27000,
+      "durationMs": 28287,
       "exitCode": 0
     },
     "flaky": {
@@ -65,16 +65,16 @@
     }
   },
   "code": {
-    "scriptCodeLines": 33375,
-    "totalTextLines": 44243,
+    "scriptCodeLines": 33531,
+    "totalTextLines": 44649,
     "hugeScripts": 1
   },
   "quality": {
     "coverage": {
-      "linesPct": 63.63,
-      "statementsPct": 63.63,
-      "branchesPct": 61.36,
-      "functionsPct": 65.4
+      "linesPct": 63.33,
+      "statementsPct": 63.33,
+      "branchesPct": 60.76,
+      "functionsPct": 64.92
     },
     "slowTests": {
       "thresholdMs": 10000,
@@ -85,16 +85,16 @@
           "top": [
             {
               "name": "launch dev starts background processes, runs smokecheck, captures browser console, and allows reuse",
-              "durationMs": 10591.60486
+              "durationMs": 10429.152036
             }
           ]
         }
       }
     },
     "duplication": {
-      "duplicatedPct": 8.69,
-      "duplicatedLines": 2757,
-      "totalLines": 31711
+      "duplicatedPct": 8.68,
+      "duplicatedLines": 2767,
+      "totalLines": 31867
     }
   },
   "notes": [
