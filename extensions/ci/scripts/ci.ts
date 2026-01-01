@@ -14,7 +14,8 @@ import {
   getProvider
 } from '@barducks/sdk';
 import type { CIProvider } from '../schemas/contract.js';
-import { ciRouter } from '../api.js';
+import ciExtension from '../api.js';
+import { createRouterFromExtensionFactory } from '@barducks/sdk';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -111,6 +112,12 @@ async function main(argv = process.argv): Promise<void> {
   }
   
   const { getProvider: getCIProvider } = await initializeProviders(workspaceRoot);
+
+  const ciRouter = createRouterFromExtensionFactory({
+    moduleName: 'ci',
+    factory: ciExtension as any,
+    workspace: { workspaceRoot }
+  });
 
   // Build yargs with commands generated from router
   const yargsInstance = ciRouter.toCli(

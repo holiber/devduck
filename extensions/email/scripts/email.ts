@@ -13,7 +13,8 @@ import {
   getProvider
 } from '@barducks/sdk';
 import type { EmailProvider, Message } from '../schemas/contract.js';
-import { emailRouter } from '../api.js';
+import emailExtension from '../api.js';
+import { createRouterFromExtensionFactory } from '@barducks/sdk';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -111,6 +112,12 @@ async function main(argv = process.argv): Promise<void> {
 
   const selected = getProvider('email', selectedName);
   const provider = selected ? asEmailProvider(selected) : asEmailProvider(providers[0]);
+
+  const emailRouter = createRouterFromExtensionFactory({
+    moduleName: 'email',
+    factory: emailExtension as any,
+    workspace: { workspaceRoot }
+  });
 
   const days = typeof args.days === 'number' && Number.isFinite(args.days) ? Math.max(1, Math.floor(args.days)) : 7;
   const since = String(args.since || '').trim() || safeIsoNowMinusDays(days);

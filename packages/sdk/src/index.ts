@@ -22,6 +22,7 @@ export * from '../../../src/lib/make-provider-router.js';
 export * from '../../../src/lib/provider-registry.js';
 export * from '../../../src/lib/tool-spec.js';
 export * from '../../../src/lib/define-provider.js';
+export * from '../../../src/lib/extension.js';
 
 export * from '../../../src/install/module-hooks.js';
 export * from '../../../src/utils.js';
