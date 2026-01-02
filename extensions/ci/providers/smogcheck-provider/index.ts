@@ -3,12 +3,20 @@ import type {
   PRInfo,
   CheckStatus,
   Comment,
-  FetchPRInput,
-  FetchCheckStatusInput,
-  FetchCommentsInput,
-  FetchReviewInput
-} from '../../schemas/contract.js';
-import { CI_PROVIDER_PROTOCOL_VERSION } from '../../schemas/contract.js';
+  DeleteResult,
+  PRListInput,
+  PRGetInput,
+  PRPostInput,
+  PRDeleteInput,
+  PRChecksListInput,
+  PRChecksGetInput,
+  CommentListInput,
+  CommentGetInput,
+  CommentPostInput,
+  CommentPutInput,
+  CommentDeleteInput
+} from '../../api.js';
+import { CI_PROVIDER_PROTOCOL_VERSION } from '../../api.js';
 import { defineProvider } from '@barducks/sdk';
 
 function nowMinusDays(days: number): string {
@@ -254,128 +262,216 @@ function findPRByBranch(branch: string): PRInfo | null {
   return MOCK_PRS.find((pr) => pr.branch?.from === branch) || null;
 }
 
-const tools = {
-  async fetchPR(input: FetchPRInput): Promise<PRInfo> {
-    let pr: PRInfo | null = null;
+function resolvePRIdFromInput(input: { prId?: string | number; branch?: string }): string | null {
+  if (input.prId !== undefined && input.prId !== null && String(input.prId).trim()) {
+    return String(input.prId);
+  }
+  if (input.branch) {
+    const pr = findPRByBranch(input.branch);
+    return pr ? pr.id : null;
+  }
+  return null;
+}
 
-    if (input.prId) {
-      pr = findPRById(input.prId);
-    } else if (input.branch) {
-      pr = findPRByBranch(input.branch);
-    }
+function okResult(ok: boolean): DeleteResult {
+  return { ok };
+}
 
-    if (!pr) {
-      throw new Error(`PR not found: ${input.prId || input.branch || 'unknown'}`);
-    }
+async function prList(input: PRListInput): Promise<PRInfo[]> {
+  let prs = [...MOCK_PRS];
+  if (input.branch) {
+    prs = prs.filter((pr) => pr.branch?.from === input.branch);
+  }
+  if (input.status) {
+    prs = prs.filter((pr) => pr.status === input.status);
+  }
+  if (input.limit) {
+    prs = prs.slice(0, input.limit);
+  }
+  return prs;
+}
 
-    return pr;
-  },
+async function prGet(input: PRGetInput): Promise<PRInfo> {
+  const pr = findPRById(input.prId);
+  if (!pr) throw new Error(`PR not found: ${input.prId}`);
+  return pr;
+}
 
-  async fetchCheckStatus(input: FetchCheckStatusInput): Promise<CheckStatus[]> {
-    let prId: string | null = null;
+async function prPost(input: PRPostInput): Promise<PRInfo> {
+  const now = new Date().toISOString();
+  const nextNumber =
+    Math.max(0, ...MOCK_PRS.map((p) => (typeof p.number === 'number' ? p.number : 0))) + 1;
+  const id = `pr-${Date.now()}`;
 
-    if (input.checkId) {
-      // If checkId is provided, find the check directly
-      for (const [pid, checks] of Object.entries(MOCK_CHECKS)) {
-        const check = checks.find((c) => c.id === input.checkId);
-        if (check) {
-          return [check];
-        }
-      }
-      throw new Error(`Check not found: ${input.checkId}`);
-    }
+  const pr: PRInfo = {
+    id,
+    number: nextNumber,
+    title: input.title,
+    status: 'open',
+    commentCount: 0,
+    reviewers: [],
+    url: `https://smogcheck.local/pr/${nextNumber}`,
+    branch: {
+      from: input.from,
+      to: input.to
+    },
+    createdAt: now,
+    updatedAt: now
+  };
 
-    if (input.prId) {
-      prId = String(input.prId);
-    } else if (input.branch) {
-      const pr = findPRByBranch(input.branch);
-      if (pr) {
-        prId = pr.id;
-      }
-    }
+  MOCK_PRS.unshift(pr);
+  return pr;
+}
 
-    if (!prId) {
-      throw new Error(`Cannot determine PR ID from input: ${JSON.stringify(input)}`);
-    }
+async function prDelete(input: PRDeleteInput): Promise<DeleteResult> {
+  const idStr = String(input.prId);
+  const idx = MOCK_PRS.findIndex((pr) => pr.id === idStr || String(pr.number) === idStr);
+  if (idx === -1) return okResult(false);
+  const [removed] = MOCK_PRS.splice(idx, 1);
+  delete MOCK_CHECKS[removed.id];
+  delete MOCK_COMMENTS[removed.id];
+  return okResult(true);
+}
 
-    const checks = MOCK_CHECKS[prId] || [];
-    return checks;
-  },
+async function prChecksList(input: PRChecksListInput): Promise<CheckStatus[]> {
+  const prId = resolvePRIdFromInput({ prId: input.prId as string | number | undefined, branch: input.branch });
+  if (!prId && !input.sha) {
+    throw new Error(`Cannot determine PR from input: ${JSON.stringify(input)}`);
+  }
+  const checks = prId ? MOCK_CHECKS[prId] || [] : [];
+  return input.limit ? checks.slice(0, input.limit) : checks;
+}
 
-  async fetchComments(input: FetchCommentsInput): Promise<Comment[]> {
-    let prId: string | null = null;
+async function prChecksGet(input: PRChecksGetInput): Promise<CheckStatus> {
+  for (const checks of Object.values(MOCK_CHECKS)) {
+    const found = checks.find((c) => c.id === input.checkId);
+    if (found) return found;
+  }
+  throw new Error(`Check not found: ${input.checkId}`);
+}
 
-    if (input.prId) {
-      prId = String(input.prId);
-    } else if (input.branch) {
-      const pr = findPRByBranch(input.branch);
-      if (pr) {
-        prId = pr.id;
-      }
-    }
+async function commentList(input: CommentListInput): Promise<Comment[]> {
+  const prId = resolvePRIdFromInput({ prId: input.prId as string | number | undefined, branch: input.branch });
+  if (!prId) throw new Error(`Cannot determine PR from input: ${JSON.stringify(input)}`);
+  const comments = MOCK_COMMENTS[prId] || [];
+  return input.limit ? comments.slice(0, input.limit) : comments;
+}
 
-    if (!prId) {
-      throw new Error(`Cannot determine PR ID from input: ${JSON.stringify(input)}`);
-    }
+async function commentGet(input: CommentGetInput): Promise<Comment> {
+  const idStr = String(input.commentId);
+  for (const comments of Object.values(MOCK_COMMENTS)) {
+    const found = comments.find((c) => c.id === idStr);
+    if (found) return found;
+  }
+  throw new Error(`Comment not found: ${input.commentId}`);
+}
 
-    const comments = MOCK_COMMENTS[prId] || [];
-    return comments;
-  },
+async function commentPost(input: CommentPostInput): Promise<Comment> {
+  const prId = resolvePRIdFromInput({ prId: input.prId as string | number | undefined, branch: input.branch });
+  if (!prId) throw new Error(`Cannot determine PR from input: ${JSON.stringify(input)}`);
 
-};
+  const now = new Date().toISOString();
+  const id = `comment-${Date.now()}`;
+  const comment: Comment = {
+    id,
+    body: input.body,
+    author: {
+      id: 'barducks',
+      login: 'barducks',
+      name: 'Barducks',
+      avatarUrl: undefined
+    },
+    createdAt: now,
+    updatedAt: now,
+    path: input.path,
+    line: input.line,
+    reactions: [],
+    isResolved: false,
+    url: `https://smogcheck.local/pr/${prId}/comments/${id}`
+  };
 
-const vendor = {
-  arcanum: {
-    async fetchReview(input: FetchReviewInput): Promise<PRInfo> {
-      // For smogcheck provider, treat review as PR
-      let reviewId: string | number | null = null;
+  const list = (MOCK_COMMENTS[prId] = MOCK_COMMENTS[prId] || []);
+  list.push(comment);
+  return comment;
+}
 
-      if (input.reviewUrl) {
-        // Extract review ID from URL like https://code-review.example.com/review/10930804
-        const match = input.reviewUrl.match(/review\/(\d+)/);
-        if (match) {
-          reviewId = Number.parseInt(match[1], 10);
-        }
-      } else if (input.reviewId) {
-        reviewId = typeof input.reviewId === 'string' ? Number.parseInt(input.reviewId, 10) : input.reviewId;
-      }
-
-      if (!reviewId) {
-        throw new Error(`Review not found: ${input.reviewId || input.reviewUrl || 'unknown'}`);
-      }
-
-      // For mock provider, return a mock PR based on review ID
-      const pr = findPRById(reviewId);
-      if (pr) {
-        return pr;
-      }
-
-      // Return a default mock PR for review
-      return {
-        id: `review-${reviewId}`,
-        number: reviewId,
-        title: `Review ${reviewId}`,
-        status: 'open',
-        commentCount: 0,
-        url: input.reviewUrl || `https://code-review.example.com/review/${reviewId}`,
-        createdAt: nowMinusDays(1),
-        updatedAt: nowMinusDays(1)
+async function commentPut(input: CommentPutInput): Promise<Comment> {
+  const idStr = String(input.commentId);
+  for (const comments of Object.values(MOCK_COMMENTS)) {
+    const idx = comments.findIndex((c) => c.id === idStr);
+    if (idx >= 0) {
+      const prev = comments[idx];
+      const next: Comment = {
+        ...prev,
+        body: input.body,
+        path: input.path ?? prev.path,
+        line: input.line ?? prev.line,
+        updatedAt: new Date().toISOString()
       };
+      comments[idx] = next;
+      return next;
     }
   }
-};
+  throw new Error(`Comment not found: ${input.commentId}`);
+}
 
-const provider: CIProvider = defineProvider({
+async function commentDelete(input: CommentDeleteInput): Promise<DeleteResult> {
+  const idStr = String(input.commentId);
+  for (const comments of Object.values(MOCK_COMMENTS)) {
+    const idx = comments.findIndex((c) => c.id === idStr);
+    if (idx >= 0) {
+      comments.splice(idx, 1);
+      return okResult(true);
+    }
+  }
+  return okResult(false);
+}
+
+const tools = {
+  'pr.list': prList,
+  'pr.get': prGet,
+  'pr.post': prPost,
+  'pr.delete': prDelete,
+  'pr.checks.list': prChecksList,
+  'pr.checks.get': prChecksGet,
+  'comment.list': commentList,
+  'comment.get': commentGet,
+  'comment.post': commentPost,
+  'comment.put': commentPut,
+  'comment.delete': commentDelete
+} as const;
+
+const base = defineProvider({
   type: 'ci',
   name: 'smogcheck-provider',
   version: '0.1.0',
   description: 'Test provider for CI module',
   protocolVersion: CI_PROVIDER_PROTOCOL_VERSION,
   tools,
-  vendor,
   auth: { type: 'none', requiredTokens: [] },
   capabilities: ['pr', 'checks', 'comments']
 });
+
+const provider = {
+  ...base,
+  pr: {
+    list: prList,
+    get: prGet,
+    post: prPost,
+    delete: prDelete,
+    checks: {
+      list: prChecksList,
+      get: prChecksGet
+    }
+  },
+  comment: {
+    list: commentList,
+    get: commentGet,
+    post: commentPost,
+    put: commentPut,
+    delete: commentDelete
+  }
+} satisfies CIProvider;
 
 export default provider;
 

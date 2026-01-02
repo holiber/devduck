@@ -5,14 +5,14 @@
  */
 
 import { spawnSync } from 'child_process';
-import { readdirSync, statSync } from 'fs';
-import { join } from 'path';
+import { existsSync, mkdirSync, readdirSync, statSync, symlinkSync } from 'fs';
+import path from 'node:path';
 
 function findTestFiles(dir: string, testFiles: string[] = []): string[] {
   const entries = readdirSync(dir, { withFileTypes: true });
   
   for (const entry of entries) {
-    const fullPath = join(dir, entry.name);
+    const fullPath = path.join(dir, entry.name);
     
     if (entry.isDirectory()) {
       findTestFiles(fullPath, testFiles);
@@ -24,7 +24,28 @@ function findTestFiles(dir: string, testFiles: string[] = []): string[] {
   return testFiles;
 }
 
-const testFiles = findTestFiles('tests');
+function ensureWorkspaceSymlink(pkgName: string, targetRel: string): void {
+  const scopeDir = path.join('node_modules', '@barducks');
+  const linkPath = path.join(scopeDir, pkgName);
+  const target = path.resolve(targetRel);
+
+  if (existsSync(linkPath)) return;
+  if (!existsSync(target)) return;
+
+  mkdirSync(scopeDir, { recursive: true });
+  try {
+    symlinkSync(target, linkPath, 'dir');
+  } catch {
+    // best-effort: if symlink creation fails, let runtime throw a clear module not found error
+  }
+}
+
+// In some environments npm workspaces links may be missing; make CI tests more robust.
+ensureWorkspaceSymlink('sdk', 'packages/sdk');
+
+const roots = process.argv.slice(2).filter((a) => a && !a.startsWith('-'));
+const searchRoots = roots.length > 0 ? roots : ['tests', 'extensions'];
+const testFiles = searchRoots.flatMap((r) => findTestFiles(r));
 console.log(`Found ${testFiles.length} test files`);
 
 if (testFiles.length === 0) {

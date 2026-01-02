@@ -13,7 +13,7 @@ import {
   getProvidersByType,
   getProvider
 } from '@barducks/sdk';
-import type { CIProvider } from '../schemas/contract.js';
+import type { CIProvider } from '../api.js';
 import ciExtension from '../api.js';
 import { createRouterFromExtensionFactory } from '@barducks/sdk';
 
@@ -106,7 +106,9 @@ async function main(argv = process.argv): Promise<void> {
     // Set environment variables from .env (don't override existing ones)
     for (const [key, value] of Object.entries(env)) {
       if (!process.env[key]) {
-        process.env[key] = value;
+        if (typeof value === 'string') {
+          process.env[key] = value;
+        }
       }
     }
   }
