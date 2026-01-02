@@ -5,7 +5,7 @@
  */
 
 import { spawnSync } from 'child_process';
-import { existsSync, mkdirSync, readdirSync, rmSync, statSync, symlinkSync } from 'fs';
+import { existsSync, mkdirSync, readdirSync, rmSync, symlinkSync } from 'fs';
 import path from 'node:path';
 
 function findTestFiles(dir: string, testFiles: string[] = []): string[] {
@@ -42,6 +42,7 @@ function ensureWorkspaceSymlink(pkgName: string, targetRel: string): void {
 
 // In some environments npm workspaces links may be missing; make CI tests more robust.
 ensureWorkspaceSymlink('sdk', 'packages/sdk');
+ensureWorkspaceSymlink('test-utils', 'packages/test-utils');
 
 // Always clean artifacts from previous runs.
 const artifactsDir = path.join(process.cwd(), '.cache', 'artifacts');
@@ -65,8 +66,7 @@ if (testFiles.length === 0) {
 
 // Run tests with tsx (use npx to ensure tsx is available)
 const nodeOptions = String(process.env.NODE_OPTIONS || '').trim();
-const hooksImport = path.resolve('src/test-hooks.ts');
-const nextNodeOptions = `${nodeOptions ? nodeOptions + ' ' : ''}--import=${hooksImport}`.trim();
+const nextNodeOptions = `${nodeOptions ? nodeOptions + ' ' : ''}--import=@barducks/test-utils/node-test-hooks`.trim();
 
 const result = spawnSync(
   'npx',
