@@ -6,7 +6,7 @@
  */
 
 import { z } from 'zod';
-import { initProviderContract } from '../provider-router.js';
+import { initProviderContract } from '../router.js';
 import { findWorkspaceRoot } from '../workspace-root.js';
 import { readJSON } from '../config.js';
 import path from 'path';

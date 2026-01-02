@@ -34,7 +34,8 @@ Example:
 
 ```ts
 import { z } from 'zod';
-import { defineTools, tool, type VendorToolsSpec } from '../../src/lib/tool-spec.js';
+// NOTE: `tool-spec` helpers were removed during repo cleanup.
+// Define your tool schemas directly with zod + `publicProcedure` in `api.ts`.
 import { SomeInputSchema, SomeOutputSchema } from './schemas/contract.js';
 
 export const myTools = defineTools({

@@ -17,10 +17,9 @@ export * from '../../../src/lib/workspace-root.js';
 export * from '../../../src/lib/workspace-config.js';
 export * from '../../../src/lib/barducks-paths.js';
 
-export * from '../../../src/lib/provider-router.js';
+export * from '../../../src/lib/router.js';
 export * from '../../../src/lib/make-provider-router.js';
-export * from '../../../src/lib/provider-registry.js';
-export * from '../../../src/lib/tool-spec.js';
+export * from '../../../src/lib/providers-registry.js';
 export * from '../../../src/lib/define-provider.js';
 export * from '../../../src/lib/extension.js';
 export * from '../../../src/lib/workspace.js';

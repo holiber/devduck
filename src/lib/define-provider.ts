@@ -1,4 +1,4 @@
-import type { ProviderManifestBase, ProviderType } from './provider-registry.js';
+import type { ProviderManifestBase, ProviderType } from './providers-registry.js';
 
 export type DefineProviderArgs<
   TType extends ProviderType,

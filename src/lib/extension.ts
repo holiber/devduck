@@ -1,7 +1,7 @@
 import type { z } from 'zod';
 
-import type { Procedure, ProcedureContext, ProcedureMeta } from './provider-router.js';
-import { ProviderRouter } from './provider-router.js';
+import type { Procedure, ProcedureContext, ProcedureMeta } from './router.js';
+import { ProviderRouter } from './router.js';
 
 export type ExtensionWorkspace = Record<string, unknown>;
 
