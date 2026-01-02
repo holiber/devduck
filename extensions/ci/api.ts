@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { defineExtention, publicProcedure } from '@barducks/sdk';
+import { defineExtention, publicProcedure, registerExtention } from '@barducks/sdk';
 
 import type { CIProvider } from './schemas/contract.js';
 import {
@@ -13,7 +13,15 @@ import {
   CommentSchema
 } from './schemas/contract.js';
 
-export default defineExtention((ext: { ci: CIProvider }) => {
+// Register CI as a built-in extension resource type (declarative metadata).
+registerExtention({
+  id: 'ci',
+  source: 'build-in',
+  title: 'CI',
+  version: '1.0.0'
+});
+
+export default defineExtention((ext: { ci: CIProvider }, _workspace: Record<string, unknown>) => {
   return {
     api: {
       fetchPR: publicProcedure
