@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { defineExtention, publicProcedure } from '@barducks/sdk';
+import { defineExtension, publicProcedure } from '@barducks/sdk';
 
 import type { IssueTrackerProvider } from './schemas/contract.js';
 import {
@@ -14,7 +14,7 @@ import {
   DownloadResourcesResultSchema
 } from './schemas/contract.js';
 
-export default defineExtention((ext: { 'issue-tracker': IssueTrackerProvider }) => {
+export default defineExtension((ext: { 'issue-tracker': IssueTrackerProvider }) => {
   return {
     api: {
       fetchIssue: publicProcedure

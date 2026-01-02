@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { defineExtention, publicProcedure } from '@barducks/sdk';
+import { defineExtension, publicProcedure } from '@barducks/sdk';
 
 import type { MessengerProvider } from './schemas/contract.js';
 import {
@@ -12,7 +12,7 @@ import {
   DownloadFileResultSchema
 } from './schemas/contract.js';
 
-export default defineExtention((ext: { messenger: MessengerProvider }) => {
+export default defineExtension((ext: { messenger: MessengerProvider }) => {
   return {
     api: {
       listChats: publicProcedure

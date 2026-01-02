@@ -9,7 +9,6 @@ export type DefineProviderArgs<
   name: string;
   version: string;
   description?: string;
-  protocolVersion: string;
   tools: TTools;
   vendor?: TVendor;
   auth?: unknown;
@@ -47,7 +46,6 @@ export function defineProvider<
     name: args.name,
     version: args.version,
     description: (args.manifest as any)?.description ?? args.description,
-    protocolVersion: args.protocolVersion,
     tools: toolsList,
     vendorTools,
     auth: (args as { auth?: unknown }).auth ?? { type: 'none', requiredTokens: [] },

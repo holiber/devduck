@@ -2,7 +2,6 @@ import { describe, test, beforeEach } from 'node:test';
 import assert from 'node:assert';
 import path from 'node:path';
 
-import provider from '../providers/smogcheck-provider/index.js';
 import {
   PRInfoSchema,
   CheckStatusSchema,
@@ -18,6 +17,17 @@ import {
 } from '../../../src/lib/providers-registry.js';
 
 describe('ci: smogcheck-provider', () => {
+  let provider: CIProvider;
+
+  beforeEach(async () => {
+    clearProvidersForTests();
+    const extensionsDir = path.resolve(process.cwd(), 'extensions');
+    await discoverProvidersFromModules({ extensionsDir });
+    const p = getProvider('ci', 'smogcheck-provider');
+    assert.ok(p, 'Expected smogcheck-provider to be discovered');
+    provider = p as unknown as CIProvider;
+  });
+
   test('matches CIProvider interface', () => {
     const p = provider as CIProvider;
     assert.ok(p.name);
@@ -157,11 +167,8 @@ describe('ci: smogcheck-provider', () => {
 });
 
 describe('ci: provider registry discovery', () => {
-  beforeEach(() => {
-    clearProvidersForTests();
-  });
-
   test('discovers smogcheck-provider from modules directory and registers it', async () => {
+    clearProvidersForTests();
     const extensionsDir = path.resolve(process.cwd(), 'extensions');
     await discoverProvidersFromModules({ extensionsDir });
 

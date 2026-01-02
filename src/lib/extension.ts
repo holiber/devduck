@@ -40,7 +40,7 @@ function withExtensionRuntime<T>(runtime: NonNullable<ExtensionRuntime>, fn: () 
  * NOTE: This intentionally returns the factory function unchanged.
  * The runtime decides *when* and *with what context* to execute it.
  */
-export function defineExtention<TExt = unknown, TWorkspace extends ExtensionWorkspace = ExtensionWorkspace>(
+export function defineExtension<TExt = unknown, TWorkspace extends ExtensionWorkspace = ExtensionWorkspace>(
   factory: ExtensionFactory<TExt, TWorkspace>
 ): ExtensionFactory<TExt, TWorkspace> {
   return ((ext: TExt, workspace: TWorkspace) => {
@@ -109,7 +109,7 @@ class PublicProcedureBuilder<
 
     const runtime = CURRENT_EXTENSION_RUNTIME as { ext: TExt; workspace: TWorkspace } | null;
     if (!runtime) {
-      throw new Error('publicProcedure: used outside of defineExtention(...) factory execution');
+      throw new Error('publicProcedure: used outside of defineExtension(...) factory execution');
     }
 
     return {

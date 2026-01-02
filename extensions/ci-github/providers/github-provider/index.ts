@@ -1,10 +1,9 @@
 import { execSync } from 'child_process';
 
-import { defineProvider } from '@barducks/sdk';
+import type { Extension, Workspace } from '@barducks/sdk';
 
 import type {
   Annotation,
-  CIProvider,
   CheckStatus,
   Comment,
   CommentDeleteInput,
@@ -21,7 +20,6 @@ import type {
   PRListInput,
   PRPostInput
 } from '../../../ci/api.js';
-import { CI_PROVIDER_PROTOCOL_VERSION } from '../../../ci/api.js';
 
 type RepoInfo = {
   owner: string;
@@ -582,7 +580,7 @@ async function commentDelete(input: CommentDeleteInput): Promise<DeleteResult> {
   return okResult(true);
 }
 
-const tools = {
+const api = {
   'pr.list': prList,
   'pr.get': prGet,
   'pr.post': prPost,
@@ -596,21 +594,14 @@ const tools = {
   'comment.delete': commentDelete
 } as const;
 
-const base = defineProvider({
-  type: 'ci',
-  name: 'github-provider',
-  version: '0.1.0',
-  description: 'GitHub provider for CI module (GitHub API)',
-  protocolVersion: CI_PROVIDER_PROTOCOL_VERSION,
-  tools,
-  auth: { type: 'apiKey', requiredTokens: ['GITHUB_TOKEN'] },
-  capabilities: ['pr', 'checks', 'comments']
-});
-
-const provider = {
-  ...base,
-  api: tools
-} satisfies CIProvider;
-
-export default provider;
+export function activate(_workspace: Workspace, ext: Extension) {
+  ext.defineProvider({
+    type: 'ci',
+    name: 'github-provider',
+    version: '0.1.0',
+    description: 'GitHub provider for CI module (GitHub API)',
+    auth: { type: 'apiKey', requiredTokens: ['GITHUB_TOKEN'] },
+    api
+  });
+}
 

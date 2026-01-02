@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { defineExtention, publicProcedure, workspace } from '@barducks/sdk';
+import { defineExtension, publicProcedure, workspace } from '@barducks/sdk';
 
 const ProjectSchema = z.object({
   resourceId: z.string().min(1),
@@ -36,7 +36,7 @@ type ProjectListInput = z.infer<typeof ProjectListInputSchema>;
 
 const OkSchema = z.object({ ok: z.boolean() });
 
-export default defineExtention((_ext: Record<string, never>) => {
+export default defineExtension((_ext: Record<string, never>) => {
   return {
     api: {
       'project.post': publicProcedure

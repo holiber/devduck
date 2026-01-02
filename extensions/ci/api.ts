@@ -1,12 +1,6 @@
 import { z } from 'zod';
 
-import { defineExtention, publicProcedure, workspace } from '@barducks/sdk';
-
-/**
- * Provider protocol version for this contract.
- * Bump only on breaking changes.
- */
-export const CI_PROVIDER_PROTOCOL_VERSION = '1.0.0' as const;
+import { defineExtension, publicProcedure, setProviderTypeSchema, workspace } from '@barducks/sdk';
 
 export const TimestampSchema = z
   .string()
@@ -256,7 +250,6 @@ export const CIProviderManifestSchema = z
     name: z.string().min(1),
     version: z.string().min(1),
     description: z.string().optional(),
-    protocolVersion: z.literal(CI_PROVIDER_PROTOCOL_VERSION),
     tools: z.array(z.string().min(1)),
     events: z
       .object({
@@ -270,11 +263,32 @@ export const CIProviderManifestSchema = z
         requiredTokens: z.array(z.string()).default([])
       })
       .default({ type: 'none', requiredTokens: [] }),
-    capabilities: z.array(z.string()).default([])
   })
   .passthrough();
 
 export type CIProviderManifest = z.infer<typeof CIProviderManifestSchema>;
+
+// Provider object schema (best-effort): validates shape and cross-checks `manifest.tools` vs `api` keys.
+export const CIProviderSchema = z
+  .object({
+    name: z.string().min(1),
+    version: z.string().min(1),
+    manifest: CIProviderManifestSchema,
+    api: z.record(z.any())
+  })
+  .passthrough()
+  .superRefine((p, ctx) => {
+    const tools = p.manifest?.tools || [];
+    const apiKeys = p.api ? Object.keys(p.api) : [];
+    for (const t of tools) {
+      if (!apiKeys.includes(t)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `Provider manifest.tools includes '${t}' but provider.api is missing this key`
+        });
+      }
+    }
+  });
 
 /**
  * CI provider interface
@@ -301,7 +315,10 @@ export interface CIProvider {
   };
 }
 
-export default defineExtention((ext: { ci: CIProvider }) => {
+export default defineExtension((ext: { ci: CIProvider }) => {
+  // Enable runtime validation on provider registration (in providers-registry).
+  setProviderTypeSchema('ci', CIProviderSchema);
+
   return {
     api: {
       'pr.list': publicProcedure
