@@ -64,19 +64,35 @@ if (testFiles.length === 0) {
   process.exit(1);
 }
 
-// Run tests with tsx (use npx to ensure tsx is available)
-const nodeOptions = String(process.env.NODE_OPTIONS || '').trim();
-const nextNodeOptions = `${nodeOptions ? nodeOptions + ' ' : ''}--import=@barducks/test-utils/node-test-hooks`.trim();
+// Run tests with Node's built-in test runner, using tsx loader for TS support.
+// This avoids subtle boot-order issues with `npx tsx --test` + NODE_OPTIONS preloads.
+const timeoutMs = Number(process.env.BARDUCKS_TEST_TIMEOUT_MS || 10 * 60_000);
+if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) {
+  console.error('Invalid BARDUCKS_TEST_TIMEOUT_MS, must be a positive number (ms)');
+  process.exit(1);
+}
 
-const result = spawnSync(
-  'npx',
-  ['tsx', '--test', '--test-concurrency=1', ...testFiles],
-  {
-    stdio: 'inherit',
-    cwd: process.cwd(),
-    env: { ...process.env, NODE_OPTIONS: nextNodeOptions }
-  }
-);
+const args = [
+  '--import',
+  'tsx',
+  '--import',
+  '@barducks/test-utils/node-test-hooks',
+  '--test',
+  '--test-concurrency=1',
+  ...testFiles
+];
+
+const result = spawnSync('node', args, {
+  stdio: 'inherit',
+  cwd: process.cwd(),
+  timeout: timeoutMs,
+  killSignal: 'SIGKILL'
+});
+
+if (result.error && (result.error as any).code === 'ETIMEDOUT') {
+  console.error(`\nERROR: unit tests timed out after ${timeoutMs}ms (BARDUCKS_TEST_TIMEOUT_MS)\n`);
+  process.exit(124);
+}
 
 process.exit(result.status ?? 1);
 

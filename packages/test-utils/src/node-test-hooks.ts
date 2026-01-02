@@ -4,7 +4,8 @@ import { afterEach } from 'node:test';
 
 // Note: we import from the repo source because `@barducks/sdk` may not be resolvable
 // in all unit-test environments (workspace links / build artifacts can be absent).
-import { workspace } from '../../../src/lib/workspace.js';
+// This module is executed via NODE_OPTIONS `--import=tsx`, so TS resolution works here.
+import { workspace } from '../../../src/lib/workspace';
 
 function safePathSegment(s: string): string {
   return String(s || '')
