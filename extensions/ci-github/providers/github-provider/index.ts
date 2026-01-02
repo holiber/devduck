@@ -423,7 +423,7 @@ async function updateIssueComment(owner: string, repo: string, commentId: number
 
 async function deleteIssueComment(owner: string, repo: string, commentId: number): Promise<void> {
   await githubApiDelete(`repos/${owner}/${repo}/issues/comments/${commentId}`);
-}
+      }
 
 async function postIssueComment(owner: string, repo: string, issueNumber: number, body: string): Promise<GitHubIssueComment> {
   return await githubApiPost<GitHubIssueComment>(`repos/${owner}/${repo}/issues/${issueNumber}/comments`, { body });
@@ -431,7 +431,7 @@ async function postIssueComment(owner: string, repo: string, issueNumber: number
 
 function okResult(ok: boolean): DeleteResult {
   return { ok };
-}
+    }
 
 async function prList(input: PRListInput): Promise<PRInfo[]> {
   const { owner, repo } = ensureOwnerRepo(input);
@@ -452,10 +452,10 @@ async function prList(input: PRListInput): Promise<PRInfo[]> {
 }
 
 async function prGet(input: PRGetInput): Promise<PRInfo> {
-  const { owner, repo } = ensureOwnerRepo(input);
-  const prNumber = typeof input.prId === 'number' ? input.prId : Number.parseInt(String(input.prId), 10);
+    const { owner, repo } = ensureOwnerRepo(input);
+        const prNumber = typeof input.prId === 'number' ? input.prId : Number.parseInt(String(input.prId), 10);
   if (!Number.isFinite(prNumber)) throw new Error(`github-provider: invalid prId: ${input.prId}`);
-  const pr = await getPRByNumber(owner, repo, prNumber);
+        const pr = await getPRByNumber(owner, repo, prNumber);
   return toContractPRInfo(pr);
 }
 
@@ -465,7 +465,7 @@ async function prPost(input: PRPostInput): Promise<PRInfo> {
   const base = String(input.to || '').trim();
   if (!head || !base) {
     throw new Error('github-provider: pr.post requires from (head) and to (base)');
-  }
+      }
   const pr = await createPR(owner, repo, { title: input.title, head, base, body: input.body });
   return toContractPRInfo(pr);
 }
@@ -482,27 +482,27 @@ async function prChecksList(input: PRChecksListInput): Promise<CheckStatus[]> {
   const { owner, repo } = ensureOwnerRepo(input);
   let sha: string | null = null;
 
-  if (input.sha) {
-    sha = input.sha;
+    if (input.sha) {
+      sha = input.sha;
   } else if (input.prId !== undefined && input.prId !== null) {
-    const prNumber = typeof input.prId === 'number' ? input.prId : Number.parseInt(String(input.prId), 10);
-    const pr = await getPRByNumber(owner, repo, prNumber);
-    sha = pr.head?.sha || null;
-  } else if (input.branch) {
-    const pr = await getPRByBranch(owner, repo, input.branch);
+      const prNumber = typeof input.prId === 'number' ? input.prId : Number.parseInt(String(input.prId), 10);
+      const pr = await getPRByNumber(owner, repo, prNumber);
+      sha = pr.head?.sha || null;
+    } else if (input.branch) {
+      const pr = await getPRByBranch(owner, repo, input.branch);
     sha = pr?.head?.sha || null;
-  }
+    }
 
   if (!sha) throw new Error('github-provider: cannot determine SHA. Provide sha, prId, or branch');
 
   const checkRuns = await getCheckRuns(owner, repo, sha, input.limit || 100);
-  const checks: CheckStatus[] = [];
-  for (const check of checkRuns) {
+    const checks: CheckStatus[] = [];
+    for (const check of checkRuns) {
     const annotations = await getCheckAnnotations(owner, repo, check.id || 0, 100);
-    checks.push(toContractCheckStatus(check, annotations));
+      checks.push(toContractCheckStatus(check, annotations));
     if (input.limit && checks.length >= input.limit) break;
   }
-  return checks;
+    return checks;
 }
 
 async function prChecksGet(input: PRChecksGetInput): Promise<CheckStatus> {
@@ -515,13 +515,13 @@ async function prChecksGet(input: PRChecksGetInput): Promise<CheckStatus> {
 }
 
 async function commentList(input: CommentListInput): Promise<Comment[]> {
-  const { owner, repo } = ensureOwnerRepo(input);
-  let prNumber: number | null = null;
+    const { owner, repo } = ensureOwnerRepo(input);
+    let prNumber: number | null = null;
 
   if (input.prId !== undefined && input.prId !== null) {
-    prNumber = typeof input.prId === 'number' ? input.prId : Number.parseInt(String(input.prId), 10);
-  } else if (input.branch) {
-    const pr = await getPRByBranch(owner, repo, input.branch);
+      prNumber = typeof input.prId === 'number' ? input.prId : Number.parseInt(String(input.prId), 10);
+    } else if (input.branch) {
+      const pr = await getPRByBranch(owner, repo, input.branch);
     prNumber = pr?.number || null;
   }
 
@@ -534,7 +534,7 @@ async function commentList(input: CommentListInput): Promise<Comment[]> {
   ]);
   const all = [...reviewComments, ...issueComments].map(toContractComment);
   return input.limit ? all.slice(0, input.limit) : all;
-}
+      }
 
 async function commentGet(input: CommentGetInput): Promise<Comment> {
   const { owner, repo } = ensureOwnerRepo(input);
@@ -609,23 +609,7 @@ const base = defineProvider({
 
 const provider = {
   ...base,
-  pr: {
-    list: prList,
-    get: prGet,
-    post: prPost,
-    delete: prDelete,
-    checks: {
-      list: prChecksList,
-      get: prChecksGet
-    }
-  },
-  comment: {
-    list: commentList,
-    get: commentGet,
-    post: commentPost,
-    put: commentPut,
-    delete: commentDelete
-  }
+  api: tools
 } satisfies CIProvider;
 
 export default provider;

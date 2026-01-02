@@ -283,23 +283,21 @@ export interface CIProvider {
   name: string;
   version: string;
   manifest: CIProviderManifest;
-  tools?: Record<string, unknown>;
-  pr: {
-    list(input: PRListInput): Promise<PRInfo[]>;
-    get(input: PRGetInput): Promise<PRInfo>;
-    post(input: PRPostInput): Promise<PRInfo>;
-    delete(input: PRDeleteInput): Promise<DeleteResult>;
-    checks: {
-      list(input: PRChecksListInput): Promise<CheckStatus[]>;
-      get(input: PRChecksGetInput): Promise<CheckStatus>;
-    };
-  };
-  comment: {
-    list(input: CommentListInput): Promise<Comment[]>;
-    get(input: CommentGetInput): Promise<Comment>;
-    post(input: CommentPostInput): Promise<Comment>;
-    put(input: CommentPutInput): Promise<Comment>;
-    delete(input: CommentDeleteInput): Promise<DeleteResult>;
+  /**
+   * Flat REST-like provider API surface (dotted keys), same style as extension `api`.
+   */
+  api: {
+    'pr.list': (input: PRListInput) => Promise<PRInfo[]>;
+    'pr.get': (input: PRGetInput) => Promise<PRInfo>;
+    'pr.post': (input: PRPostInput) => Promise<PRInfo>;
+    'pr.delete': (input: PRDeleteInput) => Promise<DeleteResult>;
+    'pr.checks.list': (input: PRChecksListInput) => Promise<CheckStatus[]>;
+    'pr.checks.get': (input: PRChecksGetInput) => Promise<CheckStatus>;
+    'comment.list': (input: CommentListInput) => Promise<Comment[]>;
+    'comment.get': (input: CommentGetInput) => Promise<Comment>;
+    'comment.post': (input: CommentPostInput) => Promise<Comment>;
+    'comment.put': (input: CommentPutInput) => Promise<Comment>;
+    'comment.delete': (input: CommentDeleteInput) => Promise<DeleteResult>;
   };
 }
 
@@ -310,13 +308,13 @@ export default defineExtention((ext: { ci: CIProvider }) => {
         .title('List pull requests')
         .input(PRListInputSchema)
         .return(z.array(PRInfoSchema))
-        .query((input: PRListInput) => ext.ci.pr.list(input)),
+        .query((input: PRListInput) => ext.ci.api['pr.list'](input)),
 
       'pr.get': publicProcedure
         .title('Get pull request')
         .input(PRGetInputSchema)
         .return(PRInfoSchema)
-        .query((input: PRGetInput) => ext.ci.pr.get(input)),
+        .query((input: PRGetInput) => ext.ci.api['pr.get'](input)),
 
       'pr.post': publicProcedure
         .title('Create pull request')
@@ -331,7 +329,7 @@ export default defineExtention((ext: { ci: CIProvider }) => {
             if (!inst || inst.resourceType !== 'project' || inst.enabled === false) {
               throw new Error(`Unknown projectId '${explicit}'. Register project or use a valid projectId.`);
             }
-            return ext.ci.pr.post(input);
+            return ext.ci.api['pr.post'](input);
           }
 
           const active = workspace.projects.getActive();
@@ -341,56 +339,56 @@ export default defineExtention((ext: { ci: CIProvider }) => {
             );
           }
 
-          return ext.ci.pr.post({ ...input, projectId: active.id });
+          return ext.ci.api['pr.post']({ ...input, projectId: active.id });
         }),
 
       'pr.delete': publicProcedure
         .title('Delete pull request')
         .input(PRDeleteInputSchema)
         .return(DeleteResultSchema)
-        .query((input: PRDeleteInput) => ext.ci.pr.delete(input)),
+        .query((input: PRDeleteInput) => ext.ci.api['pr.delete'](input)),
 
       'pr.checks.list': publicProcedure
         .title('List PR checks')
         .input(PRChecksListInputSchema)
         .return(z.array(CheckStatusSchema))
-        .query((input: PRChecksListInput) => ext.ci.pr.checks.list(input)),
+        .query((input: PRChecksListInput) => ext.ci.api['pr.checks.list'](input)),
 
       'pr.checks.get': publicProcedure
         .title('Get PR check')
         .input(PRChecksGetInputSchema)
         .return(CheckStatusSchema)
-        .query((input: PRChecksGetInput) => ext.ci.pr.checks.get(input)),
+        .query((input: PRChecksGetInput) => ext.ci.api['pr.checks.get'](input)),
 
       'comment.list': publicProcedure
         .title('List comments')
         .input(CommentListInputSchema)
         .return(z.array(CommentSchema))
-        .query((input: CommentListInput) => ext.ci.comment.list(input)),
+        .query((input: CommentListInput) => ext.ci.api['comment.list'](input)),
 
       'comment.get': publicProcedure
         .title('Get comment')
         .input(CommentGetInputSchema)
         .return(CommentSchema)
-        .query((input: CommentGetInput) => ext.ci.comment.get(input)),
+        .query((input: CommentGetInput) => ext.ci.api['comment.get'](input)),
 
       'comment.post': publicProcedure
         .title('Create comment')
         .input(CommentPostInputSchema)
         .return(CommentSchema)
-        .query((input: CommentPostInput) => ext.ci.comment.post(input)),
+        .query((input: CommentPostInput) => ext.ci.api['comment.post'](input)),
 
       'comment.put': publicProcedure
         .title('Update comment')
         .input(CommentPutInputSchema)
         .return(CommentSchema)
-        .query((input: CommentPutInput) => ext.ci.comment.put(input)),
+        .query((input: CommentPutInput) => ext.ci.api['comment.put'](input)),
 
       'comment.delete': publicProcedure
         .title('Delete comment')
         .input(CommentDeleteInputSchema)
         .return(DeleteResultSchema)
-        .query((input: CommentDeleteInput) => ext.ci.comment.delete(input))
+        .query((input: CommentDeleteInput) => ext.ci.api['comment.delete'](input))
 
     },
 

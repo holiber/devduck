@@ -43,23 +43,7 @@ const base = defineProvider({
 
 const provider = {
   ...base,
-  pr: {
-    list: db.pr.list,
-    get: db.pr.get,
-    post: db.pr.post,
-    delete: db.pr.delete,
-    checks: {
-      list: db.pr.checks.list,
-      get: db.pr.checks.get
-    }
-  },
-  comment: {
-    list: db.comment.list,
-    get: db.comment.get,
-    post: db.comment.post,
-    put: db.comment.put,
-    delete: db.comment.delete
-  }
+  api: tools
 } satisfies CIProvider;
 
 export default provider;

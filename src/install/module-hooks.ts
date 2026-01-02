@@ -182,7 +182,7 @@ export async function executeHook(
 
   const eventName = hookEvent(hookName, module.name);
   const results = await workspace.events.emit(eventName, context);
-
+  
   if (results.length === 0) {
     return {
       success: true,
@@ -202,16 +202,16 @@ export async function executeHook(
   }
 
   const result = first as HookResult | void;
-  if (result && typeof result === 'object') {
-    return {
+    if (result && typeof result === 'object') {
+      return {
       success: result.success !== false,
-      message: result.message,
-      createdFiles: result.createdFiles || [],
-      errors: result.errors || [],
-      ...result
-    };
-  }
-
+        message: result.message,
+        createdFiles: result.createdFiles || [],
+        errors: result.errors || [],
+        ...result
+      };
+    }
+    
   return { success: true, message: `Hook '${hookName}' executed for module ${module.name}` };
 }
 

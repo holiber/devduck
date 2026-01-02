@@ -15,7 +15,7 @@ import {
   discoverProvidersFromModules,
   getProvider,
   getProvidersByType
-} from '../../../src/lib/provider-registry.ts';
+} from '../../../src/lib/providers-registry.js';
 
 test.describe('ci: smogcheck-provider', () => {
   test('matches CIProvider interface', () => {
@@ -38,16 +38,14 @@ test.describe('ci: smogcheck-provider', () => {
     assert.ok(p.manifest.tools.includes('comment.put'));
     assert.ok(p.manifest.tools.includes('comment.delete'));
 
-    assert.ok(p.pr);
-    assert.ok(p.pr.checks);
-    assert.ok(p.comment);
-    assert.ok(typeof p.pr.get === 'function');
-    assert.ok(typeof p.pr.checks.list === 'function');
-    assert.ok(typeof p.comment.list === 'function');
+    assert.ok(p.api);
+    assert.ok(typeof p.api['pr.get'] === 'function');
+    assert.ok(typeof p.api['pr.checks.list'] === 'function');
+    assert.ok(typeof p.api['comment.list'] === 'function');
   });
 
   test('pr.get returns PR info that matches PRInfo schema', async () => {
-    const pr = await provider.pr.get({ prId: 'pr-1' });
+    const pr = await provider.api['pr.get']({ prId: 'pr-1' });
     const parsed = PRInfoSchema.safeParse(pr);
     assert.ok(parsed.success, parsed.success ? '' : parsed.error.message);
     assert.strictEqual(pr.id, 'pr-1');
@@ -57,7 +55,7 @@ test.describe('ci: smogcheck-provider', () => {
 
   test('pr.get throws error for non-existent PR', async () => {
     try {
-      await provider.pr.get({ prId: 'non-existent' });
+      await provider.api['pr.get']({ prId: 'non-existent' });
       assert.fail('Expected error for non-existent PR');
     } catch (error) {
       assert.ok(error instanceof Error);
@@ -66,7 +64,7 @@ test.describe('ci: smogcheck-provider', () => {
   });
 
   test('pr.list can filter by branch name', async () => {
-    const prs = await provider.pr.list({ branch: 'feature/new-feature' });
+    const prs = await provider.api['pr.list']({ branch: 'feature/new-feature' });
     assert.ok(Array.isArray(prs));
     assert.ok(prs.length > 0);
     const pr = prs[0];
@@ -76,7 +74,7 @@ test.describe('ci: smogcheck-provider', () => {
   });
 
   test('pr.checks.list returns check statuses that match CheckStatus schema', async () => {
-    const checks = await provider.pr.checks.list({ prId: 'pr-1' });
+    const checks = await provider.api['pr.checks.list']({ prId: 'pr-1' });
     assert.ok(Array.isArray(checks));
     assert.ok(checks.length > 0);
     for (const check of checks) {
@@ -88,7 +86,7 @@ test.describe('ci: smogcheck-provider', () => {
   });
 
   test('pr.checks.list returns annotations for failed checks', async () => {
-    const checks = await provider.pr.checks.list({ prId: 'pr-1' });
+    const checks = await provider.api['pr.checks.list']({ prId: 'pr-1' });
     const failedCheck = checks.find((c) => c.conclusion === 'failure');
     assert.ok(failedCheck, 'Expected at least one failed check');
     assert.ok(Array.isArray(failedCheck.annotations));
@@ -97,21 +95,21 @@ test.describe('ci: smogcheck-provider', () => {
   });
 
   test('pr.checks.get works with checkId', async () => {
-    const checks = await provider.pr.checks.list({ prId: 'pr-1' });
+    const checks = await provider.api['pr.checks.list']({ prId: 'pr-1' });
     assert.ok(checks.length > 0);
     const checkId = checks[0].id;
-    const check = await provider.pr.checks.get({ checkId });
+    const check = await provider.api['pr.checks.get']({ checkId });
     assert.strictEqual(check.id, checkId);
   });
 
   test('pr.checks.list works with branch name', async () => {
-    const checks = await provider.pr.checks.list({ branch: 'feature/new-feature' });
+    const checks = await provider.api['pr.checks.list']({ branch: 'feature/new-feature' });
     assert.ok(Array.isArray(checks));
     assert.ok(checks.length > 0);
   });
 
   test('comment.list returns comments that match Comment schema', async () => {
-    const comments = await provider.comment.list({ prId: 'pr-1' });
+    const comments = await provider.api['comment.list']({ prId: 'pr-1' });
     assert.ok(Array.isArray(comments));
     assert.ok(comments.length > 0);
     for (const comment of comments) {
@@ -125,7 +123,7 @@ test.describe('ci: smogcheck-provider', () => {
   });
 
   test('comment.list includes reactions', async () => {
-    const comments = await provider.comment.list({ prId: 'pr-1' });
+    const comments = await provider.api['comment.list']({ prId: 'pr-1' });
     const commentWithReactions = comments.find((c) => c.reactions && c.reactions.length > 0);
     assert.ok(commentWithReactions, 'Expected at least one comment with reactions');
     assert.ok(Array.isArray(commentWithReactions.reactions));
@@ -133,7 +131,7 @@ test.describe('ci: smogcheck-provider', () => {
   });
 
   test('comment.list includes file location for file comments', async () => {
-    const comments = await provider.comment.list({ prId: 'pr-1' });
+    const comments = await provider.api['comment.list']({ prId: 'pr-1' });
     const fileComment = comments.find((c) => c.path && c.line);
     assert.ok(fileComment, 'Expected at least one file comment');
     assert.ok(typeof fileComment.path === 'string');
@@ -141,19 +139,19 @@ test.describe('ci: smogcheck-provider', () => {
   });
 
   test('comment.list works with branch name', async () => {
-    const comments = await provider.comment.list({ branch: 'feature/new-feature' });
+    const comments = await provider.api['comment.list']({ branch: 'feature/new-feature' });
     assert.ok(Array.isArray(comments));
     assert.ok(comments.length > 0);
   });
 
   test('comment.post creates a comment that matches Comment schema', async () => {
-    const created = await provider.comment.post({ prId: 'pr-1', body: 'Hello from test' });
+    const created = await provider.api['comment.post']({ prId: 'pr-1', body: 'Hello from test' });
     const parsed = CommentSchema.safeParse(created);
     assert.ok(parsed.success, parsed.success ? '' : parsed.error.message);
     assert.ok(created.id);
     assert.strictEqual(created.body, 'Hello from test');
 
-    const comments = await provider.comment.list({ prId: 'pr-1' });
+    const comments = await provider.api['comment.list']({ prId: 'pr-1' });
     assert.ok(comments.some((c) => c.id === created.id));
   });
 });

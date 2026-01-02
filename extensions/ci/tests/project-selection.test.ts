@@ -13,27 +13,28 @@ function getProc<TInput, TOutput>(shape: any, name: string) {
 type Captured = { lastProjectId?: string };
 
 function makeProviderCapture(captured: Captured) {
+  const api = {
+    'pr.list': async () => [],
+    'pr.get': async () => ({ id: 'x', title: '', commentCount: 0, reviewers: [] }),
+    'pr.post': async (input: any) => {
+      captured.lastProjectId = input.projectId;
+      return { id: 'pr-x', title: input.title || '', commentCount: 0, reviewers: [] };
+    },
+    'pr.delete': async () => ({ ok: true }),
+    'pr.checks.list': async () => [],
+    'pr.checks.get': async () => ({ id: 'c', name: 'c', status: 'completed', annotations: [] }),
+    'comment.list': async () => [],
+    'comment.get': async () => ({ id: 'c', body: '', author: { login: 'x' }, createdAt: new Date().toISOString(), reactions: [] }),
+    'comment.post': async () => ({ id: 'c', body: '', author: { login: 'x' }, createdAt: new Date().toISOString(), reactions: [] }),
+    'comment.put': async () => ({ id: 'c', body: '', author: { login: 'x' }, createdAt: new Date().toISOString(), reactions: [] }),
+    'comment.delete': async () => ({ ok: true })
+  } as const;
+
   return {
     name: 'test-provider',
     version: '0.0.0',
     manifest: { type: 'ci', name: 'test-provider', version: '0.0.0', protocolVersion: 'x', tools: [] as string[] },
-    pr: {
-      list: async () => [],
-      get: async () => ({ id: 'x', title: '', commentCount: 0, reviewers: [] }),
-      post: async (input: any) => {
-        captured.lastProjectId = input.projectId;
-        return { id: 'pr-x', title: input.title || '', commentCount: 0, reviewers: [] };
-      },
-      delete: async () => ({ ok: true }),
-      checks: { list: async () => [], get: async () => ({ id: 'c', name: 'c', status: 'completed', annotations: [] }) }
-    },
-    comment: {
-      list: async () => [],
-      get: async () => ({ id: 'c', body: '', author: { login: 'x' }, createdAt: new Date().toISOString(), reactions: [] }),
-      post: async () => ({ id: 'c', body: '', author: { login: 'x' }, createdAt: new Date().toISOString(), reactions: [] }),
-      put: async () => ({ id: 'c', body: '', author: { login: 'x' }, createdAt: new Date().toISOString(), reactions: [] }),
-      delete: async () => ({ ok: true })
-    }
+    api
   };
 }
 
