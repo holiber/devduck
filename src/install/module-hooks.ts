@@ -73,6 +73,21 @@ async function ensureHookRegistered(module: { path: string; name: string }, hook
   const already = REGISTERED_HOOKS.get(key) || new Set<string>();
   if (already.has(hookName)) return;
 
+  // All events used via workspace.events must be registered as resource types first.
+  // We register event types per exact event name (including module-specific suffix).
+  workspace.resources.registerResourceType({
+    resourceType: 'event',
+    id: `event.${hookEvent(hookName, module.name)}`,
+    instanceCount: 'none',
+    title: `Module hook event ${hookEvent(hookName, module.name)}`
+  });
+  workspace.resources.registerResourceType({
+    resourceType: 'event',
+    id: `event.${hookEvent(hookName)}`,
+    instanceCount: 'none',
+    title: `Module hook event ${hookEvent(hookName)}`
+  });
+
   const loaded = await loadModuleHooks(module.path);
   if (loaded.status !== 'loaded') {
     already.add(hookName);

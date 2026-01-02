@@ -11,6 +11,11 @@ export type WorkspaceEventHandler<TPayload = unknown> = (payload: TPayload) => u
 export type ResourceTypeName = string;
 
 export type WorkspaceResourceType = {
+  /**
+   * Unique identifier for this resource type (e.g. "project", "event.hook-pre-install").
+   * If omitted, defaults to `resourceType`.
+   */
+  id?: string;
   resourceType: ResourceTypeName;
   enabled?: boolean;
   instanceCount?: 'none' | 'singletone' | 'single' | 'multiple';
@@ -104,18 +109,79 @@ type RegisterResourceInstanceEvent = {
 };
 
 export class Workspace {
-  public readonly events = new EventBus();
+  private readonly _events = new EventBus();
+
+  private eventTypeId(eventName: string): string {
+    return `event.${eventName}`;
+  }
+
+  private ensureEventRegistered(eventName: string): void {
+    const name = String(eventName || '').trim();
+    if (!name) throw new Error('workspace.events: eventName is required');
+    const typeId = this.eventTypeId(name);
+    const def = this.resources.types.get(typeId);
+    if (!def || def.resourceType !== 'event' || def.enabled === false) {
+      throw new Error(
+        `Event '${name}' is not registered. Register it via workspace.resources.registerResourceType({ resourceType: 'event', id: '${typeId}', ... }) before using workspace.events.`
+      );
+    }
+  }
+
+  public readonly events = {
+    on: <TPayload = unknown>(eventName: WorkspaceEventName, handler: WorkspaceEventHandler<TPayload>): (() => void) => {
+      this.ensureEventRegistered(String(eventName || '').trim());
+      return this._events.on(eventName, handler);
+    },
+    off: <TPayload = unknown>(eventName: WorkspaceEventName, handler: WorkspaceEventHandler<TPayload>): void => {
+      this.ensureEventRegistered(String(eventName || '').trim());
+      this._events.off(eventName, handler);
+    },
+    emit: async <TPayload = unknown>(eventName: WorkspaceEventName, payload: TPayload): Promise<unknown[]> => {
+      this.ensureEventRegistered(String(eventName || '').trim());
+      return await this._events.emit(eventName, payload);
+    },
+    listeners: (eventName: WorkspaceEventName): number => this._events.listeners(eventName),
+    clear: (eventName?: WorkspaceEventName): void => this._events.clear(eventName)
+  } as const;
 
   public readonly resources = {
-    types: new Map<ResourceTypeName, WorkspaceResourceType>(),
+    // Keyed by resource type id (e.g. "project", "event.hook-pre-install")
+    types: new Map<string, WorkspaceResourceType>(),
     instances: new Map<string, WorkspaceResourceInstance>(),
 
-    registerResourceType: (def: WorkspaceResourceType): WorkspaceResourceType => {
+    registerResourceType: (def: WorkspaceResourceType, opts?: { emitHook?: boolean }): WorkspaceResourceType => {
       const typeName = String(def?.resourceType || '').trim();
       if (!typeName) throw new Error('registerResourceType: def.resourceType is required');
-      const next: WorkspaceResourceType = { enabled: true, ...def, resourceType: typeName };
-      this.resources.types.set(typeName, next);
-      void this.events.emit('hook-register-resource-type', { resourceType: typeName, def: next } satisfies RegisterResourceTypeEvent);
+
+      const id = String(def?.id || typeName).trim();
+      if (!id) throw new Error('registerResourceType: def.id is required');
+
+      const next: WorkspaceResourceType = { enabled: true, ...def, id, resourceType: typeName };
+      this.resources.types.set(id, next);
+
+      // Avoid recursion: ensure hook event types exist before emitting hook events.
+      // These are bootstrapped silently (no further hook emissions).
+      if (!this.resources.types.has('event.hook-register-resource-type')) {
+        this.resources.registerResourceType(
+          { resourceType: 'event', id: 'event.hook-register-resource-type', instanceCount: 'none', title: 'Resource type registered' },
+          { emitHook: false }
+        );
+      }
+      if (!this.resources.types.has('event.hook-register-resource-instance')) {
+        this.resources.registerResourceType(
+          { resourceType: 'event', id: 'event.hook-register-resource-instance', instanceCount: 'none', title: 'Resource instance registered' },
+          { emitHook: false }
+        );
+      }
+
+      // Emit hook event (default on).
+      if (opts?.emitHook !== false) {
+        void this.events.emit(
+          'hook-register-resource-type',
+          { resourceType: id, def: next } satisfies RegisterResourceTypeEvent
+        );
+      }
+
       return next;
     },
 
@@ -129,7 +195,17 @@ export class Workspace {
 
       const next: WorkspaceResourceInstance = { enabled: true, ...instance, resourceId, resourceType, id };
       this.resources.instances.set(resourceId, next);
-      void this.events.emit('hook-register-resource-instance', { resourceId, instance: next } satisfies RegisterResourceInstanceEvent);
+      // Ensure the hook event is registered before emitting.
+      if (!this.resources.types.has('event.hook-register-resource-instance')) {
+        this.resources.registerResourceType(
+          { resourceType: 'event', id: 'event.hook-register-resource-instance', instanceCount: 'none', title: 'Resource instance registered' },
+          { emitHook: false }
+        );
+      }
+      void this.events.emit(
+        'hook-register-resource-instance',
+        { resourceId, instance: next } satisfies RegisterResourceInstanceEvent
+      );
       return next;
     },
 
@@ -139,6 +215,18 @@ export class Workspace {
     }
   } as const;
 
+  constructor() {
+    // Bootstrap: register core workspace events before any other code can use workspace.events.
+    this.resources.registerResourceType(
+      { resourceType: 'event', id: 'event.hook-register-resource-type', instanceCount: 'none', title: 'Resource type registered' },
+      { emitHook: false }
+    );
+    this.resources.registerResourceType(
+      { resourceType: 'event', id: 'event.hook-register-resource-instance', instanceCount: 'none', title: 'Resource instance registered' },
+      { emitHook: false }
+    );
+  }
+
   private activeProjectId: string | null = null;
 
   public readonly projects = {
@@ -147,6 +235,7 @@ export class Workspace {
       if (existing) return existing;
       return this.resources.registerResourceType({
         resourceType: 'project',
+        id: 'project',
         instanceCount: 'multiple',
         title: 'Project',
         description: 'Workspace project resource'
