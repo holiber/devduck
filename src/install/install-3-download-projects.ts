@@ -13,6 +13,7 @@ import { readWorkspaceConfigFromRoot } from '../lib/workspace-config.js';
 import { readEnvFile } from '../lib/env.js';
 import { print, symbols } from '../utils.js';
 import { markStepCompleted, type ProjectResult } from './install-state.js';
+import { loadInstallState, saveInstallState } from './install-state.js';
 import { WorkspaceConfigSchema } from '../schemas/workspace-config.zod.js';
 import { z } from 'zod';
 import type { InstallContext, StepOutcome } from './runner.js';
@@ -41,6 +42,35 @@ function getProjectName(src: string | undefined): string {
   
   // Handle regular paths
   return path.basename(src);
+}
+
+function persistProjectResourceToInstallState(args: {
+  workspaceRoot: string;
+  projectId: string;
+  src: string;
+  title?: string;
+  description?: string;
+  checks?: unknown[];
+}): void {
+  const id = String(args.projectId || '').trim();
+  const src = String(args.src || '').trim();
+  if (!id || !src) return;
+
+  const state = loadInstallState(args.workspaceRoot);
+  if (!state.resources) state.resources = { instances: {} };
+  if (!state.resources.instances) state.resources.instances = {};
+
+  const resourceId = `project:${id}`;
+  state.resources.instances[resourceId] = {
+    resourceId,
+    resourceType: 'project',
+    id,
+    src,
+    title: args.title,
+    description: args.description,
+    checks: args.checks
+  };
+  saveInstallState(args.workspaceRoot, state);
 }
 
 /**
@@ -221,6 +251,16 @@ export async function runStep3DownloadProjects(
   
   for (const project of config.projects) {
     const projectName = getProjectName(project.src);
+
+    // Persist project resource into install-state (active project is not persisted).
+    persistProjectResourceToInstallState({
+      workspaceRoot,
+      projectId: projectName,
+      src: project.src,
+      title: (project as any).title,
+      description: (project as any).description,
+      checks: (project as any).checks
+    });
     
     print(`  Processing project: ${projectName}`, 'cyan');
     if (log) {

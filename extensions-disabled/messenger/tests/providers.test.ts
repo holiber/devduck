@@ -18,7 +18,7 @@ import {
   getProvider,
   getProvidersByType,
   setProviderTypeSchema
-} from '../../src/lib/provider-registry.js';
+} from '../../src/lib/providers-registry.js';
 
 describe('messenger: telegram-provider', () => {
   test('matches MessengerProvider contract schema', () => {

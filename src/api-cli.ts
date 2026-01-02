@@ -15,7 +15,7 @@ import { createYargs, installEpipeHandler } from './lib/cli.js';
 import { findWorkspaceRoot } from './lib/workspace-root.js';
 import { readEnvFile } from './lib/env.js';
 import { getUnifiedAPIEntries } from './lib/api.js';
-import { ensureProvidersDiscovered, createProviderGetter } from './lib/api-cli/provider-runtime.js';
+import { ensureProvidersDiscovered, createProviderGetter } from './lib/api-cli/runtime.js';
 import { formatAvailableMethods, resolveProcedureFromSpec } from './lib/api-cli/help-formatter.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -89,7 +89,7 @@ function parseCommand(command: string): { moduleName: string; procedurePath: str
  */
 async function generateExample(moduleName: string, procedurePath: string, procedure: any): Promise<string> {
   try {
-    const { extractYargsOptionsFromSchema } = await import('./lib/provider-cli-utils.js');
+    const { extractYargsOptionsFromSchema } = await import('./lib/cli-utils.js');
     
     const inputSchema = procedure.input;
     if (!inputSchema || typeof inputSchema !== 'object') {
@@ -234,7 +234,7 @@ async function main(argv = process.argv): Promise<void> {
   }
 
   // Create command module manually (similar to router.toCli but for single procedure)
-  const { extractYargsOptionsFromSchema, buildInputFromArgs } = await import('./lib/provider-cli-utils.js');
+  const { extractYargsOptionsFromSchema, buildInputFromArgs } = await import('./lib/cli-utils.js');
   const { positionals, options: schemaOptions } = extractYargsOptionsFromSchema(procedureInput);
 
   // Build command name from positionals

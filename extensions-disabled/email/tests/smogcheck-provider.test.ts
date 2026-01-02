@@ -14,7 +14,7 @@ import {
   discoverProvidersFromModules,
   getProvider,
   getProvidersByType
-} from '../../src/lib/provider-registry.js';
+} from '../../src/lib/providers-registry.js';
 
 function toIsoDaysAgo(days: number): string {
   const d = new Date();

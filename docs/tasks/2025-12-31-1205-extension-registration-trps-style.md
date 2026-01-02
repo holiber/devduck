@@ -10,7 +10,7 @@
 
 ## 1. Intake
 
-Refactor extension registration to a tRPS-style DSL where each extension defines its API endpoints and provider contracts via `publicProcedure` inside `defineExtention(...)`. Remove the legacy extension registration/router exports so extensions are standardized under the new API/contract model.
+Refactor extension registration to a tRPS-style DSL where each extension defines its API endpoints and provider contracts via `publicProcedure` inside `defineExtension(...)`. Remove the legacy extension registration/router exports so extensions are standardized under the new API/contract model.
 
 ## 2. Status Log
 

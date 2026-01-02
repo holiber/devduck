@@ -2,5 +2,5 @@
  * @barducks/test-utils (workspace package placeholder).
  */
 
-export {};
+export * from './node-test-hooks.js';
 

@@ -1,5 +1,26 @@
-import { initProviderContract, type Procedure, type ProcedureMeta, type ProviderRouter } from './provider-router.js';
-import type { ToolDef, ToolsSpec, VendorToolsSpec } from './tool-spec.js';
+import { initProviderContract, type Procedure, type ProcedureMeta, type ProviderRouter } from './router.js';
+
+import type { z } from 'zod';
+
+type ToolExample = { command: string; description?: string };
+type ToolMeta = {
+  title?: string;
+  description?: string;
+  help?: string;
+  examples?: ToolExample[];
+  timeoutMs?: number;
+  idempotent?: boolean;
+  deprecated?: boolean;
+  tags?: string[];
+  [key: string]: unknown;
+};
+type ToolDef<TInput extends z.ZodTypeAny = z.ZodTypeAny, TOutput extends z.ZodTypeAny = z.ZodTypeAny> = {
+  input: TInput;
+  output: TOutput;
+  meta?: ToolMeta;
+};
+type ToolsSpec = Record<string, ToolDef>;
+type VendorToolsSpec = Record<string, ToolsSpec>;
 
 function toProcedureMeta(meta: ToolDef['meta'] | undefined): ProcedureMeta {
   return (meta || {}) as ProcedureMeta;

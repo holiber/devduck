@@ -8,6 +8,10 @@
     ".": {
       "types": "./src/index.ts",
       "default": "./src/index.ts"
+    },
+    "./node-test-hooks": {
+      "types": "./src/node-test-hooks.ts",
+      "default": "./src/node-test-hooks.ts"
     }
   }
 }

@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { Buffer } from 'node:buffer';
 
-import { defineExtention, publicProcedure } from '@barducks/sdk';
+import { defineExtension, publicProcedure } from '@barducks/sdk';
 
 import type { EmailProvider } from './schemas/contract.js';
 import {
@@ -12,7 +12,7 @@ import {
   SearchMessagesInputSchema
 } from './schemas/contract.js';
 
-export default defineExtention((ext: { email: EmailProvider }) => {
+export default defineExtension((ext: { email: EmailProvider }) => {
   return {
     api: {
       getMessage: publicProcedure
