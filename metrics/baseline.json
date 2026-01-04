@@ -1,42 +1,39 @@
 {
   "meta": {
-    "collectedAt": "2026-01-01T17:58:41.887Z",
+    "collectedAt": "2026-01-04T07:25:51.672Z",
     "repository": "holiber/barducks",
     "eventName": "push",
-    "sha": "a12cd30660cc6d0cda39312bd57e41966f61864b",
+    "sha": "edab0eef952bedc13b905ffc8fd02c11c52d5c74",
     "ref": "refs/heads/main",
-    "runId": "20642978188",
+    "runId": "20689471078",
     "runAttempt": "1",
-    "prNumber": 131,
-    "prUrl": "https://github.com/holiber/barducks/pull/131",
     "node": "v24.12.0"
   },
-  "pr": 131,
   "commands": {
     "npm_test": {
       "name": "npm_test",
       "command": "bash -lc 'npx c8 --reporter=json-summary --report-dir .cache/coverage npm run test:unit || (echo \"⚠️ Unit tests failed, retrying after 60 seconds...\"; sleep 60; npx c8 --reporter=json-summary --report-dir .cache/coverage npm run test:unit)'",
       "exitCode": 0,
-      "durationMs": 32388,
-      "collectedAt": "2026-01-01T17:57:54.831Z"
+      "durationMs": 32563,
+      "collectedAt": "2026-01-04T07:25:06.476Z"
     },
     "pw_installer": {
       "name": "pw_installer",
       "command": "bash -lc 'npx playwright test -c tests/installer/playwright.config.ts || (echo \"⚠️ Playwright installer suite failed, retrying after 60 seconds...\"; sleep 60; npx playwright test -c tests/installer/playwright.config.ts)'",
       "exitCode": 0,
-      "durationMs": 28287,
-      "collectedAt": "2026-01-01T17:58:40.895Z"
+      "durationMs": 27694,
+      "collectedAt": "2026-01-04T07:25:50.921Z"
     },
     "npm_pack": {
       "name": "npm-pack",
       "command": "npm pack --silent",
       "exitCode": 0,
-      "durationMs": 1069
+      "durationMs": 1058
     }
   },
   "sizes": {
     "npm_pack": {
-      "bytes": 8935797
+      "bytes": 8936138
     }
   },
   "tests": {
@@ -46,15 +43,15 @@
       "passed": 74,
       "failed": 0,
       "skipped": 9,
-      "reportedDurationMs": 29430.560073,
-      "durationMs": 32388,
+      "reportedDurationMs": 29673.427697,
+      "durationMs": 32563,
       "exitCode": 0
     },
     "e2e_installer": {
       "total": 34,
       "passed": 34,
-      "reportedDurationMs": 27000,
-      "durationMs": 28287,
+      "reportedDurationMs": 26400,
+      "durationMs": 27694,
       "exitCode": 0
     },
     "flaky": {
@@ -82,7 +79,7 @@
           "top": [
             {
               "name": "launch dev starts background processes, runs smokecheck, captures browser console, and allows reuse",
-              "durationMs": 10429.152036
+              "durationMs": 11058.36397
             }
           ]
         }
@@ -98,11 +95,12 @@
     "BUILD_COMMAND not set; build metric skipped.",
     "DEV_COMMAND not set; dev startup metric skipped."
   ],
-  "commit": "a12cd30660cc6d0cda39312bd57e41966f61864b",
-  "timestamp": "2026-01-01T17:58:47.071Z",
+  "commit": "edab0eef952bedc13b905ffc8fd02c11c52d5c74",
+  "pr": 0,
+  "timestamp": "2026-01-04T07:25:56.744Z",
   "baseline": {
-    "commit": "a12cd30660cc6d0cda39312bd57e41966f61864b",
-    "pr": 131,
-    "timestamp": "2026-01-01T17:58:47.071Z"
+    "commit": "edab0eef952bedc13b905ffc8fd02c11c52d5c74",
+    "pr": 0,
+    "timestamp": "2026-01-04T07:25:56.744Z"
   }
 }
