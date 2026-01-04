@@ -1,7 +1,24 @@
 import type { z } from 'zod';
 
 import type { UnifiedAPIEntries } from '../api.js';
-import type { ToolDef } from '../tool-spec.js';
+
+type ToolExample = { command: string; description?: string };
+type ToolMeta = {
+  title?: string;
+  description?: string;
+  help?: string;
+  examples?: ToolExample[];
+  timeoutMs?: number;
+  idempotent?: boolean;
+  deprecated?: boolean;
+  tags?: string[];
+  [key: string]: unknown;
+};
+type ToolDef = {
+  input: z.ZodTypeAny;
+  output: z.ZodTypeAny;
+  meta?: ToolMeta;
+};
 
 function listToolsFromSpec(spec: { tools?: Record<string, ToolDef>; vendorTools?: Record<string, Record<string, ToolDef>> }): Array<{
   procedurePath: string;

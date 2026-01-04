@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { defineExtension, publicProcedure, setProviderTypeSchema, workspace } from '@barducks/sdk';
+import { defineExtension, publicProcedure, type Workspace } from '@barducks/sdk';
 
 export const TimestampSchema = z
   .string()
@@ -290,34 +290,19 @@ export const CIProviderSchema = z
     }
   });
 
-/**
- * CI provider interface
- */
-export interface CIProvider {
-  name: string;
-  version: string;
-  manifest: CIProviderManifest;
-  /**
-   * Flat REST-like provider API surface (dotted keys), same style as extension `api`.
-   */
-  api: {
-    'pr.list': (input: PRListInput) => Promise<PRInfo[]>;
-    'pr.get': (input: PRGetInput) => Promise<PRInfo>;
-    'pr.post': (input: PRPostInput) => Promise<PRInfo>;
-    'pr.delete': (input: PRDeleteInput) => Promise<DeleteResult>;
-    'pr.checks.list': (input: PRChecksListInput) => Promise<CheckStatus[]>;
-    'pr.checks.get': (input: PRChecksGetInput) => Promise<CheckStatus>;
-    'comment.list': (input: CommentListInput) => Promise<Comment[]>;
-    'comment.get': (input: CommentGetInput) => Promise<Comment>;
-    'comment.post': (input: CommentPostInput) => Promise<Comment>;
-    'comment.put': (input: CommentPutInput) => Promise<Comment>;
-    'comment.delete': (input: CommentDeleteInput) => Promise<DeleteResult>;
-  };
-}
+export type CIProvider = z.infer<typeof CIProviderSchema>;
 
-export default defineExtension((ext: { ci: CIProvider }) => {
-  // Enable runtime validation on provider registration (in providers-registry).
-  setProviderTypeSchema('ci', CIProviderSchema);
+
+
+/**
+ * Draft / future iteration of the CI module API.
+ *
+ * Not currently used by the runtime; kept as a reference while the provider API is evolving.
+ */
+export default defineExtension((ext: { ci: CIProvider }, workspace) => {
+  const ws = workspace as unknown as Workspace;
+
+  const ci = ext.ci.api;
 
   return {
     api: {
@@ -325,13 +310,13 @@ export default defineExtension((ext: { ci: CIProvider }) => {
         .title('List pull requests')
         .input(PRListInputSchema)
         .return(z.array(PRInfoSchema))
-        .query((input: PRListInput) => ext.ci.api['pr.list'](input)),
+        .query((input: PRListInput) => ci['pr.list'](input)),
 
       'pr.get': publicProcedure
         .title('Get pull request')
         .input(PRGetInputSchema)
         .return(PRInfoSchema)
-        .query((input: PRGetInput) => ext.ci.api['pr.get'](input)),
+        .query((input: PRGetInput) => ci['pr.get'](input)),
 
       'pr.post': publicProcedure
         .title('Create pull request')
@@ -342,70 +327,70 @@ export default defineExtension((ext: { ci: CIProvider }) => {
           if (explicit) {
             // ensure project exists
             const rid = `project:${explicit}`;
-            const inst = workspace.resources.instances.get(rid);
+            const inst = ws.resources.instances.get(rid);
             if (!inst || inst.resourceType !== 'project' || inst.enabled === false) {
               throw new Error(`Unknown projectId '${explicit}'. Register project or use a valid projectId.`);
             }
-            return ext.ci.api['pr.post'](input);
+            return ci['pr.post'](input);
           }
 
-          const active = workspace.projects.getActive();
+          const active = ws.projects.getActive();
           if (!active) {
             throw new Error(
               'Multiple projects are registered (or none active). Provide projectId in pr.post input or call project.setActive.'
             );
           }
 
-          return ext.ci.api['pr.post']({ ...input, projectId: active.id });
+          return ci['pr.post']({ ...input, projectId: active.id });
         }),
 
       'pr.delete': publicProcedure
         .title('Delete pull request')
         .input(PRDeleteInputSchema)
         .return(DeleteResultSchema)
-        .query((input: PRDeleteInput) => ext.ci.api['pr.delete'](input)),
+        .query((input: PRDeleteInput) => ci['pr.delete'](input)),
 
       'pr.checks.list': publicProcedure
         .title('List PR checks')
         .input(PRChecksListInputSchema)
         .return(z.array(CheckStatusSchema))
-        .query((input: PRChecksListInput) => ext.ci.api['pr.checks.list'](input)),
+        .query((input: PRChecksListInput) => ci['pr.checks.list'](input)),
 
       'pr.checks.get': publicProcedure
         .title('Get PR check')
         .input(PRChecksGetInputSchema)
         .return(CheckStatusSchema)
-        .query((input: PRChecksGetInput) => ext.ci.api['pr.checks.get'](input)),
+        .query((input: PRChecksGetInput) => ci['pr.checks.get'](input)),
 
       'comment.list': publicProcedure
         .title('List comments')
         .input(CommentListInputSchema)
         .return(z.array(CommentSchema))
-        .query((input: CommentListInput) => ext.ci.api['comment.list'](input)),
+        .query((input: CommentListInput) => ci['comment.list'](input)),
 
       'comment.get': publicProcedure
         .title('Get comment')
         .input(CommentGetInputSchema)
         .return(CommentSchema)
-        .query((input: CommentGetInput) => ext.ci.api['comment.get'](input)),
+        .query((input: CommentGetInput) => ci['comment.get'](input)),
 
       'comment.post': publicProcedure
         .title('Create comment')
         .input(CommentPostInputSchema)
         .return(CommentSchema)
-        .query((input: CommentPostInput) => ext.ci.api['comment.post'](input)),
+        .query((input: CommentPostInput) => ci['comment.post'](input)),
 
       'comment.put': publicProcedure
         .title('Update comment')
         .input(CommentPutInputSchema)
         .return(CommentSchema)
-        .query((input: CommentPutInput) => ext.ci.api['comment.put'](input)),
+        .query((input: CommentPutInput) => ci['comment.put'](input)),
 
       'comment.delete': publicProcedure
         .title('Delete comment')
         .input(CommentDeleteInputSchema)
         .return(DeleteResultSchema)
-        .query((input: CommentDeleteInput) => ext.ci.api['comment.delete'](input))
+        .query((input: CommentDeleteInput) => ci['comment.delete'](input))
 
     },
 

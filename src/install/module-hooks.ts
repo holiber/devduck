@@ -13,6 +13,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { createRequire } from 'module';
 import { getWorkspaceConfigFilePath, readWorkspaceConfigFile } from '../lib/workspace-config.js';
+import { workspace } from '../lib/workspace.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -55,6 +56,64 @@ type LoadModuleHooksResult =
   | { status: 'missing' }
   | { status: 'loaded'; hooksPath: string; hooks: ModuleHooks }
   | { status: 'error'; hooksPath: string; error: Error };
+
+type HookEventName = `hook-${string}` | `hook-${string}:${string}`;
+
+function hookEvent(hookName: string, moduleName?: string): HookEventName {
+  const base = `hook-${hookName}` as HookEventName;
+  if (!moduleName) return base;
+  return (`hook-${hookName}:${moduleName}`) as HookEventName;
+}
+
+// modulePath -> set of hookNames already registered
+const REGISTERED_HOOKS: Map<string, Set<string>> = new Map();
+
+async function ensureHookRegistered(module: { path: string; name: string }, hookName: string): Promise<void> {
+  const key = module.path;
+  const already = REGISTERED_HOOKS.get(key) || new Set<string>();
+  if (already.has(hookName)) return;
+
+  // All events used via workspace.events must be registered as resource types first.
+  // We register event types per exact event name (including module-specific suffix).
+  workspace.resources.registerResourceType({
+    resourceType: 'event',
+    id: `event.${hookEvent(hookName, module.name)}`,
+    instanceCount: 'none',
+    title: `Module hook event ${hookEvent(hookName, module.name)}`
+  });
+  workspace.resources.registerResourceType({
+    resourceType: 'event',
+    id: `event.${hookEvent(hookName)}`,
+    instanceCount: 'none',
+    title: `Module hook event ${hookEvent(hookName)}`
+  });
+
+  const loaded = await loadModuleHooks(module.path);
+  if (loaded.status !== 'loaded') {
+    already.add(hookName);
+    REGISTERED_HOOKS.set(key, already);
+    return;
+  }
+
+  const hook = loaded.hooks[hookName];
+  if (typeof hook !== 'function') {
+    already.add(hookName);
+    REGISTERED_HOOKS.set(key, already);
+    return;
+  }
+
+  // Register both names:
+  // - module-specific: hook-pre-install:<moduleName> (used by executor)
+  // - generic: hook-pre-install (reserved for future "broadcast stage" use)
+  const handler = async (ctx: HookContext): Promise<HookResult | void> => {
+    return await hook(ctx);
+  };
+  workspace.events.on(hookEvent(hookName, module.name), handler);
+  workspace.events.on(hookEvent(hookName), handler);
+
+  already.add(hookName);
+  REGISTERED_HOOKS.set(key, already);
+}
 
 /**
  * Load hooks from module
@@ -118,33 +177,13 @@ export async function executeHook(
   hookName: string,
   context: HookContext
 ): Promise<HookResult> {
-  const loaded = await loadModuleHooks(module.path);
-  
-  if (loaded.status === 'missing') {
-    // No hooks file - module doesn't define hooks
-    // Log this for debugging (only in test mode to avoid noise)
-    if (process.env.NODE_ENV === 'test') {
-      console.log(`[DEBUG] No hooks found for module ${module.name} at path ${module.path}`);
-    }
-    return {
-      success: true,
-      skipped: true,
-      message: `No hooks.ts/hooks.js found for module ${module.name}`
-    };
-  }
+  // Ensure module hook is registered as an event handler (idempotent).
+  await ensureHookRegistered({ path: module.path, name: module.name }, hookName);
 
-  if (loaded.status === 'error') {
-    return {
-      success: false,
-      errors: [`Failed to load hooks from ${loaded.hooksPath}: ${loaded.error.message}`],
-      stack: loaded.error.stack
-    };
-  }
-
-  const hook = loaded.hooks[hookName];
+  const eventName = hookEvent(hookName, module.name);
+  const results = await workspace.events.emit(eventName, context);
   
-  if (!hook) {
-    // Hook not defined - not an error, just skip
+  if (results.length === 0) {
     return {
       success: true,
       skipped: true,
@@ -152,20 +191,20 @@ export async function executeHook(
     };
   }
 
-  if (typeof hook !== 'function') {
+  // We expect at most one handler per module per hook.
+  const first = results[0];
+  if (first instanceof Error) {
     return {
       success: false,
-      errors: [`Hook '${hookName}' in module ${module.name} is not a function`]
+      errors: [`Hook '${hookName}' failed for module ${module.name}: ${first.message}`],
+      stack: first.stack
     };
   }
 
-  try {
-    const result = await hook(context);
-    
-    // Validate result
+  const result = first as HookResult | void;
     if (result && typeof result === 'object') {
       return {
-        success: result.success !== false, // Default to true if not specified
+      success: result.success !== false,
         message: result.message,
         createdFiles: result.createdFiles || [],
         errors: result.errors || [],
@@ -173,19 +212,7 @@ export async function executeHook(
       };
     }
     
-    // If hook returns non-object, assume success
-    return {
-      success: true,
-      message: `Hook '${hookName}' executed for module ${module.name}`
-    };
-  } catch (error) {
-    const err = error as Error;
-    return {
-      success: false,
-      errors: [`Hook '${hookName}' failed for module ${module.name}: ${err.message}`],
-      stack: err.stack
-    };
-  }
+  return { success: true, message: `Hook '${hookName}' executed for module ${module.name}` };
 }
 
 /**

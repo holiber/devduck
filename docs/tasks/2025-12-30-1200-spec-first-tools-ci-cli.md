@@ -26,7 +26,7 @@ This caused drift risk, copy-paste overhead, and unstable CLI help generation.
 
 ### Core libs
 
-- Added `src/lib/tool-spec.ts` for tool definitions and metadata (typed, autocompletion-friendly).
+- (Removed later) `src/lib/tool-spec.ts` was an experiment for tool definitions/metadata; the repo now uses direct zod + `publicProcedure` instead.
 - Added `src/lib/make-provider-router.ts` to auto-generate provider routers from tool specs.
 - Added `src/lib/define-provider.ts` to define providers declaratively, auto-building `manifest.tools` and `manifest.vendorTools`.
 
@@ -49,7 +49,7 @@ This caused drift risk, copy-paste overhead, and unstable CLI help generation.
   - builds help from spec when available, with fallback for legacy modules
   - uses spec-provided `requiresProvider/providerType` instead of heuristics
 - Added `src/lib/extensions-discovery.ts` (`collectExtensionsDirs`) to centralize repo scanning logic.
-- Added `src/lib/api-cli/provider-runtime.ts` and `src/lib/api-cli/help-formatter.ts` to split responsibilities.
+- Added `src/lib/api-cli/runtime.ts` and `src/lib/api-cli/help-formatter.ts` to split responsibilities.
 
 ### Docs
 

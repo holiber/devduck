@@ -91,6 +91,9 @@ export interface InstallState {
   mcpServers?: unknown[];
   checks?: CheckResult[];
   projects?: ProjectResult[];
+  resources?: {
+    instances?: Record<string, unknown>;
+  };
 }
 
 const DEFAULT_STATE: InstallState = {
@@ -103,7 +106,8 @@ const DEFAULT_STATE: InstallState = {
     'setup-projects': { completed: false },
     'verify-installation': { completed: false }
   },
-  executedChecks: []
+  executedChecks: [],
+  resources: { instances: {} }
 };
 
 /**
@@ -138,7 +142,13 @@ export function loadInstallState(workspaceRoot: string): InstallState {
         ...DEFAULT_STATE.steps,
         ...(state.steps || {})
       },
-      executedChecks: state.executedChecks || []
+      executedChecks: state.executedChecks || [],
+      resources: {
+        instances: {
+          ...(DEFAULT_STATE.resources?.instances || {}),
+          ...(((state as InstallState).resources && (state as InstallState).resources?.instances) || {})
+        }
+      }
     };
   } catch (error) {
     const err = error as Error;

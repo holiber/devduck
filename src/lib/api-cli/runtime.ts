@@ -1,7 +1,7 @@
 import fs from 'fs';
 
 import { getWorkspaceConfigFilePath, readWorkspaceConfigFile } from '../workspace-config.js';
-import { discoverProvidersFromModules, getProvider, getProvidersByType, type ProviderBase } from '../provider-registry.js';
+import { discoverProvidersFromModules, getProvider, getProvidersByType, type ProviderBase } from '../providers-registry.js';
 import { collectExtensionsDirs } from '../extensions-discovery.js';
 
 type WorkspaceConfigLike = {
